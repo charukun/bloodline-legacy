@@ -1,0 +1,92 @@
+
+
+
+
+const STORAGE_PREFIX='aerin.tactics.v3.';
+const readStore=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(STORAGE_PREFIX+key))??fallback;}catch{return fallback;}};
+const writeStore=(key,value)=>{try{localStorage.setItem(STORAGE_PREFIX+key,JSON.stringify(value));return true;}catch{return false;}};
+const gameId=()=>globalThis.crypto?.randomUUID?.()||'id-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+class Game{
+ constructor(){this.profile={owner:gameId(),clan:'暁風',name:'',race:0,inherit:[],mode:'normal',online:false,villageCode:'',quality:'auto',sound:true,...readStore('profile',{})};if(this.profile.settingsVersion!==5){this.profile.mode='normal';this.profile.settingsVersion=5;this.profile.race=(this.profile.race||0)%4;}this.profile.inherit=Array.isArray(this.profile.inherit)?this.profile.inherit.filter(id=>skillById(id)).slice(0,1):[];this.screen='clan';this.online=false;this.serverAvailable=false;this.sim=null;this.snapshot=null;this.playerId=null;this.seq=0;this.keys=new Set();this.input={x:0,z:0};this.pendingMove=null;this.commandBuffer=[];this.accumulator=0;this.lastFrame=0;this.lastUI=0;this.sinceSave=0;this.nextNetwork=0;this.mapCache=new Map();this.walkTarget=null;this.closed=false;this.audio=new AudioEngine();this.renderer=new Renderer(document.getElementById('world'));this.renderer.setQuality(this.profile.quality);this.ui=new UI(this);this.loadMode();this.makeClanPreview();Object.assign(this.renderer.camera,{x:0,z:0,zoom:4.2,yaw:.12,pitch:.24});this.ui.showClan();this.installInput();window.addEventListener('resize',()=>this.renderer.resize());window.addEventListener('beforeunload',()=>{this.stopInput();this.saveWorld();});document.addEventListener('visibilitychange',()=>{this.audio.visibility(document.hidden);if(document.hidden){this.stopInput();this.saveWorld();}this.lastFrame=performance.now();});this.saveProfile();this.checkServer();document.getElementById('loading').classList.add('hidden');this.installQA();requestAnimationFrame(t=>this.frame(t));}
+ saveProfile(){return writeStore('profile',this.profile);}
+ loadMode(){this.loadedMode=this.profile.mode;let raw=null;try{raw=localStorage.getItem(STORAGE_PREFIX+'world.'+this.loadedMode);this.sim=raw?Simulation.restore(JSON.parse(raw)):new Simulation({seed:7349,mode:this.profile.mode});}catch(e){console.warn('Invalid previous save',e);let backed=false;try{if(raw!==null){localStorage.setItem(STORAGE_PREFIX+'unreadable-world.'+Date.now(),raw);backed=true;}}catch{}this.blockSave=raw!==null&&!backed;this.sim=new Simulation({seed:7349,mode:this.profile.mode});this.ui.toast(backed?'前の記録は別に保管した。新しい旅を始める。':'記録を読み込めなかった。保存先の空きを確認してください。');}this.playerId=[...this.sim.players.values()].find(p=>p.owner===this.profile.owner&&p.alive)?.id||[...this.sim.players.values()].filter(p=>p.owner===this.profile.owner).at(-1)?.id||null;this.seq=this.sim.seq;if(this.playerId)this.snapshot=this.decorate(this.sim.snapshot(this.playerId,this.seq));}
+ decorate(s){if(!s)return s;if(!this.mapCache.has(s.room.seed))this.mapCache.set(s.room.seed,makeVillage(s.room.seed));s.map=this.mapCache.get(s.room.seed);return s;}
+ makeClanPreview(){const previewSim=new Simulation({seed:7349,mode:'normal'}),p=previewSim.addPlayer('preview',{race:this.profile.race,owner:'preview',name:'エリン'});Object.assign(p,{kind:'portrait',race:this.profile.race,age:24,appearanceSeed:16,hair:1,gender:0,weapon:-1,armor:0,shield:false,prologue:false,introUntil:-100,x:0,z:0,dir:.05,baseY:.13,action:'idle',alive:true});this.previewCharacter=p;this.clanScene=this.decorate(previewSim.snapshot(p.id));}
+ saveWorld(){if(!this.sim||this.online||this.blockSave)return;writeStore('world.'+this.loadedMode,this.sim.exportState());this.saveProfile();}
+ canResume(){return this.profile.online?!!readStore('online.token.'+this.profile.mode,null):[...this.sim.players.values()].some(p=>p.owner===this.profile.owner&&p.alive);}
+ getLegacy(){return this.online&&this.snapshot?.legacy?this.snapshot.legacy:this.profile.online?readStore('online.legacy.'+this.profile.mode,{archive:[],records:[],generation:1}):this.sim.legacy(this.profile.owner);}
+ async checkServer(){if(!/^https?:$/.test(location.protocol))return;try{const r=await fetch('/api/health',{signal:AbortSignal.timeout(2000)}),h=await r.json();this.serverAvailable=h.game==='AERIN'&&h.version===VERSION;}catch{this.serverAvailable=false;}}
+ async start(){if(!this.profile.uiExplained){this.ui.onboarding(()=>{this.profile.uiExplained=true;this.saveProfile();this.start();});return;}if(this.profile.sound)this.audio.enable();const b=document.getElementById('begin-life');if(b)b.disabled=true;try{this.online=!!this.profile.online;if(this.online){await this.checkServer();if(!this.serverAvailable)throw Error('共有は、同梱サーバーから開いてください');const res=await fetch('/api/join',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:readStore('online.token.'+this.profile.mode,null),config:this.profile})}),j=await res.json();if(!res.ok)throw Error(j.error||'村に入れませんでした');this.token=j.token;this.playerId=j.playerId;writeStore('online.token.'+this.profile.mode,j.token);this.acceptSnapshot(j.snapshot);this.connectEvents();}else{this.events?.close();this.events=null;let p=[...this.sim.players.values()].find(p=>p.owner===this.profile.owner&&p.alive);if(!p)p=this.sim.addPlayer(gameId(),{...this.profile,inherit:this.profile.inherit.filter(id=>this.sim.legacy(this.profile.owner).archive.includes(id))});this.playerId=p.id;this.seq=this.sim.seq;this.snapshot=this.decorate(this.sim.snapshot(p.id,this.seq));}this.screen='game';this.ui.showGame();this.renderer.effects=[];this.renderer.staticShadowDirty=true;this.renderer.camera.x=this.snapshot.player.x;this.renderer.camera.z=this.snapshot.player.z;this.renderer.camera.zoom=14;this.renderer.camera.yaw=.42;this.renderer.camera.pitch=.68;this.lastFrame=performance.now();this.saveWorld();}catch(e){this.online=false;this.ui.toast(e.message);this.ui.renderClan();}}
+ acceptSnapshot(s){this.snapshot=this.decorate(s);this.seq=s.seq;writeStore('online.legacy.'+this.profile.mode,s.legacy);for(const e of s.events||[]){this.renderer.effect(e,s.t);this.audio.fx(e);if(this.screen==='game')this.ui.event(e);}this.lastSnapshotAt=performance.now();}
+ connectEvents(){this.events?.close();this.events=new EventSource('/api/events?token='+encodeURIComponent(this.token));this.events.onmessage=e=>{try{this.acceptSnapshot(JSON.parse(e.data));this.networkErrorShown=false;}catch(err){console.error(err);}};this.events.onerror=()=>{if(!this.networkErrorShown){this.ui.toast('村とのつながりを取り直している');this.networkErrorShown=true;}};}
+ command(cmd){if(this.screen!=='game'||!this.snapshot?.player.alive)return false;if(this.online){if(cmd.type==='move'){this.pendingMove=cmd;return true;}if(cmd.type==='weights'){const i=this.commandBuffer.findIndex(c=>c.type==='weights'&&c.phase===cmd.phase);if(i>=0)this.commandBuffer[i]=cmd;else this.commandBuffer.push(cmd);}else if(this.commandBuffer.length<20){if(cmd.type==='dash'){this.pendingMove=null;this.commandBuffer=this.commandBuffer.filter(c=>c.type!=='dash');}this.commandBuffer.push(cmd);};return true;}const ok=this.sim.command(this.playerId,cmd);this.snapshot=this.decorate(this.sim.snapshot(this.playerId,this.seq));return ok;}
+ sendNetwork(){if(!this.online||!this.token)return;const cmd=this.commandBuffer.shift()||this.pendingMove;if(!cmd)return;if(cmd===this.pendingMove)this.pendingMove=null;fetch('/api/command',{method:'POST',headers:{'Content-Type':'application/json','X-Aerin-Session':this.token},body:JSON.stringify(cmd)}).then(r=>{if(r.status===401)this.ui.toast('入り直して、村につなぎ直そう');else if(!r.ok||r.headers.get('X-Command-Accepted')==='0')this.ui.toast('今は、その操作をできない');}).catch(()=>{if(!this.networkErrorShown){this.ui.toast('操作が届かなかった');this.networkErrorShown=true;}});}
+ toClan(){this.stopInput();this.saveWorld();this.screen='clan';this.makeClanPreview();this.renderer.effects=[];this.renderer.staticShadowDirty=true;this.ui.showClan();}
+ nearRack(){const p=this.snapshot?.player,r=this.snapshot?.room;if(!p||r.kind!=='village')return false;const rack=this.snapshot.map.schools.find(s=>s.id==='armory');if(!rack)return false;return Math.hypot(p.x-rack.x,p.z-rack.z-3)<=5.4;}
+ resetPointer(){if(this.pointer){clearTimeout(this.pointer.timer);const id=this.pointer.id;this.pointer=null;try{if(this.renderer.canvas.hasPointerCapture(id))this.renderer.canvas.releasePointerCapture(id);}catch{}}this.input={x:0,z:0};document.getElementById('joystick').classList.add('hidden');}
+ stopInput(){this.keys.clear();this.walkTarget=null;this.resetPointer();if(this.screen==='game')this.command({type:'move',x:0,z:0});}
+ installInput(){
+  const canvas=this.renderer.canvas;
+  document.addEventListener('pointerdown',()=>{if(this.screen==='game'&&this.profile.sound&&(!this.audio.enabled||this.audio.ctx?.state!=='running'))this.audio.enable();},{passive:true});
+  canvas.oncontextmenu=e=>e.preventDefault();
+  canvas.addEventListener('pointerdown',e=>{
+   if(this.screen!=='game'||this.ui.modal||e.button!==0||this.pointer)return;
+   e.preventDefault();const wasDash=!!this.snapshot.player.dash;this.walkTarget=null;
+   if(wasDash)this.command({type:'move',x:0,z:0});
+   const q={id:e.pointerId,x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY,started:performance.now(),moved:false,held:false,wasDash};
+   q.timer=setTimeout(()=>{if(this.pointer!==q||q.moved||this.snapshot?.player.prologue)return;q.held=true;this.command({type:'sit',active:true});},480);
+   this.pointer=q;canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener('pointermove',e=>{
+   const q=this.pointer;if(!q||q.id!==e.pointerId)return;e.preventDefault();q.lastX=e.clientX;q.lastY=e.clientY;
+   const dx=e.clientX-q.x,dy=e.clientY-q.y,d=Math.hypot(dx,dy);
+   if(d>8){q.moved=true;clearTimeout(q.timer);}if(!q.moved||q.held||this.snapshot?.player.prologue)return;
+   const world=this.renderer.screenToWorld(dx,dy),n=Math.hypot(world.x,world.z)||1;
+   this.input={x:world.x/n*Math.min(1,d/40),z:world.z/n*Math.min(1,d/40)};this.command({type:'move',...this.input});
+   const joy=document.getElementById('joystick');joy.classList.remove('hidden');joy.style.left=q.x+'px';joy.style.top=q.y+'px';joy.querySelector('i').style.transform=`translate(${dx/Math.max(1,d/23)}px,${dy/Math.max(1,d/23)}px)`;
+  });
+  const release=e=>{
+   const q=this.pointer;if(!q||q.id!==e.pointerId)return;
+   const elapsed=performance.now()-q.started,dx=(Number.isFinite(e.clientX)&&e.type==='pointerup'?e.clientX:q.lastX)-q.x,dy=(Number.isFinite(e.clientY)&&e.type==='pointerup'?e.clientY:q.lastY)-q.y,d=Math.hypot(dx,dy);
+   this.resetPointer();
+   if(e.type!=='pointerup'){this.command({type:'move',x:0,z:0});return;}
+   if(this.snapshot?.player.prologue)return;
+   // One recognizer for mouse, pen and touch. Dash persists on the server until a new intent.
+   if(!q.held&&d>=32&&elapsed<320&&d/Math.max(1,elapsed)>.18){
+    const w=this.renderer.screenToWorld(dx,dy),n=Math.hypot(w.x,w.z)||1;this.command({type:'dash',x:w.x/n,z:w.z/n});return;
+   }
+   if(q.moved){this.command({type:'move',x:0,z:0});return;}
+   if(q.held)return;
+   this.command({type:'move',x:0,z:0});
+   if(!q.wasDash)this.walkTarget={...this.renderer.pointToWorld(e.clientX,e.clientY),until:performance.now()+8000};
+  };
+  canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);canvas.addEventListener('lostpointercapture',e=>{if(this.pointer)release(e);});
+  canvas.addEventListener('wheel',e=>{if(this.ui.modal)return;e.preventDefault();this.zoomOffset=clamp((this.zoomOffset||0)+e.deltaY*.006,-4,8);},{passive:false});
+  window.addEventListener('keydown',e=>{
+   if(e.key==='Escape'){if(this.ui.modal)this.ui.closeModal();else if(this.screen==='game')this.ui.settings();return;}
+   if(this.screen!=='game'||this.ui.modal||['INPUT','TEXTAREA'].includes(document.activeElement?.tagName))return;
+   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();this.keys.add(e.code);if(e.repeat)return;
+   if(e.code==='KeyR'||e.code==='Space')this.command({type:'sit',active:true});
+   if(e.code==='KeyK')this.ui.skills();if(e.code==='KeyB')this.ui.body();if(e.code==='KeyT')this.ui.talk();if(e.code==='KeyE')document.querySelector('[data-context]')?.click();
+  });
+  window.addEventListener('keyup',e=>{const wasMove=['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code);this.keys.delete(e.code);if(wasMove&&!this.keys.size&&!this.pointer)this.command({type:'move',x:0,z:0});});window.addEventListener('blur',()=>this.stopInput());
+ }
+ updateMove(){if(this.screen!=='game'||this.ui.modal)return;let dx=(this.keys.has('KeyD')||this.keys.has('ArrowRight')?1:0)-(this.keys.has('KeyA')||this.keys.has('ArrowLeft')?1:0),dy=(this.keys.has('KeyS')||this.keys.has('ArrowDown')?1:0)-(this.keys.has('KeyW')||this.keys.has('ArrowUp')?1:0);if(dx||dy){this.walkTarget=null;const w=this.renderer.screenToWorld(dx,dy),n=Math.hypot(w.x,w.z)||1;this.command({type:'move',x:w.x/n,z:w.z/n});}else if(this.walkTarget){const p=this.snapshot.player,w=this.walkTarget,d=Math.hypot(w.x-p.x,w.z-p.z);if(d<.3||performance.now()>w.until){this.walkTarget=null;this.command({type:'move',x:0,z:0});}else this.command({type:'move',x:(w.x-p.x)/d,z:(w.z-p.z)/d});}else if(this.pointer?.moved)this.command({type:'move',...this.input});}
+ frame(now){if(this.closed)return;const elapsed=this.lastFrame?Math.min(3,(now-this.lastFrame)/1000):.016;this.lastFrame=now;const dt=Math.min(.1,elapsed);try{
+ this.updateMove();if(!this.online){this.accumulator+=elapsed;let loops=0;while(this.accumulator>=1/30&&loops++<90){this.sim.tick(1/30);this.accumulator-=1/30;}if(this.playerId){this.snapshot=this.decorate(this.sim.snapshot(this.playerId,this.seq));for(const e of this.snapshot.events){this.renderer.effect(e,this.snapshot.t);if(this.screen==='game'){this.audio.fx(e);this.ui.event(e);}}this.seq=this.snapshot.seq;}}
+ else if(now>this.nextNetwork){this.sendNetwork();this.nextNetwork=now+60;}
+ if(this.screen==='clan'){this.clanScene.t=now/1000;this.clanScene.player=this.previewCharacter;this.clanScene.players=[this.previewCharacter];this.renderer.render(this.clanScene,dt,{clan:true,preview:this.previewCharacter});}else if(this.snapshot){this.audio.setListener(this.snapshot.player);this.audio.setArea?.(this.snapshot.room.kind==='front'?'front':this.snapshot.player.z<-28?'outside':'village');this.audio.front=this.snapshot.room.kind==='front';this.audio.updateFootsteps(this.snapshot.player);this.renderer.render(this.snapshot,dt,{zoomOffset:this.zoomOffset||0});this.audio.updateWeather?.(this.renderer.weatherState,this.snapshot,this.renderer.art.sources);if(now-this.lastUI>80){this.ui.update(this.snapshot);this.lastUI=now;}}
+ if(this.ui.portraitQueue.length&&!this.ui.pieDragging){const q=this.ui.portraitQueue.shift();if(q.node.isConnected){const data=this.renderPortrait(q.record);if(data){this.ui.portraits.set(q.key,data);q.node.innerHTML=`<img alt="姿" src="${data}">`;}}}
+ this.sinceSave+=elapsed;if(this.sinceSave>7){this.sinceSave=0;this.saveWorld();}
+ }catch(e){console.error(e);if(!this.frameError){this.frameError=e;this.ui.toast('動作を中断しました。記録を保存して再読み込みしてください。');}}
+ requestAnimationFrame(t=>this.frame(t));}
+ renderPortrait(record){
+  if(!this.portraitRenderer){const canvas=document.createElement('canvas');this.portraitRenderer=new Renderer(canvas,{width:224,height:280});this.portraitRenderer.setQuality('low');this.portraitRenderer.scale=1;}
+  const r=this.portraitRenderer,app=record.appearance||{},sk=skillById(record.skills?.[0]??record.skill),p={...this.previewCharacter,...app,id:'portrait',kind:'portrait',prologue:false,introUntil:-100,alive:true,name:record.name,x:0,z:0,dir:.18,action:record.idle||record.head?'idle':'attack',actionStarted:0,actionUntil:1.5,attackSkill:sk?.id??4000,pendingSkill:null,hitReactUntil:0,statuses:{},seated:false};
+  const s={...this.clanScene,t:.66,player:p,players:[p],actors:[]};const age=p.age??24,sc=(age<4?.46:age<10?.64+(age-4)*.022:age<18?.78+(age-10)*.027:age>72?.96:1)*((p.race||0)===2?.86:(p.race||0)===1?1.07:(p.race||0)===3?.95:1);r.camera={x:0,z:0,zoom:record.head?1.30*sc:3.65*sc,yaw:0,pitch:record.head?.07:.20,y:record.head?.18+2.35*sc:.18+1.30*sc};r.render(s,.016,{portrait:true,freezeCamera:true});return r.canvas.toDataURL('image/png');
+ }
+
+ exportSave(){if(this.online){this.ui.toast('共有の旅は、サーバーに保存される');return;}this.saveWorld();const data=JSON.stringify({format:'AERIN-portable-1',version:VERSION,profile:this.profile,world:this.sim.exportState()},null,2),blob=new Blob([data],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='継ぎ火の谷_旅の記録.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);this.ui.toast('旅の記録を書き出した');}
+ async importSave(file){if(!file)return;if(this.online){this.ui.toast('共有の旅は、サーバーに保存される');return;}if(file.size>12000000){this.ui.toast('記録が大きすぎる');return;}try{const j=JSON.parse(await file.text());if(j.format!=='AERIN-portable-1')throw Error('エリンの記録ではありません');const sim=Simulation.restore(j.world);if(!confirm('この記録に切り替えますか？ 今の旅はバックアップします。'))return;writeStore('backup.'+Date.now(),{profile:this.profile,world:this.sim.exportState()});this.stopInput();this.sim=sim;this.profile={...this.profile,...j.profile,online:false,mode:sim.mode,settingsVersion:5};this.loadedMode=sim.mode;this.playerId=[...sim.players.values()].find(p=>p.owner===this.profile.owner&&p.alive)?.id||null;this.snapshot=this.playerId?this.decorate(sim.snapshot(this.playerId,sim.seq)):null;this.seq=sim.seq;this.saveWorld();this.toClan();this.ui.toast('旅の記録を読み込んだ');}catch(e){this.ui.toast(e.message);}}
+ installQA(){if(!new URLSearchParams(location.search).has('qa'))return;Object.defineProperty(window,'AERIN_QA',{value:{app:this,sim:()=>this.sim,player:()=>this.sim.players.get(this.playerId),age:age=>{this.sim.players.get(this.playerId).age=age;},place:(x,z)=>{Object.assign(this.sim.players.get(this.playerId),{x,z,prologue:false,introUntil:-100});},learn:id=>this.sim.learn(this.sim.players.get(this.playerId),id),step:n=>{for(let i=0;i<n;i++)this.sim.tick(1/30);this.snapshot=this.decorate(this.sim.snapshot(this.playerId,this.seq));},stats:()=>this.renderer.stats},configurable:false});}
+}
