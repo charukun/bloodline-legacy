@@ -1,0 +1,1 @@
+These textures and meshes are original procedural artworks authored for this project. No Visual Reference pixels or third-party art are incorporated. The user may use, modify and redistribute these assets with the game. No font files are included.
