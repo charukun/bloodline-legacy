@@ -1,0 +1,20 @@
+/* Texture comes from authored paper/weave atlases, never from a reference image. */
+:root{--gold:#bba477;--ivory:#efe1c1;--paper:#e9d6af;--shade:#343a31}
+.player-mark,.place-mark,.hud-button,.game-panel:not(.parchment){background-image:linear-gradient(130deg,#514b39de,#2f3c33e8),url("asset:cloth-panel.png");background-size:auto,128px 128px;box-shadow:inset 0 0 0 2px #d2b77b10,inset 0 1px 0 #ebd6a534,0 3px 7px #1f271944;border-color:#c9b181}
+.player-mark:after{content:"❧";position:absolute;right:7px;top:7px;font-size:18px;color:#c2aa73;pointer-events:none}
+.player-mark{padding-right:26px}.portrait-frame{background:radial-gradient(ellipse at 45% 30%,#c9bea0,#655c49);border-color:#c3a46b;outline-color:#7b6646;box-shadow:inset 0 0 0 2px #ecd6a24d,0 2px 5px #24291c80}
+.portrait-frame img{object-fit:cover}.orb-wrap{width:49px;height:82px}.stamina-orb{filter:drop-shadow(0 2px 3px #1b292a80)}
+.parchment{background-color:#e8d5ad;background-image:radial-gradient(ellipse at 25% 10%,#fff3d54a,transparent 48%),linear-gradient(100deg,#916a3e22,transparent 18%,transparent 83%,#a37a502a),url("asset:parchment.png");background-size:auto,auto,256px 256px;color:#493c2c;box-shadow:inset 0 0 29px #8d603c36,0 9px 32px #0b160f55}
+.parchment .panel-head{background:linear-gradient(90deg,#79573519,transparent);border-bottom:1px solid #8b60382e}.parchment:after{border-color:#98744755;inset:6px}
+.ancestor-card,.legacy-card{background-image:linear-gradient(100deg,#c5a67844,#f6e7c366,transparent),url("asset:parchment.png");background-size:auto,256px;box-shadow:inset 0 0 0 3px #f8e5b866,inset 0 -9px 15px #9971421a,0 2px 4px #68502f2c;border-color:#ad8a60;border-radius:3px 8px 6px 3px;min-height:140px}
+.ancestor-generation{display:inline-block;padding:2px 9px;background:#8b704c;color:#f4e6c7;clip-path:polygon(0 0,90% 0,100% 50%,90% 100%,0 100%);letter-spacing:.08em;font-size:10px}
+.ancestor-pose,.legacy-pose{width:113px;height:133px;filter:drop-shadow(0 3px 2px #755b3b30)}.ancestor-info h3{font-size:15px;letter-spacing:.025em;margin-top:4px}
+.ancestry-list{gap:14px}.lineage-intro,.legacy-intro{border-color:#a4875b77;background:#f8edcd44;box-shadow:inset 0 1px 5px #fbf2da55}
+.hud-button{border-radius:13px 15px 12px 12px;outline:1px solid #68593f80;outline-offset:2px}.hud-button .icon{color:#ebdab0}.hud-button:hover{border-color:#f0d491}.hud-button:active{background-color:#84734e}
+.game-panel:not(.parchment):after{border-color:#dac49428}.panel-head{border-bottom-color:#ac926359}.skill-cell{border-radius:8px;background:#202c2499;border-color:#a49b713f}.skill-cell.enabled{border-color:#b29a5e;background:linear-gradient(145deg,#8c865b44,#51604452)}.skill-sigil{color:#ecdfb8}.cost-marks i.lit{background:#c9b67e;border-color:#efdaa2}
+.talk-button{background-image:linear-gradient(130deg,#c4b186e8,#86734cf7),url("asset:parchment.png");outline:1px solid #4d483b80;outline-offset:2px;color:#fff3d3;border-color:#e1cca0}.mother-bubble,.speech-bubble{background-image:linear-gradient(#f2e7ccc9,#f2e7ccc9),url("asset:parchment.png");color:#4b412c;border:1px solid #dbc494}
+.building-label{background:#2f3b2eab;border-color:#c8b37a77;padding:3px 7px;font-size:10px;color:#ead9b1}.enemy-hp{box-shadow:0 1px 3px #1823149c}.combo-burst{filter:drop-shadow(0 2px 1px #312315);width:53px;height:57px;font-size:26px}
+#clan-screen{background:linear-gradient(180deg,#d8d6bdde,transparent 31%,transparent 51%,#c7ceb055 71%,#d8d3b9f2 100%)}
+@media(min-width:700px){.orb-wrap{width:58px;height:91px}.hud-button{width:76px;height:60px}}
+@media(max-width:359px){.orb-wrap{width:42px;height:72px}.player-mark{padding-right:17px}.player-mark:after{display:none}}
+@media(max-height:560px) and (orientation:landscape){.orb-wrap{width:46px;height:76px}}
