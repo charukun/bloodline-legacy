@@ -41,7 +41,7 @@ class UILineage {
   const ui=this.ui,scroll=ui.clan.scrollTop;
   ui.portraitQueue=ui.portraitQueue.filter(q=>!ui.clan.contains(q.node));
   ui.clan.classList.add('family-screen');
-  ui.clan.innerHTML=`<header class="family-top"><span>${ESC(GAME_TITLE)}<small>一族の書</small></span><button id="clan-settings" class="quiet-button">${icon('menu')}設定</button></header>${this.markup(true)}<footer class="family-footer"><span>${this.g.profile.online?'共有の村':'ひとりの村'}</span><button id="begin-life" class="begin-button">${label(this.g.canResume()?'旅を続ける':'この血に生まれる')}${icon('arrow')}</button></footer>`;
+  ui.clan.innerHTML=`<header class="family-top"><span>${ESC(GAME_TITLE)}<small>一族の書</small></span><button id="clan-settings" class="quiet-button">${icon('menu')}設定</button></header>${this.markup(true)}<footer class="family-footer"><span>${this.g.profile.online?'共有の村':'ひとりの村'} · ${buildVersionMarkup()}</span><button id="begin-life" class="begin-button">${label(this.g.canResume()?'旅を続ける':'この血に生まれる')}${icon('arrow')}</button></footer>`;
   this.bind(ui.clan,true);ui.clan.scrollTop=scroll;
   document.getElementById('clan-settings').onclick=()=>ui.settings();
   document.getElementById('begin-life').onclick=()=>this.g.start();
