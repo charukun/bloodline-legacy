@@ -19,7 +19,7 @@ jobs:
   build:
     name: Build and verify
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     outputs:
       target: ${{ steps.target.outputs.target }}
       suffix: ${{ steps.target.outputs.suffix }}
@@ -46,11 +46,11 @@ jobs:
           JS
       - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
       - run: npm test --prefix deploy
+      - run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Verify life skills and produce playtest fixtures
         run: |
-          node --test tests/skills/*.test.mjs
+          npm test
           node tests/skills/lives.mjs
-      - run: node --test tests/tilt-shift.test.mjs
       - name: Build deployment
         env:
           TARGET: ${{ steps.target.outputs.target }}

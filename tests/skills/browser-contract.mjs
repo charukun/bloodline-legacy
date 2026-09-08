@@ -2,8 +2,9 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
 export async function verifySkillSlice(page,evidence,viewport) {
- const prefix=path.join(evidence,`skills-${viewport.width}`),report={fixture:'Age/location/time may be prepared through existing QA. Gift, activity, loadout and detail use real UI. No direct skill grant.'};
+ const prefix=path.join(evidence,`skills-${viewport.width}`),report={fixture:'Age/location/time may be prepared through existing QA. Gift, activity, loadout and detail use real UI. No direct skill grant. Skill captures use existing medium quality on CI SwiftShader; the reveal frame is held only for still capture and menu checks.'};
  const initial=await page.evaluate(()=>{const a=window.AERIN_QA.app;return {world:a.sim.exportState(),profile:structuredClone(a.profile),playerId:a.playerId};});
+ await page.evaluate(()=>window.AERIN_QA.app.renderer.setQuality('medium'));
  await page.evaluate(()=>{const q=window.AERIN_QA,p=q.player();p.prologue=true;p.releaseAt=q.sim().time+300;p.giftOffer=['bell','stone','feather'];q.app.ui.lastGifts=null;});
  await page.locator('[data-gift="bell"]').click();
  assert.equal(await page.evaluate(()=>window.AERIN_QA.player().skillLife.memories.bell.origin),'family');
@@ -34,7 +35,7 @@ export async function verifySkillSlice(page,evidence,viewport) {
  const {readFile}=await import('node:fs/promises');
  for(let i=0;i<3;i++) {
   const fixture=JSON.parse(await readFile(new URL(`./generated/life-${i}.json`,import.meta.url),'utf8'));
-  await page.evaluate(f=>{const q=window.AERIN_QA,a=q.app;const s=a.sim.constructor.restore(f.world);a.sim=s;a.profile={...a.profile,...f.profile};a.playerId=[...s.players.values()].find(p=>p.owner===f.profile.owner).id;a.seq=s.seq;a.snapshot=a.decorate(s.snapshot(a.playerId,s.seq));const p=q.player(),r=s.getRoom(p),dummy=r.actors.find(e=>e.kind==='dummy');q.place(dummy.x,dummy.z-1.1);p.phaseWeights=[{},{},{}];for(const id of p.skills){for(let b=0;b<3;b++){a.command({type:'weights',phase:b,weights:{...p.phaseWeights[b],[id]:100}});}}a.ui.showGame();},fixture);
+  await page.evaluate(f=>{const q=window.AERIN_QA,a=q.app;const s=a.sim.constructor.restore(f.world);a.sim=s;a.profile={...a.profile,...f.profile};a.playerId=[...s.players.values()].find(p=>p.owner===f.profile.owner).id;a.seq=s.seq;a.snapshot=a.decorate(s.snapshot(a.playerId,s.seq));const p=q.player(),r=s.getRoom(p),dummy=r.actors.find(e=>e.kind==='dummy');q.place(dummy.x,dummy.z-1.1);p.phaseWeights=[{},{},{}];for(const id of p.skills){for(let b=0;b<3;b++){a.command({type:'weights',phase:b,weights:{...p.phaseWeights[b],[id]:100}});}}a.renderer.setQuality('medium');a.ui.showGame();},fixture);
   // Normal RAF renders and drives the existing contact auto combat.
   await page.waitForFunction(()=>window.AERIN_QA.player().skillUses&&Object.keys(window.AERIN_QA.player().skillUses).some(k=>+k>=60000),{},{timeout:60000});
   await page.screenshot({path:prefix+`-life-${i}.png`});
@@ -43,6 +44,6 @@ export async function verifySkillSlice(page,evidence,viewport) {
  assert.equal(report.metrics.frameError,null);assert.equal(report.metrics.overflow,false);
  // Leave the next independent renderer smoke in the original scene, without
  // carrying a combat fixture, open menu or active activity across test suites.
- await page.evaluate(f=>{const a=window.AERIN_QA.app,s=a.sim.constructor.restore(f.world);a.sim=s;a.profile=f.profile;a.playerId=f.playerId;a.seq=s.seq;a.snapshot=a.decorate(s.snapshot(a.playerId,s.seq));a.ui.closeModal();a.ui.showGame();a.saveProfile();a.saveWorld();},initial);
+ await page.evaluate(f=>{const a=window.AERIN_QA.app,s=a.sim.constructor.restore(f.world);a.sim=s;a.profile=f.profile;a.playerId=f.playerId;a.seq=s.seq;a.snapshot=a.decorate(s.snapshot(a.playerId,s.seq));a.renderer.setQuality(f.profile.quality);a.ui.closeModal();a.ui.showGame();a.saveProfile();a.saveWorld();},initial);
  return report;
 }

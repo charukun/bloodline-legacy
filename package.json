@@ -8,12 +8,17 @@
   },
   "scripts": {
     "build": "node build.mjs",
-    "test": "node --test tests/skills/*.test.mjs deploy/infrastructure.test.mjs",
+    "dev": "vite",
+    "test": "npm run build && node --test tests/skills/*.test.mjs tests/tilt-shift.test.mjs tests/golden-slice.test.mjs deploy/infrastructure.test.mjs",
     "test:skills:lives": "node tests/skills/lives.mjs",
     "test:skills:performance": "node tests/skills/performance.mjs"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "@napi-rs/canvas": "0.1.100",
+    "vite": "7.3.6"
+  }
 }

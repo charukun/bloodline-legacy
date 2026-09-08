@@ -3,4 +3,7 @@ dist/
 deploy/out/
 deploy/evidence/
 deploy/.wrangler/
+.wrangler/
+__pycache__/
+tests/current/
 tests/skills/generated/
