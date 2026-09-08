@@ -2,12 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import {compileCatalog} from '../tools/skill-catalog.mjs';
 
-const sources=['legacy/dialogue.js','legacy/core.js','legacy/render_math.js','legacy/motion.js','legacy/art.js','render/tilt-shift.js','render/shaders.js','character/rig.js','character/golden-master.runtime.js'];
+const sources=['legacy/dialogue.js','legacy/core.js','skills/engine.js','skills/runtime.js','legacy/render_math.js','legacy/motion.js','legacy/art.js','render/tilt-shift.js','render/shaders.js','character/rig.js','character/golden-master.runtime.js'];
 const gl=new Proxy({FLOAT:5126,UNSIGNED_SHORT:5123,UNSIGNED_INT:5125,getUniformLocation:()=>({})},{get:(o,k)=>k in o?o[k]:k.startsWith('create')?()=>({}):()=>{}});
 class DecodedImage { set src(_){queueMicrotask(()=>this.onload());} }
 const context=vm.createContext({console,performance,Float32Array,Uint8Array,Uint16Array,Uint32Array,DataView,TextDecoder,Blob,URL,atob,Image:DecodedImage,queueMicrotask});
 vm.runInContext('class VillageArt extends Object {}; const AssetBank={load:async()=>{}};',context);
+context.BL_SKILL_DEFINITIONS=compileCatalog(JSON.parse(fs.readFileSync(new URL('../src/skills/catalog-source.json',import.meta.url),'utf8')));
 for(const source of sources)vm.runInContext(fs.readFileSync(new URL('../src/'+source,import.meta.url),'utf8'),context,{filename:source});
 const cm=vm.runInContext('CM01',context);
 await cm.load(fs.readFileSync(new URL('../public/assets/character/young-human-male-cm01.glb',import.meta.url)).toString('base64'));
@@ -143,10 +145,15 @@ test('body collision retains player and dummy radii',()=>{
 test('visual updates retain world bounds and full simulation serialization',()=>{
   const {sim,p,room}=simulation();p.x=34;p.z=0;sim.moveAttackStep(p,room,10,0);assert(p.x<=35);
   const before=JSON.stringify(sim.exportState()),r=renderer(),c=new cm.Character(r);
+  // Current Skill System restores a missing life notice to an empty string.
+  // Compare to the same unrendered save's native restoration, keeping every
+  // game field checked without changing production save normalization.
+  context.saved=JSON.parse(before);
+  const unrenderedRestored=JSON.stringify(vm.runInContext('Simulation.restore(saved)',context).exportState());
   c.update(frozen(JSON.parse(JSON.stringify(p))),sim.time);
   assert.equal(JSON.stringify(sim.exportState()),before);
   context.saved=JSON.parse(before);const restored=vm.runInContext('Simulation.restore(saved)',context);
-  assert.equal(JSON.stringify(restored.exportState()),before);
+  assert.equal(JSON.stringify(restored.exportState()),unrenderedRestored);
 });
 test('attack and hit clocks remain unchanged after character sampling',()=>{
   const {sim,p}=simulation();p.action='attack';p.attackSkill=4100;p.actionStarted=10;p.actionUntil=11;p.hitReactAt=10;p.hitReactUntil=10.8;p.hitstopUntil=10.2;

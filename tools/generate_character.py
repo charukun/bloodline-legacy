@@ -19,9 +19,15 @@ BONES=[('root',None,(0,0,0)),('pelvis','root',(0,1.16,0)),('spine','pelvis',(0,1
  ('thigh.L','pelvis',(-.165,1.17,0)),('shin.L','thigh.L',(-.165,.665,0)),('foot.L','shin.L',(-.165,.145,.025)),('toe.L','foot.L',(-.165,.08,.22)),
  ('mantle','chest',(0,1.84,-.15)),('mantle.tip','mantle',(-.10,1.40,-.27)),('coat.R','pelvis',(.20,1.16,0)),('coat.L','pelvis',(-.20,1.16,0))]
 BI={b[0]:i for i,b in enumerate(BONES)}
-BP=np.array([b[2] for b in BONES],dtype=float)
-COLS=['#ecc1a0','#654333','#e4d9be','#426957','#583d31','#896344','#c29b56','#939fa0','#ffffff','#322a29','#ab665b','#f3e9cf','#bfa676','#4a5852','#302e30','#d89883']
-ROUGH=[.75,.66,.91,.94,.77,.70,.30,.33,.22,.81,.75,.94,.83,.92,.94,.74]
+def reference_proportion(p,head=False):
+ # Rest mesh and bind joints share this authoring transform. Gameplay height,
+ # collider and world position are never changed. Keep the solved leg chain.
+ x,y,z=p
+ if head:return np.array([x*1.43,1.83+(y-2.005)*1.28,z*1.18])
+ return np.array([x,1.16+(y-1.16)*.77 if y>1.16 else y,z])
+BP=np.array([reference_proportion(b[2],b[0] in ['head','hair','eye.R','eye.L']) for b in BONES],dtype=float)
+COLS=['#f3bd9d','#874b32','#eaddc1','#536042','#754934','#996448','#d2a45b','#939fa0','#ffffff','#39251d','#9d5947','#f5e8ce','#b59a66','#6c624e','#382e29','#db947d']
+ROUGH=[.72,.44,.89,.92,.71,.66,.28,.33,.22,.81,.75,.91,.83,.91,.90,.74]
 METAL=[0,0,0,0,0,0,.75,.83,0,0,0,0,0,0,0,0]
 def rgb(s):return np.array([int(s[i:i+2],16) for i in (1,3,5)],float)
 def make_atlas():
@@ -40,9 +46,9 @@ def make_atlas():
   if k==8:
    dx=(u-.5)*2;dy=(v-.5)*2;r=np.sqrt(dx*dx+dy*dy);ang=np.arctan2(dy,dx)
    col=np.zeros((tile,tile,3));lit=np.clip(.48+.50*dy,0,1);streak=.5+.5*np.cos(ang*53+r*15)
-   for z,(top,bot) in enumerate([(52,137),(49,126),(34,65)]):col[:,:,z]=top+(bot-top)*lit+streak*10
+   for z,(top,bot) in enumerate([(43,151),(23,80),(16,37)]):col[:,:,z]=top+(bot-top)*lit+streak*7
    outer=np.clip((r-.77)/.20,0,1);col=col*(1-outer[:,:,None])+np.array([40,33,26])*outer[:,:,None]
-   pupil=np.clip((.47-r)/.07,0,1);col=col*(1-pupil[:,:,None])+np.array([27,26,26])*pupil[:,:,None]
+   pupil=np.clip((.53-r)/.07,0,1);col=col*(1-pupil[:,:,None])+np.array([22,14,12])*pupil[:,:,None]
    hl=np.exp(-(((dx+.32)/.12)**2+((dy+.36)/.18)**2)*2);col=col*(1-hl[:,:,None])+np.array([253,245,221])*hl[:,:,None]
    hl2=np.exp(-(((dx-.36)/.065)**2+((dy-.35)/.065)**2)*2)*.65;col=col*(1-hl2[:,:,None])+np.array([230,226,158])*hl2[:,:,None]
    a[:,:,:3]=np.clip(col,0,255)
@@ -56,11 +62,11 @@ def make_atlas():
   normal[sl]=np.clip(norm,0,255).astype(np.uint8)
  for name,a in [('base',base),('orm',orm),('normal',normal)]:Image.fromarray(a).save(OUT/f'cm01-{name}.png',optimize=True)
 
-HEAD_ROWS=np.array([(2.005,0,.024,.058,.060),(2.045,0,.023,.143,.141),(2.103,0,.014,.222,.204),(2.199,0,.003,.295,.262),(2.285,0,-.005,.328,.285),(2.389,0,-.015,.339,.299),(2.50,0,-.026,.340,.305),(2.608,0,-.045,.314,.289),(2.69,0,-.052,.247,.22),(2.735,0,-.053,.133,.130),(2.75,0,-.051,.028,.029)])
+HEAD_ROWS=np.array([(2.005,0,.024,.075,.075),(2.045,0,.023,.164,.148),(2.103,0,.014,.242,.207),(2.199,0,.003,.310,.267),(2.285,0,-.005,.336,.287),(2.389,0,-.015,.339,.299),(2.50,0,-.026,.340,.305),(2.608,0,-.045,.314,.289),(2.69,0,-.052,.247,.22),(2.735,0,-.053,.133,.130),(2.75,0,-.051,.028,.029)])
 HEAD_IP=PchipInterpolator(HEAD_ROWS[:,0],HEAD_ROWS[:,1:],axis=0)
 def head_front(x,y):
  cx,cz,rx,rz=HEAD_IP(np.clip(y,2.005,2.75));front=math.sqrt(max(.0,1-((x-cx)/rx)**2));z=cz+rz*front
- z+=.076*math.exp(-(x/.050)**2-((y-2.265)/.052)**2)*front**8
+ z+=.052*math.exp(-(x/.047)**2-((y-2.265)/.045)**2)*front**8
  z+=.020*math.exp(-(x/.045)**2-((y-2.344)/.10)**2)*front**8
  z-=.018*math.exp(-((abs(x)-.146)/.091)**4-((y-2.367)/.063)**4)*front**4
  z+=.010*math.exp(-((abs(x)-.20)/.10)**2-((y-2.242)/.065)**2)*front**4
@@ -68,7 +74,7 @@ def head_front(x,y):
 
 class Mesh:
  def __init__(self,lod=0):self.v=[];self.f=[];self.uv=[];self.color=[];self.joints=[];self.weights=[];self.region=[];self.surf=[];self.lod=lod;self.parts=[]
- def steps(self,n,minimum=3):return max(minimum,int(n*(.43 if self.lod else .72)))
+ def steps(self,n,minimum=3):return max(minimum,int(n*(.385 if self.lod else .70)))
  def add(self,verts,faces,uvs,tile,weights,region=0,color=None,name=''):
   start=len(self.v);verts=np.asarray(verts,float);faces=np.asarray(faces,int)
   if name in ['eye socket rim','almond eye white','hazel iris']:
@@ -78,7 +84,9 @@ class Mesh:
   elif name in ['upper eyelid','eyebrow','mouth expression','lower lip']:
    for p in verts:p[2]=head_front(p[0],p[1])+({'upper eyelid':.015,'eyebrow':.009,'mouth expression':.006,'lower lip':.008}[name])
 
-  self.v.extend(verts);self.f.extend(faces+start)
+  # Weight and pigment authoring stay in the original coordinate system.
+  # Transform all head surfaces together so eyes, ears and hair remain seated.
+  self.v.extend([reference_proportion(p,region==1) for p in verts]);self.f.extend(faces+start)
   self.uv.extend([((tile%4+.025+float(u)*.95)/4,(tile//4+.025+float(v)*.95)/4) for u,v in uvs])
   for i,p in enumerate(verts):
    wt=weights(p) if callable(weights) else {weights:1} if isinstance(weights,str) else weights
@@ -182,8 +190,9 @@ def build(lod=0):
   m.loft([(.027,x,.083,.132,.214),(.054,x,.086,.145,.226),(.098,x,.087,.145,.225),(.148,x,.052,.135,.186),(.21,x,.005,.108,.115),(.32,x,-.01,.103,.105),(.435,x,-.014,.116,.113),(.455,x,-.014,.119,.115)],4,bootw,reg,seg=28,rings=22,name='sculpted boot '+s)
   m.loft([(.020,x,.082,.134,.218),(.036,x,.085,.149,.229),(.066,x,.085,.147,.227)],14,'foot.'+s,reg,seg=28,rings=5,name='layered sole '+s)
   m.loft([(.42,x,-.014,.120,.120),(.452,x,-.014,.126,.125),(.479,x,-.014,.117,.116)],5,'shin.'+s,reg,seg=22,rings=5,name='rolled boot cuff '+s)
-  for y in [.255,.318,.384]:
-   m.sweep([(x-.074,y,.080),(x,y-.012,.122),(x+.074,y,.080)],[.010,.010,.010],[.007,.008,.007],5,'shin.'+s,reg,rings=7,sides=6,name='boot strap')
+  for y in [.250,.301,.352,.403]:
+   for direction in [-1,1]:
+    m.sweep([(x-direction*.060,y-.017,.099),(x,y,.127),(x+direction*.060,y+.017,.099)],[.005]*3,[.004]*3,12,'shin.'+s,reg,rings=5,sides=6,name='crossed boot lace')
   # Toe cap stitch follows the actual toe surface.
   m.sweep([(x-.12,.099,.15),(x-.077,.118,.237),(x,.128,.261),(x+.077,.118,.237),(x+.12,.099,.15)],[.004,.004,.004],[.004,.004,.004],12,'foot.'+s,reg,rings=12,sides=6,name='boot toe seam')
   # Sleeves blend to chest at the shoulder and to elbow across the rolled cuff.
@@ -209,8 +218,8 @@ def build(lod=0):
  m.oval((.295,1.106,.111),.014,.015,.003,6,'pelvis',name='pouch clasp')
  # Shoulder mantle. Both a volumetric folded collar and a soft cloth panel with a weighted trailing corner.
  def cape(u,v):
-  x=(u-.5)*(.48+.39*math.sin(v*math.pi*.8));y=1.915-v*.56-.055*math.sin(u*math.pi);z=-.18-.17*math.sin(v*math.pi*.7)-.035*math.cos(u*TAU*3)*math.sin(v*math.pi)
-  y-=.08*u*v;return (x,y,z)
+  x=(u-.5)*(.52+.70*math.sin(v*math.pi*.74))-.16*v*v;y=1.915-v*.96-.055*math.sin(u*math.pi);z=-.19-.22*math.sin(v*math.pi*.7)-.045*math.cos(u*TAU*3)*math.sin(v*math.pi)
+  y-=.12*(1-u)*v;return (x,y,z)
  capew=lambda p:blend_y(p[1],[(1.35,'mantle.tip'),(1.66,'mantle'),(1.92,'chest')])
  m.patch(cape,3,capew,nu=28,nv=22,name='short woven mantle')
  m.patch(lambda u,v:np.array(cape(u,v))+[0,0,.012],3,capew,nu=22,nv=17,name='mantle lining',color=[.81,.81,.81])
@@ -218,20 +227,26 @@ def build(lod=0):
  for side in [-1,1]:
   # Collar band hugs the neck and falls asymmetrically to the shoulders.
   m.sweep([(side*.085,1.99,.05),(side*.17,1.958,.017),(side*.325,1.866,-.001),(side*.46,1.746+(.065 if side==1 else 0),-.04)],[.065,.095,.11,.028],[.022,.032,.035,.008],3,'chest',rings=14,sides=10,name='mantle shoulder fold')
- m.oval((-.175,1.88,.215),.030,.037,.010,6,'chest',name='bloodline brooch')
- m.oval((-.175,1.884,.227),.014,.019,.003,3,'chest',name='brooch centre')
+ m.oval((-.175,1.88,.255),.054,.060,.013,6,'chest',name='bloodline brooch',color=[.75,.75,.75])
+ m.oval((-.175,1.884,.272),.043,.046,.019,6,'chest',name='brooch centre')
  # Front mantle falls from the left shoulder with two raised cloth ridges, defining an asymmetric silhouette.
  def mantle_front(u,v):
-  x=-.31+u*.27+.21*v;y=1.902-v*.256+.035*math.sin(u*math.pi);z=.164+.089*math.sin(v*math.pi/2)+.011*math.sin(u*math.pi*3)*math.sin(v*math.pi)
+  x=-.36+u*.30+.23*v;y=1.94-v*.32+.035*math.sin(u*math.pi);z=.164+.089*math.sin(v*math.pi/2)+.022*math.sin(u*math.pi*3)*math.sin(v*math.pi)
   return (x,y,z)
  m.patch(mantle_front,3,'chest',nu=18,nv=12,name='diagonal front mantle fold')
  m.sweep([mantle_front(i/16,1) for i in range(17)],[.007]*17,[.005]*17,12,'chest',rings=18,sides=6,name='front mantle piping')
  # A narrow diagonal leather suspension strap lies on the tunic, with a readable break against ivory cloth.
  m.sweep([(.27,1.797,.164),(.155,1.629,.202),(-.005,1.47,.197),(-.195,1.277,.181)],[.034,.030,.030,.034],[.009,.008,.008,.010],5,body_w,rings=20,sides=6,name='diagonal traveller strap')
+ m.sweep([(-.23,1.79,.186),(-.13,1.65,.231),(.06,1.49,.224)],[.034,.032,.026],[.009]*3,4,body_w,rings=12,sides=6,name='cross chest strap')
+ # Folded ivory scarf, broad enough to read as a layered garment at game scale.
+ for j in range(3):
+  m.sweep([(-.125,1.987-j*.032,.10),(-.09,1.947-j*.037,.19),(.025,1.919-j*.034,.23),(.138,1.963-j*.025,.13)],[.022,.031,.032,.018],[.011,.013,.017,.010],11,'chest',rings=14,sides=8,name='folded ivory scarf')
+ for side in [-1,1]:
+  m.patch(lambda u,v,s=side:(s*(.09+.135*u),1.19-v*(.205+.02*u),.179+.038*v+.008*math.sin(u*math.pi)),3,'pelvis',nu=8,nv=6,name='olive tunic facing')
  # Sculpted jaw / cheek / brow / cranium; continuous nasal bridge displacement.
  def face(p,a,t):
   front=max(0,math.cos(a));x,y,z=p
-  z+=.076*math.exp(-(x/.050)**2-((y-2.265)/.052)**2)*front**8
+  z+=.052*math.exp(-(x/.047)**2-((y-2.265)/.045)**2)*front**8
   z+=.020*math.exp(-(x/.045)**2-((y-2.344)/.10)**2)*front**8
   # Eye sockets are recessed just behind the applied eye surfaces.
   z-=.018*math.exp(-((abs(x)-.146)/.091)**4-((y-2.367)/.063)**4)*front**4
@@ -239,20 +254,20 @@ def build(lod=0):
   return np.array([x,y,z])
  def facecolor(p):
   blush=math.exp(-((abs(p[0])-.237)/.065)**2-((p[1]-2.267)/.046)**2)*max(0,p[2])/.30
-  return [1,1-.065*blush,1-.055*blush]
- m.loft([(2.005,0,.024,.058,.060),(2.045,0,.023,.143,.141),(2.103,0,.014,.222,.204),(2.199,0,.003,.295,.262),(2.285,0,-.005,.328,.285),(2.389,0,-.015,.339,.299),(2.50,0,-.026,.340,.305),(2.608,0,-.045,.314,.289),(2.69,0,-.052,.247,.22),(2.735,0,-.053,.133,.130),(2.75,0,-.051,.028,.029)],0,'head',1,seg=64,rings=48,deform=face,color=facecolor,name='sculpted face and cranium')
+  return [1,1-.14*blush,1-.11*blush]
+ m.loft(HEAD_ROWS,0,'head',1,seg=52,rings=40,deform=face,color=facecolor,name='sculpted face and cranium')
  for side in [-1,1]:
   # Ear helix with a smaller inner concha; not a ball glued to the head.
   pts=[(side*.30,2.33,-.015),(side*.367,2.359,.0),(side*.386,2.31,.017),(side*.363,2.244,.03),(side*.33,2.232,.025)]
   m.sweep(pts,[.040,.044,.039,.033,.023],[.030,.024,.024,.021,.018],0,'head',1,rings=15,sides=10,name='ear helix')
   m.oval((side*.356,2.294,.039),.030,.045,.005,15,'head',1,tilt=side*.20,name='ear concha')
   x=side*.145;y=2.365;eye='eye.R' if side==1 else 'eye.L'
-  m.oval((x,y,.284),.101,.064,.022,9,eye,1,tilt=side*.1,name='eye socket rim')
-  m.oval((x,y+.002,.292),.097,.059,.021,11,eye,1,tilt=side*.10,name='almond eye white')
-  m.oval((x-side*.009,y-.003,.313),.046,.053,.008,8,eye,1,tilt=side*.03,name='hazel iris')
+  m.oval((x,y,.284),.105,.090,.022,9,eye,1,tilt=side*.1,name='eye socket rim')
+  m.oval((x,y+.002,.292),.100,.084,.021,11,eye,1,tilt=side*.10,name='almond eye white')
+  m.oval((x-side*.009,y-.003,.313),.065,.076,.008,8,eye,1,tilt=side*.03,name='hazel iris')
   lid=[]
   for i in range(13):
-   u=i/12;a=u*math.pi;lid.append((x+.101*math.cos(a),y+.060*math.sin(a)**1.22+side*.01*math.cos(a),.296+.008*math.sin(a)))
+   u=i/12;a=u*math.pi;lid.append((x+.105*math.cos(a),y+.087*math.sin(a)**1.22+side*.01*math.cos(a),.296+.008*math.sin(a)))
   m.sweep(lid,[.007,.008,.004],[.004,.005,.003],9,eye,1,rings=14,sides=6,name='upper eyelid')
   m.sweep([(x-side*.064,2.478,.283),(x,2.493,.282),(x+side*.074,2.47,.260)],[.011,.014,.004],[.005,.005,.003],1,'head',1,rings=12,sides=6,name='eyebrow')
  # Mouth follows muzzle surface rather than disconnected beads.
@@ -265,21 +280,23 @@ def build(lod=0):
   return (x,y,z)
  m.patch(scalp,1,'head',1,nu=50,nv=20,color=lambda p:[.92,.92,.92],name='hair interior mass')
  # Crown-to-nape clumps have direction, different width and pointed tips.
- for i in range(14):
-  a=(i/14)*TAU;front=math.cos(a)>.48
+ for i in range(13):
+  a=(i/13)*TAU;front=math.cos(a)>.48
   if front:continue
-  root=(.12*math.sin(a-.30),2.756,-.02+.085*math.cos(a-.30));middle=(.34*math.sin(a),2.62,-.05+.286*math.cos(a));end=(.376*math.sin(a+.10),2.34+.05*math.sin(i*1.8),-.05+.29*math.cos(a+.1));tip=(.358*math.sin(a+.23),2.235+.04*math.sin(i*2.2),-.075+.278*math.cos(a+.23))
-  m.sweep([root,middle,end,tip],[.060,.128,.10,.002],[.026,.038,.025,.001],1,{'head':.65,'hair':.35},1,rings=17,sides=10,normal=(math.sin(a),.3,math.cos(a)),color=[.88+(i%3)*.045]*3,name='layered side/back hair '+str(i))
+  root=(.12*math.sin(a-.30),2.756,-.02+.085*math.cos(a-.30));middle=(.34*math.sin(a),2.64,-.05+.31*math.cos(a));end=(.397*math.sin(a+.10),2.37+.05*math.sin(i*1.8),-.05+.32*math.cos(a+.1));tip=(.465*math.sin(a+.25),2.36+.035*math.sin(i*2.2),-.07+.35*math.cos(a+.25))
+  m.sweep([root,middle,end,tip],[.060,.133,.098,.002],[.035,.063,.047,.001],1,{'head':.85,'hair':.15},1,rings=18,sides=12,normal=(math.sin(a),.3,math.cos(a)),color=[.88+(i%3)*.055]*3,name='layered side/back hair '+str(i))
  # Deliberate side-swept forehead locks leave the eyes open and break the crown silhouette.
- frontlocks=[([(-.28,2.69,.04),(-.24,2.766,.174),(-.16,2.638,.323),(-.105,2.48,.343)],[.04,.10,.095,.001]),
- ([(-.21,2.764,.09),(-.065,2.803,.228),(.055,2.645,.335),(.016,2.464,.355)],[.06,.115,.093,.001]),
- ([(-.075,2.79,.07),(.12,2.775,.218),(.206,2.632,.293),(.153,2.472,.335)],[.06,.116,.08,.001]),
- ([(.095,2.76,.035),(.26,2.685,.185),(.295,2.497,.229),(.252,2.376,.247)],[.058,.092,.082,.001]),
- ([(-.30,2.64,.048),(-.342,2.584,.172),(-.322,2.419,.238),(-.269,2.351,.250)],[.06,.085,.066,.001])]
+ frontlocks=[([(.12,2.73,.07),(.02,2.84,.23),(-.17,2.64,.367),(-.29,2.57,.349)],[.04,.132,.116,.001]),
+ ([(.02,2.74,.07),(-.17,2.73,.30),(-.29,2.56,.339),(-.395,2.58,.244)],[.05,.123,.086,.001]),
+ ([(.20,2.71,.058),(.275,2.695,.256),(.211,2.535,.353),(.127,2.437,.359)],[.052,.117,.098,.001]),
+ ([(-.15,2.71,.03),(-.30,2.625,.241),(-.353,2.411,.245),(-.451,2.435,.116)],[.04,.104,.080,.001]),
+ ([(.25,2.686,.016),(.365,2.594,.184),(.375,2.404,.200),(.445,2.438,.081)],[.04,.105,.080,.001]),
+ ([(.10,2.772,-.035),(-.07,2.862,.095),(-.205,2.795,.265),(-.335,2.77,.290)],[.045,.112,.088,.001]),
+ ([(.11,2.79,-.095),(.28,2.824,.019),(.365,2.703,.089),(.443,2.746,.053)],[.04,.091,.072,.001])]
  for i,(pts,width) in enumerate(frontlocks):
-  m.sweep(pts,width,[.019,.033,.022,.001],1,{'head':.85,'hair':.15},1,rings=20,sides=12,color=[.94+(i%2)*.04]*3,name='sculpted swept fringe '+str(i))
- for pts,w in [([(-.10,2.768,-.09),(.055,2.876,-.066),(.246,2.887,-.032),(.29,2.83,.0)],[.05,.085,.040,.001]), ([(.01,2.765,-.08),(-.15,2.821,-.15),(-.27,2.80,-.19),(-.31,2.754,-.16)],[.05,.063,.035,.001])]:
-  m.sweep(pts,w,[.026,.028,.015,.001],1,{'hair':.75,'head':.25},1,rings=15,sides=10,name='crown silhouette flick')
+  m.sweep(pts,width,[.028,.062,.043,.001],1,{'head':.92,'hair':.08},1,rings=20,sides=12,color=[.93+(i%2)*.065]*3,name='sculpted swept fringe '+str(i))
+ for pts,w in [([(.03,2.762,-.09),(.086,2.927,-.063),(-.033,2.98,-.006),(-.11,2.946,.017)],[.04,.064,.037,.001]), ([(.01,2.765,-.08),(-.15,2.841,-.15),(-.29,2.825,-.19),(-.37,2.87,-.16)],[.05,.076,.042,.001])]:
+  m.sweep(pts,w,[.032,.034,.018,.001],1,{'hair':.45,'head':.55},1,rings=15,sides=10,name='crown silhouette flick')
  # Optional existing armor: visible only when the unchanged equipment state requests it.
  def plate(u,v):
   x=(u-.5)*(.58-.15*(1-v));y=1.36+v*.41;z=.194+.040*math.sin(u*math.pi)+.018*math.sin(v*math.pi);return (x,y,z)

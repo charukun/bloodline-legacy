@@ -31,5 +31,7 @@ for lod,m in enumerate(g['meshes']):
  check(f'LOD{lod} weighted deforming vertices exist',np.count_nonzero((w>0).sum(axis=1)>1)>500)
 check('LOD geometry reduction',len(acc(g['meshes'][1]['primitives'][0]['indices']))<len(acc(g['meshes'][0]['primitives'][0]['indices']))*.55)
 check('asset hash matches manifest',hashlib.sha256(b).hexdigest()==json.loads((root/'public/assets/character/cm01-manifest.json').read_text())['sha256'])
+check('reference revision stays inside reviewed CM01 geometry budget',all(len(acc(m['primitives'][0]['attributes']['POSITION']))<=nv and len(acc(m['primitives'][0]['indices']))<=nt*3 for m,(nv,nt) in zip(g['meshes'],[(13534,24431),(6568,11230)])))
+check('reference revision stays inside reviewed CM01 transfer budget',len(b)<=2315212,{'bytes':len(b),'budget':2315212})
 print(json.dumps({'checks':checks,'passed':sum(c['pass'] for c in checks),'total':len(checks)},indent=2))
 assert all(c['pass'] for c in checks),'Asset validation failed'

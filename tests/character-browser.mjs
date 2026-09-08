@@ -11,7 +11,7 @@ import {fileURLToPath} from 'node:url';
 import {chromium} from '../deploy/node_modules/playwright/index.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const mode=process.env.CHARACTER_MODE||'all';
-assert(['all','functional','performance','motion'].includes(mode),'Unknown verification mode');
+assert(['all','functional','performance','motion','reference'].includes(mode),'Unknown verification mode');
 const out=path.join(root,'verification/current',mode);
 await fs.mkdir(out,{recursive:true});
 const files={before:await fs.readFile(process.env.CHARACTER_BASELINE),after:await fs.readFile(path.join(root,'dist/index.html'))};
@@ -24,7 +24,7 @@ const server=http.createServer((req,res)=>{
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const origin='http://127.0.0.1:'+server.address().port;
-const report={mode,base:'f94513ed65342de1674a716b33c2ebb4a9c523d1',head:process.env.GITHUB_SHA||null,checks:[],versions:{},passed:false,
+const report={mode,base:'187bab5b4aae5236e44e9a20f9f0c972d62b3148',head:process.env.GITHUB_SHA||null,checks:[],versions:{},passed:false,
   limitations:['SwiftShader is software rendering, not Desktop GPU or Pixel Fold performance approval.','Screenshots and videos require visual review; numeric success is not Golden Master approval.']};
 const flush=()=>writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));
 const check=(name,ok,details)=>{report.checks.push({name,pass:!!ok,details});flush();assert(ok,name+' '+JSON.stringify(details||''));console.log('PASS '+name);};
@@ -69,6 +69,40 @@ try{
     for(let i=0;i<3;i++)await page.locator('#guide-next').click();
     await page.waitForFunction('AERIN_QA.app.screen==="game"');
     check(version+' native onboarding',await page.evaluate(()=>AERIN_QA.player().prologue));
+    if(mode==='reference'){
+      await fixture(page);await shot(version+'-gameplay');
+      check(version+' master dispatch and no blur',await page.evaluate(()=>!!AERIN_QA.stats().characterMaster&&!AERIN_QA.app.renderer.diorama.active));
+      await fixture(page,{close:true});await shot(version+'-close');
+      if(version==='after')for(const [label,yaw]of [['quarter',.9],['side',1.82],['back',3.2]]){
+        await page.evaluate(yaw=>{const a=AERIN_QA.app;a.renderer.camera.yaw=yaw;a.renderer.render(a.snapshot,0,{freezeCamera:true});},yaw);await shot('after-'+label);
+      }
+      await fixture(page);
+      for(const [name,key,ticks]of [['run','d',20],['turn','a',30],['stop',null,30]]){
+        if(key)await page.keyboard.down(key);await page.evaluate(n=>characterStep(n),ticks);if(key)await page.keyboard.up(key);
+        const rows=await page.evaluate(n=>characterTrace.slice(-n),ticks);record[name+'Contact']=rows;
+        check(version+' '+name+' contact',rows.length===ticks&&rows.every(s=>s.finite&&s.metrics.pelvisDrop<.38&&s.feet.every(f=>f.error<.035))&&groundedSlip(rows)<.012);
+        await shot(version+'-'+name);
+      }
+      await fixture(page);await page.mouse.move(550,470);await page.mouse.down();await page.mouse.move(565,470);await page.evaluate(()=>characterStep(24));await page.mouse.up();
+      const walk=await page.evaluate(()=>characterTrace);check(version+' pointer walk',walk.length===24&&walk.at(-1).metrics.animation==='walk'&&groundedSlip(walk)<.012);await shot(version+'-walk');
+      // Existing contact combat and combat clocks, rendering only significant
+      // poses. Simulation can advance without spending a software GPU frame.
+      await fixture(page,{close:true});
+      await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player(),d=a.sim.getRoom(p).actors.find(e=>e.kind==='dummy');p.x=d.x;p.z=d.z+2.1;p.dir=Math.PI;a.renderer.camera.x=p.x;a.renderer.camera.z=p.z;});
+      await page.keyboard.down('w');await page.evaluate(()=>characterStep(10,false));await page.keyboard.up('w');
+      const combat=await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();let charged=false;for(let i=0;i<240;i++){characterStep(1,false);charged||=!!p.pendingSkill;const u=(a.sim.time-p.actionStarted)/Math.max(.001,p.actionUntil-p.actionStarted);if(p.action==='attack'&&u>=.3&&u<=.65){a.renderer.render(a.snapshot,1/30,{freezeCamera:true});return {charged,attack:true,target:!!p.autoFight,animation:AERIN_QA.stats().characterMaster.animation};}}return {charged,attack:false};});
+      record.combat=combat;check(version+' real contact attack',combat.attack&&combat.target&&combat.animation==='attack');await shot(version+'-attack');
+      await fixture(page,{close:true});
+      await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();p.guard=true;characterStep(2);});await shot(version+'-combat-idle');
+      await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();p.guard=false;a.sim.inflictWound(p,'torso','light',{id:'qa-hit',x:p.x,z:p.z+1,alive:true});characterStep(3);});
+      check(version+' simulation hit',await page.evaluate(()=>AERIN_QA.player().health<100&&AERIN_QA.stats().characterMaster.animation==='hit'));await shot(version+'-hit');
+      await page.setViewportSize({width:393,height:852});await fixture(page);await shot(version+'-mobile-gameplay');
+      // Bounded, synchronized whole-frame samples. gl.finish includes submitted
+      // GPU work; timings are a software comparison, never a handset FPS claim.
+      record.performance=await page.evaluate(()=>{const a=AERIN_QA.app,g=a.renderer.gl,rows=[];for(let i=0;i<30;i++){const t=performance.now();a.renderer.render(a.snapshot,1/30,{freezeCamera:true});g.finish();if(i>=6)rows.push(performance.now()-t);}rows.sort((a,b)=>a-b);return {samples:rows.length,medianMs:rows[Math.floor(rows.length*.5)],p95Ms:rows[Math.floor(rows.length*.95)],minMs:rows[0],maxMs:rows.at(-1),viewport:[innerWidth,innerHeight]};});flush();
+      check(version+' no renderer exception',record.errors.length===0&&await page.evaluate(()=>!AERIN_QA.app.frameError&&AERIN_QA.app.renderer.gl.getError()===0));
+      if(page.video())record.video=path.basename(await page.video().path());await context.close();continue;
+    }
     if(mode==='motion'){
       await fixture(page);
       for(const [name,key,ticks]of [['run','d',20],['turn','a',30],['stop',null,30]]){
