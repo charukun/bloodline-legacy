@@ -107,6 +107,11 @@ export async function verifyTiltShift(page, evidence, viewport, record) {
   });
   assert.deepEqual(report.exclusions,{village:true,attack:false,outside:false,clan:false});
 
+  // Golden UI keeps nested modal history, so Escape from lineage returns to
+  // settings. Close that parent before exercising real movement input.
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(()=>AERIN_QA.app.ui.modal===null);
+
   // Resume the real application frame loop, then move using its keyboard input.
   await page.evaluate(()=>{
     const q=AERIN_QA,a=q.app,r=a.renderer;
@@ -141,7 +146,7 @@ export async function verifyTiltShift(page, evidence, viewport, record) {
   const motionSamples=report.motion.samples.slice(firstActive).filter(s=>s.active&&s.focus);
   assert(motionSamples.length>=4,'Too few active village motion samples');
   const travel=points=>Math.hypot(points.at(-1)[0]-points[0][0],points.at(-1)[1]-points[0][1]);
-  assert(travel(motionSamples.map(s=>[s.x,s.z]))>.8,'Character did not move through the village');
+  assert(Math.hypot(report.motion.end.x-report.motion.start.x,report.motion.end.z-report.motion.start.z)>.8,'Character did not move through the village');
   assert(travel(motionSamples.map(s=>[s.focus[0],s.focus[2]]))>.2,'Focus did not follow the moving character');
   assert(motionSamples.some(s=>Math.hypot(s.x-s.focus[0],s.z-s.focus[2])>.001),'Focus snapped instead of following smoothly');
   assert(report.motion.finalError<.5,'Focus did not converge after movement stopped');

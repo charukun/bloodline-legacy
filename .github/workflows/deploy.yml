@@ -46,9 +46,10 @@ jobs:
           JS
       - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
       - run: npm test --prefix deploy
-      - run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Verify life skills and produce playtest fixtures
+      - run: node --test tests/tilt-shift.test.mjs
+      - name: Verify UI, skill and simulation regression
         run: |
+          npm ci --ignore-scripts --no-audit --no-fund
           npm test
           node tests/skills/lives.mjs
       - name: Build deployment
