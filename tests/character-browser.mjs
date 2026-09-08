@@ -11,7 +11,7 @@ import {fileURLToPath} from 'node:url';
 import {chromium} from '../deploy/node_modules/playwright/index.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const mode=process.env.CHARACTER_MODE||'all';
-assert(['all','functional','performance','motion'].includes(mode),'Unknown verification mode');
+assert(['all','functional','performance','motion','reference','polish'].includes(mode),'Unknown verification mode');
 const out=path.join(root,'verification/current',mode);
 await fs.mkdir(out,{recursive:true});
 const files={before:await fs.readFile(process.env.CHARACTER_BASELINE),after:await fs.readFile(path.join(root,'dist/index.html'))};
@@ -24,7 +24,7 @@ const server=http.createServer((req,res)=>{
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const origin='http://127.0.0.1:'+server.address().port;
-const report={mode,base:'f94513ed65342de1674a716b33c2ebb4a9c523d1',head:process.env.GITHUB_SHA||null,checks:[],versions:{},passed:false,
+const report={mode,base:'010f2d9615ac0492d3a118f7057a313667455df1',head:process.env.GITHUB_SHA||null,checks:[],versions:{},passed:false,
   limitations:['SwiftShader is software rendering, not Desktop GPU or Pixel Fold performance approval.','Screenshots and videos require visual review; numeric success is not Golden Master approval.']};
 const flush=()=>writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));
 const check=(name,ok,details)=>{report.checks.push({name,pass:!!ok,details});flush();assert(ok,name+' '+JSON.stringify(details||''));console.log('PASS '+name);};
@@ -32,7 +32,7 @@ const groundedSlip=rows=>Math.max(0,...rows.slice(1).flatMap((s,i)=>s.feet.map((
   const previous=rows[i].feet[j];
   return !f.swing&&!previous.swing?Math.hypot(f.actual[0]-previous.actual[0],f.actual[2]-previous.actual[2]):0;
 })));
-let browser,page;
+let browser,page;const pairedPages=[];
 async function fixture(page,{close=false}={}){
   await page.evaluate(({close})=>{
     const a=AERIN_QA.app,p=AERIN_QA.player();a.closed=true;a.stopInput();a.ui.closeModal();
@@ -57,7 +57,7 @@ async function shot(name){await page.screenshot({path:path.join(out,name+'.png')
 try{
   browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
   for(const version of mode==='motion'?['after']:['before','after']){
-    const context=await browser.newContext({viewport:{width:1000,height:900},deviceScaleFactor:1,...(mode==='performance'?{}:{recordVideo:{dir:out,size:{width:1000,height:900}}})});
+    const context=await browser.newContext({viewport:{width:1000,height:900},deviceScaleFactor:1,...(['performance','polish'].includes(mode)?{}:{recordVideo:{dir:out,size:{width:1000,height:900}}})});
     page=await context.newPage();page.setDefaultTimeout(120000);
     const record=report.versions[version]={errors:[],consoleErrors:[],states:[],performance:[]};
     page.on('pageerror',e=>record.errors.push(e.message));
@@ -69,6 +69,79 @@ try{
     for(let i=0;i<3;i++)await page.locator('#guide-next').click();
     await page.waitForFunction('AERIN_QA.app.screen==="game"');
     check(version+' native onboarding',await page.evaluate(()=>AERIN_QA.player().prologue));
+    if(mode==='polish'){
+      await fixture(page);await shot(version+'-gameplay');await fixture(page,{close:true});
+      // Isolated mesh inspection outside the village bounds; no scene assets
+      // are edited. Gameplay evidence above/below retains the village fixture.
+      await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();p.x=100;p.z=0;a.renderer.camera.x=100;a.renderer.camera.z=0;a.snapshot=a.decorate(a.sim.snapshot(p.id,a.seq));a.renderer.render(a.snapshot,0,{freezeCamera:true});});await shot(version+'-close');
+      if(version==='after'){
+        for(const [view,yaw] of [['quarter',.85],['side',1.82],['back',3.2]]){
+          await page.evaluate(yaw=>{const a=AERIN_QA.app;a.renderer.camera.yaw=yaw;a.renderer.render(a.snapshot,0,{freezeCamera:true});},yaw);await shot('after-'+view);
+        }
+        await page.evaluate(()=>{const a=AERIN_QA.app;a.renderer.camera.yaw=.28;a.renderer.render(a.snapshot,0,{freezeCamera:true});});
+        await fixture(page,{close:true});
+        record.states.push({name:'idle',animation:await page.evaluate(()=>AERIN_QA.stats().characterMaster.animation)});await shot('after-idle');
+        for(const [name,key,ticks] of [['run','d',12],['stop',null,16]]){
+          if(key)await page.keyboard.down(key);await page.evaluate(n=>characterStep(n),ticks);if(key)await page.keyboard.up(key);
+          const rows=await page.evaluate(n=>characterTrace.slice(-n),ticks);record[name+'Contact']=rows;
+          check('after '+name+' contact',rows.length===ticks&&rows.every(s=>s.finite&&s.metrics.pelvisDrop<.38&&s.feet.every(f=>f.error<.035))&&groundedSlip(rows)<.012);await shot('after-'+name);
+        }
+        await fixture(page);await page.mouse.move(550,470);await page.mouse.down();await page.mouse.move(565,470);await page.evaluate(()=>characterStep(16));await page.mouse.up();
+        const walk=await page.evaluate(()=>characterTrace);check('after pointer walk',walk.length===16&&walk.at(-1).metrics.animation==='walk'&&groundedSlip(walk)<.012);await shot('after-walk');
+        await fixture(page,{close:true});
+        await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player(),d=a.sim.getRoom(p).actors.find(e=>e.kind==='dummy');p.x=d.x;p.z=d.z+2.1;p.dir=Math.PI;a.renderer.camera.x=p.x;a.renderer.camera.z=p.z;});
+        await page.keyboard.down('w');await page.evaluate(()=>characterStep(10,false));await page.keyboard.up('w');
+        const combat=await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();for(let i=0;i<240;i++){characterStep(1,false);const u=(a.sim.time-p.actionStarted)/Math.max(.001,p.actionUntil-p.actionStarted);if(p.action==='attack'&&u>=.3&&u<=.65){a.renderer.render(a.snapshot,1/30,{freezeCamera:true});return {attack:true,target:!!p.autoFight,animation:AERIN_QA.stats().characterMaster.animation};}}return {attack:false};});
+        record.combat=combat;check('after native contact attack',combat.attack&&combat.target&&combat.animation==='attack');await shot('after-attack');
+        await fixture(page,{close:true});await page.evaluate(()=>{AERIN_QA.player().guard=true;characterStep(2);});
+        check('after combat idle',await page.evaluate(()=>AERIN_QA.stats().characterMaster.animation==='combat_idle'));await shot('after-combat-idle');
+        await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();p.guard=false;a.sim.inflictWound(p,'torso','light',{id:'qa-hit',x:p.x,z:p.z+1,alive:true});characterStep(3);});
+        check('after simulation hit',await page.evaluate(()=>AERIN_QA.player().health<100&&AERIN_QA.stats().characterMaster.animation==='hit'));await shot('after-hit');
+        await fixture(page,{close:true});const equipment=await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player(),rack=a.snapshot.map.schools.find(s=>s.id==='armory');p.x=rack.x;p.z=rack.z+3;const ok=a.command({type:'equip',slot:'weapon',value:0});a.renderer.camera.x=p.x;a.renderer.camera.z=p.z;characterStep(1);return {ok,weapon:p.weapon,tip:a.renderer.weaponTips.has(p.id)};});
+        check('after native sword attachment',equipment.ok&&equipment.weapon===0&&equipment.tip);await shot('after-sword');
+        record.inspection='Close, quarter, side and back are isolated mesh inspection at x=100. Gameplay, locomotion and combat use the unchanged village.';
+        check('updated gloves and boots retain finite joints',await page.evaluate(()=>AERIN_QA.app.renderer.characterMaster.palette.every(Number.isFinite)));
+      }
+      check(version+' shader and game loop',record.errors.length===0&&await page.evaluate(()=>!!AERIN_QA.stats().characterMaster&&!AERIN_QA.app.frameError&&AERIN_QA.app.renderer.gl.getError()===0));
+      await page.setViewportSize({width:393,height:852});await fixture(page);await shot(version+'-mobile-gameplay');
+      // Keep both contexts ready, turn recording off, and alternate sample
+      // order to distinguish character cost from host/encoder scheduling.
+      pairedPages.push({version,page,context,record});continue;
+    }
+    if(mode==='reference'){
+      await fixture(page);await shot(version+'-gameplay');
+      check(version+' master dispatch and no blur',await page.evaluate(()=>!!AERIN_QA.stats().characterMaster&&!AERIN_QA.app.renderer.diorama.active));
+      await fixture(page,{close:true});await shot(version+'-close');
+      if(version==='after')for(const [label,yaw]of [['quarter',.9],['side',1.82],['back',3.2]]){
+        await page.evaluate(yaw=>{const a=AERIN_QA.app;a.renderer.camera.yaw=yaw;a.renderer.render(a.snapshot,0,{freezeCamera:true});},yaw);await shot('after-'+label);
+      }
+      await fixture(page);
+      for(const [name,key,ticks]of [['run','d',20],['turn','a',30],['stop',null,30]]){
+        if(key)await page.keyboard.down(key);await page.evaluate(n=>characterStep(n),ticks);if(key)await page.keyboard.up(key);
+        const rows=await page.evaluate(n=>characterTrace.slice(-n),ticks);record[name+'Contact']=rows;
+        check(version+' '+name+' contact',rows.length===ticks&&rows.every(s=>s.finite&&s.metrics.pelvisDrop<.38&&s.feet.every(f=>f.error<.035))&&groundedSlip(rows)<.012);
+        await shot(version+'-'+name);
+      }
+      await fixture(page);await page.mouse.move(550,470);await page.mouse.down();await page.mouse.move(565,470);await page.evaluate(()=>characterStep(24));await page.mouse.up();
+      const walk=await page.evaluate(()=>characterTrace);check(version+' pointer walk',walk.length===24&&walk.at(-1).metrics.animation==='walk'&&groundedSlip(walk)<.012);await shot(version+'-walk');
+      // Existing contact combat and combat clocks, rendering only significant
+      // poses. Simulation can advance without spending a software GPU frame.
+      await fixture(page,{close:true});
+      await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player(),d=a.sim.getRoom(p).actors.find(e=>e.kind==='dummy');p.x=d.x;p.z=d.z+2.1;p.dir=Math.PI;a.renderer.camera.x=p.x;a.renderer.camera.z=p.z;});
+      await page.keyboard.down('w');await page.evaluate(()=>characterStep(10,false));await page.keyboard.up('w');
+      const combat=await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();let charged=false;for(let i=0;i<240;i++){characterStep(1,false);charged||=!!p.pendingSkill;const u=(a.sim.time-p.actionStarted)/Math.max(.001,p.actionUntil-p.actionStarted);if(p.action==='attack'&&u>=.3&&u<=.65){a.renderer.render(a.snapshot,1/30,{freezeCamera:true});return {charged,attack:true,target:!!p.autoFight,animation:AERIN_QA.stats().characterMaster.animation};}}return {charged,attack:false};});
+      record.combat=combat;check(version+' real contact attack',combat.attack&&combat.target&&combat.animation==='attack');await shot(version+'-attack');
+      await fixture(page,{close:true});
+      await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();p.guard=true;characterStep(2);});await shot(version+'-combat-idle');
+      await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();p.guard=false;a.sim.inflictWound(p,'torso','light',{id:'qa-hit',x:p.x,z:p.z+1,alive:true});characterStep(3);});
+      check(version+' simulation hit',await page.evaluate(()=>AERIN_QA.player().health<100&&AERIN_QA.stats().characterMaster.animation==='hit'));await shot(version+'-hit');
+      await page.setViewportSize({width:393,height:852});await fixture(page);await shot(version+'-mobile-gameplay');
+      // Bounded, synchronized whole-frame samples. gl.finish includes submitted
+      // GPU work; timings are a software comparison, never a handset FPS claim.
+      record.performance=await page.evaluate(()=>{const a=AERIN_QA.app,g=a.renderer.gl,rows=[];for(let i=0;i<30;i++){const t=performance.now();a.renderer.render(a.snapshot,1/30,{freezeCamera:true});g.finish();if(i>=6)rows.push(performance.now()-t);}rows.sort((a,b)=>a-b);return {samples:rows.length,medianMs:rows[Math.floor(rows.length*.5)],p95Ms:rows[Math.floor(rows.length*.95)],minMs:rows[0],maxMs:rows.at(-1),viewport:[innerWidth,innerHeight]};});flush();
+      check(version+' no renderer exception',record.errors.length===0&&await page.evaluate(()=>!AERIN_QA.app.frameError&&AERIN_QA.app.renderer.gl.getError()===0));
+      if(page.video())record.video=path.basename(await page.video().path());await context.close();continue;
+    }
     if(mode==='motion'){
       await fixture(page);
       for(const [name,key,ticks]of [['run','d',20],['turn','a',30],['stop',null,30]]){
@@ -95,7 +168,7 @@ try{
     record.stats=await page.evaluate(()=>AERIN_QA.stats());
     check(version+' WebGL has no error',await page.evaluate(()=>AERIN_QA.app.renderer.gl.getError()===0));
     check(version+' comparison has no diorama blur',await page.evaluate(()=>AERIN_QA.app.renderer.diorama.mode==='normal'&&!AERIN_QA.app.renderer.diorama.active));
-    check(version+' target renderer dispatch',!!record.stats.characterMaster===(version==='after'));
+    check(version+' target renderer dispatch',!!record.stats.characterMaster);
     await fixture(page,{close:true});await shot(version+'-close');
     if(version==='after'){
       for(const [label,yaw]of [['quarter',1.1],['side',1.82],['back',3.2]]){
@@ -199,6 +272,20 @@ try{
     check(version+' no game frame exception',await page.evaluate(()=>!AERIN_QA.app.frameError));
     if(page.video())record.video=path.basename(await page.video().path());await context.close();
     await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));
+  }
+  if(mode==='polish'){
+    for(const p of pairedPages)p.record.performance={samples:[],recording:false,viewport:[393,852]};
+    for(let round=0;round<30;round++){
+      const order=round%2?[...pairedPages].reverse():pairedPages;
+      for(const p of order){
+        const ms=await p.page.evaluate(()=>{const a=AERIN_QA.app,g=a.renderer.gl;g.finish();const t=performance.now();a.renderer.render(a.snapshot,1/30,{freezeCamera:true});g.finish();return performance.now()-t;});
+        if(round>=6)p.record.performance.samples.push(ms);
+      }
+    }
+    for(const p of pairedPages){const data=p.record.performance,s=[...data.samples].sort((a,b)=>a-b);data.medianMs=s[Math.floor(s.length*.5)];data.p95Ms=s[Math.floor(s.length*.95)];await p.context.close();}
+    const before=report.versions.before.performance,after=report.versions.after.performance;
+    report.performanceComparison={method:'Alternating AB/BA; 6 warmup + 24 synchronized whole frames per version; no video recording',medianChangeMs:after.medianMs-before.medianMs,medianRatio:after.medianMs/before.medianMs,p95Ratio:after.p95Ms/before.p95Ms};flush();
+    check('bounded paired median has no material regression',after.medianMs<=Math.max(before.medianMs*1.05,before.medianMs+.5),report.performanceComparison);
   }
   report.passed=true;
 }catch(e){report.failure=e.stack;console.error(e);if(page)await shot('failure').catch(()=>{});process.exitCode=1;}

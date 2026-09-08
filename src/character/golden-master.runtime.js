@@ -37,12 +37,21 @@ const CM01 = (()=>{
  bool hidden(){return (vRegion==2&&cmLoss.x>.5)||(vRegion==3&&cmLoss.y>.5)||(vRegion==4&&cmLoss.z>.5)||(vRegion==5&&cmLoss.w>.5)||(vRegion==10&&cmArmor<.5)||(vRegion==11&&(cmArmor<1.5||cmLoss.x>.5))||(vRegion==12&&(cmArmor<1.5||cmLoss.y>.5));}`;
  const FS=RFRAG.slice(0,RFRAG.indexOf('void main()'))+regionHeader+`
  uniform sampler2D cmBase;uniform sampler2D cmOrm;uniform sampler2D cmNormal;uniform vec3 cmHairTint;uniform float cmSilhouette;
+ // Compare each PCF tap against the receiver's depth at that tap. A single
+ // centre depth incorrectly shadows a curved, sloping forehead on itself.
+ float cmShadow(sampler2D map,vec3 p,float bias,vec2 gradient){vec2 texel=1./vec2(textureSize(map,0));float shade=0.;
+  for(int i=0;i<4;i++){vec2 delta=vec2((i&1)==0?-.9:.9,(i&2)==0?-.9:.9)*texel*1.35;
+   float receiver=p.z+clamp(dot(gradient,delta),-.015,.015);shade+=step(texture(map,p.xy+delta).r,receiver-bias);}
+  return shade*.25;
+ }
+
  void main(){if(hidden())discard;vec2 uv=vUv;if(vRegion==10&&cmArmor<1.5)uv+=vec2(-.75,0.);vec3 pigment=texture(cmBase,uv).rgb*vInk.rgb;if(abs(vSurface-1.)<.1)pigment*=cmHairTint;
- vec3 packed=texture(cmOrm,uv).rgb;float rough=clamp(packed.g,.18,1.),metal=packed.b,ao=packed.r;vec3 N=normalize(vNormal),V=normalize(eye-vWorld),L=normalize(vec3(-.48,.85,.42));
+ vec3 packed=texture(cmOrm,uv).rgb;float rough=clamp(packed.g,.18,1.),metal=packed.b,ao=packed.r*clamp(vInk.a,.5,1.);vec3 N=normalize(vNormal),V=normalize(eye-vWorld),L=normalize(vec3(-.48,.85,.42));
  vec3 dp1=dFdx(vWorld),dp2=dFdy(vWorld);vec2 duv1=dFdx(uv),duv2=dFdy(uv);vec3 T=cross(dp2,N)*duv1.x+cross(N,dp1)*duv2.x;vec3 B=cross(dp2,N)*duv1.y+cross(N,dp1)*duv2.y;
  float denom=max(dot(T,T),dot(B,B));if(denom>1e-10){float inv=inversesqrt(denom);vec3 n=texture(cmNormal,uv).rgb*2.-1.;N=normalize(mat3(T*inv,B*inv,N)*normalize(vec3(n.xy*.30,n.z)));}
  bool skin=abs(vSurface)<.1;float wet=skin?0.:wetness*clamp(N.y*.65+.4,.1,1.);rough=mix(rough,max(.22,rough*.5),wet);pigment*=1.-wet*.12;
- vec3 base=lin(pigment);float shade=0.;if(shadows){vec3 s=vShadow.xyz/vShadow.w*.5+.5;if(all(greaterThan(s,vec3(0.)))&&all(lessThan(s,vec3(1.)))){float bias=max(.00055,.00105*(1.-dot(N,L)));shade=max(shadowValue(shadowTex,s,bias),shadowValue(dynamicShadow,s,bias));}}
+ vec3 base=lin(pigment);vec3 s=vShadow.xyz/vShadow.w*.5+.5,dx=dFdx(s),dy=dFdy(s);float det=dx.x*dy.y-dx.y*dy.x;vec2 gradient=abs(det)>1e-10?vec2(dx.z*dy.y-dy.z*dx.y,dy.z*dx.x-dx.z*dy.x)/det:vec2(0.);
+ float shade=0.;if(shadows&&all(greaterThan(s,vec3(0.)))&&all(lessThan(s,vec3(1.)))){float bias=max(.0012,.002*(1.-dot(N,L)));shade=max(cmShadow(shadowTex,s,bias,gradient),cmShadow(dynamicShadow,s,bias,gradient));}
  vec3 hemi=mix(groundColor,skyColor,clamp(N.y*.5+.5,0.,1.));vec3 lit=base*hemi*skyStrength*ao;lit+=brdf(base,N,V,L,rough,metal,sunColor*sunStrength*(1.-shade*.85));
  vec3 reflected=reflect(-V,N),f0=mix(vec3(.035),base,metal);lit+=mix(groundColor,skyColor,reflected.y*.5+.5)*f0*(1.-rough*.8)*skyStrength*.4;
  if(skin)lit+=base*vec3(.32,.17,.09)*pow(1.-max(0.,dot(N,V)),3.)*.17;

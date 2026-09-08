@@ -166,10 +166,15 @@ test('body collision retains player and dummy radii',()=>{
 test('visual updates retain world bounds and full simulation serialization',()=>{
   const {sim,p,room}=simulation();p.x=34;p.z=0;sim.moveAttackStep(p,room,10,0);assert(p.x<=35);
   const before=JSON.stringify(sim.exportState()),r=renderer(),c=new cm.Character(r);
+  // Current Skill System restores a missing life notice to an empty string.
+  // Compare to the same unrendered save's native restoration, keeping every
+  // game field checked without changing production save normalization.
+  context.saved=JSON.parse(before);
+  const unrenderedRestored=JSON.stringify(vm.runInContext('Simulation.restore(saved)',context).exportState());
   c.update(frozen(JSON.parse(JSON.stringify(p))),sim.time);
   assert.equal(JSON.stringify(sim.exportState()),before);
   context.saved=JSON.parse(before);const restored=vm.runInContext('Simulation.restore(saved)',context);
-  assert.equal(JSON.stringify(restored.exportState()),before);
+  assert.equal(JSON.stringify(restored.exportState()),unrenderedRestored);
 });
 test('attack and hit clocks remain unchanged after character sampling',()=>{
   const {sim,p}=simulation();p.action='attack';p.attackSkill=4100;p.actionStarted=10;p.actionUntil=11;p.hitReactAt=10;p.hitReactUntil=10.8;p.hitstopUntil=10.2;

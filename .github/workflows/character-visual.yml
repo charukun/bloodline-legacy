@@ -7,7 +7,17 @@ on:
         type: boolean
         default: false
   push:
-    branches: ['work/character-golden-master-*']
+    branches: ['work/character-reference-master-*']
+    paths:
+      - 'src/character/**'
+      - 'public/assets/character/**'
+      - 'tests/character*'
+      - 'tools/generate_character.py'
+      - 'tools/character_sculpture.py'
+      - 'tools/character_ao.cpp'
+      - '.github/workflows/character-visual.yml'
+      - 'build.mjs'
+      - 'package*.json'
   pull_request:
     branches: [develop]
     paths:
@@ -15,6 +25,8 @@ on:
       - 'public/assets/character/**'
       - 'tests/character*'
       - 'tools/generate_character.py'
+      - 'tools/character_sculpture.py'
+      - 'tools/character_ao.cpp'
       - '.github/workflows/character-visual.yml'
 permissions:
   contents: read
@@ -45,13 +57,13 @@ jobs:
       - run: deploy/node_modules/.bin/playwright install --with-deps chromium
       - name: Build the fixed implementation baseline
         run: |
-          git worktree add --detach /tmp/character-baseline f94513ed65342de1674a716b33c2ebb4a9c523d1
+          git worktree add --detach /tmp/character-baseline 010f2d9615ac0492d3a118f7057a313667455df1
           node /tmp/character-baseline/build.mjs
       - name: Verify the changed movement poses
         timeout-minutes: 20
         env:
           CHARACTER_BASELINE: /tmp/character-baseline/dist/index.html
-          CHARACTER_MODE: ${{ inputs.full_review && 'functional' || 'motion' }}
+          CHARACTER_MODE: ${{ inputs.full_review && 'functional' || 'polish' }}
         run: node tests/character-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
