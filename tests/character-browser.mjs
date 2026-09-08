@@ -3,6 +3,7 @@
  * Native HTTP origin/localStorage, unmodified production HTML, real WebGL2.
  */
 import fs from 'node:fs/promises';
+import {writeFileSync} from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
 import assert from 'node:assert/strict';
@@ -25,7 +26,8 @@ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const origin='http://127.0.0.1:'+server.address().port;
 const report={mode,base:'9ee25afc5f67e142adc313813b4289d157d47935',head:process.env.GITHUB_SHA||null,checks:[],versions:{},passed:false,
   limitations:['SwiftShader is software rendering, not Desktop GPU or Pixel Fold performance approval.','Screenshots and videos require visual review; numeric success is not Golden Master approval.']};
-const check=(name,ok,details)=>{report.checks.push({name,pass:!!ok,details});assert(ok,name+' '+JSON.stringify(details||''));console.log('PASS '+name);};
+const flush=()=>writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));
+const check=(name,ok,details)=>{report.checks.push({name,pass:!!ok,details});flush();assert(ok,name+' '+JSON.stringify(details||''));console.log('PASS '+name);};
 let browser,page;
 async function fixture(page,{close=false}={}){
   await page.evaluate(({close})=>{
@@ -47,11 +49,11 @@ async function fixture(page,{close=false}={}){
   // Drain the old, now-closed frame callback before starting a new live loop.
   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
 }
-async function shot(name){await page.screenshot({path:path.join(out,name+'.png')});}
+async function shot(name){await page.screenshot({path:path.join(out,name+'.png')});report.lastScreenshot=name;flush();}
 try{
   browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
   for(const version of ['before','after']){
-    const context=await browser.newContext({viewport:{width:1000,height:900},deviceScaleFactor:1,recordVideo:{dir:out,size:{width:1000,height:900}}});
+    const context=await browser.newContext({viewport:{width:1000,height:900},deviceScaleFactor:1,...(mode==='performance'?{}:{recordVideo:{dir:out,size:{width:1000,height:900}}})});
     page=await context.newPage();page.setDefaultTimeout(120000);
     const record=report.versions[version]={errors:[],consoleErrors:[],states:[],performance:[]};
     page.on('pageerror',e=>record.errors.push(e.message));
@@ -105,16 +107,23 @@ try{
     // Move into the existing dummy with native keyboard; no attack command is fabricated.
     await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player(),d=a.sim.getRoom(p).actors.find(e=>e.kind==='dummy');p.x=d.x;p.z=d.z+2.1;p.dir=Math.PI;a.snapshot=a.decorate(a.sim.snapshot(p.id,a.seq));a.renderer.camera={x:d.x,z:d.z+.5,zoom:16,yaw:0,pitch:.68};a.renderer.render(a.snapshot,0,{freezeCamera:true});});
     await page.keyboard.down('w');await page.evaluate(()=>characterStep(10));await page.keyboard.up('w');
+    // Settle the existing gameplay combat camera; a forced village yaw hid the
+    // actor behind a roof and could not serve as attack visual evidence.
+    await page.evaluate(()=>{const a=AERIN_QA.app;a.renderer.render(a.snapshot,1);});
     const combat={charged:false,attack:false,states:[],animations:[]};
     for(let i=0;i<150;i++){
-      const state=await page.evaluate(()=>{characterStep(1);const p=AERIN_QA.player();return {action:p.action,charged:!!p.pendingSkill,target:p.autoFight,animation:AERIN_QA.stats().characterMaster?.animation};});
+      const state=await page.evaluate(({draw,capturedCharge,capturedPeak})=>{characterStep(1,false);const a=AERIN_QA.app,p=AERIN_QA.player(),u=(a.sim.time-p.actionStarted)/Math.max(.001,p.actionUntil-p.actionStarted),peak=p.action==='attack'&&u>=.3&&u<=.65;
+        if(draw||p.pendingSkill&&!capturedCharge||peak&&!capturedPeak)a.renderer.render(a.snapshot,1/30,{freezeCamera:true});
+        return {action:p.action,charged:!!p.pendingSkill,target:p.autoFight,peak,animation:AERIN_QA.stats().characterMaster?.animation};
+      },{draw:i%3===0,capturedCharge:combat.charged,capturedPeak:combat.peak});
       if(state.charged&&!combat.charged)await shot(version+'-combat-charge');
-      if(state.action==='attack'&&!combat.attack)await shot(version+'-attack');
+      if(state.peak&&!combat.peak)await shot(version+'-attack');
+      combat.peak||=state.peak;
       combat.charged||=state.charged;combat.attack||=state.action==='attack';combat.target=state.target;
       if(!combat.states.includes(state.action))combat.states.push(state.action);
       if(state.animation&&!combat.animations.includes(state.animation))combat.animations.push(state.animation);
     }
-    check(version+' real contact combat',combat.charged&&combat.attack&&!!combat.target,combat);record.combat=combat;await shot(version+'-combat');
+    check(version+' real contact combat',combat.charged&&combat.attack&&combat.peak&&!!combat.target,combat);record.combat=combat;await shot(version+'-combat');
     if(version==='after'){
       await fixture(page,{close:true});
       await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();a.sim.inflictWound(p,'torso','light',{id:'qa-hit',x:p.x,z:p.z+1,alive:true});characterStep(3);});
@@ -134,6 +143,9 @@ try{
     await page.reload({waitUntil:'load'});await page.waitForFunction('window.AERIN_QA && AERIN_QA.app.renderer.frame>2');await page.locator('#begin-life').click();await page.waitForFunction('AERIN_QA.app.screen==="game"');
     const restored=await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();return {id:p.id,name:p.name,age:p.age,gender:p.gender,race:p.race,legacy:JSON.stringify(a.sim.legacy(p.owner)),keys:Object.keys(localStorage)};});
     check(version+' native save reload',JSON.stringify(saved)===JSON.stringify(restored),{saved,restored});
+    await page.setViewportSize({width:393,height:852});await fixture(page);await shot(version+'-mobile-gameplay');
+    check(version+' mobile layout',await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2&&!AERIN_QA.app.renderer.gl.isContextLost()));
+    await page.setViewportSize({width:1000,height:900});
     }
     // Actual render-loop timestamps, no simulation-clamped dt, no instantaneous FPS averaging.
     // Three steady village runs plus separate rain/combat scenes, all 30 seconds after warm-up.
@@ -154,9 +166,9 @@ try{
     }
     check(version+' no page exception',record.errors.length===0,record.errors);
     check(version+' no game frame exception',await page.evaluate(()=>!AERIN_QA.app.frameError));
-    record.video=path.basename(await page.video().path());await context.close();
+    if(page.video())record.video=path.basename(await page.video().path());await context.close();
     await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));
   }
   report.passed=true;
 }catch(e){report.failure=e.stack;console.error(e);if(page)await shot('failure').catch(()=>{});process.exitCode=1;}
-finally{await browser?.close();await new Promise(resolve=>server.close(resolve));await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));}
+finally{flush();await browser?.close();await new Promise(resolve=>server.close(resolve));flush();}

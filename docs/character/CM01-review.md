@@ -38,6 +38,6 @@ Two further defects were reproduced and fixed during review: grounded soles slid
 
 `tests/character-browser.mjs` records the exact base/head, GPU identity, viewport, screenshots, video and JSON checks. The young-player fixture is explicitly set to age 24, human male, time 12, clear weather and medium quality. Both revisions use the same gameplay camera and input sequence. Additional inspection cameras are separate from the gameplay comparison.
 
-Performance samples use actual render submission timestamps: 10 seconds warm-up, 30 seconds measurement, three village runs, plus rain and combat. Software results compare revisions under the same harness, with video overhead on both, and cannot certify real-device frame-rate targets.
+Performance samples use actual render submission timestamps: 10 seconds warm-up, 30 seconds measurement, three village runs, plus rain and combat. Both revisions run on the same runner without video capture during performance measurement. Functional verification retains video; contact combat samples all 150 simulation ticks and renders every third tick plus the first charge and peak attack. Software results cannot certify real-device frame-rate targets.
 
 Push verification runs on the work branch before a Ready PR is created, as required by policy v5. CI artifacts retain the evidence for 30 days; accepted comparison images and a final review will be committed after inspection. A numeric CI success alone is not Golden Master acceptance.
