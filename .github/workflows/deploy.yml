@@ -74,11 +74,11 @@ jobs:
   deploy:
     name: Deploy and verify ${{ needs.build.outputs.target }}
     needs: build
-    # Enable only after latest-source/hosting collision audit and account setup.
+    # Enable each environment only after its source/hosting audit and account setup.
     # Repository-level secrets avoid requiring paid private-repo Environments.
     if: >-
       github.event_name == 'push' &&
-      vars.CICD_ENABLED == 'true' &&
+      vars[format('CICD_ENABLED_{0}', needs.build.outputs.suffix)] == 'true' &&
       contains(fromJSON('["refs/heads/develop","refs/heads/staging","refs/heads/main"]'), github.ref)
     runs-on: ubuntu-latest
     timeout-minutes: 15
