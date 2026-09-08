@@ -84,3 +84,18 @@ Final build and **106 tests PASS**, including actual terrain draw submission at
 plus retained offscreen culling. Default-on settings, combat/frontline focus,
 motion, skill menu/save compatibility and family UI regressions also pass.
 Browser/WebGL and Pixel Fold verification of this latest fix remain UNVERIFIED.
+
+## Concurrent CM01 integration during PR creation
+
+Develop advanced to `f93c0a56fd978f33c2dc23aad7bd1331a64afbbb` (Character PR #12)
+while PR #14 was being created. Reconciled both module/test lists and retained
+the new character asset/runtime. A focused compatibility test reproduced CM01
+estimating 3.8 units/s as 1.9 at 60 Hz when interpolated positions were paired
+with the unchanged 30 Hz simulation clock.
+
+Rendered pose copies now carry their sample timestamp. CM01 uses it only for
+locomotion elapsed time; combat/skill animation still receives authoritative
+time. No asset, rig design, gameplay clock or saved entity is changed. The
+30/60/120 Hz regression now preserves movement speed and the run gait.
+Post-reconciliation build and **127/127 tests PASS**, including the current
+Character WORK tests. The rebuilt standalone preview includes CM01.

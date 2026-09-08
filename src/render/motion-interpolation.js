@@ -30,7 +30,8 @@ class MotionInterpolation {
    // New lives, room transfers and teleports must appear at their destination.
    if(!old||old.alive!==e.alive||old.prologue!==e.prologue||
       Math.hypot(e.x-old.x,e.z-old.z)>2)return e;
-   const p={...e,x:old.x+(e.x-old.x)*alpha,z:old.z+(e.z-old.z)*alpha};
+   const p={...e,x:old.x+(e.x-old.x)*alpha,z:old.z+(e.z-old.z)*alpha,
+    renderPoseTime:this.time+gap*alpha};
    if(Number.isFinite(old.dir)&&Number.isFinite(e.dir)){
     const angle=Math.atan2(Math.sin(e.dir-old.dir),Math.cos(e.dir-old.dir));
     p.dir=old.dir+angle*alpha;
