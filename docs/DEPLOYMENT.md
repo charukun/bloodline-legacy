@@ -1,7 +1,6 @@
 # Bloodline Legacy / 血脈の系譜 — Deployment運用
 
-状態: **develop移行/read-back完了・CI/CD設定反映済み・DEV公開/WebGL検証成功・staging作成済み・PRODUCTIONはSecret接続待ち**。2026-09-08 JST。
-この文書と設定の存在をCI/CD構築完了と扱わないこと。
+状態: **develop移行/read-back完了。DEV・STAGINGの固定URLで公開WebGL smoke成功。PRODUCTIONの固定URLで待機ページ公開・smoke成功。3環境の自動配信を接続済み**。2026-09-08 JST。ゲームの正式Productionリリースは実施していない。
 
 ## 調査範囲とSource of Truth
 
@@ -9,7 +8,7 @@ GitHubの正本は `charukun/bloodline-legacy`（Private）。Connectorは404だ
 
 2026-09-08にWeb UIでdevelopを同じcommitから作成し、作成後のdevelop HEADが指定commitと完全一致することを確認した。その後、配信用設定をdevelopへ追加している。ゲームソースは変更していない。全35ファイルの再取得・SHA256照合はGitHub Actions内で成功した。検証commit `52409ba735fb495c10252bc9eb060ca351745d1b`、[実行証跡](https://github.com/charukun/bloodline-legacy/actions/runs/34174723377)。ZIPダウンロードはCloud BrowserのURLポリシーで拒否されたが、ソースを外部へ転送せずActions内でGitHubの全blobを再取得する安全な方式で完了した。正式なDevelopment / Implementation Source of Truthは **develop**。原35ファイルはすべて保持され、追加20ファイルはCI/CD設定と文書。
 
-Cloudflare ChatGPT Desktop App/Pluginは使用しない。Cloud Browserはセキュリティ検証がループするため、ユーザーの通常Chromeからアカウント設定を実施。Workers & Pagesの提供スクリーンショットでプロジェクト未作成、account ID `980d243c0a980bdc2ddbbee89e901db5`、subdomain `c-okamoto.workers.dev` を確認。DEV tokenはユーザーがGitHub Secretへ直接登録し、Secret名の存在をWeb UIでread-back確認した。token値の取得・表示は行わない。
+Cloudflare ChatGPT Desktop App/Pluginは使用しない。Cloud Browserはセキュリティ検証がループするため、ユーザーの通常Chromeからアカウント設定を実施。Workers & Pagesの提供スクリーンショットでプロジェクト未作成、account ID `980d243c0a980bdc2ddbbee89e901db5`、subdomain `c-okamoto.workers.dev` を確認。3環境のtokenはユーザーがGitHub Secretsへ直接登録し、3つのSecret名の存在をWeb UIでread-back確認した。token値の取得・表示は行わない。
 
 Project Sourcesの実装プロンプトを確認し、復旧用 `/bloodline-legacy/work-handoff/current/` の35ファイルを取得して調査・ビルドした。添付のstandalone HTMLも確認した。Visual Referenceの再設計・ゲーム改変は今回の対象外。
 
@@ -59,10 +58,10 @@ Workersの静的アセット配信リクエストは無料・無制限と案内�
 | 環境 | Branch | Worker名 | 固定URL（公開状態は右列） | 状態 |
 | --- | --- | --- | --- | --- |
 | DEV | develop | bloodline-legacy-dev | https://bloodline-legacy-dev.c-okamoto.workers.dev | 公開済み・公開後WebGL smoke PASS |
-| STAGING | staging | bloodline-legacy-staging | https://bloodline-legacy-staging.c-okamoto.workers.dev | branch/接続先設定済み・Secret待ち・未公開 |
-| PRODUCTION | main | bloodline-legacy-production | https://bloodline-legacy-production.c-okamoto.workers.dev | mainに基盤導入・Secret待ち・待機ページ未公開 |
+| STAGING | staging | bloodline-legacy-staging | https://bloodline-legacy-staging.c-okamoto.workers.dev | 公開済み・公開後WebGL smoke PASS |
+| PRODUCTION | main | bloodline-legacy-production | https://bloodline-legacy-production.c-okamoto.workers.dev | 待機ページ公開済み・公開後smoke PASS（正式ゲーム未公開） |
 
-実際のaccount subdomainを確認し、下記 `FIXED_URL_*` の登録値をGitHubから再取得して一致を確認済み。Worker未公開のURLを起動確認済みとは扱わない。同一originのパスで3環境を作らない。
+実際のaccount subdomainを確認し、下記 `FIXED_URL_*` の登録値をGitHubから再取得して一致を確認済み。3つの公開URLを実際に開き、CIの公開後検証の成功も確認した。同一originのパスで3環境を作らない。
 
 3つのホスト名が異なるためlocalStorageはブラウザのorigin単位で分離される。既存キーと既存セーブ内容は変更しない。APIプロキシ、Cookie共有、DB共有、Service Workerは追加しない。`/api/health` は `{online:false, environment:...}` を返し、欠落した共有サーバーの稼働を偽装しない。他の `/api/*` は501。オンライン機能が必要になった時点で別途サーバーを設計し、環境別bindingを設定する。
 
@@ -75,8 +74,8 @@ Private repoの有料Environments機能を必須にしない構成。設定場�
 | Variable | CICD_ENABLED_DEV / CICD_ENABLED_STAGING / CICD_ENABLED_PRODUCTION | 各環境の公開スイッチ。対象環境の接続準備完了後にtrue。未設定/falseはその環境だけDeployを停止 |
 | Variable | CLOUDFLARE_ACCOUNT_ID | 対象アカウントID。Secret値ではない |
 | Variable | FIXED_URL_DEV | 実在確認したDEV固定URL |
-| Variable | FIXED_URL_STAGING | STAGING固定URL（接続先設定済み、公開はSecret登録後） |
-| Variable | FIXED_URL_PRODUCTION | PRODUCTION固定URL（接続先設定済み、公開はSecret登録後） |
+| Variable | FIXED_URL_STAGING | STAGING固定URL（公開検証済み） |
+| Variable | FIXED_URL_PRODUCTION | PRODUCTION固定URL（待機ページ公開検証済み） |
 | Secret | CLOUDFLARE_API_TOKEN_DEV | DEV配信用トークン |
 | Secret | CLOUDFLARE_API_TOKEN_STAGING | STAGING配信用トークン |
 | Secret | CLOUDFLARE_API_TOKEN_PRODUCTION | PRODUCTION配信用トークン |
@@ -150,7 +149,7 @@ GLB・textures・shadersは元HTMLの埋込バイト列が保たれているかb
 | API 501 | 現版に共有サーバーはない。DEVを本番APIへ向けて回避しない |
 | Smoke失敗 | artifactのsmoke.jsonとPNG。SwiftShaderの描画結果を実機FPS評価に用いない |
 
-## 今回の実測と残作業
+## 今回の実測と公開証跡
 
 2026-09-08 JST。ゲームソースを変更せず、次を実施した。
 
@@ -159,21 +158,20 @@ GLB・textures・shadersは元HTMLの埋込バイト列が保たれているかb
 - 同runで基盤5テスト、原ビルド/JS構文/5アセットbyte照合、ローカルWorkersのWebGL smoke、公開固定URLの同commit/同HTML hash、PC1280×800・モバイル393×852のゲーム/HUD到達とWebGL描画が **PASS**。console/page/network/HTTP error検査も合格。
 - 公開ゲームHTML: 1,819,339 bytes、SHA256 `f791f5099440f186a45614e5b6dd1978804356ff9e1bee36a5bb2e26658c814a`。
 - 証跡: run #6の `smoke-published-34182505263-1` artifact（smoke.json、PC/モバイルPNG、3ファイル）。生成・アップロード成功をログで確認。Cloud Browserでartifactダウンロードイベントを取得できず、このWORK内でPNG目視までは実施していない。
-- Cloud Browserでも実DEV固定URLを開いてHTML/JS読込を確認したが、このブラウザにはWebGL2がなく起動画面で停止。公開後の描画検証はCIのChromium + SwiftShaderが実URLにアクセスして実施した。実機FPS・発熱・操作感の評価とは区別する。
+- Cloud Browserでも実DEV・STAGING固定URLを開いてHTML/JS読込を確認したが、このブラウザにはWebGL2がなく起動画面で停止。公開後の描画検証はCIのChromium + SwiftShaderが実URLにアクセスして実施した。実機FPS・発熱・操作感の評価とは区別する。
 - stagingはDEV公開検証合格後、上記f07c632 commitから作成し、GitHubからstagingの同SHAとゲーム/設定ディレクトリをread-back確認。通常ゲーム更新を無検証でstagingへ直送しない。
 - mainにはCI/CD基盤と待機ページ生成のみを追加。READMEと既存履歴を保持し、src/public/原ゲームbuild/packageの追加なし。`production:false`を保持。
-- STAGING/PRODUCTIONのCloudflare tokenは未登録。対応するWorkerの公開、固定URLの実在/ゲームまたは待機ページの検証は **未完了**。対応ゲートを未設定のまま保持。
+- STAGING初回公開: commit `f07c632db03af2d5cb2fb1f25e01431b8d4ff085`、[run #7 attempt 2](https://github.com/charukun/bloodline-legacy/actions/runs/34183140509)。Build 4m11s、Deploy/公開検証3m41s、全体 **success**。公開WebGL smoke 2m58s。PC・モバイル両viewportでゲーム/HUD、描画、asset、console/HTTP検査に合格。
+- PRODUCTION初回公開検証成功: commit `bebd7c13d27304188a0e8b3773d6e9822c19dfcf`、[run #12](https://github.com/charukun/bloodline-legacy/actions/runs/34186408137)。Build 56s、Deploy/公開smoke45s、全体 **success**。mode=holding、ゲームなし、PC/モバイルで待機ページ・同SHA・HTML hash・console/HTTP検査に合格。Cloud Browserでも待機文を目視確認。
+- 3つのSecret名、account ID、固定URL Variablesをread-back確認。`CICD_ENABLED_DEV` / `CICD_ENABLED_STAGING` / `CICD_ENABLED_PRODUCTION` はすべてtrue。通常運用は正しいbranchへのpushのみ。
+- Productionの初回run #11はモバイル読込時のroot 404で失敗した。Workerに到達したroot/indexリクエストを汎用404へ返す経路を修正し、実アセットへ `env.ASSETS.fetch(request)` で委譲。status/headers/bytes保持・本当に存在しないassetは404のまま、という回帰テストを追加して基盤テストは6件。未修正の再実行はせず、新しい修正commitのrun #12で同じ公開smokeが成功した。Cloudflare内部で最初の404に至った詳細要因は未確定。参考: [ASSETS binding](https://developers.cloudflare.com/workers/static-assets/binding/)。
+- 公開実績のcommitはその時点の証跡。後続の文書・基盤更新を含む現在HEADの状態はActionsで完全SHAを照合する。文書に自分自身のcommitを追記するためだけの再commitは行わない。
 
-## 残る2環境の接続
+## 接続後の運用
 
-人間操作が必要なのはCloudflare token作成とGitHub Secretへの値登録。Cloud BrowserのCloudflare検証ループは再試行しない。Desktop Appは不要。
+3環境の初回接続は完了。Cloudflare管理画面を毎回操作する必要はない。通常開発はdevelopへのpush、同SHAのCIとDEV公開後smoke確認まで。staging/mainへの昇格は別の明示的な指示で行う。ゲームの正式Production公開はSTAGING検証後、release.production=trueへの変更を伴う。
 
-1. 通常Chromeで [CloudflareアカウントAPIトークン](https://dash.cloudflare.com/?to=/:account/api-tokens) を開き、対象accountを確認。
-2. STAGING用・PRODUCTION用を別々に作成する。名前例 `bloodline-legacy-staging` / `bloodline-legacy-production`。Workersの配信に必要な権限を指定アカウントに限定。未使用のDB/storage権限を追加しない。
-3. [GitHubのNew repository secret](https://github.com/charukun/bloodline-legacy/settings/secrets/actions/new) で、それぞれ `CLOUDFLARE_API_TOKEN_STAGING` / `CLOUDFLARE_API_TOKEN_PRODUCTION` として登録。token値はGitHub Secret欄だけに入力。
-4. 登録後CI/CD WORKがSecret名の存在をread-backし、`CICD_ENABLED_STAGING=true` / `CICD_ENABLED_PRODUCTION=true` を設定。
-5. stagingへ検証記録のcommitをpushし、Build/Test/Deploy/公開WebGL smokeの成功を確認。mainへ基盤文書のcommitをpushし、同じpipelineでmode=holdingの公開を確認。手動Run workflowはCIのみ。
-6. 各公開URL、完全SHA、run URL、検証結果をこの実績欄に追記。ゲームの正式Production公開は別途STAGING検証後の明示的な昇格で実施する。
+tokenの失効・交換時だけ [GitHub Actions Secrets](https://github.com/charukun/bloodline-legacy/settings/secrets/actions) の該当環境Secretを更新する。値は取得・表示しない。Cloudflare Desktop Appは不要。
 
 未使用Variables: `VERIFY_INITIAL_HANDOFF=true` と旧 `CICD_ENABLED=false` はWeb UI更新・削除が保存されなかった。初回監査stepは完了後削除し、workflowは環境別CICD_ENABLED_*へ移行済みなので参照されない。不要変数として後日整理できるが通常CIに影響しない。
 

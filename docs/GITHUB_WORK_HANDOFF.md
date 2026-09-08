@@ -4,9 +4,9 @@
 
 完了済みの初回移行の基準はcommit `383a1eef7adde83c22073c74982052b3a75a2b5c`。`BRANCH_STRATEGY.md` と `deploy/migrate-branches.mjs` でdevelop作成と全35ファイルread-backを完了し、正式なImplementation Source of Truthはdevelopへ切替済み。mainはProduction、stagingはPre-production、work/current-handoffは初期搬入のhistorical branchとする。
 
-**DEVは固定URLへの自動公開と公開後PC/モバイルWebGL smokeに成功。stagingは検証済みDEVから作成済み。STAGING/PRODUCTIONの公開は専用Secret登録待ち。実績はDEPLOYMENT.mdを参照。**
+**3環境の自動配信は接続済み。DEV・STAGINGは固定URLで公開後PC/モバイルWebGL smoke成功。PRODUCTIONは待機ページ公開・smoke成功、正式ゲーム未公開。実績はDEPLOYMENT.mdを参照。**
 初回作業の正確な順序・反映一覧は `GITHUB_CICD_INSTRUCTIONS.md` を使用してください。
-通常の開発反映は以下のDEV運用を使う。STAGING/PRODUCTIONの初回接続は `DEPLOYMENT.md` の残作業に従い、DEV成功と全3環境完成を区別する。
+通常の開発反映は以下のDEV運用を使う。3つのSecretsと環境別公開ゲートは設定済み。STAGING/PRODUCTIONを通常反映で自動昇格しない。
 
 ## 初回の設定反映
 
