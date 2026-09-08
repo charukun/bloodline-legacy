@@ -72,14 +72,14 @@ uniform sampler2D dioramaBlur;uniform float dioramaAmount;uniform float dioramaD
 ${DIORAMA_FOCUS_GLSL}
 vec3 decode(vec3 x){return x/max(vec3(.015),1.-x);}
 vec3 aces(vec3 x){return clamp((x*(2.51*x+.03))/(x*(2.43*x+.59)+.14),0.,1.);}
-void main(){vec3 c=decode(texture(image,uv).rgb);float d=texture(depth,uv).r;float occ=0.;float coc=0.;
- if(dioramaAmount>0.){coc=dioramaCoC(uv,d);c=mix(c,decode(texture(dioramaBlur,uv).rgb),abs(coc)*dioramaAmount);}
+void main(){vec3 c=decode(texture(image,uv).rgb);float d=texture(depth,uv).r;float occ=0.;float coc=0.;float dofCoverage=0.;
+ if(dioramaAmount>0.){coc=dioramaCoC(uv,d);vec4 bokeh=texture(dioramaBlur,uv);dofCoverage=bokeh.a*dioramaAmount;c=mix(c,decode(bokeh.rgb),dofCoverage);}
  if(dioramaDebug>.5){color=vec4(mix(vec3(.12,.85,.32),coc>0.?vec3(.2,.45,1.):vec3(1.,.4,.15),abs(coc)),1.);return;}
- if(d<.9999){for(int k=0;k<8;k++){float a=float(k)*2.399963;float r=2.+float(k%4)*3.5;vec2 off=vec2(cos(a),sin(a))*r*texel;float delta=d-texture(depth,uv+off).r;occ+=smoothstep(.0002,.0024,delta)*(1.-smoothstep(.004,.016,delta));}c*=1.-occ*.060*occlusion*(1.-abs(coc)*dioramaAmount);}
+ if(d<.9999){for(int k=0;k<8;k++){float a=float(k)*2.399963;float r=2.+float(k%4)*3.5;vec2 off=vec2(cos(a),sin(a))*r*texel;float delta=d-texture(depth,uv+off).r;occ+=smoothstep(.0002,.0024,delta)*(1.-smoothstep(.004,.016,delta));}c*=1.-occ*.060*occlusion*(1.-dofCoverage);}
  vec3 glow=vec3(0.);if(bloom>.01)for(int k=0;k<8;k++){float a=float(k)*2.399963;vec3 tap=decode(texture(image,uv+vec2(cos(a),sin(a))*(3.+float(k%3)*3.)*texel).rgb);glow+=max(vec3(0.),tap-.90);}c+=glow*bloom*.125;
  c=aces(c*exposure);c=pow(c,vec3(1./2.2));
  // The display resolve is the only tone map. Keep sharp-region edge AA;
  // blurred regions must not pick up full-resolution edges again.
- vec3 a=aces(decode(texture(image,uv+vec2(texel.x,0.)).rgb)*exposure),b=aces(decode(texture(image,uv-vec2(texel.x,0.)).rgb)*exposure);float contrast=length(a-b);if(contrast>.40)c=mix(c,pow((a+b)*.5,vec3(1./2.2)),.16*(1.-abs(coc)*dioramaAmount));
+ vec3 a=aces(decode(texture(image,uv+vec2(texel.x,0.)).rgb)*exposure),b=aces(decode(texture(image,uv-vec2(texel.x,0.)).rgb)*exposure);float contrast=length(a-b);if(contrast>.40)c=mix(c,pow((a+b)*.5,vec3(1./2.2)),.16*(1.-dofCoverage));
  c*=1.-dot(uv-.5,uv-.5)*.10*(1.-min(1.,portrait));color=vec4(c,portrait>1.5?(d<.9999?1.:0.):1.);
 }`;

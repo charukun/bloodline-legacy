@@ -17,7 +17,7 @@ function renderer(){
   disable(){},bindVertexArray(){},useProgram(){},activeTexture(){},viewport(){},drawArrays(){}};
  const r={gl,canvas:{width:1001,height:853},width:741,height:632,camera:{x:0,z:0,yaw:.42,pitch:.68},viewWidth:20,viewHeight:18,
   target:{image:'scene',depth:'depth'},stats:{calls:0},uniforms:{},compiled:0,
-  programOf(){this.compiled++;return{};},int(){},uniform(_p,name,value){this.uniforms[name]=value;}};
+  programOf(){this.compiled++;return{};},int(_p,name,value){this.uniforms[name]=value;},uniform(_p,name,value){this.uniforms[name]=value;}};
  r.view=rLookAt([10,20,30],[0,1,0]);r.resources={textures,framebuffers};return r;
 }
 const scene=()=>({room:{kind:'village'},player:{x:0,z:0,alive:true,action:'idle'}});
@@ -87,7 +87,7 @@ test('focus plane reconstructs world depth across camera rotation, zoom and aspe
  }
 });
 test('SUBTLE/STRONG reuse two half-resolution targets, OFF frees them',()=>{
- const {r,d}=enabled();d.render();assert.equal(r.compiled,1);assert.equal(r.resources.textures.size,2);
+ const {r,d}=enabled();d.render();assert.equal(r.compiled,2);assert.equal(r.resources.textures.size,2);
  assert.equal(d.size,'501x427');assert.equal(r.stats.dofBytes,501*427*8);assert.equal(r.stats.dofPasses,2);
  const ids=[...r.resources.textures];d.configure(undefined,'strong');d.render();assert.deepEqual([...r.resources.textures],ids);
  d.configure(undefined,'off');d.render();d.bindComposite({});assert.equal(r.resources.textures.size,0);
@@ -99,7 +99,14 @@ test('repeated mode changes and odd-size resizes do not retain abandoned GPU tar
   assert.equal(r.resources.textures.size,2);assert.equal(r.resources.framebuffers.size,2);
   d.configure('normal');assert.equal(r.resources.textures.size,0);assert.equal(r.resources.framebuffers.size,0);
  }
- d.dispose();assert.equal(d.program,null);
+ d.dispose();assert.equal(d.program,null);assert.equal(d.cocProgram,null);
+});
+test('disk sampling increases only for STRONG and radius follows CSS pixels',()=>{
+ const {r,d}=enabled();d.render();assert.equal(r.uniforms.diskSamples,16);
+ close(r.uniforms.blurRadius[0],8/r.width);
+ const textures=[...r.resources.textures];d.configure(undefined,'strong');d.render();
+ assert.equal(r.uniforms.diskSamples,32);close(r.uniforms.blurRadius[0],14/r.width);
+ assert.deepEqual([...r.resources.textures],textures);assert.equal(r.stats.dofPasses,2);
 });
 test('retained targets remain counted while combat/lineage temporarily bypasses blur',()=>{
  const {r,d}=enabled();d.render();const bytes=r.stats.dofBytes;d.suspended=true;d.update(scene(),.016);d.render();
@@ -108,7 +115,7 @@ test('retained targets remain counted while combat/lineage temporarily bypasses 
 test('framebuffer allocation failure safely resolves through NORMAL, without leaks or per-frame retries',()=>{
  const {r,d}=enabled();r.gl.complete=false;d.render();d.bindComposite({});
  assert(d.error);assert.equal(d.active,false);assert.equal(r.resources.textures.size,0);assert.equal(r.resources.framebuffers.size,0);
- assert.equal(r.uniforms.dioramaAmount,0);assert.equal(r.stats.dofBytes,0);d.render();assert.equal(r.compiled,1);
+ assert.equal(r.uniforms.dioramaAmount,0);assert.equal(r.stats.dofBytes,0);d.render();assert.equal(r.compiled,2);
  r.gl.complete=true;d.configure('normal');d.configure('tilt-shift');d.update(scene(),.016);d.render();assert.equal(r.stats.dofActive,true);
 });
 test('null GPU allocation handles fall back before binding the default framebuffer as a blur target',()=>{
