@@ -1,0 +1,81 @@
+{
+  "samples": [
+    {
+      "weather": "clear",
+      "revision": "before",
+      "backend": "llvmpipe (LLVM 20.1.2, 256 bits)",
+      "extra_passes": 2,
+      "target_bytes": 1296000,
+      "normal_difference_mean": 7.462619855967078,
+      "post_only_median_ms": 9.972764004487544,
+      "post_only_samples_ms": [
+        12.420786995789967,
+        10.247218000586145,
+        9.930020998581313,
+        10.10765200771857,
+        9.893757000099868,
+        9.972764004487544,
+        9.668076003436
+      ]
+    },
+    {
+      "weather": "clear",
+      "revision": "after",
+      "backend": "llvmpipe (LLVM 20.1.2, 256 bits)",
+      "extra_passes": 2,
+      "target_bytes": 1296000,
+      "normal_difference_mean": 9.630177983539095,
+      "post_only_median_ms": 13.561063999077305,
+      "post_only_samples_ms": [
+        14.46102799673099,
+        13.238369007012807,
+        14.226833009161055,
+        13.351365007110871,
+        13.649244006955996,
+        13.421679002931342,
+        13.561063999077305
+      ]
+    },
+    {
+      "weather": "rain",
+      "revision": "before",
+      "backend": "llvmpipe (LLVM 20.1.2, 256 bits)",
+      "extra_passes": 2,
+      "target_bytes": 1296000,
+      "normal_difference_mean": 5.363595679012346,
+      "post_only_median_ms": 10.446919986861758,
+      "post_only_samples_ms": [
+        15.704965000622906,
+        12.107603004551493,
+        13.57232801092323,
+        10.446919986861758,
+        10.061641994980164,
+        10.278040994307958,
+        10.105768000357784
+      ]
+    },
+    {
+      "weather": "rain",
+      "revision": "after",
+      "backend": "llvmpipe (LLVM 20.1.2, 256 bits)",
+      "extra_passes": 2,
+      "target_bytes": 1296000,
+      "normal_difference_mean": 7.144953189300412,
+      "post_only_median_ms": 14.859832008369267,
+      "post_only_samples_ms": [
+        18.263309000758454,
+        16.207194988965057,
+        17.420118005247787,
+        14.250856009311974,
+        13.989711995236576,
+        14.859832008369267,
+        14.474324008915573
+      ]
+    }
+  ],
+  "unverified": [
+    "browser interaction",
+    "real WebGL frame pacing",
+    "Pixel Fold GPU"
+  ]
+}

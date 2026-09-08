@@ -62,10 +62,12 @@ const CM01 = (()=>{
    for(const m of this.groundCells.get(Math.floor(x)+','+Math.floor(z))||[]){const det=m[0]*m[10]-m[8]*m[2];if(Math.abs(det)<1e-8)continue;const dx=x-m[12],dz=z-m[14],u=(dx*m[10]-dz*m[8])/det,v=(dz*m[0]-dx*m[2])/det;const edge=Math.max(Math.abs(u),Math.abs(v));if(edge<.50)y=Math.max(y,m[13]+Math.abs(m[5])*.5-.014*(1-smooth((.50-edge)/.09)));}return y;
   }
   update(p,t){if(!eligible(p,true)){this.lastFrame=-1;return;}const start=performance.now(),r=this.r;this.owner=p;this.lastFrame=r.frame;let st=this.state;
-   if(!st||st.id!==p.id||t<st.t||t-st.t>.35||Math.hypot(p.x-st.x,p.z-st.z)>1.5){st=this.state={id:p.id,t,x:p.x,z:p.z,phase:0,speed:0,feet:[],lastQ:null};}
+   const motionT=Number.isFinite(p.renderPoseTime)?p.renderPoseTime:t;
+   if(!st||st.id!==p.id||t<st.t||t-st.t>.35||Math.hypot(p.x-st.x,p.z-st.z)>1.5){st=this.state={id:p.id,t,motionT,x:p.x,z:p.z,phase:0,speed:0,feet:[],lastQ:null};}
    // Simulation snapshots run at 30 Hz; extra render frames must not restart
    // the gait merely because no new authoritative movement sample arrived.
-   const dt=Math.max(0,Math.min(.1,t-st.t)),dx=p.x-st.x,dz=p.z-st.z,d=Math.hypot(dx,dz),moving=['run','guardWalk','dash'].includes(p.action)&&(d>1e-7||dt===0&&st.moving),vel=dt>0?d/dt:st.speed;
+   // Rendered displacement uses its own sample time; combat poses still use t.
+   const dt=Math.max(0,Math.min(.1,motionT-st.motionT)),dx=p.x-st.x,dz=p.z-st.z,d=Math.hypot(dx,dz),moving=['run','guardWalk','dash'].includes(p.action)&&(d>1e-7||dt===0&&st.moving),vel=dt>0?d/dt:st.speed;
    if(dt>0)st.speed+=( (moving?vel:0)-st.speed)*(1-Math.exp(-dt*18));
    const run=!!p.dash||st.speed>3.1,gaitWeight=clamp(st.speed/.65,0,1),stride=run?(p.dash?3.65:3.05):1.60;
    const duty=run?(p.dash?.285:.34):.62, gaitMode=run?'run':'walk';
@@ -149,7 +151,7 @@ const CM01 = (()=>{
     }
    }
    for(let i=0;i<q.length;i++){this.transforms[i]=rMultiply(rootM,globalM[i]);const m=rMultiply(this.transforms[i],asset.ibm.subarray(i*16,i*16+16));this.palette.set(m,i*16);}
-   st.x=p.x;st.z=p.z;st.t=t;const gl=r.gl;gl.activeTexture(gl.TEXTURE5);gl.bindTexture(gl.TEXTURE_2D,this.boneTex);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,4,asset.bind.length,gl.RGBA,gl.FLOAT,this.palette);
+   st.x=p.x;st.z=p.z;st.t=t;st.motionT=motionT;const gl=r.gl;gl.activeTexture(gl.TEXTURE5);gl.bindTexture(gl.TEXTURE_2D,this.boneTex);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,4,asset.bind.length,gl.RGBA,gl.FLOAT,this.palette);
    const px=3*r.canvas.height/Math.max(1,r.viewHeight||r.camera.zoom);if(this.lod===0&&px<100)this.lod=1;else if(this.lod===1&&px>120)this.lod=0;
    this.metrics={character:'CM01',lod:this.lod,triangles:this.lods[this.lod].count/3,solveMs:performance.now()-start,contactError,contacts,pelvisDrop:st.pelvisDrop,animation:reaction.amount>.1?'hit':p.action==='attack'||p.pendingSkill?'attack':guard?'combat_idle':gaitWeight>.15?(run?'run':'walk'):'idle',bones:31};
   }

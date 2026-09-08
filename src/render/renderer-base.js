@@ -11,17 +11,44 @@ class Renderer{
  add(type,x,y,z,sx,sy,sz,c,yaw=0,rz=0,rx=0,surf=0,alpha=1,target=this.dynamic){this.put(type,rModel(x,y,z,sx,sy,sz,yaw,rz,rx),c,surf,alpha,target);}
  blob(x,z,sx,sz,a=.28,target=this.fxBatches){this.add('disk',x,.27,z,sx,1,sz,'#665b42',0,0,0,2,a,target);}
  geometry(type){if(this.geo.has(type))return this.geo.get(type);const gl=this.gl,g=rGeometry(type);if(!g.count)throw new Error('Unknown mesh: '+type);const vao=gl.createVertexArray();gl.bindVertexArray(vao);const data=new Float32Array(g.count*6);for(let i=0;i<g.count;i++){data.set(g.positions.subarray(i*3,i*3+3),i*6);data.set(g.normals.subarray(i*3,i*3+3),i*6+3);}const vertex=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,vertex);gl.bufferData(gl.ARRAY_BUFFER,data,gl.STATIC_DRAW);for(let i=0;i<2;i++){gl.enableVertexAttribArray(i);gl.vertexAttribPointer(i,3,gl.FLOAT,false,24,i*12);}const instance=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,instance);for(let i=0;i<4;i++){gl.enableVertexAttribArray(2+i);gl.vertexAttribPointer(2+i,4,gl.FLOAT,false,84,i*16);gl.vertexAttribDivisor(2+i,1);}gl.enableVertexAttribArray(6);gl.vertexAttribPointer(6,4,gl.FLOAT,false,84,64);gl.vertexAttribDivisor(6,1);gl.enableVertexAttribArray(7);gl.vertexAttribPointer(7,1,gl.FLOAT,false,84,80);gl.vertexAttribDivisor(7,1);gl.bindVertexArray(null);const out={...g,vao,vertex,instance};this.geo.set(type,out);return out;}
- visible(m,vp,padding=0){const x=m[12],y=m[13],z=m[14];const r=Math.max(Math.hypot(m[0],m[1],m[2]),Math.hypot(m[4],m[5],m[6]),Math.hypot(m[8],m[9],m[10]))*1.75;const clipX=vp[0]*x+vp[4]*y+vp[8]*z+vp[12],clipY=vp[1]*x+vp[5]*y+vp[9]*z+vp[13];return Math.abs(clipX)<1+r*this.unitsToClip+padding&&Math.abs(clipY)<1+r*this.unitsToClip+padding;}
+ geometryBounds(type){
+  const g=rGeometry(type);
+  // Mesh coordinates need not be unit sized or centered on the instance origin.
+  // Regenerated grout/trails replace their RG_CACHE entry, invalidating this cache.
+  if(!g.cullBounds){
+   const min=[Infinity,Infinity,Infinity],max=[-Infinity,-Infinity,-Infinity];
+   for(let i=0;i<g.positions.length;i+=3)for(let k=0;k<3;k++){min[k]=Math.min(min[k],g.positions[i+k]);max[k]=Math.max(max[k],g.positions[i+k]);}
+   g.cullBounds={center:min.map((v,k)=>(v+max[k])*.5),extent:min.map((v,k)=>(max[k]-v)*.5)};
+  }
+  return g.cullBounds;
+ }
+ visible(m,vp,padding=0,bounds=null){
+  if(bounds){
+   // Project the actual local AABB through the instance and this pass's camera.
+   // Includes rotated/nonuniform instances and the independent shadow camera.
+   const c=bounds.center,e=bounds.extent;
+   for(let axis=0;axis<2;axis++){
+    const a=vp[axis]*m[0]+vp[axis+4]*m[1]+vp[axis+8]*m[2];
+    const b=vp[axis]*m[4]+vp[axis+4]*m[5]+vp[axis+8]*m[6];
+    const d=vp[axis]*m[8]+vp[axis+4]*m[9]+vp[axis+8]*m[10];
+    const center=a*c[0]+b*c[1]+d*c[2]+vp[axis]*m[12]+vp[axis+4]*m[13]+vp[axis+8]*m[14]+vp[axis+12];
+    if(Math.abs(center)>1+padding+Math.abs(a)*e[0]+Math.abs(b)*e[1]+Math.abs(d)*e[2])return false;
+   }
+   return true;
+  }
+  // Skinned characters supply their existing conservative animation envelope.
+  const x=m[12],y=m[13],z=m[14];const r=Math.max(Math.hypot(m[0],m[1],m[2]),Math.hypot(m[4],m[5],m[6]),Math.hypot(m[8],m[9],m[10]))*1.75;const clipX=vp[0]*x+vp[4]*y+vp[8]*z+vp[12],clipY=vp[1]*x+vp[5]*y+vp[9]*z+vp[13];return Math.abs(clipX)<1+r*this.unitsToClip+padding&&Math.abs(clipY)<1+r*this.unitsToClip+padding;
+ }
  drawBatches(map,program,shadow=false){
   const gl=this.gl,buckets=new Map(),pixelScale=this.width/this.viewWidth;
-  for(const [type,items] of map)for(const m of items){
+  for(const [type,items] of map){const bounds=this.geometryBounds(type);for(const m of items){
    if(shadow&&(m[20]===1||m[20]===2||m[20]===4||m[19]<.85))continue;
-   if(!this.visible(m,shadow?this.lightVP:this.vp,shadow?.4:.09))continue;
+   if(!this.visible(m,shadow?this.lightVP:this.vp,shadow?.4:.09,bounds))continue;
    const radius=Math.max(Math.hypot(m[0],m[1],m[2]),Math.hypot(m[4],m[5],m[6]),Math.hypot(m[8],m[9],m[10])),pixels=radius*pixelScale;
    let lod=type;if(type==='sphere'&&(pixels<11||shadow))lod='bead';else if(type==='rbox'&&(pixels<7||shadow&&radius<.65))lod='box';else if(type==='leaf'&&(pixels<7||shadow))lod='leaflow';
    if(lod!==type)this.stats.lodInstances++;
    if(!buckets.has(lod))buckets.set(lod,[]);buckets.get(lod).push(m);
-  }
+  }}
   for(const [type,rows]of buckets){const g=this.geometry(type),data=new Float32Array(rows.length*21);for(let i=0;i<rows.length;i++)data.set(rows[i],i*21);gl.bindVertexArray(g.vao);gl.bindBuffer(gl.ARRAY_BUFFER,g.instance);gl.bufferData(gl.ARRAY_BUFFER,data,gl.DYNAMIC_DRAW);gl.drawArraysInstanced(gl.TRIANGLES,0,g.count,rows.length);this.stats.calls++;this.stats.triangles+=g.count/3*rows.length;if(!shadow)this.stats.instances+=rows.length;}
  }
 
@@ -63,5 +90,4 @@ class Renderer{
  }
  drawShadow(target,map){const gl=this.gl;gl.bindFramebuffer(gl.FRAMEBUFFER,target.fb);gl.viewport(0,0,target.size,target.size);gl.enable(gl.DEPTH_TEST);gl.depthMask(true);gl.disable(gl.BLEND);gl.disable(gl.CULL_FACE);gl.enable(gl.POLYGON_OFFSET_FILL);gl.polygonOffset(1.2,2.0);gl.clearDepth(1);gl.clear(gl.DEPTH_BUFFER_BIT);gl.useProgram(this.depthProgram);this.uniform(this.depthProgram,'vp',this.lightVP);this.uniform(this.depthProgram,'lightVP',this.lightVP);this.drawBatches(map,this.depthProgram,true);gl.disable(gl.POLYGON_OFFSET_FILL);}
 }
-
 
