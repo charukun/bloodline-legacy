@@ -5,6 +5,7 @@ import {spawn} from 'node:child_process';
 import {chromium, request} from 'playwright';
 import {root, sha256} from './build.mjs';
 import {environments} from './config.mjs';
+import {verifySkillSlice} from '../tests/skills/browser-contract.mjs';
 
 const environment = process.argv[2];
 assert(environments[environment], 'Unknown environment');
@@ -99,6 +100,7 @@ try {
         return colors.size;
       });
       assert(record.framebufferColors>4,'WebGL framebuffer appears blank');
+      if(local)record.skills=await verifySkillSlice(page,evidence,viewport);
     }
     await page.screenshot({path:path.join(evidence,`${viewport.width}x${viewport.height}.png`)});
     if(local && expected.mode==='game' && process.argv.includes('--tilt-shift')) {

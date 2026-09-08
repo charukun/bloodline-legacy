@@ -1,7 +1,7 @@
 name: Bloodline Legacy CI and deployment
 on:
   push:
-    branches: [develop, staging, main, 'feature/**']
+    branches: [develop, staging, main, 'feature/**', 'work/skill-system-*']
   pull_request:
     branches: [develop, staging, main]
   workflow_dispatch:
@@ -19,13 +19,14 @@ jobs:
   build:
     name: Build and verify
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     outputs:
       target: ${{ steps.target.outputs.target }}
       suffix: ${{ steps.target.outputs.suffix }}
     steps:
       - uses: actions/checkout@v6
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
@@ -46,10 +47,11 @@ jobs:
       - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
       - run: npm test --prefix deploy
       - run: node --test tests/tilt-shift.test.mjs
-      - name: Verify UI presentation and simulation regression
+      - name: Verify UI, skill and simulation regression
         run: |
           npm ci --ignore-scripts --no-audit --no-fund
           npm test
+          node tests/skills/lives.mjs
       - name: Build deployment
         env:
           TARGET: ${{ steps.target.outputs.target }}
