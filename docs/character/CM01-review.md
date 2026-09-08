@@ -21,8 +21,8 @@ Animation follows existing `artPose`, `hitPose`, actions and clocks. Foot phase 
 
 ## Current verification
 
-- `node build.mjs`: PASS, 22 modules, 5,450,576 bytes.
-- `npm test`: PASS, 54 tests (18 character/numeric/regression, eight Golden Slice, 22 Tilt-Shift, six deployment infrastructure).
+- `node build.mjs`: PASS, 22 modules, 5,450,759 bytes.
+- `npm test`: PASS, 55 tests (19 character/numeric/regression, eight Golden Slice, 22 Tilt-Shift, six deployment infrastructure).
 - `python tests/character_asset_validation.py`: PASS, 22 asset checks.
 - Cloud preview: HTTP delivery works; its browser cannot create WebGL2. No visual PASS is claimed from that environment.
 - Repository CI browser test: GS02 run pending. Earlier runs on the original base are historical diagnostics only; new BEFORE/AFTER and native save verification are required on this refreshed base.
@@ -30,7 +30,7 @@ Animation follows existing `artPose`, `hitPose`, actions and clocks. Foot phase 
 
 Numeric runtime tests use a mocked graphics API; they do not validate shader compilation or the rendered appearance. Asset validation checks structural integrity, not commercial visual quality.
 
-Two further defects were reproduced and fixed during review: grounded soles sliding up to 0.141 game units per sample when stopping, and stride phase restarting when the same 30 Hz simulation snapshot was rendered twice. Stopping now uses a lifted recovery step; duplicate render samples preserve gait state. Both failures have regression tests. These changes affect presentation only.
+Three further defects were reproduced and fixed during review: grounded soles sliding up to 0.141 game units per sample when stopping, and stride phase restarting when the same 30 Hz simulation snapshot was rendered twice. Stopping now uses a lifted recovery step; duplicate render samples preserve gait state. Acceleration also recreated planted anchors when the gait switched from walking to running, shifting a support sole by 0.189 units in the browser trace. Existing anchors now survive gait transitions, and the initial phase includes observed displacement. All three failures have regression tests. These changes affect presentation only.
 
 `source-audit.json` records 33 byte-identical pre-existing source/asset files and the six current Project Sources. `asset-reproduction.json` records a fresh, independent regeneration matching all five generated asset files exactly.
 
@@ -38,7 +38,7 @@ Two further defects were reproduced and fixed during review: grounded soles slid
 
 `tests/character-browser.mjs` records the exact base/head, GPU identity, viewport, screenshots, video and JSON checks. The young-player fixture is explicitly set to age 24, human male, time 12, clear weather and medium quality. Both revisions use the same gameplay camera and input sequence, with the existing diorama mode explicitly set to NORMAL. Additional inspection cameras are separate from the gameplay comparison.
 
-Performance samples use actual render submission timestamps: 10 seconds warm-up, 30 seconds measurement, three village runs, plus rain and combat. Both revisions run on the same runner without video capture during performance measurement. Functional verification retains video; contact combat samples all 150 simulation ticks and renders every third tick plus the first charge and peak attack. Software results cannot certify real-device frame-rate targets.
+Performance samples use actual render submission timestamps: 10 seconds warm-up, at least 30 seconds measurement and 12 frame intervals (up to 90 seconds for slow software rendering), three village runs, plus rain and combat. The viewport and rendering workload stay identical. Both revisions run on the same runner without video capture during performance measurement. Functional verification retains video; contact combat samples all 150 simulation ticks and renders every third tick plus the first charge and peak attack. Software results cannot certify real-device frame-rate targets.
 
 Push verification runs on the work branch before a Ready PR is created, as required by policy v5. CI artifacts retain the evidence for 30 days; accepted comparison images and a final review will be committed after inspection. A numeric CI success alone is not Golden Master acceptance.
 

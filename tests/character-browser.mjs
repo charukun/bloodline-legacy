@@ -28,6 +28,10 @@ const report={mode,base:'4f928f133ea56310d63dbf32af6a3295f2446fcb',head:process.
   limitations:['SwiftShader is software rendering, not Desktop GPU or Pixel Fold performance approval.','Screenshots and videos require visual review; numeric success is not Golden Master approval.']};
 const flush=()=>writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));
 const check=(name,ok,details)=>{report.checks.push({name,pass:!!ok,details});flush();assert(ok,name+' '+JSON.stringify(details||''));console.log('PASS '+name);};
+const groundedSlip=rows=>Math.max(0,...rows.slice(1).flatMap((s,i)=>s.feet.map((f,j)=>{
+  const previous=rows[i].feet[j];
+  return !f.swing&&!previous.swing?Math.hypot(f.actual[0]-previous.actual[0],f.actual[2]-previous.actual[2]):0;
+})));
 let browser,page;
 async function fixture(page,{close=false}={}){
   await page.evaluate(({close})=>{
@@ -86,10 +90,12 @@ try{
     if(version==='after'){
       record.runContact=await page.evaluate(()=>characterTrace);
       check('run joints and support reach',record.runContact.length>0&&record.runContact.every(s=>s.finite&&s.metrics.pelvisDrop<.38&&s.feet.filter(f=>!f.swing).every(f=>f.error<.035)));
+      check('acceleration preserves grounded soles',groundedSlip(record.runContact)<.012,{maxSlip:groundedSlip(record.runContact)});
       await page.keyboard.down('a');await page.evaluate(()=>characterStep(30));await shot('after-turn');await page.keyboard.up('a');
       record.turnContact=await page.evaluate(()=>characterTrace.slice(-30));
       check('turn keeps finite joints',record.turnContact.every(s=>s.finite));
       await page.evaluate(()=>characterStep(30));await shot('after-run-stop');record.stopContact=await page.evaluate(()=>characterTrace.slice(-30));
+      check('stopping preserves grounded soles',groundedSlip(record.stopContact)<.012,{maxSlip:groundedSlip(record.stopContact)});
     }
     await fixture(page);
     await page.mouse.move(550,470);await page.mouse.down();await page.mouse.move(565,470);
@@ -149,7 +155,8 @@ try{
     await page.setViewportSize({width:1000,height:900});
     }
     // Actual render-loop timestamps, no simulation-clamped dt, no instantaneous FPS averaging.
-    // Three steady village runs plus separate rain/combat scenes, all 30 seconds after warm-up.
+    // Three steady village runs plus rain/combat. Keep the viewport and workload
+    // unchanged; slow software GPU samples extend to obtain at least 12 intervals.
     for(const scenario of mode==='functional'?[]:['clear-1','clear-2','clear-3','rain','combat']){
       await fixture(page);
       await page.evaluate(scenario=>{const a=AERIN_QA.app,p=AERIN_QA.player();if(scenario==='rain')a.renderer.weather.setOverride('rain');
@@ -158,11 +165,13 @@ try{
         if(!a.renderer.qaRenderOriginal){a.renderer.qaRenderOriginal=original;a.renderer.render=function(...args){const t=performance.now(),result=this.qaRenderOriginal(...args);if(window.characterPerfOn)window.characterPerf.push({t,calls:this.stats.calls,triangles:this.stats.triangles,cpu:this.stats.cpuSubmitMs});return result;};}
         a.closed=false;a.lastFrame=0;requestAnimationFrame(t=>a.frame(t));
       },scenario);
-      await page.waitForTimeout(10000);await page.evaluate(()=>{window.characterPerf=[];window.characterPerfOn=true;});await page.waitForTimeout(30000);
+      await page.waitForTimeout(10000);await page.evaluate(()=>{window.characterPerf=[];window.characterPerfOn=true;window.characterPerfStart=performance.now();});
+      try{await page.waitForFunction(()=>performance.now()-window.characterPerfStart>=30000&&window.characterPerf.length>=13,{},{timeout:90000,polling:1000});}
+      catch(error){if(error.name!=='TimeoutError')throw error;record.sampleTimeout=scenario;}
       const sample=await page.evaluate(()=>{window.characterPerfOn=false;const a=AERIN_QA.app;a.closed=true;return {frames:window.characterPerf,stats:a.renderer.stats,age:AERIN_QA.player().age};});
       const dt=sample.frames.slice(1).map((f,i)=>f.t-sample.frames[i].t),sorted=[...dt].sort((a,b)=>a-b),percentile=p=>sorted[Math.min(sorted.length-1,Math.floor(sorted.length*p))];
-      check(version+' '+scenario+' rendered frames',dt.length>10,{frames:dt.length});
-      record.performance.push({scenario,frames:sample.frames.length,elapsedMs:sample.frames.at(-1).t-sample.frames[0].t,fps:dt.length*1000/dt.reduce((a,b)=>a+b,0),p50:percentile(.5),p95:percentile(.95),p99:percentile(.99),max:Math.max(...dt),over100ms:dt.filter(x=>x>100).length,raw:sample});
+      record.performance.push({scenario,frames:sample.frames.length,elapsedMs:dt.reduce((a,b)=>a+b,0),fps:dt.length?dt.length*1000/dt.reduce((a,b)=>a+b,0):null,p50:percentile(.5),p95:percentile(.95),p99:percentile(.99),max:dt.length?Math.max(...dt):null,over100ms:dt.filter(x=>x>100).length,raw:sample});
+      flush();check(version+' '+scenario+' rendered frames',dt.length>=12,{frames:dt.length});
       await shot(version+'-perf-'+scenario);
     }
     check(version+' no page exception',record.errors.length===0,record.errors);

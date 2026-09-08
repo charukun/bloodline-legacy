@@ -19,7 +19,7 @@ jobs:
   character:
     name: Character build, input and visual evidence
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v6
         with:
@@ -55,7 +55,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
       - name: Compare sustained performance on the same runner
-        timeout-minutes: 12
+        timeout-minutes: 22
         env:
           CHARACTER_BASELINE: /tmp/character-baseline/dist/index.html
           CHARACTER_MODE: performance

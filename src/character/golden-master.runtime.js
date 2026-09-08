@@ -71,7 +71,9 @@ const CM01 = (()=>{
    const duty=run?(p.dash?.285:.34):.62, gaitMode=run?'run':'walk';
    // A resting foot starts at mid-stance, not at the forward touchdown phase.
    // Otherwise the first stance demands almost a full stride behind the hip.
-   if(moving&&(!st.moving||st.gaitMode!==gaitMode)){st.phase=duty*.5;st.feet=[];}
+   // Keep planted world anchors when acceleration changes the gait. Recreating
+   // feet at the current root teleports a support sole by one movement sample.
+   if(moving&&!st.moving){st.phase=duty*.5+d/stride;for(const foot of st.feet)if(foot)foot.settle=null;}
    else if(moving)st.phase+=d/stride;
    st.moving=moving;st.gaitMode=gaitMode;
    const phase=st.phase*TAU,pose=artPose(p,t),reaction=hitPose(p,t),ail=ailmentPose(p,t),guard=p.guard||p.guardUntil>t||p.autoFight;

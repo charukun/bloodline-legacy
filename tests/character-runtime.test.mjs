@@ -75,6 +75,18 @@ test('rendering a 30 Hz movement snapshot twice preserves gait phase',()=>{
   const a=once.values.at(-1).palette,b=twice.values.at(-1).palette;
   assert(a.every((v,i)=>Math.abs(v-b[i])<1e-5),'pose depends on render sampling rate');
 });
+test('accelerating from rest through walk and run preserves planted world anchors',()=>{
+  for(const speed of [3.8,5.665,6.8]){
+    const points=Array.from({length:91},(_,i)=>({...player(),time:i/30,z:4+Math.max(0,i-3)/30*speed,action:i>3?'run':'idle',dash:speed>6&&i>3?{}:null}));
+    const {values}=poseSequence(points);let slip=0;
+    for(let i=1;i<values.length;i++)for(let side=0;side<2;side++){
+      const a=values[i-1].feet[side],b=values[i].feet[side];
+      if(!a.swing&&!b.swing)slip=Math.max(slip,Math.hypot(b.actual[0]-a.actual[0],b.actual[2]-a.actual[2]));
+    }
+    assert(slip<.012,`grounded acceleration slip at ${speed}: ${slip}`);
+    assert(values.every(v=>v.metrics.pelvisDrop<.38),'acceleration pelvis reach');
+  }
+});
 test('six requested states are sampled from existing motion clocks',()=>{
   const fixtures=[{name:'idle',p:{}},{name:'combat_idle',p:{autoFight:'foe'}},{name:'attack',p:{action:'attack',attackSkill:4100,actionStarted:0,actionUntil:1}},{name:'hit',p:{hitReactAt:0,hitReactUntil:1,hitPart:'torso',hitSeverity:'heavy'}}];
   for(const f of fixtures){const {values}=poseSequence([{...player(),...f.p,time:.1}]);assert.equal(values[0].metrics.animation,f.name);assert(values[0].palette.every(Number.isFinite));}
