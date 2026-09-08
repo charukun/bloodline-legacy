@@ -1,0 +1,62 @@
+{
+  "environment": "dev",
+  "url": "http://127.0.0.1:4173",
+  "expected": {
+    "application": "Bloodline Legacy",
+    "environment": "dev",
+    "branch": "develop",
+    "commit": "9ee25afc5f67e142adc313813b4289d157d47935",
+    "mode": "game",
+    "htmlSha256": "f791f5099440f186a45614e5b6dd1978804356ff9e1bee36a5bb2e26658c814a",
+    "htmlBytes": 1819339
+  },
+  "passed": true,
+  "viewports": [
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "errors": [],
+      "consoleErrors": [],
+      "failedRequests": [],
+      "httpErrors": [],
+      "game": {
+        "screen": "game",
+        "webgl2": true,
+        "contextLost": false,
+        "width": 1280,
+        "height": 800,
+        "cssWidth": 1280,
+        "cssHeight": 800,
+        "overflow": false,
+        "brokenImages": 0,
+        "frame": 33
+      },
+      "framebufferColors": 36
+    },
+    {
+      "viewport": {
+        "width": 393,
+        "height": 852
+      },
+      "errors": [],
+      "consoleErrors": [],
+      "failedRequests": [],
+      "httpErrors": [],
+      "game": {
+        "screen": "game",
+        "webgl2": true,
+        "contextLost": false,
+        "width": 393,
+        "height": 852,
+        "cssWidth": 393,
+        "cssHeight": 852,
+        "overflow": false,
+        "brokenImages": 0,
+        "frame": 24
+      },
+      "framebufferColors": 19
+    }
+  ]
+}
