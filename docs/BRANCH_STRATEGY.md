@@ -5,8 +5,8 @@
 | Branch | 移行後の正式な役割 | 現在の実施状態 |
 | --- | --- | --- |
 | develop | Development / Implementation Source of Truth、DEV配信 | 基準commitから作成。GitHub Actionsで全35ファイルSHA256照合成功 |
-| staging | Pre-production、STAGING配信 | DEV公開検証済みf07c632から作成、同SHAをread-back。公開はSecret待ち |
-| main | Production、PRODUCTION配信 | 既存README/履歴を保持し、ゲームを含まないProduction基盤を追加 |
+| staging | Pre-production、STAGING配信 | DEV公開検証済みf07c632から作成、同SHAをread-back。固定URLで公開WebGL smoke PASS |
+| main | Production、PRODUCTION配信 | 既存README/履歴を保持。固定URLで待機ページ公開・smoke PASS。正式ゲーム未公開 |
 | work/current-handoff | Initial handoff import / historical branch | 保持。初期handoffのhistorical branch。新規開発の正本には使わない |
 
 基準commit: `383a1eef7adde83c22073c74982052b3a75a2b5c`。
