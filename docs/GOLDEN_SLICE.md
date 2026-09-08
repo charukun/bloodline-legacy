@@ -60,6 +60,9 @@ The native `renderer-base.js`, Character rig, camera and post processing are unc
    atlas fetch for authored materials, skip zero-intensity local-light BRDF work,
    and simplify the stone outline to six chipped sides. Retain bevels, normal
    detail, lighting and placement; repeat the same capture and timing protocol.
+6. Skip local-light BRDF work beyond its existing zero-contribution radius. The
+   clear capture is pixel-identical before/after this optimization; retime both
+   weather presets. No light radius, intensity or visible result is reduced.
 
 The same-camera comparisons show a substantial reduction in the original gaps
 in ground continuity, roof thickness, well structure and scene grouping. Remaining
@@ -130,6 +133,12 @@ frame is submitted and completed (`ctx.finish`); recording is disabled. Raw fram
 intervals, percentiles, >100ms counts and per-run totals are retained. This measures
 offline scene rendering, not Browser frame pacing, native GPU time or game input.
 Static shadow refresh counts are distinguished from stationary frame draw counts.
+`profile_golden_cpu.mjs` separately measures the real culling/packing code with a
+fake GL sink, and observes Node heap around eight identical scene rebuilds. These
+are diagnostics, not native driver/GPU or Browser heap measurements.
+`capture_golden_walk.mjs` replays existing Simulation movement and gait into a
+15 fps offline review clip. Its export rate is not game FPS. Inspect foot contact
+and scene overlap there; GPU bone-palette crossfades still require the Browser.
 Browser heap/GC and device thermals cannot be inferred from this renderer.
 
 ## Integration gates
