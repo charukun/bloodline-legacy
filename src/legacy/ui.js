@@ -109,7 +109,6 @@ class UI {
    if(!['player','guard','dummy'].includes(a.kind))html+=`<div class="enemy-hp ${a.elite?'elite':''}" style="left:${pos.x}px;top:${pos.y}px"><i style="width:${clamp((a.hp??50)/(a.hpMax||50),0,1)*100}%"></i></div>`;
    if(a.speechUntil>t&&a.speech)html+=`<span class="speech-bubble" style="left:${clamp(pos.x,100,innerWidth-100)}px;top:${pos.y-43}px">${ESC(a.speech)}</span>`;
   }
-  for(const b of renderer.labels){if(Math.hypot(b.x-p.x,b.z-p.z)>14)continue;const pos=renderer.project(b.x,b.y,b.z);if(pos.visible)html+=`<span class="building-label" style="left:${pos.x}px;top:${pos.y}px">${ESC(b.text)}</span>`;}
   this.floatLines=this.floatLines.filter(e=>t-e.born<4.6);for(const e of this.floatLines){const a=s.players.find(p=>p.id===e.player);if(!a||Math.hypot(a.x-p.x,a.z-p.z)>14||e.type==='speech')continue;const elapsed=t-e.born,pos=at(a,head(a)+.3);if(!pos.visible)continue;html+=`<span class="progress-float ${['insight','passive'].includes(e.type)?'discovery':''}" style="left:${clamp(pos.x,innerWidth*.3,innerWidth*.7)}px;top:${pos.y-elapsed*12}px;opacity:${Math.min(1,elapsed*3,(4.6-elapsed)*1.3)}">${ESC(e.text)}</span>`;}
   if(p.activity){const pos=at(p,head(p)+.02);html+=`<span class="activity-mark" style="left:${pos.x}px;top:${pos.y}px">${icon(p.activity==='pray'?'sun':p.activity==='play'?'leaf':'book')}</span>`;}
   document.getElementById('world-labels').innerHTML=html;
