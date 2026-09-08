@@ -47,7 +47,7 @@ export async function loadScene(root = repository, options = {}) {
     if(typeof installGoldenGeometry==='function')installGoldenGeometry();
     const sim=new Simulation({seed:options.seed,mode:'normal'});
     const player=sim.addPlayer('qa-hero',{owner:'qa-owner',race:0,name:'リオ'});
-    Object.assign(player,{age:24,prologue:false,introUntil:-100,x:options.x,z:options.z,
+    Object.assign(player,{age:options.age??24,prologue:false,introUntil:-100,x:options.x,z:options.z,
       hair:0,appearanceSeed:18,dir:.3,weapon:-1,armor:0,shield:false,action:'idle'});
     const snapshot=sim.snapshot(player.id); snapshot.map=makeVillage(snapshot.room.seed);snapshot.t=options.time;
     const r=Object.create(SliceRenderer.prototype);
@@ -64,6 +64,7 @@ export async function loadScene(root = repository, options = {}) {
     // environment review; browser bone-palette crossfades are not verified here.
     if(options.characters!==false){r.art.doll(player,options.time,true);
       for(const actor of snapshot.actors||[])if(Math.hypot(actor.x-options.x,actor.z-options.z)<33)r.art.doll(actor,options.time,false);}
+    if(options.gameplayCamera)r.updateCamera(snapshot,1/60);
     r.matrix();r.weather.setOverride(options.weather);r.weatherState=r.weather.sample(options.time,snapshot.map.seed);
     const uniforms={};r.uniform=(p,n,v)=>{uniforms[n]=v;};r.int=r.uniform;
     let rows,mesh,currentPass;const passes={};

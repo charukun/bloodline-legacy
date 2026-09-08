@@ -68,10 +68,56 @@ class Renderer{
  if(broken&&e.severed){this.add('softbox',x+age*1.4,.6+Math.sin(u*Math.PI)*1.1,z-age*.6,.3,.55,.3,'#b1a289',age*3,age*5,age*2,0,1-u*.6,this.fxBatches);}}
  }
  }
+ updateCamera(snapshot,dt=.016,options={}){
+  const c=this.camera,p=snapshot.player||snapshot.players?.[0];
+  if(options.clan&&options.preview){const q=options.preview;this.cameraFollow=null;c.x+=(q.x-c.x)*Math.min(1,dt*8);c.z+=(q.z-c.z)*Math.min(1,dt*8);c.zoom+=(4.2-c.zoom)*Math.min(1,dt*8);c.yaw=.12;c.pitch=.24;return;}
+  if(!p||options.freezeCamera||options.portrait||this.logicalSize)return;
+  dt=Math.max(0,Math.min(.1,dt));
+  const time=Number.isFinite(p.renderPoseTime)?p.renderPoseTime:snapshot.t||0;
+  const room=snapshot.room?.id??snapshot.room?.kind;
+  let f=this.cameraFollow;
+  const reset=!f||f.id!==p.id||f.room!==room||time<f.time-.001||time-f.time>.5||Math.hypot(p.x-f.x,p.z-f.z)>8;
+  if(reset)f=this.cameraFollow={id:p.id,room,time,x:p.x,z:p.z,vx:0,vz:0,leadX:0,leadZ:0,velocity:{},target:{}};
+  const sampleDt=time-f.time;
+  if(sampleDt>1e-6){const dx=p.x-f.x,dz=p.z-f.z,speed=Math.hypot(dx,dz)/sampleDt,scale=speed>.12?Math.min(1,10/speed)/sampleDt:0;f.vx=dx*scale;f.vz=dz*scale;f.x=p.x;f.z=p.z;f.time=time;}
+  const foe=p.autoFight&&[...(snapshot.actors||[]),...(snapshot.players||[])].find(e=>e.id===p.autoFight&&e.alive!==false);
+  let leadX=foe?0:f.vx*.22,leadZ=foe?0:f.vz*.22;
+  const leadLength=Math.hypot(leadX,leadZ);if(leadLength>1.25){leadX*=1.25/leadLength;leadZ*=1.25/leadLength;}
+  const leadBlend=1-Math.exp(-dt*6),lx=(leadX-f.leadX)*leadBlend,lz=(leadZ-f.leadZ)*leadBlend;
+  const leadStep=Math.min(1,2.5*dt/Math.max(1e-9,Math.hypot(lx,lz)));
+  f.leadX+=lx*leadStep;f.leadZ+=lz*leadStep;
+  const aspect=this.width/this.height,aspectScale=Math.min(1,aspect*.90);
+  // Reference composition: lower three-quarter view, readable facades, feet at 62%.
+  // Keep the existing orthographic projection and input/world-space conversion.
+  const yaw=options.yaw??.30,pitch=.52;
+  let viewHeight=Math.max(18,12.4/aspect),cx=p.x,cz=p.z;
+  if(foe){
+   const dx=foe.x-p.x,dz=foe.z-p.z,distance=Math.hypot(dx,dz),weight=.35*Math.min(1,8/Math.max(.001,distance));
+   cx+=dx*weight;cz+=dz*weight;
+   const side=Math.abs(Math.cos(yaw)*dx-Math.sin(yaw)*dz),depth=Math.abs(Math.sin(yaw)*dx+Math.cos(yaw)*dz)*Math.sin(pitch);
+   viewHeight=Math.max(viewHeight,(side+3.5)/(aspect*.72),(depth+3.5)/.48);
+  }
+  const zoom=Math.max(7,Math.min(34,viewHeight*aspectScale+(options.zoomOffset||0)));
+  // Exact critically damped response to a linearly moving target. Frame-rate
+  // independent damping has no Euler clamp and carries momentum through turns.
+  const damp=(key,target,rate)=>{
+   if(reset){c[key]=target;f.velocity[key]=0;f.target[key]=target;return;}
+   if(dt===0)return;
+   const previous=f.target[key]??target,slope=(target-previous)/dt;
+   const lag=2*slope/rate,error=c[key]-previous+lag,relative=(f.velocity[key]||0)-slope;
+   const j=(relative+rate*error)*dt,decay=Math.exp(-rate*dt);
+   c[key]=target-lag+(error+j)*decay;f.velocity[key]=slope+(relative-rate*j)*decay;f.target[key]=target;
+  };
+  const yawTarget=c.yaw+Math.atan2(Math.sin(yaw-c.yaw),Math.cos(yaw-c.yaw));
+  damp('yaw',yawTarget,9);damp('pitch',pitch,9);damp('zoom',zoom,7);
+  const height=c.zoom/aspectScale,anchor=options.anchorY??.62;
+  const ahead=((anchor-.5)*height-((c.y??1)-.18)*Math.cos(c.pitch))/Math.sin(c.pitch);
+  damp('x',cx-Math.sin(c.yaw)*ahead+f.leadX,12);
+  damp('z',cz-Math.cos(c.yaw)*ahead+f.leadZ,12);
+ }
  render(snapshot,dt=.016,options={}){if(this.lost||!snapshot)return;this.resize();const gl=this.gl,t=snapshot.t||0,p=snapshot.player||snapshot.players?.[0],area=snapshot.room?.kind||'village';let key=options.portrait?'portrait':options.clan?'showcase':area==='village'?'village'+snapshot.map.seed:'front'+Math.floor(-(p?.z||0)/44);if(key!==this.sceneKey){this.sceneKey=key;this.static.clear();if(options.portrait){this.groundFX.clear();this.labels=[];}else if(options.clan)this.art.showcase();else if(area==='village')this.art.village(snapshot.map);else this.art.front(snapshot.map.seed,Math.floor(-(p?.z||0)/44));this.staticShadowDirty=true;}
  this.diorama.update(snapshot,dt,options);
- if(options.clan&&options.preview){const c=options.preview;this.camera.x+=(c.x-this.camera.x)*Math.min(1,dt*8);this.camera.z+=(c.z-this.camera.z)*Math.min(1,dt*8);this.camera.zoom+=(4.2-this.camera.zoom)*Math.min(1,dt*8);this.camera.yaw=.12;this.camera.pitch=.24;}
- else if(p&&!options.freezeCamera){const foe=snapshot.actors?.find(e=>e.id===p.autoFight&&e.alive);if(foe&&this.combatTarget!==foe.id){const axis=Math.atan2(foe.x-p.x,foe.z-p.z),wrap=n=>Math.atan2(Math.sin(n),Math.cos(n)),a=axis+Math.PI/2,b=axis-Math.PI/2;this.combatYaw=Math.abs(wrap(a-this.camera.yaw))<Math.abs(wrap(b-this.camera.yaw))?a:b;this.combatTarget=foe.id;}if(!foe)this.combatTarget=null;const yaw=options.yaw??(foe?this.combatYaw:.42),cx=p.x+(foe?(foe.x-p.x)*.35:0),cz=p.z+(foe?(foe.z-p.z)*.35-1:-1.5);this.camera.x+=(cx-this.camera.x)*Math.min(1,dt*6);this.camera.z+=(cz-this.camera.z)*Math.min(1,dt*6);this.camera.zoom+=((foe?13.5:16-this.diorama.blend*.8)+(options.zoomOffset||0)-this.camera.zoom)*Math.min(1,dt*3);const dy=Math.atan2(Math.sin(yaw-this.camera.yaw),Math.cos(yaw-this.camera.yaw));this.camera.yaw+=dy*Math.min(1,dt*3);this.camera.pitch+=(.68+this.diorama.blend*.10-this.camera.pitch)*Math.min(1,dt*4);}
+ this.updateCamera(snapshot,dt,options);
  this.matrix();this.stats={calls:0,triangles:0,instances:0,lodInstances:0,resolution:this.canvas.width+'×'+this.canvas.height,scale:this.scale,meshTypes:this.geo.size};this.dynamic.clear();this.fxBatches.clear();this.impactFX.clear();
  let entities=[...snapshot.actors||[],...snapshot.players||[]];if(p&&!entities.some(e=>e.id===p.id))entities.push(p);if(options.clan&&options.preview)entities=[options.preview];entities.sort((a,b)=>(a.id===p?.id)-(b.id===p?.id));
  for(const e of entities){if(Math.hypot(e.x-this.camera.x,e.z-this.camera.z)>33)continue;const lod=Math.hypot(e.x-this.camera.x,e.z-this.camera.z)>18;this.art.low=lod;let et=t;this.art.doll(e,et,e.id===p?.id);this.art.statuses(e,t);if(e.id===p?.id)this.art.parentScene(e,t);}
@@ -90,4 +136,3 @@ class Renderer{
  }
  drawShadow(target,map){const gl=this.gl;gl.bindFramebuffer(gl.FRAMEBUFFER,target.fb);gl.viewport(0,0,target.size,target.size);gl.enable(gl.DEPTH_TEST);gl.depthMask(true);gl.disable(gl.BLEND);gl.disable(gl.CULL_FACE);gl.enable(gl.POLYGON_OFFSET_FILL);gl.polygonOffset(1.2,2.0);gl.clearDepth(1);gl.clear(gl.DEPTH_BUFFER_BIT);gl.useProgram(this.depthProgram);this.uniform(this.depthProgram,'vp',this.lightVP);this.uniform(this.depthProgram,'lightVP',this.lightVP);this.drawBatches(map,this.depthProgram,true);gl.disable(gl.POLYGON_OFFSET_FILL);}
 }
-
