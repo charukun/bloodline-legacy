@@ -1,6 +1,59 @@
 const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const {fixture,flush} = require('./ui-fixture.cjs');
+test('open family book refreshes on age or gear changes only, preserving expanded records',async t=>{
+ const {ui,p,g,d,w,sync,sim}=fixture(t);sim.legacy(p.owner).records=[{id:'old',name:'先人',skills:[4000]}];ui.lineage();await flush();d.querySelector('details').open=true;
+ const observer=new w.MutationObserver(()=>{});observer.observe(ui.root,{subtree:true,childList:true,attributes:true,characterData:true});for(let i=0;i<10;i++)ui.update(g.snapshot);assert.equal(observer.takeRecords().length,0);observer.disconnect();
+ p.age=18;p.weapon=2;sync();await flush();assert.match(d.querySelector('.living-chapter').textContent,/18歳.*大剣/s);assert.equal(d.querySelector('details').open,true);
+});
+test('bottom dock contains exactly consciousness, wardrobe and settings in order; map stays available',async t=>{
+ const {ui,d,g}=fixture(t),buttons=[...d.querySelectorAll('.hud-bottom button')];
+ assert.deepEqual(buttons.map(b=>b.dataset.menu),['skills','body','settings']);
+ assert.deepEqual(buttons.map(b=>b.textContent),['意識','身支度','設定']);
+ for(const b of buttons){b.click();await flush();assert.equal(ui.modal,b.dataset.menu);assert.equal(b.getAttribute('aria-expanded'),'true');assert.ok(d.querySelector('[role=dialog]').contains(b));assert.equal(b.closest('[inert]'),null);assert.equal(g.renderer.canvas.inert,true);b.click();assert.equal(ui.modal,null);assert.equal(b.getAttribute('aria-expanded'),'false');assert.equal(d.activeElement,b);assert.ok(ui.hud.contains(b));}
+ d.getElementById('mini-map').click();assert.equal(ui.modal,'map');assert.ok(d.getElementById('large-map'));
+});
+test('dock switches sections without stacking; active parent also closes a nested page',async t=>{
+ const {ui,d}=fixture(t),dock=ui.hudDock,body=dock.querySelector('[data-menu=body]'),settings=dock.querySelector('[data-menu=settings]');
+ body.click();d.getElementById('open-rack').click();assert.equal(ui.modal,'rack');assert.equal(ui.navigation.length,1);body.click();assert.equal(ui.modal,null);
+ for(let i=0;i<8;i++){body.click();settings.click();assert.equal(ui.modal,'settings');assert.equal(ui.navigation.length,0);d.getElementById('lineage-nav').click();assert.equal(ui.modal,'lineage');settings.click();assert.equal(ui.modal,null);}
+ assert.equal(d.querySelectorAll('.hud-bottom').length,1);assert.equal(ui.hudDock,dock);await flush();assert.equal(d.activeElement,settings);
+});
+test('family book is the clan home, keeps actual race/name/start controls, and does not invent relatives',async t=>{
+ const {ui,g,d,p,sim}=fixture(t);g.screen='clan';g.profile.race=0;ui.showClan();
+ assert.equal(d.querySelectorAll('#clan-screen [data-race]').length,4);assert.match(ui.clan.textContent,/人族.*森人.*山人.*狐人/s);assert.match(ui.clan.textContent,/まだ、白紙の頁/);assert.equal(d.querySelectorAll('.life-record').length,0);
+ const before=JSON.stringify(sim.exportState());d.querySelector('[data-race="2"]').click();assert.equal(g.profile.race,2);assert.equal(g.previewCharacter.race,2);assert.equal(p.race,0);assert.equal(JSON.stringify(sim.exportState()),before);
+ const name=d.getElementById('life-name');name.value='新しい名';name.dispatchEvent(new d.defaultView.Event('input'));assert.equal(g.profile.name,'新しい名');assert.equal(p.name,'リオ');
+ let starts=0;g.start=()=>starts++;d.getElementById('begin-life').click();assert.equal(starts,1);
+ const settings=d.getElementById('clan-settings');settings.focus();settings.click();await flush();ui.closeModal();assert.equal(d.activeElement.id,'clan-settings');assert.equal(ui.clan.inert,false);
+});
+test('new life still starts through Game.start with one actual inherited skill',async t=>{
+ const {g,sim,p,ui,d}=fixture(t);sim.die(p,'老衰');g.screen='clan';g.profile.uiExplained=true;g.profile.race=1;g.profile.name='次の灯';g.renderer.effects=[];g.renderer.camera={};
+ sim.legacy(p.owner).archive=[4000];g.profile.inherit=[4000];ui.showClan();await g.start();
+ const next=g.snapshot.player;assert.equal(g.screen,'game');assert.notEqual(next.id,p.id);assert.equal(next.race,1);assert.equal(next.name,'次の灯');assert.deepEqual(Array.from(next.inherit),[4000]);assert.equal(next.gen,2);assert.equal(d.querySelectorAll('.hud-bottom button').length,3);
+});
+test('historical and current equipment remain separate and missing portraits stay unrecorded',t=>{
+ const {ui,sim,p,d}=fixture(t),legacy=sim.legacy(p.owner);p.inventory=['stone','bell'];legacy.archive=[4000];legacy.records=[{id:'old',name:'先人',gen:1,age:42,skills:[4000],uses:19,appearance:{race:2,age:42,weapon:2,armor:2,shield:true}},{id:'unknown',name:'記録のみ',skills:[]}];ui.lineage();
+ assert.equal(d.querySelectorAll('.life-record').length,2);assert.equal(d.querySelectorAll('.book-inventory>div').length,2);assert.match(d.querySelector('.living-chapter').textContent,/素手/);assert.match(d.querySelectorAll('.life-details')[1].textContent,/大剣.*重鎧/s);
+ assert.match(d.querySelector('[data-portrait="0"]').textContent,/肖像未記録/);assert.ok(!ui.portraitQueue.some(q=>q.record.id==='unknown'));assert.equal(d.querySelectorAll('[data-race]').length,0);
+});
+test('single inheritance selection updates the seal, preserves details, and never changes the current life',async t=>{
+ const {ui,sim,p,g,d}=fixture(t),legacy=sim.legacy(p.owner);legacy.archive=[4000,4001];legacy.records=[{id:'a',name:'一',gen:1,skills:[4000]},{id:'b',name:'二',gen:2,skills:[4001]}];ui.lineage();await flush();const before=JSON.stringify(sim.exportState());
+ d.querySelector('details').open=true;d.querySelector('[data-ancestor="4001"]').click();await flush();assert.deepEqual(Array.from(g.profile.inherit),[4001]);assert.match(d.querySelector('.inheritance-seal').textContent,/斬る/);assert.equal(d.querySelector('details').open,true);
+ d.querySelector('[data-ancestor="4000"]').click();assert.deepEqual(Array.from(g.profile.inherit),[4000]);assert.equal(d.querySelectorAll('.inherit-choice.chosen').length,1);assert.equal(JSON.stringify(sim.exportState()),before);
+ d.querySelector('[data-clear-inherit]').click();await flush();assert.equal(g.profile.inherit.length,0);assert.match(d.querySelector('.inheritance-seal').textContent,/まだ選んでいない/);
+});
+test('long histories are paged, all records remain reachable, and queues do not accumulate',t=>{
+ const {ui,sim,p,d}=fixture(t),legacy=sim.legacy(p.owner);legacy.archive=[4000];legacy.records=Array.from({length:29},(_,i)=>({id:'past'+i,name:'先人'+i,gen:i+1,skills:[4000],appearance:{race:i%4,age:40,weapon:-1,armor:0,shield:false}}));ui.lineage();assert.equal(d.querySelectorAll('.life-record').length,12);
+ d.querySelector('[data-more-records]').click();assert.equal(d.querySelectorAll('.life-record').length,24);d.querySelector('[data-more-records]').click();assert.equal(d.querySelectorAll('.life-record').length,29);assert.equal(d.querySelector('[data-more-records]'),null);
+ for(let i=0;i<10;i++)ui.lineage();assert.ok(ui.portraitQueue.length<=31);ui.closeModal();assert.ok(ui.portraitQueue.every(q=>q.node.isConnected));
+});
+test('hide-help preference persists and dismissing one guide is not a persistent setting',t=>{
+ const {ui,d,g}=fixture(t);ui.lineage();d.querySelector('[data-dismiss-guide]').click();assert.equal(d.querySelector('.book-guide').hidden,true);assert.ok(!g.profile.hideLineageHelp);ui.lineage();const box=d.getElementById('hide-lineage-help');box.checked=true;box.dispatchEvent(new d.defaultView.Event('change'));ui.lineage();assert.equal(d.querySelector('.book-guide'),null);assert.equal(g.profile.hideLineageHelp,true);
+});
+test('Tilt-Shift has strength controls only and preserves lineage suspension',t=>{
+ const {ui,g,d}=fixture(t);ui.settings();assert.equal(d.querySelector('[data-diorama-mode]'),null);assert.equal(d.querySelector('[data-diorama-dof="off"]'),null);assert.equal(g.renderer.diorama.mode,'tilt-shift');d.querySelector('[data-diorama-dof="strong"]').click();assert.equal(g.renderer.diorama.dof,'strong');d.getElementById('lineage-nav').click();assert.equal(g.renderer.diorama.suspended,true);ui.closeModal();assert.equal(g.renderer.diorama.suspended,false);
+});
 test('wounds cannot be presented as good health even at health=100',t=>{
  const {p,api}=fixture(t);
  for(const [severity,expected] of [['light','負傷'],['heavy','重傷'],['lost','欠損あり']]){p.wounds={head:{severity}};assert.equal(api.uiCondition(p,0).text,expected);}
@@ -46,7 +99,7 @@ test('modal navigation restores parent, scroll and focus and isolates the backgr
 test('Escape returns one level; Tab stays inside modal; rerender does not grow navigation',async t=>{
  const {ui,d,w}=fixture(t);ui.settings();await flush();const button=d.getElementById('lineage-nav');button.focus();button.click();await flush();
  d.activeElement.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));await flush();assert.equal(ui.modal,'settings');assert.equal(d.activeElement.id,'lineage-nav');
- d.querySelector('.panel-back').focus();d.activeElement.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Tab',shiftKey:true,bubbles:true,cancelable:true}));assert.equal(d.activeElement.id,'to-clan');
+ d.querySelector('.panel-back').focus();d.activeElement.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Tab',shiftKey:true,bubbles:true,cancelable:true}));assert.equal(d.activeElement.dataset.menu,'settings');
  const toggle=d.getElementById('sound-toggle');toggle.focus();toggle.click();await flush();assert.equal(ui.navigation.length,0);assert.equal(d.activeElement.id,'sound-toggle');
 });
 test('keyboard typing and pointer down during modal cannot begin game movement or rest',t=>{

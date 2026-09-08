@@ -1,4 +1,4 @@
-/* Opt-in presentation only. The existing orthographic camera/depth convention
+/* Default gameplay presentation. The existing orthographic camera/depth convention
  * is retained; this pass never owns simulation time, inputs or saved data. */
 const DIORAMA_PRESETS=Object.freeze({
  off:Object.freeze({width:4,falloff:7,radius:0,strength:0}),
@@ -70,7 +70,7 @@ void main(){
 
 class TiltShiftPass{
  constructor(renderer){
-  this.r=renderer;this.mode='normal';this.dof='subtle';this.debug=false;
+  this.r=renderer;this.mode='tilt-shift';this.dof='subtle';this.debug=false;
   this.suspended=false;this.eligible=false;this.blend=0;this.focus=null;this.combatFocus=[];this.room=null;
   this.program=null;this.cocProgram=null;this.targets=[];this.size='';this.error=null;
  }

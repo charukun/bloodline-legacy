@@ -16,7 +16,7 @@ export async function verifyTiltShift(page, evidence, viewport, record) {
     window.__tiltFixture={snapshot:structuredClone(a.snapshot),camera:{x:0,z:-1.5,zoom:16,yaw:.42,pitch:.68},buffers:{}};
     return result;
   });
-  assert.deepEqual(defaults,{mode:'normal',dof:'subtle',passes:0});
+  assert.equal(defaults.mode,'tilt-shift');assert.equal(defaults.dof,'subtle');
 
   async function still(name,mode,dof,weather='clear',debug=false) {
     const sample=await page.evaluate(({name,mode,dof,weather,debug})=>{
@@ -84,11 +84,11 @@ export async function verifyTiltShift(page, evidence, viewport, record) {
   // Opening any existing menu stops input and updates lastInput. Compare the
   // toggles with that established modal state, not the pre-menu input timestamp.
   const saved=await page.evaluate(()=>({profile:JSON.stringify(AERIN_QA.app.profile),world:JSON.stringify(AERIN_QA.sim().exportState())}));
-  await page.locator('[data-diorama-mode="normal"]').click();
-  await page.locator('[data-diorama-mode="tilt-shift"]').click();
-  await page.locator('[data-diorama-dof="off"]').click();
+  assert.equal(await page.locator('[data-diorama-mode]').count(),0);
+  assert.equal(await page.locator('[data-diorama-dof="off"]').count(),0);
+  await page.locator('[data-diorama-dof="strong"]').click();
   await page.locator('[data-diorama-dof="subtle"]').click();
-  assert.equal(await page.locator('[data-diorama-mode="tilt-shift"]').getAttribute('aria-pressed'),'true');
+  assert.equal(await page.evaluate(()=>AERIN_QA.app.renderer.diorama.mode),'tilt-shift');
   assert.equal(await page.locator('[data-diorama-dof="subtle"]').getAttribute('aria-pressed'),'true');
   for(const selector of ['#sound-toggle','#help-nav','#export-save','#import-save','#lineage-nav'])assert.equal(await page.locator(selector).count(),1);
   await page.screenshot({path:path.join(evidence,`${prefix}-settings.png`)});
@@ -97,6 +97,11 @@ export async function verifyTiltShift(page, evidence, viewport, record) {
   const lineage=await page.evaluate(()=>{const r=AERIN_QA.app.renderer;r.render(window.__tiltFixture.snapshot,.016);return{active:r.stats.dofActive,suspended:r.diorama.suspended};});
   assert.deepEqual(lineage,{active:false,suspended:true});
   await page.keyboard.press('Escape');
+  // Back now restores the parent Settings page. Close it through the active
+  // dock button before testing movement; never bypass the modal input guard.
+  assert.equal(await page.evaluate(()=>AERIN_QA.app.ui.modal),'settings');
+  await page.locator('[data-menu="settings"]').click();
+  assert.equal(await page.evaluate(()=>AERIN_QA.app.ui.modal),null);
   report.exclusions=await page.evaluate(()=>{
     const r=AERIN_QA.app.renderer,s=structuredClone(window.__tiltFixture.snapshot),result={};
     r.render(s,.016);result.village=r.stats.dofActive;

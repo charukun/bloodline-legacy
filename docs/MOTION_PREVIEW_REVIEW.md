@@ -21,4 +21,5 @@ restores a new skill, and observes advancing attack poses against the training
 dummy at age 14 through Game.frame. GPU startup is skipped; actual rendered
 pixels and the user's symptom remain UNVERIFIED pending user review.
 
-Do not create a PR until the user approves the revised preview. Do not merge.
+The user has now authorized PR creation for the combined motion/diorama preview.
+Merge remains the responsibility of Integration WORK.

@@ -24,8 +24,8 @@ const scene=()=>({room:{kind:'village'},player:{x:0,z:0,alive:true,action:'idle'
 function enabled(){const r=renderer(),d=new TiltShiftPass(r);d.configure('tilt-shift');d.update(scene(),.016);return{r,d};}
 function close(a,b,tol=1e-5){assert(Math.abs(a-b)<tol,`${a} != ${b}`);}
 
-test('NORMAL is opt-in: zero shader compilation, target allocation and extra passes',()=>{
- const r=renderer(),d=new TiltShiftPass(r);d.update(scene(),.016);d.render();d.bindComposite({});
+test('explicit NORMAL fallback has zero compilation, target allocation and extra passes',()=>{
+ const r=renderer(),d=new TiltShiftPass(r);d.configure('normal');d.update(scene(),.016);d.render();d.bindComposite({});
  assert.equal(d.mode,'normal');assert.equal(d.active,false);assert.equal(r.compiled,0);
  assert.equal(r.resources.textures.size,0);assert.equal(r.stats.calls,0);assert.equal(r.uniforms.dioramaAmount,0);
 });
@@ -150,4 +150,10 @@ test('combat focus protects both subjects during camera rotation and releases a 
 test('room changes snap focus even when world coordinates are close',()=>{
  const {d}=enabled(),s=scene();s.room={kind:'front',id:'front-2'};s.player.x=4;
  d.update(s,.016);assert.equal(d.focus[0],4);assert.equal(d.active,true);
+});
+
+test('gameplay starts in subtle tilt-shift without any settings interaction',()=>{
+ const r=renderer(),d=new TiltShiftPass(r);d.update(scene(),.016);d.render();
+ assert.equal(d.mode,'tilt-shift');assert.equal(d.dof,'subtle');assert.equal(d.active,true);
+ assert.equal(r.stats.dofPasses,2);assert.equal(r.uniforms.diskSamples,16);
 });

@@ -1,3 +1,4 @@
+import './build-info.test.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -43,7 +44,7 @@ test('production is a holding page until explicitly released',async()=>{
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),'bloodline-holding-'));
   try {
     await fs.mkdir(path.join(dir,'deploy'));
-    await fs.writeFile(path.join(dir,'deploy/release.json'),'{"production":false}');
+    await fs.writeFile(path.join(dir,'deploy/release.json'),'{"production":false,"baseVersion":"0.6.0"}');
     const result=await build('production','local-recovery',dir);
     assert.equal(result.mode,'holding');
     const html=await fs.readFile(path.join(dir,'deploy/out/production/index.html'),'utf8');
@@ -79,7 +80,7 @@ test('a failed game build throws and cannot leave a stale deployable index',asyn
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),'bloodline-failed-build-'));
   try {
     await fs.mkdir(path.join(dir,'deploy/out/dev'),{recursive:true});
-    await fs.writeFile(path.join(dir,'deploy/release.json'),'{"production":false}');
+    await fs.writeFile(path.join(dir,'deploy/release.json'),'{"production":false,"baseVersion":"0.6.0"}');
     await fs.writeFile(path.join(dir,'deploy/out/dev/index.html'),'stale build');
     await fs.writeFile(path.join(dir,'build.mjs'),'process.exitCode=1;');
     await assert.rejects(build('dev','local-recovery',dir));
