@@ -11,7 +11,7 @@ import {fileURLToPath} from 'node:url';
 import {chromium} from '../deploy/node_modules/playwright/index.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const mode=process.env.CHARACTER_MODE||'all';
-assert(['all','functional','performance'].includes(mode),'Unknown verification mode');
+assert(['all','functional','performance','motion'].includes(mode),'Unknown verification mode');
 const out=path.join(root,'verification/current',mode);
 await fs.mkdir(out,{recursive:true});
 const files={before:await fs.readFile(process.env.CHARACTER_BASELINE),after:await fs.readFile(path.join(root,'dist/index.html'))};
@@ -56,7 +56,7 @@ async function fixture(page,{close=false}={}){
 async function shot(name){await page.screenshot({path:path.join(out,name+'.png')});report.lastScreenshot=name;flush();}
 try{
   browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
-  for(const version of ['before','after']){
+  for(const version of mode==='motion'?['after']:['before','after']){
     const context=await browser.newContext({viewport:{width:1000,height:900},deviceScaleFactor:1,...(mode==='performance'?{}:{recordVideo:{dir:out,size:{width:1000,height:900}}})});
     page=await context.newPage();page.setDefaultTimeout(120000);
     const record=report.versions[version]={errors:[],consoleErrors:[],states:[],performance:[]};
@@ -69,6 +69,27 @@ try{
     for(let i=0;i<3;i++)await page.locator('#guide-next').click();
     await page.waitForFunction('AERIN_QA.app.screen==="game"');
     check(version+' native onboarding',await page.evaluate(()=>AERIN_QA.player().prologue));
+    if(mode==='motion'){
+      await fixture(page);
+      for(const [name,key,ticks]of [['run','d',20],['turn','a',30],['stop',null,30]]){
+        if(key)await page.keyboard.down(key);
+        await page.evaluate(n=>characterStep(n),ticks);
+        if(key)await page.keyboard.up(key);
+        const rows=await page.evaluate(n=>characterTrace.slice(-n),ticks);record[name+'Contact']=rows;
+        check(name+' pelvis and joints',rows.length===ticks&&rows.every(s=>s.finite&&s.metrics.pelvisDrop<.38&&s.feet.every(f=>f.error<.035)),{maxPelvisDrop:Math.max(...rows.map(s=>s.metrics.pelvisDrop))});
+        check(name+' planted soles',groundedSlip(rows)<.012,{maxSlip:groundedSlip(rows)});
+        await shot('after-'+name);
+      }
+      await fixture(page);await page.mouse.move(550,470);await page.mouse.down();await page.mouse.move(565,470);
+      await page.evaluate(()=>characterStep(24));await page.mouse.up();
+      record.walkContact=await page.evaluate(()=>characterTrace);
+      check('walk support and joints',record.walkContact.every(s=>s.finite&&s.metrics.pelvisDrop<.38&&s.feet.every(f=>f.error<.035))&&groundedSlip(record.walkContact)<.012);
+      await shot('after-walk');
+      check('motion render has no WebGL error',await page.evaluate(()=>AERIN_QA.app.renderer.gl.getError()===0));
+      check('motion has no page exception',record.errors.length===0,record.errors);
+      check('motion has no game frame exception',await page.evaluate(()=>!AERIN_QA.app.frameError));
+      if(page.video())record.video=path.basename(await page.video().path());await context.close();continue;
+    }
     if(mode!=='performance'){
     await fixture(page);await shot(version+'-gameplay');
     record.stats=await page.evaluate(()=>AERIN_QA.stats());
@@ -93,7 +114,7 @@ try{
       check('acceleration preserves grounded soles',groundedSlip(record.runContact)<.012,{maxSlip:groundedSlip(record.runContact)});
       await page.keyboard.down('a');await page.evaluate(()=>characterStep(30));await shot('after-turn');await page.keyboard.up('a');
       record.turnContact=await page.evaluate(()=>characterTrace.slice(-30));
-      check('turn keeps finite joints',record.turnContact.every(s=>s.finite));
+      check('turn keeps finite joints and plausible pelvis height',record.turnContact.every(s=>s.finite&&s.metrics.pelvisDrop<.38&&s.feet.every(f=>f.error<.035)));
       await page.evaluate(()=>characterStep(30));await shot('after-run-stop');record.stopContact=await page.evaluate(()=>characterTrace.slice(-30));
       check('stopping preserves grounded soles',groundedSlip(record.stopContact)<.012,{maxSlip:groundedSlip(record.stopContact)});
     }

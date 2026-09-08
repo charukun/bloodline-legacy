@@ -124,6 +124,11 @@ const CM01 = (()=>{
     }else{
      if(foot.swing){foot.anchor=[...foot.target];foot.swing=false;}foot.lift=0;
     }
+    // A reversal can move the hip away before the scheduled toe-off. Release
+    // that foot into a short recovery swing instead of pulling the pelvis down
+    // toward an unreachable old anchor. Only an airborne foot is repositioned.
+    const reach=Math.hypot(foot.anchor[0]-desired[0],foot.anchor[1]-desired[1]);
+    if(moving&&reach>.60){foot.swing=true;foot.lift=Math.max(foot.lift,.055);foot.anchor=desired.map((v,i)=>v+(foot.anchor[i]-v)*.60/reach);}
     const floor=Math.max(this.groundAt(foot.anchor[0],foot.anchor[1]),this.groundAt(foot.anchor[0]+Math.sin(foot.yaw)*.15,foot.anchor[1]+Math.cos(foot.yaw)*.15));
     const worldAnkle=[foot.anchor[0],floor+.125+foot.lift,foot.anchor[1]];
     targets.push({side,si,s,ti,ki,fi,toi,foot,floor,worldAnkle});

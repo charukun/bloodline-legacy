@@ -1,5 +1,11 @@
 name: Character visual verification
 on:
+  workflow_dispatch:
+    inputs:
+      full_review:
+        description: Run the full visual and software performance comparison
+        type: boolean
+        default: false
   push:
     branches: ['work/character-golden-master-*']
   pull_request:
@@ -41,20 +47,21 @@ jobs:
         run: |
           git worktree add --detach /tmp/character-baseline 4f928f133ea56310d63dbf32af6a3295f2446fcb
           node /tmp/character-baseline/build.mjs
-      - name: Render and exercise both revisions
+      - name: Verify the changed movement poses
         timeout-minutes: 20
         env:
           CHARACTER_BASELINE: /tmp/character-baseline/dist/index.html
-          CHARACTER_MODE: functional
+          CHARACTER_MODE: ${{ inputs.full_review && 'functional' || 'motion' }}
         run: node tests/character-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: character-functional-${{ github.run_id }}-${{ github.run_attempt }}
-          path: verification/current/functional/
+          path: verification/current/
           if-no-files-found: error
           retention-days: 30
       - name: Compare sustained performance on the same runner
+        if: inputs.full_review == true
         timeout-minutes: 22
         env:
           CHARACTER_BASELINE: /tmp/character-baseline/dist/index.html

@@ -87,6 +87,18 @@ test('accelerating from rest through walk and run preserves planted world anchor
     assert(values.every(v=>v.metrics.pelvisDrop<.38),'acceleration pelvis reach');
   }
 });
+test('a full-speed reversal releases unreachable feet before the pelvis collapses',()=>{
+  for(const speed of [3.8,5.665,6.8]){
+    const points=Array.from({length:80},(_,i)=>({...player(),time:i/30,z:4+(i<=20?i:40-i)/30*speed,dir:i<=20?0:Math.PI,action:'run',dash:speed>6?{}:null}));
+    const {values}=poseSequence(points);
+    assert(values.every(v=>v.metrics.pelvisDrop<.38),`reversal pelvis at ${speed}: ${Math.max(...values.map(v=>v.metrics.pelvisDrop))}`);
+    assert(values.every(v=>v.feet.every(f=>f.error<.035)),'reversal joint reach');
+    for(let i=1;i<values.length;i++)for(let j=0;j<2;j++){
+      const a=values[i-1].feet[j],b=values[i].feet[j];
+      if(!a.swing&&!b.swing)assert(Math.hypot(b.actual[0]-a.actual[0],b.actual[2]-a.actual[2])<.012,'planted reversal sole moved');
+    }
+  }
+});
 test('six requested states are sampled from existing motion clocks',()=>{
   const fixtures=[{name:'idle',p:{}},{name:'combat_idle',p:{autoFight:'foe'}},{name:'attack',p:{action:'attack',attackSkill:4100,actionStarted:0,actionUntil:1}},{name:'hit',p:{hitReactAt:0,hitReactUntil:1,hitPart:'torso',hitSeverity:'heavy'}}];
   for(const f of fixtures){const {values}=poseSequence([{...player(),...f.p,time:.1}]);assert.equal(values[0].metrics.animation,f.name);assert(values[0].palette.every(Number.isFinite));}

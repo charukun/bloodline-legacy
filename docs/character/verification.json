@@ -1,0 +1,67 @@
+{
+  "base": "4f928f133ea56310d63dbf32af6a3295f2446fcb",
+  "visualEvidenceHead": "9416816ef4a50352fb9590ff500ac06ca3d63e17",
+  "functionalChecks": {
+    "passed": 36,
+    "failed": 0
+  },
+  "functionalArtifact": {
+    "url": "https://github.com/charukun/bloodline-legacy/actions/runs/34269501297/artifacts/10073879788",
+    "sha256": "7631f177ff67cd9c033ccad960b1060fb492ee997240a7e1b2baaa0a17b6ba76",
+    "expires": "2026-10-08"
+  },
+  "visualReview": {
+    "gameplay": "Hair masses, tailored clothing, boots and materials are clearly distinguishable at the unchanged gameplay camera.",
+    "motion": "Walk, run, attack, hit and rest images inspected. The rapid-turn trace exposed excess pelvis drop despite the original numeric success; a targeted correction and stronger check were added.",
+    "limitations": [
+      "The GS02 tree partly occludes the attack camera; no environment or camera behavior was changed.",
+      "Software-rendered video cannot approve real-device frame pacing."
+    ]
+  },
+  "images": [
+    {
+      "name": "before-gameplay.png",
+      "sha256": "e2054fe4ebe5818bcb23723e2f164d5f3e83f515da39519d2ce13555a5878acc"
+    },
+    {
+      "name": "after-gameplay.png",
+      "sha256": "9e0b793e957e8690393946d2d22c1bd46739263be595ca5fdeb86b36ab602cca"
+    },
+    {
+      "name": "before-close.png",
+      "sha256": "9031f37b19ebd602f0342060c924e7f743d4605ef28c27ffaab4c7a025cda1fd"
+    },
+    {
+      "name": "after-close.png",
+      "sha256": "f4f0c46c603bab123749317e64620dcc4f4bbaf02d7bfa7ced196cf94e8f419d"
+    },
+    {
+      "name": "after-run.png",
+      "sha256": "51f6fe2d832fbfd770f99b7bb6730c4a52de56062c7636974911e1d15cf3793b"
+    },
+    {
+      "name": "after-walk.png",
+      "sha256": "5b9d44eb37b94a6707ec392bde629ef5c7aa3155e860986e311fbd3bc6e17baf"
+    },
+    {
+      "name": "after-attack.png",
+      "sha256": "cd662463f38b35d8e69dfb22a1d54a22987760f74039bda3985c798c604fd8ef"
+    },
+    {
+      "name": "after-hit.png",
+      "sha256": "2a30267719970e7dfedbfa7daa5896af36b758bc11df124f006d248a744ccd6a"
+    },
+    {
+      "name": "after-mobile-gameplay.png",
+      "sha256": "6f0cdd6c985f1c87891f807c71c1650ee8c579024015cb209f93537be115247c"
+    }
+  ],
+  "gpuBudget": {
+    "geometryBytes": 1822126,
+    "mipmappedAtlasBytes": 4194300,
+    "bonePaletteBytes": 1984,
+    "estimatedAdditionalMiB": 5.74
+  },
+  "nativeHardwarePerformance": "UNVERIFIED",
+  "softwarePerformance": "Discontinued under the user instruction to cut costly, low-value tasks; not a PASS."
+}

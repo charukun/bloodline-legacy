@@ -1,6 +1,6 @@
 # Young protagonist CM01 review
 
-Status: implementation candidate; visual and device acceptance pending.
+Status: scoped character implementation; corrected motion verification pending, hardware performance unverified.
 
 ## Authority and scope
 
@@ -21,16 +21,17 @@ Animation follows existing `artPose`, `hitPose`, actions and clocks. Foot phase 
 
 ## Current verification
 
-- `node build.mjs`: PASS, 22 modules, 5,450,759 bytes.
-- `npm test`: PASS, 55 tests (19 character/numeric/regression, eight Golden Slice, 22 Tilt-Shift, six deployment infrastructure).
+- `node build.mjs`: PASS, 22 modules, 5,451,220 bytes.
+- `npm test`: PASS, 56 tests (20 character/numeric/regression, eight Golden Slice, 22 Tilt-Shift, six deployment infrastructure).
 - `python tests/character_asset_validation.py`: PASS, 22 asset checks.
 - Cloud preview: HTTP delivery works; its browser cannot create WebGL2. No visual PASS is claimed from that environment.
-- Repository CI browser test: GS02 run pending. Earlier runs on the original base are historical diagnostics only; new BEFORE/AFTER and native save verification are required on this refreshed base.
+- Repository CI browser test: 36/36 checks passed on GS02 head `9416816ef4a50352fb9590ff500ac06ca3d63e17`, including native save/reload, scope, equipment and limb loss. Visual review subsequently identified the rapid-turn pelvis issue, so a focused motion recheck is required on the corrected head. Earlier runs on the original base are historical diagnostics only.
+- Sustained SwiftShader comparison: discontinued after the user requested cutting costly, low-value tasks. It is not a performance PASS. The full manual workflow remains available.
 - Pixel Fold hardware and native desktop GPU performance: UNVERIFIED.
 
 Numeric runtime tests use a mocked graphics API; they do not validate shader compilation or the rendered appearance. Asset validation checks structural integrity, not commercial visual quality.
 
-Three further defects were reproduced and fixed during review: grounded soles sliding up to 0.141 game units per sample when stopping, and stride phase restarting when the same 30 Hz simulation snapshot was rendered twice. Stopping now uses a lifted recovery step; duplicate render samples preserve gait state. Acceleration also recreated planted anchors when the gait switched from walking to running, shifting a support sole by 0.189 units in the browser trace. Existing anchors now survive gait transitions, and the initial phase includes observed displacement. All three failures have regression tests. These changes affect presentation only.
+Four further defects were reproduced and fixed during review: grounded soles sliding up to 0.141 game units per sample when stopping, and stride phase restarting when the same 30 Hz simulation snapshot was rendered twice. Stopping now uses a lifted recovery step; duplicate render samples preserve gait state. Acceleration also recreated planted anchors when the gait switched from walking to running, shifting a support sole by 0.189 units in the browser trace. Existing anchors now survive gait transitions, and the initial phase includes observed displacement. A full-speed reversal could also drop the pelvis by 0.786 units as an old support became unreachable. The foot now releases into a short recovery swing before exceeding reach, with a stronger reversal test. All four failures have regression tests. These changes affect presentation only.
 
 `source-audit.json` records 33 byte-identical pre-existing source/asset files and the six current Project Sources. `asset-reproduction.json` records a fresh, independent regeneration matching all five generated asset files exactly.
 
@@ -40,6 +41,6 @@ Three further defects were reproduced and fixed during review: grounded soles sl
 
 Performance samples use actual render submission timestamps: 10 seconds warm-up, at least 30 seconds measurement and 12 frame intervals (up to 90 seconds for slow software rendering), three village runs, plus rain and combat. The viewport and rendering workload stay identical. Both revisions run on the same runner without video capture during performance measurement. Functional verification retains video; contact combat samples all 150 simulation ticks and renders every third tick plus the first charge and peak attack. Software results cannot certify real-device frame-rate targets.
 
-Push verification runs on the work branch before a Ready PR is created, as required by policy v5. CI artifacts retain the evidence for 30 days; accepted comparison images and a final review will be committed after inspection. A numeric CI success alone is not Golden Master acceptance.
+Push verification runs on the work branch before a Ready PR is created, as required by policy v5. CI artifacts retain screenshots and video for 30 days; `verification.json` records the exact artifact, image hashes and review findings. To reduce the cost of repeated verification, normal character CI checks the changed movement poses; the full comparison remains available through manual `full_review` dispatch. Existing deployment CI is unchanged. A numeric CI success alone is not Golden Master acceptance.
 
 The initial work branch remains as history. The final branch was created directly from the refreshed develop SHA; no merge, force push, or wholesale old-tree replacement was performed. All inherited GS02, Tilt-Shift, UI and deployment changes are preserved.
