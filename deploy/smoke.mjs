@@ -67,9 +67,11 @@ try {
     if (expected.mode === 'holding') {
       await page.locator('#release-pending').waitFor();
       assert.equal(await page.locator('canvas').count(),0);
+      assert.equal(await page.locator('[data-build-version]').innerText(),expected.displayVersion);
     } else {
       await page.waitForFunction(()=>window.AERIN_QA?.app.renderer.frame>3,{},{timeout:60000});
       assert.equal(await page.evaluate(()=>window.AERIN_QA.app.renderer.gl.isContextLost()),false);
+      assert.equal(await page.locator('#clan-screen [data-build-version]').innerText(),expected.displayVersion);
       await page.locator('#begin-life').click();
       for (let i=0;i<4;i++) {
         if (await page.locator('#hud').isVisible()) break;
@@ -99,6 +101,9 @@ try {
         return colors.size;
       });
       assert(record.framebufferColors>4,'WebGL framebuffer appears blank');
+      await page.locator('[data-menu="settings"]').click();
+      assert.equal(await page.locator('#modal-root [data-build-version]').innerText(),expected.displayVersion);
+      await page.locator('#modal-root .panel-back').click();
     }
     await page.screenshot({path:path.join(evidence,`${viewport.width}x${viewport.height}.png`)});
     if(local && expected.mode==='game' && process.argv.includes('--tilt-shift')) {
