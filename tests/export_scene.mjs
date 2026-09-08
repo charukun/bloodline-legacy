@@ -12,7 +12,7 @@ export const repository = path.resolve(path.dirname(fileURLToPath(import.meta.ur
 
 export async function loadScene(root = repository, options = {}) {
   const files = ['legacy/dialogue.js', 'legacy/core.js', 'legacy/render_math.js',
-    'legacy/motion.js', 'legacy/art.js', 'render/shaders.js', 'render/renderer-base.js',
+    'legacy/motion.js', 'legacy/art.js', 'render/tilt-shift.js', 'render/shaders.js', 'render/renderer-base.js',
     'assets/loader.js', 'world/environment.js'];
   try { await fs.access(path.join(root, 'src/world/golden-slice.js')); files.push('world/golden-slice.js'); } catch {}
   files.push('weather/weather.js', 'character/rig.js', 'render/combat-presentation.js', 'render/adapter.js');
