@@ -97,6 +97,11 @@ export async function verifyTiltShift(page, evidence, viewport, record) {
   const lineage=await page.evaluate(()=>{const r=AERIN_QA.app.renderer;r.render(window.__tiltFixture.snapshot,.016);return{active:r.stats.dofActive,suspended:r.diorama.suspended};});
   assert.deepEqual(lineage,{active:false,suspended:true});
   await page.keyboard.press('Escape');
+  // Back now restores the parent Settings page. Close it through the active
+  // dock button before testing movement; never bypass the modal input guard.
+  assert.equal(await page.evaluate(()=>AERIN_QA.app.ui.modal),'settings');
+  await page.locator('[data-menu="settings"]').click();
+  assert.equal(await page.evaluate(()=>AERIN_QA.app.ui.modal),null);
   report.exclusions=await page.evaluate(()=>{
     const r=AERIN_QA.app.renderer,s=structuredClone(window.__tiltFixture.snapshot),result={};
     r.render(s,.016);result.village=r.stats.dofActive;
