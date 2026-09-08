@@ -178,6 +178,19 @@ test('attack and hit clocks remain unchanged after character sampling',()=>{
   assert.equal(JSON.stringify(sim.exportState()),before);
 });
 
+test('damage overlays authored skill joints and grounded feet without replacing either motion',()=>{
+  const time=1.31,skill={...player(),time,action:'attack',attackSkill:60020,currentSkill:60020,actionStarted:1,actionUntil:2};
+  const hit={...skill,hitReactAt:1.2,hitReactUntil:1.92,hitMotionId:1,hitPart:'leftArm',hitDir:Math.PI/2,hitSeverity:'heavy',hitStrength:1};
+  const skillOnly=poseSequence([skill]).values[0],damageOnly=poseSequence([{...player(),time,hitReactAt:1.2,hitReactUntil:1.92,hitMotionId:1,hitPart:'leftArm',hitDir:Math.PI/2,hitSeverity:'heavy',hitStrength:1}]).values[0];
+  const combined=poseSequence([hit]).values[0];
+  const difference=(a,b)=>Math.max(...a.map((v,i)=>Math.abs(v-b[i])));
+  assert.equal(combined.metrics.animation,'hit');
+  assert(combined.palette.every(Number.isFinite));
+  assert(difference(combined.palette,skillOnly.palette)>.01,'damage contribution was erased');
+  assert(difference(combined.palette,damageOnly.palette)>.01,'authored skill contribution was erased');
+  assert(combined.feet.every(f=>f.error<.035&&f.soleY>=f.floor-.006),'combined foot targets remain grounded and reachable');
+});
+
 test('directional strong hits keep support soles grounded through recoil and recovery',()=>{
  for(const part of ['head','torso','rightArm','leftLeg'])for(const direction of [0,Math.PI/2,Math.PI,-Math.PI/2]){
   const points=Array.from({length:91},(_,i)=>({...player(),time:1+i/60,hitReactAt:1,hitReactUntil:1.72,hitMotionId:1,hitPart:part,hitDir:direction,hitSeverity:'heavy',hitStrength:1}));
