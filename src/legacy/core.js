@@ -628,8 +628,13 @@ class Simulation {
   a.moved+=moved;if(moved<amount-.00001)a.blocked=true;
   if(!a.sounded&&moved>.001){a.sounded=true;this.emit('step',{player:p.id,room:p.room,x:p.x,z:p.z,kind:'lunge'});}
  }
- reactToHit(target,source,part,severity='light'){
-  const duration=severity==='lost'?.95:severity==='heavy'?.72:.48;
+ reactToHit(target,source,part,severity='light',strength=null,blocked=false){
+  const duration=blocked?.28:severity==='lost'?.95:severity==='heavy'?.72:.48;
+  // Visual metadata only; repeated wound resolution for one contact shares an ID.
+  const fresh=target.hitMotionAt!==this.time;
+  if(fresh)target.hitMotionId=(target.hitMotionId||0)+1;
+  target.hitMotionAt=this.time;target.hitGuard=blocked;
+  if(strength!==null||fresh)target.hitStrength=strength??(severity==='lost'?1.15:severity==='heavy'?1:.48);
   target.hitPart=part;target.hitSeverity=severity;target.hitReactAt=this.time;target.hitReactUntil=this.time+duration;
   target.hitDir=source?Math.atan2(target.x-source.x,target.z-source.z):(target.dir||0)+Math.PI;
  }
@@ -703,7 +708,7 @@ class Simulation {
    if(attacking&&!sk.ranged&&!sk.magic&&!sk.breakPower){this.resolveClash(p,e,r);break;}
    const facing=Math.abs(angleDiff(e.dir,Math.atan2(p.x-e.x,p.z-e.z)))<1.4;
    if(e.guard&&e.stun<=this.time&&facing&&!sk.magic&&!(sk.ranged&&sk.power>=3)){
-    e.counterOpportunity=this.time+1;e.action='guard';this.emit('blocked',{room:r.id,x:e.x,z:e.z});continue;
+    e.counterOpportunity=this.time+1;e.action='guard';this.reactToHit(e,p,'leftArm','light',.32,true);this.emit('blocked',{room:r.id,x:e.x,z:e.z});continue;
    }
    if(e.kind==='boss'&&!(e.exposedUntil>this.time)&&!sk.magic){this.emit('blocked',{room:r.id,x:e.x,z:e.z});continue;}
    const part=sk.targets[Math.floor(this.rng()*sk.targets.length)];this.damageActor(e,p,part,(sk.power+(e.exposedUntil>this.time?.5:0))*(hasStatus(p,'weak',this.time)?.65:1),r);if(e.alive&&sk.status&&sk.power>0)this.applyStatus(e,sk.status.id,sk.status.duration,p,r);if(e.alive&&sk.knockback&&e.kind!=='boss')this.moveAttackStep(e,r,Math.sin(p.dir)*sk.knockback,Math.cos(p.dir)*sk.knockback);SkillSystem.contact(this,p,e,sk);
@@ -714,7 +719,7 @@ class Simulation {
   if(!e.alive||power<=0)return;if(e.wounds[part]?.severity==='lost')part='torso';
   e.hp??=e.hpMax??70;e.hpMax??=e.hp; e.hp-=Math.max(3,power*9);
   const exposed=e.exposedUntil>this.time,committed=!!e.telegraph,prev=e.wounds[part]?.severity,injured=Object.keys(e.wounds).length;
-  e.aggro=true;e.sleepUntil=0;if(e.statuses)delete e.statuses.sleep;this.reactToHit(e,source,part,power>=2?'heavy':'light');e.hitUntil=this.time+.1;
+  e.aggro=true;e.sleepUntil=0;if(e.statuses)delete e.statuses.sleep;this.reactToHit(e,source,part,power>=2?'heavy':'light',clamp(.25+power*.30,.25,1.25));e.hitUntil=this.time+.1;
   this.impact(source,e,part,power>=2);this.emit('hit',{room:r.id,target:e.id,source:source?.id,x:e.x,z:e.z,part,weapon:source?.weapon,skill:source?.currentSkill});
   if(e.hp<=0&&e.kind!=='boss'){this.killActor(e,source,r);return;}
   if(e.kind==='boss'){
@@ -746,13 +751,13 @@ class Simulation {
     const weights=p.phaseWeights[p.combo?.band??0],sum=Object.values(weights).reduce((a,b)=>a+b,0)||1,focus=(weights[4013]||0)/sum;
     const chance=p.counterUntil>this.time?clamp(.18+focus*.16+(p.skills.includes(4011)?.05:0),0,.40):.12;
     if(!tg.unblockable&&this.rng()<chance){e.stun=this.time+1.8;e.exposedUntil=this.time+2.5;e.telegraph=null;p.parries++;p.counterUntil=0;this.emit('parry',{player:p.id,room:p.room,x:e.x,z:e.z});return;}
-    if(!tg.unblockable){this.emit('guarded',{player:p.id,room:p.room,x:p.x,z:p.z});return;}
+    if(!tg.unblockable){this.reactToHit(p,e,'leftArm','light',.32,true);this.emit('guarded',{player:p.id,room:p.room,x:p.x,z:p.z});return;}
    }
    p.guard=false;p.guardPending=false;
   }
   if(p.wardUntil>this.time&&p.wardCharges>0){p.wardCharges--;this.emit('guarded',{player:p.id,room:p.room,x:p.x,z:p.z});return;}
   if(hasStatus(e,'blind',this.time)&&this.rng()<.35)return;
-  if(p.shield&&facing&&p.stamina>=5&&this.rng()<.38){this.spend(p,5,.08);p.guardUntil=this.time+.55;this.emit('guarded',{player:p.id,room:p.room,x:p.x,z:p.z});return;}
+  if(p.shield&&facing&&p.stamina>=5&&this.rng()<.38){this.spend(p,5,.08);p.guardUntil=this.time+.55;this.reactToHit(p,e,'leftArm','light',.32,true);this.emit('guarded',{player:p.id,room:p.room,x:p.x,z:p.z});return;}
   const part=tg.part||BODY_PARTS[Math.floor(this.rng()*BODY_PARTS.length)],old=p.wounds[part]?.severity;
   let severity=e.elite||e.kind==='boss'||tg.unblockable?'heavy':'light';
   if(old==='light')severity='heavy';if(old==='heavy')severity=['head','torso'].includes(part)?'fatal':e.elite||e.kind==='boss'?'lost':'heavy';

@@ -1,24 +1,87 @@
-
-/* Additive hit reactions never cancel a committed enemy attack by themselves. */
+/* Presentation only. Force travels from the contact to the trunk, then the
+ * pelvis/support foot. All curves finish within the existing reaction clock. */
 function hitPose(p,t){
- const active=p.hitReactUntil>t&&Number.isFinite(p.hitReactAt);
- const legacy=!active&&['hit','break','stagger'].includes(p.action)&&p.actionUntil>t;
+ const active=p.hitReactUntil>t&&Number.isFinite(p.hitReactAt)&&t>=p.hitReactAt;
+ // A completed reaction must not restart from actionStarted during residual stun.
+ const legacy=!p.hitSeverity&&['hit','break','stagger'].includes(p.action)&&p.actionUntil>t;
  const start=active?p.hitReactAt:p.actionStarted||0,end=active?p.hitReactUntil:p.actionUntil||0;
- const u=clamp((t-start)/Math.max(.01,end-start),0,1);
- const shape=u<.18?Math.sin(u/.18*Math.PI/2):((1-u)/.82)**2;
- const severity=p.hitSeverity==='lost'?1.22:p.hitSeverity==='heavy'?1.1:1;
- const amount=(active||legacy)&&p.alive!==false?shape*severity:0;
- const part=p.hitPart||'torso',leg=part.endsWith('Leg'),dir=Number.isFinite(p.hitDir)?p.hitDir:(p.dir||0)+Math.PI;
+ const u=clamp((t-start)/Math.max(.01,end-start),0,1),smooth=v=>{v=clamp(v,0,1);return v*v*(3-2*v);};
+ const pulse=peak=>u<peak?.32+.68*smooth(u/peak):1-smooth((u-peak)/(1-peak));
+ const on=(active||legacy)&&p.alive!==false,blocked=!!p.hitGuard;
+ const force=on?clamp(p.hitStrength??(p.hitSeverity==='lost'?1.15:p.hitSeverity==='heavy'?1:.48),.15,1.25):0;
+ const contact=pulse(.075)*force,body=pulse(.19)*force,balance=smooth(u/.29)*(1-smooth((u-.42)/.58))*force;
+ const recover=Math.sin(Math.PI*clamp((u-.48)/.52,0,1))*.065*force;
+ const part=p.hitPart||'torso',leg=part.endsWith('Leg'),arm=part.endsWith('Arm');
+ const dir=Number.isFinite(p.hitDir)?p.hitDir:(p.dir||0)+Math.PI;
  const side=Math.sin(dir-(p.dir||0)),front=Math.cos(dir-(p.dir||0));
- return {amount,part,x:Math.sin(dir)*amount*.10,z:Math.cos(dir)*amount*.10,
-  drop:amount*(leg?.18:.018),pitch:amount*front*.14,roll:-amount*side*.14,
-  head:part==='head'?-.42*amount:0,torso:part==='torso'?.24*amount:0,
-  rightArm:part==='rightArm'?.58*amount:part==='torso'?-.18*amount:0,
-  leftArm:part==='leftArm'?.58*amount:part==='torso'?-.18*amount:0,
-  rightLeg:part==='rightLeg'?-.62*amount:leg?-.12*amount:0,
-  leftLeg:part==='leftLeg'?-.62*amount:leg?-.12*amount:0,
-  rightKnee:part==='rightLeg'?.98*amount:leg?.26*amount:0,
-  leftKnee:part==='leftLeg'?.98*amount:leg?.26*amount:0};
+ const struck=part.startsWith('left')?-1:part.startsWith('right')?1:Math.abs(side)>.2?-Math.sign(side):((p.hitMotionId||0)%2?1:-1);
+ const brace=blocked?.3:leg?1:.65,stepSide=leg?-struck:(Math.abs(side)>.3?Math.sign(side):struck);
+ const step=(smooth((u-.13)/.22)-smooth((u-.67)/.33))*Math.max(0,force-.55)*.28;
+ const lift=(Math.sin(Math.PI*clamp((u-.13)/.22,0,1))+Math.sin(Math.PI*clamp((u-.67)/.33,0,1)))*Math.max(0,force-.55)*.15;
+ const o={amount:contact,part,blocked,phase:u,stepSide,stepX:side*step,stepZ:front*step,stepLift:lift,
+  x:Math.sin(dir)*balance*.045,z:Math.cos(dir)*balance*.045,
+  drop:balance*(blocked?.028:leg?.23:.095),pitch:(balance*.045-recover)*front,roll:-(balance*.045-recover)*side,
+  torso:(part==='torso'?-front*.36:front*.12)*body*(blocked?.32:1),
+  torsoRoll:-side*body*(arm?.25:.20),yaw:-struck*body*(arm?.20:.06),
+  head:front*contact*(part==='head'?.43:.11)-front*recover,
+  headRoll:-side*contact*(part==='head'?.36:.08),
+  rightArm:0,leftArm:0,rightArmZ:0,leftArmZ:0,rightLeg:0,leftLeg:0,rightKnee:0,leftKnee:0};
+ for(const s of [-1,1]){const a=s===1?'rightArm':'leftArm',l=s===1?'rightLeg':'leftLeg',k=s===1?'rightKnee':'leftKnee';
+  o[a]=(part===a?contact*.42:-balance*.24)*(blocked?.45:1);
+  o[a+'Z']=-s*balance*.18+(part===a?-side*contact*.25:0);
+  o[l]=-balance*brace*(part===l?.46:.16);o[k]=balance*brace*(part===l?.95:.32);
+ }
+ for(const s of [-1,1]){const key=s===1?'rightFoot':'leftFoot',moves=s===stepSide;o[key+'X']=moves?o.stepX:0;o[key+'Z']=moves?o.stepZ:0;o[key+'Lift']=moves?o.stepLift:0;}
+ if(blocked){o.leftArm=contact*.30;o.leftArmZ=side*contact*.10;o.rightArm=-balance*.12;}
+ return o;
+}
+
+/* Repeated hits blend from the actually rendered pose, never from bind pose.
+ * State lives on the renderer, is bounded and is never serialized into a save. */
+class DamageMotion{
+ constructor(){this.actors=new Map();}
+ sample(p,t){
+  const pose=hitPose(p,t),key=p.hitMotionId??p.lastImpactAt??p.hitReactAt;
+  let s=this.actors.get(p.id);
+  if(s&&(t<s.t||t-s.t>.4||s.room!==p.room||Math.hypot(p.x-s.x,p.z-s.z)>1.5||p.alive===false)){this.actors.delete(p.id);s=null;}
+  if(!s){s={key,t,x:p.x,z:p.z,room:p.room,pose};this.actors.set(p.id,s);}
+  if(key!==s.key){s.from=s.pose.amount>0?s.pose:null;s.elapsed=0;s.key=key;s.clock=t-(p.hitReactAt||0);}
+  if(s.from){
+   // hitReactAt advances with hitstop, so reaction age is the frozen clock.
+   const clock=t-(p.hitReactAt||0),delta=Math.max(0,clock-(s.clock??clock));
+   s.elapsed+=delta;const mix=clamp(s.elapsed/.065,0,1),w=mix*mix*(3-2*mix);
+   if(pose.amount>0&&w<1){for(const k of Object.keys(pose))if(typeof pose[k]==='number'&&!['phase','stepSide'].includes(k))pose[k]=s.from[k]*(1-w)+pose[k]*w;}
+   else s.from=null;
+  }
+  s.clock=t-(p.hitReactAt||0);s.pose=pose;s.t=t;s.x=p.x;s.z=p.z;
+  if(this.actors.size>64&&t>=(this.nextPrune||0)){this.nextPrune=t+.5;for(const [id,a]of this.actors)if(t-a.t>.4)this.actors.delete(id);}
+  return pose;
+ }
+}
+function damagePose(renderer,p,t){renderer.damageMotion??=new DamageMotion();return renderer.damageMotion.sample(p,t);}
+
+/* Preserve the last authored attack pose only when the existing combat rules
+ * interrupt it. Its momentum releases beneath the additive impact in 90 ms. */
+function damageArtPose(renderer,p,t,pose){
+ const s=renderer.damageMotion?.actors.get(p.id);if(!s)return pose;
+ const age=t-(p.hitReactAt||0),attacking=!!p.pendingSkill||p.action==='attack';
+ if(!attacking&&s.attacking&&s.pose.amount>0){s.attackFrom=s.art;s.attackAge=age;}
+ if(s.attackFrom){
+  const u=clamp((age-s.attackAge)/.09,0,1),w=(1-u)**2;
+  if(s.pose.amount>0&&!attacking&&w>0){for(const k of Object.keys(pose))if(typeof pose[k]==='number')pose[k]+=s.attackFrom[k]*w;pose.active=true;}
+  else s.attackFrom=null;
+ }
+ s.attacking=attacking;s.art=attacking?{...pose}:null;return pose;
+}
+
+/* Two-link contact correction for the existing rigid dolls. No raycasts, new
+ * geometry or simulation displacement. The sole remains on its pre-hit plane. */
+function damageLeg(reaction,side,l1,l2,scale=1,facing=0){
+ const foot=side===1?'rightFoot':'leftFoot',dx=reaction[foot+'X']-(Math.cos(facing)*reaction.x-Math.sin(facing)*reaction.z)/scale;
+ const z=reaction[foot+'Z']-(Math.sin(facing)*reaction.x+Math.cos(facing)*reaction.z)/scale,drop=reaction.drop/scale,lift=reaction[foot+'Lift'];
+ const vertical=Math.max(.15,l1+l2-drop-lift),length=Math.min(l1+l2,Math.hypot(vertical,z,dx));
+ const bend=Math.acos(clamp((l1*l1+length*length-l2*l2)/(2*l1*length),-1,1));
+ return {hip:-Math.atan2(z,vertical)-bend,knee:Math.PI-Math.acos(clamp((l1*l1+l2*l2-length*length)/(2*l1*l2),-1,1)),roll:Math.atan2(dx,vertical)};
 }
 
 /* Presentation only: the existing Simulation owns charge, each .43 contact,

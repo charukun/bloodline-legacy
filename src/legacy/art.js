@@ -173,10 +173,10 @@ class ArtDirector{
   const race=(p.race||0)%4,stage=appearanceStage(p),seed=p.appearanceSeed||4,age=p.age??25,child=age<10;
   let scale=p.scaleOverride??(age<4?.46:age<10?.64+(age-4)*.022:age<18?.78+(age-10)*.027:age>72?.96:1);
   const width=race===2?1.23:race===1?.88:1;scale*=race===2?.86:race===1?1.07:race===3?.95:1;
-  const run=p.action==='run'||p.action==='guardWalk'||(p.action==='carry'&&p.carryWalking),walk=this.gait?this.gait(p,t):Math.sin(t*8.2),reaction=hitPose(p,t),pose=artPose(p,t),ail=ailmentPose(p,t),fall=!p.alive?clamp((t-(p.deathAt??t))/1.12,0,1):0;
+  const run=p.action==='run'||p.action==='guardWalk'||(p.action==='carry'&&p.carryWalking),walk=this.gait?this.gait(p,t):Math.sin(t*8.2),reaction=damagePose(r,p,t),pose=damageArtPose(r,p,t,artPose(p,t)),ail=ailmentPose(p,t),fall=!p.alive?clamp((t-(p.deathAt??t))/1.12,0,1):0;
   // Keep the established floor anchors through recovery/idle. Returning to the
   // old short-leg rest matrices here would pop both soles above the ground.
-  const groundedMotion=p.alive!==false&&!run&&!p.seated&&!p.activity&&(pose.skillMotion||this.skillFeet?.has(p.id));
+  const groundedMotion=p.alive!==false&&!run&&!p.seated&&!p.activity&&(pose.skillMotion||reaction.amount>0||this.skillFeet?.has(p.id));
   if(p.kind==='guard'){const q=p.telegraph;if(q){const u=clamp((t-q.started)/Math.max(.01,q.at-q.started),0,1);pose.active=true;pose.rightArm=u<.65?-.55-u/.65*1.85:-2.4+((u-.65)/.35)**2*(3-2*(u-.65)/.35)*1.45;pose.leftArm=-1.0;pose.rightLeg=-.14;pose.leftLeg=.1;}else if(p.action==='attack'&&p.actionUntil>t){const u=clamp((t-p.actionStarted)/Math.max(.01,p.actionUntil-p.actionStarted),0,1);pose.active=true;pose.rightArm=-.95+u*1.2;pose.leftArm=-1.0;}}
   const dying=fall*fall*(3-2*fall),baseY=(p.baseY||.18)+(pose.skillMotion?0:run?Math.abs(walk)*.055:Math.sin(t*1.8+seed)*.015)+pose.y+ail.y-reaction.drop;
   const facing=(p.dir||0)+pose.yaw,guard=p.kind==='guard'||p.guard||p.guardUntil>t;
@@ -185,9 +185,10 @@ class ArtDirector{
   const cloth=p.kind==='guard'?'#8ca2a1':p.kind==='parent'?'#b6b49b':p.armor===2?'#9ca9a4':p.armor===1?'#b09e7d':palette[0],pants=p.kind==='guard'?'#6f8583':palette[1],skin=p.kind==='guard'?'#e2be9f':RACES[race].tone;
   const hairPalette=['#80674e','#a48660','#68584c','#b09772','#8b7053','#685e56'],gray=age>65?'#ddd9c6':age>48&&seed%3!==0?'#b1ac98':null,hair=gray||hairPalette[(p.hair||0)%6];
   const loss=k=>p.wounds?.[k]?.severity==='lost';
-  if(groundedMotion&&this.skillGround)this.skillGround(p,pose,t,scale);
+  if(groundedMotion&&this.skillGround)this.skillGround(p,pose,t,scale,reaction);
   const bodyRoot=this.root;
-  const upperRoot=rMultiply(bodyRoot,rMultiply(rModel(0,1.27,0,1,1,1,pose.torsoYaw||0,0,pose.skillMotion?pose.torso:0),rModel(0,-1.27,0)));
+  const skillUpper=rMultiply(bodyRoot,rMultiply(rModel(0,1.27,0,1,1,1,pose.torsoYaw||0,0,pose.skillMotion?pose.torso:0),rModel(0,-1.27,0)));
+  const upperRoot=reaction.amount>0?rMultiply(skillUpper,rMultiply(rModel(0,1.08,0,1,1,1,reaction.yaw,reaction.torsoRoll,reaction.torso),rModel(0,-1.08,0))):skillUpper;
   this.root=upperRoot;
   // Coat volume, folded hem, a visible collar, seams, belt and pouch.
   this.p('coat',0,1.48,0,1.05,.97,1.02,cloth,0,0,pose.skillMotion?0:pose.torso,0);this.S(0,1.17,0,.43,.18,.29,cloth);
@@ -204,7 +205,7 @@ class ArtDirector{
   this.root=upperRoot;
   // Arms use elbow pivots, not a single rigid rod. Equipment follows the hand.
   for(const side of [-1,1]){const key=side===1?'rightArm':'leftArm';if(loss(key))continue;let rx=(run?-walk*side*.38:0)+(pose.active?pose[key]:0)+reaction[key]+ail.arm,rz=(pose.active?pose[key+'Z']:side*-.08);
-   if(p.action==='carry'){rx=-1.12;rz=-side*.26;}if(p.action==='wave'&&side===1){rx=-2.3;rz=.15+Math.sin(t*5)*.18;}if(guard&&side===-1)rx=-1.08;
+   if(p.action==='carry'){rx=-1.12;rz=-side*.26;}if(p.action==='wave'&&side===1){rx=-2.3;rz=.15+Math.sin(t*5)*.18;}if(guard&&side===-1)rx=-1.08+reaction[key];rz+=reaction[key+'Z'];
    const arm=rMultiply(this.root,rModel(side*.45,1.78,0,1,1,1,0,rz,rx));
    const root=this.root;this.root=arm;this.S(0,-.13,0,.20,.25,.20,cloth);if(p.armor===2)this.S(side*.02,.02,0,.24,.16,.24,'#b7c0b0',0,0,0,10);
    const elbow=rMultiply(arm,rModel(0,-.28,0,1,1,1,0,0,pose[side===1?'rightElbow':'leftElbow']??0));this.root=elbow;
@@ -215,7 +216,7 @@ class ArtDirector{
    this.root=root;
   }
   // Head is a smooth sculpted mesh. Facial features are actual geometry at close range.
-  this.with(rModel(0,2.30,0,1,1,1,0,0,pose.head+reaction.head+ail.head),()=>{
+  this.with(rModel(0,2.30,0,1,1,1,0,reaction.headRoll,pose.head+reaction.head+ail.head),()=>{
    this.p('head',0,0,0,.51,.53,.5,skin,0,0,0,0);this.S(0,-.09,.424,.062,.064,.061,skin);
    for(const side of [-1,1]){if(race!==3)this.p(race===1?'leaf':'sphere',side*.48,-.01,0,race===1?.21:.085,race===1?.34:.135,.079,skin,0,-side*(race===1?1.06:.2),0,0);
     const blink=hasStatus(p,'sleep',t)||p.action==='sleep'||Math.sin(t*.9+seed)>.996,eyeH=blink?.019:.118*(seed%7===0?.81:1),eyeX=side*(seed%5===1?.218:.19),brow=hasStatus(p,'stun',t)||reaction.amount>.2?.14:0;
@@ -248,9 +249,11 @@ class ArtDirector{
   this.target=oldTarget;
  }
  monster(p,t){
-  const oldTarget=this.target;this.target=this.r.dynamic;this.root=rModel();const step=Math.sin(t*6+(p.stance||0)),run=p.action==='run',react=hitPose(p,t),ail=ailmentPose(p,t),fall=!p.alive?clamp((t-(p.deathAt??t))/1.1,0,1):0;
+  const oldTarget=this.target;this.target=this.r.dynamic;this.root=rModel();const step=Math.sin(t*6+(p.stance||0)),run=p.action==='run',react=damagePose(this.r,p,t),ail=ailmentPose(p,t),fall=!p.alive?clamp((t-(p.deathAt??t))/1.1,0,1):0;
   const kind=p.kind||'goblin',elite=p.elite||kind==='boss',sc=kind==='boss'?2.1:elite?1.45:1;
-  this.root=rModel(p.x+react.x,.20+ail.y+(run?Math.abs(step)*.04:0)-react.drop,p.z+react.z,sc,sc,sc,p.dir||0,react.roll+ail.roll,fall*1.5+react.pitch+ail.pitch);
+  const humanoid=['goblin','soldier','elite','boss','archer','mage'].includes(kind);
+  this.root=rModel(p.x+react.x,.20+ail.y+(run?Math.abs(step)*.04:0)-react.drop,p.z+react.z,sc,sc,sc,p.dir||0,(humanoid?0:react.roll)+ail.roll,fall*1.5+(humanoid?0:react.pitch)+ail.pitch);
+  const damageBase=this.root,damageUpper=humanoid&&react.amount>0?rMultiply(damageBase,rMultiply(rModel(0,.89,0,1,1,1,react.yaw,react.torsoRoll+react.roll,react.torso+react.pitch),rModel(0,-.89,0))):damageBase;
   let fur=elite?'#a7ac9b':kind==='goblin'?'#b3c394':kind==='guard'?'#aeb7a5':'#babfa0',top=2.3;
   if(kind==='dummy'){this.C(0,.9,0,.12,1.8,.12,'#bfa67c');this.S(0,1.6,0,.49,.60,.31,'#d7c9a2');this.S(0,2.2,0,.32,.35,.29,'#e5d4ad');this.B(0,1.6,.32,.035,.65,.022,'#a1916f');this.line([-.6,1.4,0],[.6,1.4,0],.08,'#ad9166');}
   else if(kind==='crawler'){
@@ -266,21 +269,36 @@ class ArtDirector{
   }else if(kind==='wraith'){
    this.p('cone',0,1.13,0,.66,1.9,.59,'#b6b6b8');this.S(0,1.9,0,.49,.52,.42,'#b6b6ba');this.p('arch',0,1.86,.35,.68,.79,.17,'#626b74');for(const side of [-1,1]){this.S(side*.14,1.89,.46,.09,.12,.023,'#c4d8d1',0,0,0,4);this.p('hair',side*.60,1.05,0,.17,.89,.14,'#c3c1bc',0,side*.4,0,0);}this.B(0,1.18,.44,.50,.06,.04,'#e6d7b0');
   }else{
+   this.root=damageUpper;
    this.S(0,1.26,0,.56,.63,.37,fur);this.B(0,1.29,.18,.81,.81,.43,elite?'#b08772':'#a5a884',0,0,0,0);this.B(0,1.10,.35,1.01,.13,.13,'#c2ac82');
+   const damageHead=rMultiply(damageUpper,rMultiply(rModel(0,1.82,0,1,1,1,0,react.headRoll,react.head),rModel(0,-1.82,0)));this.root=damageHead;
    this.S(0,2.06,.01,.63,.58,.51,fur);this.S(0,1.83,.48,.34,.22,.23,'#c3be9b');this.S(0,1.88,.69,.18,.10,.035,'#766c52');
    for(const side of [-1,1]){
+    this.root=damageHead;
     this.p('leaf',side*.61,2.15,0,.22,.43,.12,fur,0,-side*.95,0,0);
     this.S(side*.23,2.13,.471,.135,.14,.031,'#e5d4a7');this.S(side*.23,2.12,.503,.062,.10,.022,'#5a5442',0,0,0,10);this.S(side*.215,2.15,.526,.022,.027,.01,'#fff1c9',0,0,0,4);
     this.B(side*.23,2.31,.41,.27,.07,.058,'#788172',0,side*.17,0,0);
-    const k=side===1?'rightLeg':'leftLeg';if(p.wounds?.[k]?.severity!=='lost')this.with(rModel(side*.28,.89,0,1,1,1,0,0,(run?step*side*.42:0)+react[k]),()=>{this.S(0,-.26,0,.22,.35,.22,fur);this.B(0,-.52,.13,.43,.30,.55,'#a69f80',0,0,0,0);});
+    this.root=damageBase;
+    const k=side===1?'rightLeg':'leftLeg';if(p.wounds?.[k]?.severity!=='lost'){
+     const planted=react.amount>0&&!run&&p.alive!==false,leg=planted?damageLeg(react,side,.34,.33,sc,p.dir||0):null;
+     const hip=leg?leg.hip:(run?step*side*.42:0)+react[k],knee=leg?.knee||0;
+     this.with(rModel(side*.28,.89,0,1,1,1,0,leg?.roll||0,hip),()=>{
+      this.S(0,-.26,0,.22,.35,.22,fur);
+      this.with(rModel(0,-.34,0,1,1,1,0,0,knee),()=>{
+       this.with(rMultiply(rModel(0,-.33,0,1,1,1,0,leg?-leg.roll:0,leg?-hip-knee:0),rModel(0,.33,0)),()=>this.B(0,-.18,.13,.43,.30,.55,'#a69f80',0,0,0,0));});
+     });
+    }
+    this.root=damageUpper;
     const arm=side===1?'rightArm':'leftArm';if(p.wounds?.[arm]?.severity==='lost')continue;
     const attack=p.action==='attack'?clamp((t-p.actionStarted)/Math.max(.01,p.actionUntil-p.actionStarted),0,1):0,wind=p.telegraph?clamp((t-p.telegraph.started)/(p.telegraph.at-p.telegraph.started),0,1):0;
-    this.with(rModel(side*.64,1.60,0,1,1,1,0,side*-.18,p.telegraph?(wind<.65?-.55-wind/.65*1.85:-2.4+((wind-.65)/.35)**2*(3-2*(wind-.65)/.35)*1.45):p.action==='attack'?-.95+attack*1.2:react[arm]+ail.arm),()=>{this.S(0,-.24,0,.22,.36,.23,fur);this.S(0,-.57,.07,.23,.24,.23,fur);if(side===1)this.with(rModel(0,-.6,0,1,1,1,0,0,Math.PI),()=>{this.C(0,.16,0,.08,1.05,.08,'#a18c68');this.B(0,.76,0,.50,.43,.50,elite?'#a0a796':'#b6a684',0,0,0,elite?10:8);});else if(p.kind==='soldier'||elite)this.shield(-.06,-.3,.22,1.05);});
+    this.with(rModel(side*.64,1.60,0,1,1,1,0,side*-.18+react[arm+'Z'],(p.telegraph?(wind<.65?-.55-wind/.65*1.85:-2.4+((wind-.65)/.35)**2*(3-2*(wind-.65)/.35)*1.45):p.action==='attack'?-.95+attack*1.2:ail.arm)+react[arm]),()=>{this.S(0,-.24,0,.22,.36,.23,fur);this.S(0,-.57,.07,.23,.24,.23,fur);if(side===1)this.with(rModel(0,-.6,0,1,1,1,0,0,Math.PI),()=>{this.C(0,.16,0,.08,1.05,.08,'#a18c68');this.B(0,.76,0,.50,.43,.50,elite?'#a0a796':'#b6a684',0,0,0,elite?10:8);});else if(p.kind==='soldier'||elite)this.shield(-.06,-.3,.22,1.05);});
    }
+   this.root=damageHead;
    if(elite){
     // Felt skull helm, cheek guards, curled horns and stitched red mantle.
     this.p('cap',0,2.24,-.04,.68,.47,.56,'#d4ccb0',0,0,0,9);
     for(const side of [-1,1]){this.p('horn',side*.49,2.86,-.10,.16,.86,.17,'#c1b89a',0,side*.31,0,9);this.B(side*.49,2.07,.18,.20,.52,.35,'#d1c6a6',0,side*.15,0,9);this.S(side*.52,1.63,-.01,.29,.19,.32,'#bea487',0,0,0,9);}
+    this.root=damageUpper;
     this.B(0,1.39,-.37,.95,1.08,.15,'#b48575',0,0,.08,0);for(let i=0;i<7;i++)this.B(-.38+i*.12,1.83,-.48,.04,.02,.03,'#dfc89f',0,0,0,0);
    }
   }

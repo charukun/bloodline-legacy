@@ -1,9 +1,17 @@
 {
-  "conditions": "Simulation at 30Hz; adult/location fixture; actual activity/pickup/weights/combat commands, no discovery grants. Same 240-second activity budget.",
+  "conditions": "Simulation at 30Hz; adult/location fixture; actual activity/pickup/weights/combat commands, no discovery grants. Same 720-second activity budget at the slower discovery pace; event-only diversity cohorts retain their 240-second budget.",
   "lives": [
     {
       "name": "稽古と学び",
       "skills": [
+        {
+          "id": 60040,
+          "name": "間割り",
+          "route": "main",
+          "reasons": [
+            "指南書と稽古で、構えの意味を学んだ"
+          ]
+        },
         {
           "id": 60041,
           "name": "せめぎ返し",
@@ -13,16 +21,8 @@
           ]
         },
         {
-          "id": 60040,
-          "name": "間割り",
-          "route": "main",
-          "reasons": [
-            "指南書と稽古で、構えの意味を学んだ"
-          ]
-        },
-        {
-          "id": 60011,
-          "name": "綾返し",
+          "id": 60012,
+          "name": "結び止め",
           "route": "main",
           "reasons": [
             "武具を手入れし、力の通り道を確かめた"
@@ -38,17 +38,8 @@
           ]
         },
         {
-          "id": 60100,
-          "name": "打ち合わせ",
-          "route": "cross",
-          "reasons": [
-            "武具を手入れし、力の通り道を確かめた",
-            "指南書と稽古で、構えの意味を学んだ"
-          ]
-        },
-        {
-          "id": 60010,
-          "name": "糸通し",
+          "id": 60001,
+          "name": "鉄返し",
           "route": "main",
           "reasons": [
             "武具を手入れし、力の通り道を確かめた"
@@ -57,36 +48,40 @@
       ],
       "latest": {
         "ids": [
-          60010,
-          60011
+          60040,
+          60001,
+          60012
         ],
         "kind": "crawler",
-        "elapsed": 11.4,
+        "elapsed": 9,
         "won": true,
         "survived": true,
         "health": 100,
-        "enemyHp": -3,
-        "connections": 2,
+        "enemyHp": -3.719999999999999,
+        "connections": 4,
         "used": [
-          60010,
-          60011
+          60040,
+          60001,
+          60012
         ]
       },
       "best": {
         "ids": [
-          60010,
-          60011
+          60040,
+          60041,
+          60012
         ],
         "kind": "crawler",
-        "elapsed": 11.4,
+        "elapsed": 7.83,
         "won": true,
         "survived": true,
         "health": 100,
-        "enemyHp": -3,
-        "connections": 2,
+        "enemyHp": -0.4799999999999969,
+        "connections": 3,
         "used": [
-          60010,
-          60011
+          60040,
+          60041,
+          60012
         ]
       }
     },
@@ -94,99 +89,89 @@
       "name": "足跡と遊び",
       "skills": [
         {
+          "id": 60030,
+          "name": "足跡突き",
+          "route": "main",
+          "reasons": [
+            "狩人の足跡を学び、一歩先を読んだ。手元には羽根があった",
+            "道で拾った羽根"
+          ]
+        },
+        {
+          "id": 60032,
+          "name": "獣道断ち",
+          "route": "main",
+          "reasons": [
+            "狩人の足跡を学び、一歩先を読んだ。手元には羽根があった",
+            "道で拾った羽根"
+          ]
+        },
+        {
+          "id": 60071,
+          "name": "風羽返し",
+          "route": "cross",
+          "reasons": [
+            "庭で遊び、弾む足の拍子を覚えた。手元には羽根があった",
+            "狩人の足跡を学び、一歩先を読んだ。手元には羽根があった",
+            "道で拾った羽根"
+          ]
+        },
+        {
+          "id": 60022,
+          "name": "遊び終い",
+          "route": "main",
+          "reasons": [
+            "庭で遊び、弾む足の拍子を覚えた。手元には羽根があった",
+            "道で拾った羽根"
+          ]
+        },
+        {
           "id": 60072,
           "name": "落羽",
           "route": "cross",
           "reasons": [
-            "狩人の足跡を学び、一歩先を読んだ。手元には羽根があった",
-            "道で拾った羽根。手元には羽根があった",
-            "道で拾った羽根"
-          ]
-        },
-        {
-          "id": 60031,
-          "name": "追い枝",
-          "route": "main",
-          "reasons": [
-            "狩人の足跡を学び、一歩先を読んだ。手元には羽根があった",
-            "道で拾った羽根"
-          ]
-        },
-        {
-          "id": 60021,
-          "name": "くるり舞",
-          "route": "main",
-          "reasons": [
-            "庭で遊び、弾む足の拍子を覚えた。手元には羽根があった",
-            "道で拾った羽根"
-          ]
-        },
-        {
-          "id": 60070,
-          "name": "羽先払い",
-          "route": "cross",
-          "reasons": [
-            "庭で遊び、弾む足の拍子を覚えた。手元には羽根があった",
-            "狩人の足跡を学び、一歩先を読んだ。手元には羽根があった",
-            "道で拾った羽根"
-          ]
-        },
-        {
-          "id": 60112,
-          "name": "夕凪返し",
-          "route": "cross",
-          "reasons": [
-            "狩人の足跡を学び、一歩先を読んだ。手元には羽根があった",
             "祈りの間、息と静けさを確かめた。手元には羽根があった",
-            "道で拾った羽根"
-          ]
-        },
-        {
-          "id": 60011,
-          "name": "綾返し",
-          "route": "deviation",
-          "reasons": [
-            "祈りの間、息と静けさを確かめた。手元には羽根があった",
+            "庭で遊び、弾む足の拍子を覚えた。手元には羽根があった",
             "道で拾った羽根"
           ]
         }
       ],
       "latest": {
         "ids": [
-          60070,
-          60011,
-          60112
+          60030,
+          60071,
+          60072
         ],
         "kind": "crawler",
-        "elapsed": 12,
+        "elapsed": 11.6,
         "won": true,
         "survived": true,
-        "health": 65,
-        "enemyHp": -17.94,
-        "connections": 4,
+        "health": 100,
+        "enemyHp": -2.8199999999999985,
+        "connections": 3,
         "used": [
-          60070,
-          60011,
-          60112
+          60030,
+          60071,
+          60072
         ]
       },
       "best": {
         "ids": [
-          60070,
-          60031,
-          60112
+          60030,
+          60071,
+          60072
         ],
         "kind": "crawler",
-        "elapsed": 10.6,
+        "elapsed": 11.6,
         "won": true,
         "survived": true,
         "health": 100,
-        "enemyHp": -0.21000000000000307,
-        "connections": 1,
+        "enemyHp": -2.8199999999999985,
+        "connections": 3,
         "used": [
-          60070,
-          60031,
-          60112
+          60030,
+          60071,
+          60072
         ]
       }
     },
@@ -194,31 +179,11 @@
       "name": "家族の鈴と手仕事",
       "skills": [
         {
-          "id": 60062,
-          "name": "鳴り納め",
-          "route": "cross",
-          "reasons": [
-            "家族から受け取った鈴。手元には鈴があった",
-            "鍛冶場で、道具が打ち返す拍子を見た。手元には鈴があった",
-            "家族から受け取った鈴"
-          ]
-        },
-        {
-          "id": 60000,
-          "name": "炉打ち",
+          "id": 60002,
+          "name": "炉底割り",
           "route": "main",
           "reasons": [
             "鍛冶場で、道具が打ち返す拍子を見た。手元には鈴があった",
-            "家族から受け取った鈴"
-          ]
-        },
-        {
-          "id": 60900,
-          "name": "炉辺の息",
-          "route": "cross",
-          "reasons": [
-            "鍛冶場で、道具が打ち返す拍子を見た。手元には鈴があった",
-            "武具を手入れし、力の通り道を確かめた。手元には鈴があった",
             "家族から受け取った鈴"
           ]
         },
@@ -227,25 +192,54 @@
           "name": "残響打ち",
           "route": "cross",
           "reasons": [
-            "指南書と稽古で、構えの意味を学んだ。手元には鈴があった",
-            "武具を手入れし、力の通り道を確かめた。手元には鈴があった",
+            "家族から受け取った鈴。手元には鈴があった",
+            "鍛冶場で、道具が打ち返す拍子を見た。手元には鈴があった",
             "家族から受け取った鈴"
           ]
         },
         {
-          "id": 60102,
-          "name": "折り返し三打",
+          "id": 60903,
+          "name": "手仕事の無駄なし",
           "route": "cross",
           "reasons": [
             "武具を手入れし、力の通り道を確かめた。手元には鈴があった",
-            "指南書と稽古で、構えの意味を学んだ。手元には鈴があった",
+            "鍛冶場で、道具が打ち返す拍子を見た。手元には鈴があった",
             "家族から受け取った鈴"
           ]
         },
         {
-          "id": 60040,
-          "name": "間割り",
+          "id": 60900,
+          "name": "炉辺の息",
+          "route": "cross",
+          "reasons": [
+            "鍛冶場で、道具が打ち返す拍子を見た。手元には鈴があった",
+            "武具を手入れし、力の通り道を確かめた。手元には鈴があった",
+            "家族から受け取った鈴"
+          ]
+        },
+        {
+          "id": 60011,
+          "name": "綾返し",
           "route": "main",
+          "reasons": [
+            "武具を手入れし、力の通り道を確かめた。手元には鈴があった",
+            "家族から受け取った鈴"
+          ]
+        },
+        {
+          "id": 60902,
+          "name": "重みの記憶",
+          "route": "cross",
+          "reasons": [
+            "指南書と稽古で、構えの意味を学んだ。手元には鈴があった",
+            "鍛冶場で、道具が打ち返す拍子を見た。手元には鈴があった",
+            "家族から受け取った鈴"
+          ]
+        },
+        {
+          "id": 60051,
+          "name": "息継ぎ打ち",
+          "route": "deviation",
           "reasons": [
             "指南書と稽古で、構えの意味を学んだ。手元には鈴があった",
             "家族から受け取った鈴"
@@ -254,40 +248,38 @@
       ],
       "latest": {
         "ids": [
-          60040,
-          60061,
-          60102
+          60051,
+          60002
         ],
         "kind": "crawler",
-        "elapsed": 9.57,
+        "elapsed": 11.83,
         "won": true,
         "survived": true,
-        "health": 100,
-        "enemyHp": -3.5399999999999983,
+        "health": 46,
+        "enemyHp": -17.49,
         "connections": 0,
         "used": [
-          60040,
-          60061,
-          60102
+          4000,
+          60051,
+          60002
         ]
       },
       "best": {
         "ids": [
-          60040,
-          60061,
-          60102
+          60051,
+          60002
         ],
         "kind": "crawler",
-        "elapsed": 9.57,
+        "elapsed": 11.83,
         "won": true,
         "survived": true,
-        "health": 100,
-        "enemyHp": -3.5399999999999983,
+        "health": 46,
+        "enemyHp": -17.49,
         "connections": 0,
         "used": [
-          60040,
-          60061,
-          60102
+          4000,
+          60051,
+          60002
         ]
       }
     }
@@ -296,40 +288,40 @@
     {
       "mode": "combat",
       "seeds": 96,
-      "unique": 36,
-      "mean": 4.947916666666667,
-      "min": 4,
-      "max": 6,
+      "unique": 29,
+      "mean": 1.625,
+      "min": 1,
+      "max": 2,
       "routes": {
-        "main": 266,
+        "main": 105,
         "cross": 0,
-        "deviation": 209
+        "deviation": 51
       }
     },
     {
       "mode": "craft",
       "seeds": 96,
-      "unique": 45,
-      "mean": 4.947916666666667,
-      "min": 4,
-      "max": 6,
+      "unique": 30,
+      "mean": 1.625,
+      "min": 1,
+      "max": 2,
       "routes": {
-        "main": 421,
+        "main": 145,
         "cross": 0,
-        "deviation": 54
+        "deviation": 11
       }
     },
     {
       "mode": "mixed",
       "seeds": 96,
-      "unique": 96,
-      "mean": 5.8125,
-      "min": 5,
-      "max": 6,
+      "unique": 71,
+      "mean": 2.53125,
+      "min": 1,
+      "max": 3,
       "routes": {
-        "main": 340,
-        "cross": 182,
-        "deviation": 36
+        "main": 105,
+        "cross": 128,
+        "deviation": 10
       }
     }
   ],
@@ -339,42 +331,42 @@
       "best": {
         "ids": [
           60080,
-          60041,
-          60002
+          60101,
+          60102
         ],
         "kind": "crawler",
         "elapsed": 8.4,
         "won": true,
         "survived": true,
-        "health": 70,
-        "enemyHp": -0.7500000000000009,
-        "connections": 2,
+        "health": 100,
+        "enemyHp": -6.96,
+        "connections": 1,
         "used": [
           60080,
-          60041,
-          60002
+          60101,
+          60102
         ]
       },
       "worst": {
         "ids": [
           60080,
           60081,
-          60002
+          60102
         ],
         "kind": "crawler",
-        "elapsed": 9.67,
+        "elapsed": 9.63,
         "won": true,
         "survived": true,
-        "health": 66,
-        "enemyHp": -4.350000000000002,
-        "connections": 3,
+        "health": 100,
+        "enemyHp": -3.360000000000004,
+        "connections": 2,
         "used": [
           60080,
           60081,
-          60002
+          60102
         ]
       },
-      "tested": 12
+      "tested": 6
     },
     {
       "kind": "soldier",
@@ -382,83 +374,83 @@
         "ids": [
           60080,
           60041,
-          60002
+          60102
         ],
         "kind": "soldier",
-        "elapsed": 8.1,
+        "elapsed": 10.3,
         "won": true,
         "survived": true,
-        "health": 71,
-        "enemyHp": -0.7500000000000009,
+        "health": 68,
+        "enemyHp": -0.21000000000000263,
         "connections": 2,
         "used": [
           60080,
           60041,
-          60002
+          60102
         ]
       },
       "worst": {
         "ids": [
           60080,
           60081,
-          60002
+          60102
         ],
         "kind": "soldier",
-        "elapsed": 9.37,
+        "elapsed": 11.13,
         "won": true,
         "survived": true,
-        "health": 68,
-        "enemyHp": -4.350000000000002,
-        "connections": 3,
+        "health": 65,
+        "enemyHp": -3.360000000000004,
+        "connections": 2,
         "used": [
           60080,
           60081,
-          60002
+          60102
         ]
       },
-      "tested": 12
+      "tested": 6
     },
     {
       "kind": "elite",
       "best": {
         "ids": [
           60080,
-          60001,
-          60002
+          60101,
+          60102
         ],
         "kind": "elite",
-        "elapsed": 22.67,
+        "elapsed": 27.13,
         "won": true,
         "survived": true,
         "health": 100,
-        "enemyHp": -0.3599999999999923,
-        "connections": 8,
+        "enemyHp": -0.8399999999999768,
+        "connections": 4,
         "used": [
           60080,
-          60001,
-          60002
+          60101,
+          60102
         ]
       },
       "worst": {
         "ids": [
           60000,
           60081,
-          60002
+          60102
         ],
         "kind": "elite",
-        "elapsed": 23.63,
-        "won": false,
-        "survived": false,
-        "health": 0,
-        "enemyHp": 27.38999999999999,
-        "connections": 6,
+        "elapsed": 32.1,
+        "won": true,
+        "survived": true,
+        "health": 100,
+        "enemyHp": -2.5799999999999965,
+        "connections": 5,
         "used": [
           60000,
           60081,
-          60002
+          60102
         ]
       },
-      "tested": 12
+      "tested": 6
     }
   ]
 }
