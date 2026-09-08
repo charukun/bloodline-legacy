@@ -4,7 +4,7 @@ No external model, image reference pixel, or network dependency is used.
 Run with Python 3, numpy, scipy and Pillow. glTF 2.0, metre-like game units, +Y up/+Z front.
 """
 from pathlib import Path
-import json, math, struct, io, hashlib
+import json, math, struct, io, hashlib, subprocess, tempfile
 import numpy as np
 from scipy.interpolate import PchipInterpolator
 from PIL import Image, ImageDraw
@@ -181,6 +181,8 @@ def build(lod=0):
  # Tailored torso. Ring curvature defines chest, waist and the flared coat skirts.
  def coat_deform(p,a,t):
   hem=max(0,1-(p[1]-.98)/.24);p[0]+=math.sin(a)*math.cos(a*7)*.012*hem;p[2]+=math.cos(a)*math.cos(a*7)*.012*hem
+  front=max(0,math.cos(a));fold=.012*math.sin(p[0]*30+p[1]*10)*math.exp(-((p[1]-1.39)/.24)**2)
+  p[2]+=front**2*fold;p[1]+=.008*math.sin(a*3+.8)*hem
   # Raised front centre opening, lower sides/back.
   p[1]+=hem*.055*max(0,math.cos(a))**12
   return p
@@ -204,7 +206,7 @@ def build(lod=0):
   bootw=lambda p,s=s:blend_y(p[1],[(.13,'foot.'+s),(.255,'shin.'+s)])
   m.loft([(.027,x,.100,.146,.240),(.054,x,.109,.160,.255),(.108,x,.112,.162,.249),(.177,x,.062,.146,.188),(.21,x,.005,.108,.115),(.32,x,-.01,.103,.105),(.435,x,-.014,.116,.113),(.455,x,-.014,.119,.115)],4,bootw,reg,seg=26,rings=20,name='sculpted boot '+s)
   m.loft([(.020,x,.102,.148,.243),(.036,x,.109,.165,.258),(.066,x,.109,.163,.256)],14,'foot.'+s,reg,seg=28,rings=5,name='layered sole '+s)
-  m.loft([(.375,x,-.004,.111,.115),(.415,x,-.010,.153,.150),(.490,x,-.014,.146,.148),(.508,x,-.014,.131,.131)],5,'shin.'+s,reg,seg=22,rings=5,name='rolled boot cuff '+s)
+  m.loft([(.375,x,-.004,.111,.115),(.415,x,-.010,.153,.150),(.490,x,-.014,.146,.148),(.508,x,-.014,.131,.131)],5,'shin.'+s,reg,seg=22,rings=5,deform=lambda p,a,t:p+np.array([.006*math.sin(a*3),.016*math.sin(a*2+.8)*math.sin(t*math.pi),.005*math.cos(a*3)]),name='rolled boot cuff '+s)
   for y in [.240,.287,.334]:
    for direction in [-1,1]:
     m.sweep([(x-direction*.060,y-.017,.099),(x,y,.127),(x+direction*.060,y+.017,.099)],[.005]*3,[.004]*3,12,'shin.'+s,reg,rings=5,sides=6,name='crossed boot lace')
@@ -306,6 +308,18 @@ def finalize(m):
  has=np.linalg.norm(hints,axis=1)>.5;n[has]=hints[has]
  return {'POSITION':v,'NORMAL':n.astype(np.float32),'TEXCOORD_0':np.array(m.uv,np.float32),'COLOR_0':np.array(m.color,np.float32),'JOINTS_0':np.array(m.joints,np.uint16),'WEIGHTS_0':np.array(m.weights,np.float32),'_REGION':np.array(m.region,np.float32),'_SURFACE':np.array(m.surf,np.float32)},f.flatten()
 
+def bake_occlusion(attrs,indices):
+ # Hidden equipment must not darken the unarmoured protagonist. The bake only
+ # affects ambient light, encoded in the existing COLOR_0 alpha channel.
+ source=ROOT/'tools/character_ao.cpp';digest=hashlib.sha256(source.read_bytes()).hexdigest()[:12]
+ exe=Path(tempfile.gettempdir())/('bloodline-character-ao-'+digest)
+ if not exe.exists():subprocess.run(['g++','-O2','-std=c++17',str(source),'-o',str(exe)],check=True)
+ faces=indices.reshape(-1,3);faces=faces[attrs['_REGION'][faces[:,0]]<10]
+ payload=struct.pack('<II',len(attrs['POSITION']),len(faces))+attrs['POSITION'].astype('<f4').tobytes()+attrs['NORMAL'].astype('<f4').tobytes()+faces.astype('<u4').tobytes()
+ out=subprocess.run([str(exe)],input=payload,stdout=subprocess.PIPE,check=True).stdout
+ ao=np.frombuffer(out,dtype='<f4');assert len(ao)==len(attrs['POSITION']) and np.isfinite(ao).all()
+ attrs['COLOR_0'][:,3]=ao
+
 def export(lods):
  data=bytearray();g={'asset':{'version':'2.0','generator':'Bloodline Legacy CM01 original parametric sculpture','copyright':'Original project asset; authored for Bloodline Legacy, 2026'},'scene':0,'scenes':[{'nodes':[0,len(BONES)]}],'nodes':[],'meshes':[],'skins':[],'materials':[],'textures':[],'images':[],'samplers':[{'magFilter':9729,'minFilter':9987,'wrapS':33071,'wrapT':33071}],'buffers':[],'bufferViews':[],'accessors':[]}
  def view(blob,target=None):
@@ -328,7 +342,7 @@ def export(lods):
  ibm=np.tile(np.eye(4),(len(BONES),1,1));ibm[:,:3,3]=-BP;g['skins']=[{'name':'CM01 articulated skeleton','joints':list(range(len(BONES))),'skeleton':0,'inverseBindMatrices':access(ibm.transpose(0,2,1).reshape(-1,16).astype(np.float32),'MAT4')}]
  stats=[]
  for i,m in enumerate(lods):
-  attrs,ind=finalize(m);attributes={k:access(a,('SCALAR' if a.ndim==1 else {2:'VEC2',3:'VEC3',4:'VEC4'}[a.shape[1]]),34962) for k,a in attrs.items()}
+  attrs,ind=finalize(m);bake_occlusion(attrs,ind);attributes={k:access(a,('SCALAR' if a.ndim==1 else {2:'VEC2',3:'VEC3',4:'VEC4'}[a.shape[1]]),34962) for k,a in attrs.items()}
   idx=access(ind.astype(np.uint16 if len(attrs['POSITION'])<65536 else np.uint32),'SCALAR',34963)
   g['meshes'].append({'name':'CM01_LOD'+str(i),'primitives':[{'attributes':attributes,'indices':idx,'material':0}],'extras':{'screenPixelThreshold':96 if i==1 else 0,'parts':m.parts}})
   stats.append({'lod':i,'vertices':len(attrs['POSITION']),'triangles':len(ind)//3,'parts':len(m.parts)})

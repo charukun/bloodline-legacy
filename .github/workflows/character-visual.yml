@@ -14,6 +14,7 @@ on:
       - 'tests/character*'
       - 'tools/generate_character.py'
       - 'tools/character_sculpture.py'
+      - 'tools/character_ao.cpp'
       - '.github/workflows/character-visual.yml'
       - 'build.mjs'
       - 'package*.json'
@@ -25,6 +26,7 @@ on:
       - 'tests/character*'
       - 'tools/generate_character.py'
       - 'tools/character_sculpture.py'
+      - 'tools/character_ao.cpp'
       - '.github/workflows/character-visual.yml'
 permissions:
   contents: read

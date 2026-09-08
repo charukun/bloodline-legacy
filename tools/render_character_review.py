@@ -37,7 +37,7 @@ def raster(a,f,size,yaw,pitch):
   tx=np.clip(uv[:,0]*texw,0,texw-1);ty=np.clip(uv[:,1]*texh,0,texh-1);ix=tx.astype(int);iy=ty.astype(int);dx=(tx-ix)[:,None];dy=(ty-iy)[:,None]
   tex=(atlas[iy,ix,:3]*(1-dx)+atlas[iy,np.minimum(ix+1,texw-1),:3]*dx)*(1-dy)+(atlas[np.minimum(iy+1,texh-1),ix,:3]*(1-dx)+atlas[np.minimum(iy+1,texh-1),np.minimum(ix+1,texw-1),:3]*dx)*dy
   base=np.power(tex*colour,2.2);surf=int(round(a['_SURFACE'][face[0],0]));rough=[.72,.55,.89,.92,.71,.66,.28,.33,.22,.81,.75,.91,.83,.91,.9,.74][surf]
-  lam=np.maximum(0,N@light);hemi=.42+.16*N[:,1];h=unit(light+camera[2]);spec=np.power(np.maximum(0,N@h),max(4,2/rough**2))*((.12 if surf in [6,7] else .022)/rough)
+  lam=np.maximum(0,N@light);hemi=(.42+.16*N[:,1])*(w@a['COLOR_0'][face,3]);h=unit(light+camera[2]);spec=np.power(np.maximum(0,N@h),max(4,2/rough**2))*((.12 if surf in [6,7] else .022)/rough)
   lit=base*(hemi[:,None]+lam[:,None]*np.array([.83,.77,.68]))+spec[:,None]
   out=np.clip(np.power(lit,1/2.2),0,1);old[mask]=z[mask];rgb[ymin:ymax+1,xmin:xmax+1][mask]=out
  return Image.fromarray(np.uint8(np.clip(rgb*255,0,255)))

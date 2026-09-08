@@ -71,15 +71,35 @@ try{
     check(version+' native onboarding',await page.evaluate(()=>AERIN_QA.player().prologue));
     if(mode==='polish'){
       await fixture(page);await shot(version+'-gameplay');await fixture(page,{close:true});
-      // Same open stretch of existing paving for both close views; no scene
-      // object is hidden or moved to make the model look better.
-      await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();p.x=0;p.z=17;a.renderer.camera.x=0;a.renderer.camera.z=17;a.snapshot=a.decorate(a.sim.snapshot(p.id,a.seq));a.renderer.render(a.snapshot,0,{freezeCamera:true});});await shot(version+'-close');
+      // Isolated mesh inspection outside the village bounds; no scene assets
+      // are edited. Gameplay evidence above/below retains the village fixture.
+      await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();p.x=100;p.z=0;a.renderer.camera.x=100;a.renderer.camera.z=0;a.snapshot=a.decorate(a.sim.snapshot(p.id,a.seq));a.renderer.render(a.snapshot,0,{freezeCamera:true});});await shot(version+'-close');
       if(version==='after'){
         for(const [view,yaw] of [['quarter',.85],['side',1.82],['back',3.2]]){
           await page.evaluate(yaw=>{const a=AERIN_QA.app;a.renderer.camera.yaw=yaw;a.renderer.render(a.snapshot,0,{freezeCamera:true});},yaw);await shot('after-'+view);
         }
         await page.evaluate(()=>{const a=AERIN_QA.app;a.renderer.camera.yaw=.28;a.renderer.render(a.snapshot,0,{freezeCamera:true});});
-        await page.keyboard.down('d');await page.evaluate(()=>characterStep(8));await page.keyboard.up('d');await shot('after-run');
+        await fixture(page,{close:true});
+        record.states.push({name:'idle',animation:await page.evaluate(()=>AERIN_QA.stats().characterMaster.animation)});await shot('after-idle');
+        for(const [name,key,ticks] of [['run','d',12],['stop',null,16]]){
+          if(key)await page.keyboard.down(key);await page.evaluate(n=>characterStep(n),ticks);if(key)await page.keyboard.up(key);
+          const rows=await page.evaluate(n=>characterTrace.slice(-n),ticks);record[name+'Contact']=rows;
+          check('after '+name+' contact',rows.length===ticks&&rows.every(s=>s.finite&&s.metrics.pelvisDrop<.38&&s.feet.every(f=>f.error<.035))&&groundedSlip(rows)<.012);await shot('after-'+name);
+        }
+        await fixture(page);await page.mouse.move(550,470);await page.mouse.down();await page.mouse.move(565,470);await page.evaluate(()=>characterStep(16));await page.mouse.up();
+        const walk=await page.evaluate(()=>characterTrace);check('after pointer walk',walk.length===16&&walk.at(-1).metrics.animation==='walk'&&groundedSlip(walk)<.012);await shot('after-walk');
+        await fixture(page,{close:true});
+        await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player(),d=a.sim.getRoom(p).actors.find(e=>e.kind==='dummy');p.x=d.x;p.z=d.z+2.1;p.dir=Math.PI;a.renderer.camera.x=p.x;a.renderer.camera.z=p.z;});
+        await page.keyboard.down('w');await page.evaluate(()=>characterStep(10,false));await page.keyboard.up('w');
+        const combat=await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();for(let i=0;i<240;i++){characterStep(1,false);const u=(a.sim.time-p.actionStarted)/Math.max(.001,p.actionUntil-p.actionStarted);if(p.action==='attack'&&u>=.3&&u<=.65){a.renderer.render(a.snapshot,1/30,{freezeCamera:true});return {attack:true,target:!!p.autoFight,animation:AERIN_QA.stats().characterMaster.animation};}}return {attack:false};});
+        record.combat=combat;check('after native contact attack',combat.attack&&combat.target&&combat.animation==='attack');await shot('after-attack');
+        await fixture(page,{close:true});await page.evaluate(()=>{AERIN_QA.player().guard=true;characterStep(2);});
+        check('after combat idle',await page.evaluate(()=>AERIN_QA.stats().characterMaster.animation==='combat_idle'));await shot('after-combat-idle');
+        await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();p.guard=false;a.sim.inflictWound(p,'torso','light',{id:'qa-hit',x:p.x,z:p.z+1,alive:true});characterStep(3);});
+        check('after simulation hit',await page.evaluate(()=>AERIN_QA.player().health<100&&AERIN_QA.stats().characterMaster.animation==='hit'));await shot('after-hit');
+        await fixture(page,{close:true});const equipment=await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player(),rack=a.snapshot.map.schools.find(s=>s.id==='armory');p.x=rack.x;p.z=rack.z+3;const ok=a.command({type:'equip',slot:'weapon',value:0});a.renderer.camera.x=p.x;a.renderer.camera.z=p.z;characterStep(1);return {ok,weapon:p.weapon,tip:a.renderer.weaponTips.has(p.id)};});
+        check('after native sword attachment',equipment.ok&&equipment.weapon===0&&equipment.tip);await shot('after-sword');
+        record.inspection='Close, quarter, side and back are isolated mesh inspection at x=100. Gameplay, locomotion and combat use the unchanged village.';
         check('updated gloves and boots retain finite joints',await page.evaluate(()=>AERIN_QA.app.renderer.characterMaster.palette.every(Number.isFinite)));
       }
       check(version+' shader and game loop',record.errors.length===0&&await page.evaluate(()=>!!AERIN_QA.stats().characterMaster&&!AERIN_QA.app.frameError&&AERIN_QA.app.renderer.gl.getError()===0));

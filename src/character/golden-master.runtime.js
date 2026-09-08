@@ -46,7 +46,7 @@ const CM01 = (()=>{
  }
 
  void main(){if(hidden())discard;vec2 uv=vUv;if(vRegion==10&&cmArmor<1.5)uv+=vec2(-.75,0.);vec3 pigment=texture(cmBase,uv).rgb*vInk.rgb;if(abs(vSurface-1.)<.1)pigment*=cmHairTint;
- vec3 packed=texture(cmOrm,uv).rgb;float rough=clamp(packed.g,.18,1.),metal=packed.b,ao=packed.r;vec3 N=normalize(vNormal),V=normalize(eye-vWorld),L=normalize(vec3(-.48,.85,.42));
+ vec3 packed=texture(cmOrm,uv).rgb;float rough=clamp(packed.g,.18,1.),metal=packed.b,ao=packed.r*clamp(vInk.a,.5,1.);vec3 N=normalize(vNormal),V=normalize(eye-vWorld),L=normalize(vec3(-.48,.85,.42));
  vec3 dp1=dFdx(vWorld),dp2=dFdy(vWorld);vec2 duv1=dFdx(uv),duv2=dFdy(uv);vec3 T=cross(dp2,N)*duv1.x+cross(N,dp1)*duv2.x;vec3 B=cross(dp2,N)*duv1.y+cross(N,dp1)*duv2.y;
  float denom=max(dot(T,T),dot(B,B));if(denom>1e-10){float inv=inversesqrt(denom);vec3 n=texture(cmNormal,uv).rgb*2.-1.;N=normalize(mat3(T*inv,B*inv,N)*normalize(vec3(n.xy*.30,n.z)));}
  bool skin=abs(vSurface)<.1;float wet=skin?0.:wetness*clamp(N.y*.65+.4,.1,1.);rough=mix(rough,max(.22,rough*.5),wet);pigment*=1.-wet*.12;
