@@ -1,6 +1,6 @@
 # Golden UI Vertical Slice — UI WORK
 
-Status: **VALIDATION_PENDING / Draft PR / DO NOT MERGE**
+Status: **BLOCKED (GitHub WRITE) + VALIDATION_PENDING / Fallback review handoff / DO NOT MERGE**
 
 ## Source and scope
 
@@ -67,7 +67,7 @@ This is a DOM-only microbenchmark, **not FPS**, GPU time or a frame-pacing resul
 1. Cloud Browser rejected `http://127.0.0.1:8000` (`ERR_BLOCKED_BY_CLIENT`) and file HTML by URL security policy. No policy bypass or alternate browser control was used.
 2. Existing public DEV opened, but game startup reported `WebGL 2 を利用できません。Chromeで開いてください。` in this Cloud Browser. This does not mean DEV is broken on supported browsers.
 3. Repository deployment documentation says PR/feature Preview is disabled. This UI WORK does not change deployment policy or deploy over develop.
-4. The existing authorized PR CI is left responsible for its existing HTTP/WebGL smoke and screenshots. Its result will be added to the PR. That smoke covers startup at 1280×800 and 393×852; it does not cover the entire Golden UI path.
+4. PR CI has not run: remote writes failed, so no PR exists. Once a writable Integration WORK creates a Draft PR, the existing CI can run its HTTP/WebGL smoke. That smoke covers startup at 1280×800 and 393×852; it does not cover the entire Golden UI path.
 
 Before ready-for-review/merge, Integration WORK or a supported browser environment must complete:
 
@@ -92,3 +92,12 @@ TOUCHED_AREAS: `UI.constructor`, HUD/`showGame`/`update`, `updateContext`, `upda
 - CHANGED_FILES: .github/workflows/deploy.yml; build.mjs; package.json; src/legacy/game.js; src/legacy/ui.js; src/shell.html.
 - DELETED_FILES: none.
 - No root WORK_INSTRUCTIONS overwrite: that document belongs to the existing deployment/handoff workflow.
+
+## GitHub WRITE result
+
+- Local implementation commit: `1a1a362c6052eb1478707d99008b21af1080bb27`.
+- `git push`: failed because the shell has no GitHub credentials (`could not read Username`).
+- GitHub connector `create_blob` and `create_branch`: both returned GitHub HTTP 403 `Resource not accessible by integration`.
+- Repository metadata's `permissions.push=true` describes account permissions; it did not establish the integration's actual write access.
+- No remote work branch, pushed commit, PR or new CI run was created. No merge was attempted.
+- Integration continuation is packaged with fixed-base source payload, patch, portable git bundle, manifest and instructions. Do not treat this as a finished Golden UI playtest.
