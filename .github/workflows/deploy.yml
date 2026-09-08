@@ -45,6 +45,7 @@ jobs:
           JS
       - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
       - run: npm test --prefix deploy
+      - run: node --test tests/tilt-shift.test.mjs
       - name: Build deployment
         env:
           TARGET: ${{ steps.target.outputs.target }}
