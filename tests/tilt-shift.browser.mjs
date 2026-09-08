@@ -97,6 +97,11 @@ export async function verifyTiltShift(page, evidence, viewport, record) {
   const lineage=await page.evaluate(()=>{const r=AERIN_QA.app.renderer;r.render(window.__tiltFixture.snapshot,.016);return{active:r.stats.dofActive,suspended:r.diorama.suspended};});
   assert.deepEqual(lineage,{active:false,suspended:true});
   await page.keyboard.press('Escape');
+  // Back now restores the parent Settings page. Close it through the active
+  // dock button before testing movement; never bypass the modal input guard.
+  assert.equal(await page.evaluate(()=>AERIN_QA.app.ui.modal),'settings');
+  await page.locator('[data-menu="settings"]').click();
+  assert.equal(await page.evaluate(()=>AERIN_QA.app.ui.modal),null);
   report.exclusions=await page.evaluate(()=>{
     const r=AERIN_QA.app.renderer,s=structuredClone(window.__tiltFixture.snapshot),result={};
     r.render(s,.016);result.village=r.stats.dofActive;
@@ -106,6 +111,11 @@ export async function verifyTiltShift(page, evidence, viewport, record) {
     return result;
   });
   assert.deepEqual(report.exclusions,{village:true,attack:false,outside:false,clan:false});
+
+  // Golden UI keeps nested modal history, so Escape from lineage returns to
+  // settings. Close that parent before exercising real movement input.
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(()=>AERIN_QA.app.ui.modal===null);
 
   // Resume the real application frame loop, then move using its keyboard input.
   await page.evaluate(()=>{
@@ -123,7 +133,13 @@ export async function verifyTiltShift(page, evidence, viewport, record) {
   // render. Begin the movement assertion only after the real frame loop has
   // activated DOF, then keep every subsequent sample strict.
   await page.waitForFunction(()=>{const r=AERIN_QA.app.renderer;return r.stats.dofActive&&r.diorama.focus;},{},{timeout:60000});
-  const firstActive=await page.evaluate(()=>window.__tiltMotion.samples.length);
+  const firstActive=await page.evaluate(()=>{
+    const m=window.__tiltMotion,p=AERIN_QA.player(),r=AERIN_QA.app.renderer;
+    // Record the origin before keydown. The first subsequent RAF sample may
+    // already include one movement tick, so it is not a valid travel origin.
+    m.start={x:p.x,z:p.z};m.focusStart=[...r.diorama.focus];
+    return m.samples.length;
+  });
   await page.keyboard.down('ArrowRight');
   try{
     await page.waitForFunction(first=>{const m=window.__tiltMotion,p=AERIN_QA.player();return m.samples.length>=first+4&&Math.hypot(p.x-m.start.x,p.z-m.start.z)>.8;},firstActive,{timeout:60000});
@@ -133,7 +149,7 @@ export async function verifyTiltShift(page, evidence, viewport, record) {
   report.motion=await page.evaluate(()=>{
     const q=AERIN_QA,a=q.app,r=a.renderer,m=window.__tiltMotion,p=q.player();
     m.running=false;a.closed=true;a.stopInput();
-    return{samples:m.samples,start:m.start,end:{x:p.x,z:p.z},
+    return{samples:m.samples,start:m.start,focusStart:m.focusStart,end:{x:p.x,z:p.z},
       finalError:Math.hypot(p.x-r.diorama.focus[0],p.z-r.diorama.focus[2]),
       frameError:String(a.frameError||''),glError:r.gl.getError(),contextLost:r.gl.isContextLost()};
   });
@@ -141,8 +157,8 @@ export async function verifyTiltShift(page, evidence, viewport, record) {
   const motionSamples=report.motion.samples.slice(firstActive).filter(s=>s.active&&s.focus);
   assert(motionSamples.length>=4,'Too few active village motion samples');
   const travel=points=>Math.hypot(points.at(-1)[0]-points[0][0],points.at(-1)[1]-points[0][1]);
-  assert(travel(motionSamples.map(s=>[s.x,s.z]))>.8,'Character did not move through the village');
-  assert(travel(motionSamples.map(s=>[s.focus[0],s.focus[2]]))>.2,'Focus did not follow the moving character');
+  assert(travel([[report.motion.start.x,report.motion.start.z],...motionSamples.map(s=>[s.x,s.z])])>.8,'Character did not move through the village');
+  assert(travel([[report.motion.focusStart[0],report.motion.focusStart[2]],...motionSamples.map(s=>[s.focus[0],s.focus[2]])])>.2,'Focus did not follow the moving character');
   assert(motionSamples.some(s=>Math.hypot(s.x-s.focus[0],s.z-s.focus[2])>.001),'Focus snapped instead of following smoothly');
   assert(report.motion.finalError<.5,'Focus did not converge after movement stopped');
   await page.screenshot({path:path.join(evidence,`${prefix}-moving-rain.png`)});
