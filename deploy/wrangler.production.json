@@ -1,0 +1,9 @@
+{
+  "name": "bloodline-legacy-production",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-09-07",
+  "workers_dev": true,
+  "preview_urls": false,
+  "assets": {"directory": "./out/production", "binding": "ASSETS", "run_worker_first": ["/api/*"], "not_found_handling": "none"},
+  "vars": {"APP_ENV": "production"}
+}

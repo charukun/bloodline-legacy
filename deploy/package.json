@@ -1,0 +1,7 @@
+{
+  "name": "bloodline-legacy-deployment",
+  "private": true,
+  "type": "module",
+  "scripts": {"test": "node --test infrastructure.test.mjs"},
+  "devDependencies": {"playwright": "1.63.0", "wrangler": "4.129.1"}
+}
