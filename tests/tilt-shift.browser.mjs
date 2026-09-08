@@ -119,9 +119,14 @@ export async function verifyTiltShift(page, evidence, viewport, record) {
       requestAnimationFrame(sample);
     };requestAnimationFrame(sample);
   });
+  // The first RAF sample can run between enabling the pass and its first
+  // render. Begin the movement assertion only after the real frame loop has
+  // activated DOF, then keep every subsequent sample strict.
+  await page.waitForFunction(()=>{const r=AERIN_QA.app.renderer;return r.stats.dofActive&&r.diorama.focus;},{},{timeout:60000});
+  const firstActive=await page.evaluate(()=>window.__tiltMotion.samples.length);
   await page.keyboard.down('ArrowRight');
   try{
-    await page.waitForFunction(()=>{const m=window.__tiltMotion,p=AERIN_QA.player();return m.samples.length>=4&&Math.hypot(p.x-m.start.x,p.z-m.start.z)>.8;},{},{timeout:60000});
+    await page.waitForFunction(first=>{const m=window.__tiltMotion,p=AERIN_QA.player();return m.samples.length>=first+4&&Math.hypot(p.x-m.start.x,p.z-m.start.z)>.8;},firstActive,{timeout:60000});
   }finally{await page.keyboard.up('ArrowRight');}
   const stopFrame=await page.evaluate(()=>AERIN_QA.app.renderer.frame);
   await page.waitForFunction(frame=>AERIN_QA.app.renderer.frame>=frame+8,stopFrame,{timeout:60000});
@@ -133,8 +138,10 @@ export async function verifyTiltShift(page, evidence, viewport, record) {
       frameError:String(a.frameError||''),glError:r.gl.getError(),contextLost:r.gl.isContextLost()};
   });
   assert.equal(report.motion.frameError,'');assert.equal(report.motion.glError,0);assert.equal(report.motion.contextLost,false);
-  assert(report.motion.samples.every(s=>s.active&&s.focus),'Focus stopped during village movement');
-  assert(report.motion.samples.some(s=>Math.hypot(s.x-s.focus[0],s.z-s.focus[2])>.001),'Focus snapped instead of following smoothly');
+  const motionSamples=report.motion.samples.slice(firstActive);
+  assert(motionSamples.length>=4,'Too few active village motion samples');
+  assert(motionSamples.every(s=>s.active&&s.focus),'Focus stopped during village movement');
+  assert(motionSamples.some(s=>Math.hypot(s.x-s.focus[0],s.z-s.focus[2])>.001),'Focus snapped instead of following smoothly');
   assert(report.motion.finalError<.5,'Focus did not converge after movement stopped');
   await page.screenshot({path:path.join(evidence,`${prefix}-moving-rain.png`)});
   report.passed=true;
