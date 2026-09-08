@@ -40,16 +40,30 @@ class Renderer{
   const x=m[12],y=m[13],z=m[14];const r=Math.max(Math.hypot(m[0],m[1],m[2]),Math.hypot(m[4],m[5],m[6]),Math.hypot(m[8],m[9],m[10]))*1.75;const clipX=vp[0]*x+vp[4]*y+vp[8]*z+vp[12],clipY=vp[1]*x+vp[5]*y+vp[9]*z+vp[13];return Math.abs(clipX)<1+r*this.unitsToClip+padding&&Math.abs(clipY)<1+r*this.unitsToClip+padding;
  }
  drawBatches(map,program,shadow=false){
-  const gl=this.gl,buckets=new Map(),pixelScale=this.width/this.viewWidth;
+  const gl=this.gl,buckets=new Map(),pixelScale=this.width/this.viewWidth,scenery=map===this.static;
   for(const [type,items] of map){const bounds=this.geometryBounds(type);for(const m of items){
    if(shadow&&(m[20]===1||m[20]===2||m[20]===4||m[19]<.85))continue;
+   // Roof shells already cast the building silhouette. Millimetre paving relief
+   // and overlapping tile faces do not need a second copy in the static shadow.
+   if(shadow&&scenery&&(m[20]===20||type==='gltf:roof-shingle'||type==='golden:slate'))continue;
    if(!this.visible(m,shadow?this.lightVP:this.vp,shadow?.4:.09,bounds))continue;
    const radius=Math.max(Math.hypot(m[0],m[1],m[2]),Math.hypot(m[4],m[5],m[6]),Math.hypot(m[8],m[9],m[10])),pixels=radius*pixelScale;
    let lod=type;if(type==='sphere'&&(pixels<11||shadow))lod='bead';else if(type==='rbox'&&(pixels<7||shadow&&radius<.65))lod='box';else if(type==='leaf'&&(pixels<7||shadow))lod='leaflow';
+   // Environment only: retain character geometry, animation and silhouette.
+   if(scenery){
+    if((type==='sphere'||type==='bead')&&(shadow||pixels<11))lod='beadlow';
+    if(type==='torus'&&(shadow||pixels<32))lod='toruslow';
+    if(shadow&&(type==='rbox'||type==='softbox'))lod='box';
+   }
    if(lod!==type)this.stats.lodInstances++;
    if(!buckets.has(lod))buckets.set(lod,[]);buckets.get(lod).push(m);
   }}
-  for(const [type,rows]of buckets){const g=this.geometry(type),data=new Float32Array(rows.length*21);for(let i=0;i<rows.length;i++)data.set(rows[i],i*21);gl.bindVertexArray(g.vao);gl.bindBuffer(gl.ARRAY_BUFFER,g.instance);gl.bufferData(gl.ARRAY_BUFFER,data,gl.DYNAMIC_DRAW);gl.drawArraysInstanced(gl.TRIANGLES,0,g.count,rows.length);this.stats.calls++;this.stats.triangles+=g.count/3*rows.length;if(!shadow)this.stats.instances+=rows.length;}
+  this.instanceScratch??=new Map();
+  for(const [type,rows]of buckets){const g=this.geometry(type),length=rows.length*21;let data=this.instanceScratch.get(type);
+   if(!data||data.length<length){data=new Float32Array(2**Math.ceil(Math.log2(Math.max(64,length))));this.instanceScratch.set(type,data);}
+   for(let i=0;i<rows.length;i++)data.set(rows[i],i*21);
+   gl.bindVertexArray(g.vao);gl.bindBuffer(gl.ARRAY_BUFFER,g.instance);gl.bufferData(gl.ARRAY_BUFFER,data.subarray(0,length),gl.DYNAMIC_DRAW);gl.drawArraysInstanced(gl.TRIANGLES,0,g.count,rows.length);this.stats.calls++;this.stats.triangles+=g.count/3*rows.length;if(!shadow)this.stats.instances+=rows.length;
+  }
  }
 
  // Composition only: the world and the ordinary camera-follow target do not move.

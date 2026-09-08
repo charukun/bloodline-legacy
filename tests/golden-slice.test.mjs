@@ -45,7 +45,8 @@ test('surface sampler avoids the existing character bone palette on texture unit
 
 test('new furnishing keeps the centerline and well approach free',()=>{
   // New high props, unlike the low pavement, must not occupy the central street.
-  const items=Object.entries(scene.staticRows).filter(([k])=>k.startsWith('golden:')).flatMap(([,v])=>v);
+  // Existing flower heads now use a golden mesh too; they are not new high props.
+  const items=Object.entries(scene.staticRows).filter(([k])=>k.startsWith('golden:')&&k!=='golden:blossom').flatMap(([,v])=>v);
   const well=scene.snapshot.map.schools.find(s=>s.id==='dance');
   for(const m of items.filter(m=>m[13]>.30&&Math.abs(m[12])<1.5&&m[14]>-6&&m[14]<20)){
     assert.ok(Math.abs(m[14]-well.z)<1.7,'centerline obstruction');
@@ -57,7 +58,18 @@ test('district draw budget is bounded with real culling and instancing',()=>{
   assert.equal(scene.r.static.get('golden:grout').length,1);
   assert.ok(scene.meshBytes<12*1024*1024);
   const materialGroups=Object.keys(scene.staticRows).filter(k=>k.startsWith('golden:'));
-  assert.equal(materialGroups.length,4);
+  assert.equal(materialGroups.length,6);
+});
+
+test('leaf and flower detail stays opaque, shared and cheaper than solid primitive clusters',()=>{
+  const bough=scene.geometries['golden:canopy'],flower=scene.geometries['golden:blossom'];
+  assert.ok(bough.count<scene.geometries['gltf:leaf-crown'].count,'per-bough geometry budget');
+  assert.ok(flower.count<scene.geometries.beadlow.count,'all five petals cost less than one old petal');
+  for(const mesh of ['golden:canopy','golden:blossom']){
+    const rows=scene.staticRows[mesh];assert.ok(rows.length>20);
+    assert.ok(rows.every(m=>m[19]===1),'no alpha overdraw or transparent sorting');
+    assert.ok(scene.passes.dynamic.every(b=>b.mesh!==mesh),'environment-only mesh');
+  }
 });
 
 test('new texture is original, deterministic and present in the embedded build',async()=>{
@@ -100,4 +112,22 @@ test('batched grout bounds cover its real footprint and offscreen meshes still c
     assert.equal(r.visible(distant,r.vp,.09,bounds),false);
     assert.equal(r.geometryBounds('golden:grout'),bounds,'static bounds are cached');
   }finally{r.camera=oldCamera;r.matrix();}
+});
+
+test('static shadow proxies reduce geometry while retaining roof shells and character passes',()=>{
+  const shadow=scene.passes.staticShadow;
+  assert.ok(shadow.reduce((n,b)=>n+b.count*b.instances/3,0)<430_000);
+  assert.ok(shadow.some(b=>b.mesh==='roof'),'building roof silhouette survives');
+  assert.ok(scene.passes.static.some(b=>b.mesh==='golden:slate'),'roof detail stays visible');
+  for(const pass of [scene.passes.dynamic,scene.passes.dynamicShadow])
+    assert.ok(pass.every(b=>b.mesh!=='beadlow'&&b.mesh!=='toruslow'),'character geometry is unchanged');
+});
+
+test('instance uploads reuse capacity and send only live rows on consecutive frames',()=>{
+  const r=scene.r,oldGL=r.gl,frames=[];let type,frame,uploaded;
+  r.gl={...oldGL,bindVertexArray(v){type=v;},bufferData(_,data){uploaded=data;frame.set(type,data.buffer);},
+    drawArraysInstanced(_,start,count,instances){assert.equal(uploaded.length,instances*21);assert.ok(count>0);}};
+  try{for(let i=0;i<2;i++){frame=new Map();r.drawBatches(r.static,{},false);frames.push(frame);}
+    assert.ok(frames[0].size>10);for(const [mesh,buffer]of frames[0])assert.equal(frames[1].get(mesh),buffer);
+  }finally{r.gl=oldGL;}
 });
