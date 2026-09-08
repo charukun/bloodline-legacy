@@ -8,13 +8,16 @@
   },
   "scripts": {
     "build": "node build.mjs",
-    "test": "node --test tests/ui.test.cjs"
+    "test": "npm run build && node --test tests/golden-slice.test.mjs tests/ui.test.cjs deploy/infrastructure.test.mjs",
+    "dev": "vite"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "jsdom": "30.0.1"
+    "@napi-rs/canvas": "0.1.100",
+    "jsdom": "30.0.1",
+    "vite": "7.3.6"
   }
 }

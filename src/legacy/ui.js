@@ -52,7 +52,7 @@ class UI {
   const current=this.modal,focus=this.focusMark(),scroll=this.root.querySelector('.panel-content')?.scrollTop||0;
   if(!current){this.g.stopInput();this.returnFocus=document.activeElement;this.navigation=[];}
   else if(current!==type&&!this.navigating)this.navigation.push({type:current,phase:this.phase,focus,scroll});
-  this.pieDragging=false;this.portraitQueue=this.portraitQueue.filter(q=>q.node.id==='hud-portrait');this.modal=type;
+   this.pieDragging=false;this.portraitQueue=this.portraitQueue.filter(q=>q.node.id==='hud-portrait');this.modal=type;this.g.renderer.diorama.suspended=type==='lineage';
   for(const n of [this.hud,this.clan,this.g.renderer.canvas])n.inert=true;
   this.root.className='modal-root visible '+type;
   this.root.innerHTML=`<section class="game-panel ${['body','lineage','onboarding','wounds'].includes(type)?'parchment':''}" role="dialog" aria-modal="true" aria-label="${ESC(title)}"><header class="panel-head"><button class="panel-back" aria-label="戻る">${icon('back')}</button><h2>${label(title)}</h2><button class="panel-close" aria-label="閉じる">${icon('close')}</button></header><div class="panel-content">${html}</div></section>`;
@@ -67,7 +67,7 @@ class UI {
   queueMicrotask(()=>{if(this.modal!==previous.type)return;this.root.querySelector('.panel-content').scrollTop=previous.scroll;this.restoreFocus(previous.focus);});
  }
  closeModal(){
-  this.pieDragging=false;this.modal=null;this.detail=null;this.navigation=[];this.focusGeneration=(this.focusGeneration||0)+1;
+   this.pieDragging=false;this.modal=null;this.g.renderer.diorama.suspended=false;this.detail=null;this.navigation=[];this.focusGeneration=(this.focusGeneration||0)+1;
   this.root.replaceChildren();this.root.className='modal-root';
   for(const n of [this.hud,this.clan,this.g.renderer.canvas])n.inert=false;
   this.portraitQueue=this.portraitQueue.filter(q=>q.node?.isConnected);
