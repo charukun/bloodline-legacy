@@ -12,13 +12,13 @@ foreground coverage. Colors are decoded before averaging and resolved through
 the game's existing tone map. It replaces the separable Gaussian blur.
 
 Runtime changes are confined to `src/render/tilt-shift.js` and the DOF composite
-in `src/render/shaders.js`. Existing village eligibility, combat bypass, focus
-tracking and NORMAL/OFF behavior remain. SUBTLE uses 16 samples / 8 CSS pixels;
+in `src/render/shaders.js`. Gameplay focus tracking and NORMAL/OFF behavior remain. The follow-up below
+extends eligibility to combat and the frontline. SUBTLE uses 16 samples / 8 CSS pixels;
 STRONG uses 32 / 14. Both keep two half-resolution RGBA8 targets and two passes.
 The stronger preset was increased from 16 to 32 samples after visible sampling
 streaks were found in the first comparison.
 
-Validation: build and 93 tests PASS. Native EGL compiled and rendered the actual
+Initial bokeh revision validation: build and 93 tests PASS. Native EGL compiled and rendered the actual
 scene/material/post shaders in clear and rain. NORMAL/OFF pixel equivalence
 passed (maximum tolerance one byte). Same-camera STRONG comparisons are in the
 companion `Bloodline_Legacy_Diorama_Comparison.html`. The optional capture tools
@@ -30,3 +30,16 @@ These exclude scene rendering and are software-renderer timings, not game FPS
 or Pixel Fold predictions. Raw values are in `offline-results.json`.
 Actual browser visuals, WebGL frame pacing and hardware performance are
 UNVERIFIED. User preview: 設定 → 村の見え方 → TILT-SHIFT → DOF SUBTLE.
+
+## User-requested continuous tilt-shift
+
+Removed the village-outskirts and combat exclusions. Gameplay in village and
+frontline rooms retains the effect through contact, attack and telegraph states.
+Combat focus tracks the midpoint of player and live target; the sharp band
+protects both subjects during camera rotation and focus settling. Room changes
+snap focus without resetting the effect. Clan, portraits, lineage and death
+still use their existing presentation exclusions. No gameplay/save changes.
+
+Follow-up build and 21 targeted Tilt-Shift tests PASS. The browser contract now
+expects the effect to remain active outside and in combat/frontline; it was
+updated but not run here. User device verification remains pending.

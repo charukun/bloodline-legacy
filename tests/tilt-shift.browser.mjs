@@ -102,10 +102,11 @@ export async function verifyTiltShift(page, evidence, viewport, record) {
     r.render(s,.016);result.village=r.stats.dofActive;
     s.player.action='attack';r.render(s,.016);result.attack=r.stats.dofActive;
     s.player.action='idle';s.player.z=-35;r.render(s,.016);result.outside=r.stats.dofActive;
+    s.room.kind='front';r.render(s,.016);result.front=r.stats.dofActive;
     r.render(window.__tiltFixture.snapshot,.016,{clan:true});result.clan=r.stats.dofActive;
     return result;
   });
-  assert.deepEqual(report.exclusions,{village:true,attack:false,outside:false,clan:false});
+  assert.deepEqual(report.exclusions,{village:true,attack:true,outside:true,front:true,clan:false});
 
   // Golden UI keeps nested modal history, so Escape from lineage returns to
   // settings. Close that parent before exercising real movement input.

@@ -35,9 +35,7 @@ test('invalid settings fail atomically',()=>{
  assert.throws(()=>d.configure('normal','bad'));assert.equal(d.mode,'tilt-shift');
 });
 for(const [name,change,options]of [
- ['front',s=>s.room.kind='front',{}],['unknown room',s=>delete s.room,{}],
- ['outside village',s=>s.player.z=-29,{}],['auto combat',s=>s.player.autoFight='enemy',{}],
- ['attack',s=>s.player.action='attack',{}],['telegraph',s=>s.player.telegraph={},{}],
+ ['unknown room',s=>delete s.room,{}],
  ['death',s=>s.player.alive=false,{}],['clan',()=>{},{clan:true}],['portrait',()=>{},{portrait:true}]
 ])test(`${name} bypasses DOF and resets focus`,()=>{
  const {r,d}=enabled(),s=scene();change(s);d.update(s,.016,options);d.render();d.bindComposite({});
@@ -108,7 +106,7 @@ test('disk sampling increases only for STRONG and radius follows CSS pixels',()=
  assert.equal(r.uniforms.diskSamples,32);close(r.uniforms.blurRadius[0],14/r.width);
  assert.deepEqual([...r.resources.textures],textures);assert.equal(r.stats.dofPasses,2);
 });
-test('retained targets remain counted while combat/lineage temporarily bypasses blur',()=>{
+test('retained targets remain counted while lineage temporarily bypasses blur',()=>{
  const {r,d}=enabled();d.render();const bytes=r.stats.dofBytes;d.suspended=true;d.update(scene(),.016);d.render();
  assert.equal(r.stats.dofActive,false);assert.equal(r.stats.dofBytes,bytes);assert.equal(r.stats.dofPasses,0);
 });
@@ -125,4 +123,31 @@ test('null GPU allocation handles fall back before binding the default framebuff
   assert.equal(r.resources.textures.size,0);assert.equal(r.resources.framebuffers.size,0);
   assert.equal(r.uniforms.dioramaAmount,0);
  }
+});
+
+test('outskirts, frontline and combat retain active tilt-shift without reallocating targets',()=>{
+ const {r,d}=enabled(),s=scene();d.render();const targets=[...r.resources.textures];
+ for(const change of [()=>s.player.z=-29,()=>s.room.kind='front',()=>s.player.autoFight='enemy',()=>s.player.action='attack',()=>s.player.telegraph={}]){
+  const blend=d.blend;change();d.update(s,.016);d.render();
+  assert.equal(d.active,true);assert(d.blend>=blend);assert.equal(r.stats.dofPasses,2);
+  assert.deepEqual([...r.resources.textures],targets);
+ }
+});
+test('combat focus protects both subjects during camera rotation and releases a dead target',()=>{
+ const {r,d}=enabled(),s=scene();s.player.autoFight='enemy';
+ s.actors=[{id:'enemy',alive:true,x:8,z:3,baseY:2,bodyScale:2.8}];
+ const before=JSON.stringify(s);d.configure(undefined,'strong');d.update(s,.016);
+ for(const yaw of [0,.8,2.3]){
+  r.camera.yaw=yaw;const u=d.focusUniforms(),n=[Math.sin(yaw)*Math.cos(.3),Math.sin(.3),Math.cos(yaw)*Math.cos(.3)];
+  for(const subject of d.combatFocus){
+   const distance=Math.abs(subject.point.reduce((sum,x,i)=>sum+(x-d.focus[i])*n[i],0));
+   assert(distance+subject.padding<=u.focusWidth+1e-9);
+  }
+ }
+ assert.equal(JSON.stringify(s),before);
+ s.actors[0].alive=false;d.update(s,.016);assert.equal(d.combatFocus.length,0);assert.equal(d.active,true);
+});
+test('room changes snap focus even when world coordinates are close',()=>{
+ const {d}=enabled(),s=scene();s.room={kind:'front',id:'front-2'};s.player.x=4;
+ d.update(s,.016);assert.equal(d.focus[0],4);assert.equal(d.active,true);
 });

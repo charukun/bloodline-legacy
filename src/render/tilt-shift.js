@@ -71,7 +71,7 @@ void main(){
 class TiltShiftPass{
  constructor(renderer){
   this.r=renderer;this.mode='normal';this.dof='subtle';this.debug=false;
-  this.suspended=false;this.eligible=false;this.blend=0;this.focus=null;
+  this.suspended=false;this.eligible=false;this.blend=0;this.focus=null;this.combatFocus=[];this.room=null;
   this.program=null;this.cocProgram=null;this.targets=[];this.size='';this.error=null;
  }
  configure(mode=this.mode,dof=this.dof){
@@ -82,26 +82,36 @@ class TiltShiftPass{
  }
  update(snapshot,dt,options={}){
   const p=snapshot.player||snapshot.players?.[0];
-  this.eligible=!!p&&snapshot.room?.kind==='village'&&p.z>=-28&&
-   p.alive!==false&&!p.autoFight&&p.action!=='attack'&&!p.telegraph&&
+  this.eligible=!!p&&['village','front'].includes(snapshot.room?.kind)&&
+   p.alive!==false&&
    !options.clan&&!options.portrait&&!this.r.logicalSize&&!this.suspended;
   const enabled=this.mode==='tilt-shift'&&this.eligible;
   const seconds=Math.max(0,Math.min(.1,Number.isFinite(dt)?dt:0));
   this.blend=enabled?this.blend+(1-this.blend)*(-Math.expm1(-seconds/.18)):0;
-  if(!enabled){this.focus=null;return;}
-  const next=[p.x,(p.baseY||0)+1.1,p.z];
-  if(!this.focus||Math.hypot(next[0]-this.focus[0],next[2]-this.focus[2])>16)this.focus=next;
+  this.combatFocus=[];
+  if(!enabled){this.focus=null;this.room=null;return;}
+  const own=[p.x,(p.baseY||0)+1.1,p.z];
+  const foe=p.autoFight&&(snapshot.actors?.find(e=>e.id===p.autoFight&&e.alive)||snapshot.players?.find(e=>e.id===p.autoFight&&e.alive));
+  const other=foe?[foe.x,(foe.baseY||0)+1.1,foe.z]:null;
+  const next=other?own.map((v,i)=>(v+other[i])*.5):own;
+  if(other)this.combatFocus=[{point:own,padding:1.2},{point:other,padding:Math.max(1.2,(foe.bodyScale||1)*1.2)}];
+  const room=snapshot.room.id||snapshot.room.kind;
+  if(!this.focus||room!==this.room||Math.hypot(next[0]-this.focus[0],next[2]-this.focus[2])>16)this.focus=next;
   else{const a=-Math.expm1(-seconds/.11);for(let i=0;i<3;i++)this.focus[i]+=(next[i]-this.focus[i])*a;}
+  this.room=room;
  }
  get active(){return this.eligible&&this.mode==='tilt-shift'&&this.dof!=='off'&&this.blend>0&&!this.error;}
  // Use camera basis and player world position, so camera motion, zoom and
- // portrait aspect changes cannot detach the focus plane from the village.
+ // portrait aspect changes cannot detach the focus plane from the action.
  focusUniforms(){
   const r=this.r,v=r.view,f=this.focus||[r.camera.x,1.1,r.camera.z];
   const n=[Math.sin(r.camera.yaw)*Math.cos(.30),Math.sin(.30),Math.cos(r.camera.yaw)*Math.cos(.30)];
   const transform=(x,translation)=>[0,1,2].map(i=>v[i]*x[0]+v[4+i]*x[1]+v[8+i]*x[2]+(translation?v[12+i]:0));
   const preset=DIORAMA_PRESETS[this.dof];
-  return{focusSpan:[r.viewWidth,r.viewHeight],focusView:transform(f,true),focusNormal:transform(n,false),focusWidth:preset.width,focusFalloff:preset.falloff};
+  // Protect both combatants immediately, including while focus/camera settle.
+  // Only the sharp band expands; background bokeh remains enabled.
+  const width=this.combatFocus.reduce((w,s)=>Math.max(w,Math.abs(s.point.reduce((d,x,i)=>d+(x-f[i])*n[i],0))+s.padding),preset.width);
+  return{focusSpan:[r.viewWidth,r.viewHeight],focusView:transform(f,true),focusNormal:transform(n,false),focusWidth:width,focusFalloff:preset.falloff};
  }
  setFocusUniforms(program){for(const [name,value]of Object.entries(this.focusUniforms()))this.r.uniform(program,name,value);}
  releaseTargets(){
