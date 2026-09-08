@@ -1,0 +1,154 @@
+{
+  "source": "/bloodline-legacy/work-handoff/current/",
+  "reportedGitCommit": "383a1eef7adde83c22073c74982052b3a75a2b5c",
+  "githubReadBackVerified": true,
+  "files": {
+    "README.md": {
+      "sha256": "eea0047f6bf6867511fb267e870c01a0c66aa41a01071606ad76ab1efa282a9d",
+      "bytes": 1991
+    },
+    "WORK_INSTRUCTIONS.md": {
+      "sha256": "e5f455e6215ed3314c16fc7bfdbdd866f7c6f0cbb4786cb87ff31bd2f86fea5a",
+      "bytes": 4264
+    },
+    "build.mjs": {
+      "sha256": "3bc6a7fdd0f71c3abdb939cd48b95d1cf137376ecc4b38516954689796dd0b8e",
+      "bytes": 1822
+    },
+    "package.json": {
+      "sha256": "23018497fb5fddebb61df1c7a3069667bb5ec49f2b733f92ebf57d416c749acb",
+      "bytes": 296
+    },
+    "public/assets/ASSET_LICENSE.txt": {
+      "sha256": "0c846cbebf644e79e94a8aa22843b391d34bac88bf26be49af2a3d09bb360275",
+      "bytes": 248
+    },
+    "public/assets/cloth-panel.png": {
+      "sha256": "a260e72a8c675c1961ec5da23d0ea374b424b891b029bbdd4e5bf381b2678615",
+      "bytes": 14602
+    },
+    "public/assets/detail-atlas.png": {
+      "sha256": "19e99f04a2af78c80de9937c522a06ebaa80477443012333c5ee717bd4978aee",
+      "bytes": 419176
+    },
+    "public/assets/material-atlas.png": {
+      "sha256": "422e7c3cda99c67c2bed5a9135b7f150581d90762735dfd7c695f31c1efda7d7",
+      "bytes": 324930
+    },
+    "public/assets/parchment.png": {
+      "sha256": "e16e086d1c7ec42d675fb9719e6346d06214c10c4d5eb155f1baeffc834f1748",
+      "bytes": 49130
+    },
+    "public/assets/village-kit.glb": {
+      "sha256": "b4fc5422e9f711da3deba54086d8409e780f4b08f40938fd4d263a2c909ee2c5",
+      "bytes": 40448
+    },
+    "src/assets/loader.js": {
+      "sha256": "8ecdc6475472480308bc1a349957da33f9b46e6ec799b39d02dcc7ff6a94762d",
+      "bytes": 2235
+    },
+    "src/audio/ambience.js": {
+      "sha256": "446afc96e4a4b33141d002156fde67e993cd5ec3c8e1ff30c9102b502a42ccc8",
+      "bytes": 3269
+    },
+    "src/bootstrap.js": {
+      "sha256": "cf9515ef1dba2ccbb3e996ab1a14802dc8f20e4fe368ebf8df75f81fa9c4d5f5",
+      "bytes": 318
+    },
+    "src/character/rig.js": {
+      "sha256": "2744aca413e042a9a12d991e49f133370004e7977509c71b216968c3447ac64d",
+      "bytes": 5908
+    },
+    "src/legacy/art.js": {
+      "sha256": "ac6a698d717578a28d4e164d7f03d7a4b46899c4c5a5d360f45dab121726b310",
+      "bytes": 35280
+    },
+    "src/legacy/audio.js": {
+      "sha256": "9a66cedf25538ecf67432f983c9d53610f7d28bc5d968049f58f2add95da369e",
+      "bytes": 9878
+    },
+    "src/legacy/core.js": {
+      "sha256": "90e83e93071dc380c90b0fc62961b73266c720cda7bfccf16761f51ff1478853",
+      "bytes": 95042
+    },
+    "src/legacy/dialogue.js": {
+      "sha256": "ee99f8d9df14467423d9c099c7002e71088db8c318f2b1ffea34d412be2c4ce8",
+      "bytes": 8854
+    },
+    "src/legacy/game.js": {
+      "sha256": "c303632e6cb8408a16397412139ef853fada21a0f86e26e641662c20fa0cfdb5",
+      "bytes": 18844
+    },
+    "src/legacy/labels.js": {
+      "sha256": "e67241174be9d1b8c5945c75e0883b31d9c705ab70dc7d25a25d300ae95f6322",
+      "bytes": 83675
+    },
+    "src/legacy/motion.js": {
+      "sha256": "981e0ca759b1a7cd0d05c90ea1046591f973b4aca507756005a188927cd70b84",
+      "bytes": 8466
+    },
+    "src/legacy/render_math.js": {
+      "sha256": "02e821166ec562f1046580f741ae8c546dd2881135bac0b08d49eacfedc656ce",
+      "bytes": 6979
+    },
+    "src/legacy/renderer.js": {
+      "sha256": "9730289b1ce2c6a263f2468f2fd685e3e0dfda5f21d16309b1b51cdb20eab936",
+      "bytes": 23609
+    },
+    "src/legacy/ui.js": {
+      "sha256": "0740ee0a40d441011d2ec9b4a6c9956a96f848cdc600c01b2c2767659b41187b",
+      "bytes": 41249
+    },
+    "src/render/adapter.js": {
+      "sha256": "27e1d4c1f205c1749a1b4460fea4827ef7f6df002955ac209b358e92f55d9397",
+      "bytes": 7093
+    },
+    "src/render/combat-presentation.js": {
+      "sha256": "17ac34d3d545dc8eabd9c04d5edd3f4676aeb8a92adb80e3a70861e7431b9dd9",
+      "bytes": 5484
+    },
+    "src/render/renderer-base.js": {
+      "sha256": "2d7ae0eb4952f4e46f93eef672a8293f686b71a0a31c5bbf5b9bfce2bfd76300",
+      "bytes": 18497
+    },
+    "src/render/shaders.js": {
+      "sha256": "684aee8fdfe3c59d50054cfecf7c1e3c6280332178b50aa3586b91cfafeff8be",
+      "bytes": 8432
+    },
+    "src/shell.html": {
+      "sha256": "54d39f346d20ca83e1af3a6fb003081a34ac5327fe78bc5a804a4ef8f167ade0",
+      "bytes": 675
+    },
+    "src/ui/base.css": {
+      "sha256": "b72a7c5bc0687eb3004eedb3e3e4ec935ee579c04c330faa29fdb261359ede00",
+      "bytes": 28944
+    },
+    "src/ui/world-skin.css": {
+      "sha256": "0917b2372a2f879cdf874375cc4ee2bfbb7812bc43907d760a77a84b18ba2777",
+      "bytes": 3742
+    },
+    "src/weather/weather.js": {
+      "sha256": "240e8601f9dffea80efd76313c0276e457ee81474f9dea35308f0f9d43da4a01",
+      "bytes": 3322
+    },
+    "src/world/environment.js": {
+      "sha256": "322ad10dc51699a76b3a428214bc103921eb635543b4e783adc15cc0cc7552d3",
+      "bytes": 9721
+    },
+    "tests/smoke.py": {
+      "sha256": "5d269a09ad2e3bcf2c10050ac25e8448b0dd2e1c41626d4bcfa1dbdd91bdcbe8",
+      "bytes": 3187
+    },
+    "tools/generate_assets.py": {
+      "sha256": "f5aaad8497e0e27320c90295d31f3fecf96b7ed628bcad3c839063884f71fd7c",
+      "bytes": 7561
+    }
+  },
+  "verification": {
+    "method": "GitHub Actions gh API blob read-back",
+    "run": "https://github.com/charukun/bloodline-legacy/actions/runs/34174723377",
+    "developCommit": "52409ba735fb495c10252bc9eb060ca351745d1b",
+    "verifiedFiles": 35,
+    "sourceOfTruth": "develop"
+  }
+}
