@@ -1,6 +1,6 @@
 # Young protagonist CM01 review
 
-Status: scoped character implementation; corrected motion verification pending, hardware performance unverified.
+Status: ready for integration review. Visual and regression evidence is available; hardware performance remains unverified, so unconditional Golden Master acceptance is not claimed.
 
 ## Authority and scope
 
@@ -25,7 +25,7 @@ Animation follows existing `artPose`, `hitPose`, actions and clocks. Foot phase 
 - `npm test`: PASS, 56 tests (20 character/numeric/regression, eight Golden Slice, 22 Tilt-Shift, six deployment infrastructure).
 - `python tests/character_asset_validation.py`: PASS, 22 asset checks.
 - Cloud preview: HTTP delivery works; its browser cannot create WebGL2. No visual PASS is claimed from that environment.
-- Repository CI browser test: 36/36 checks passed on GS02 head `9416816ef4a50352fb9590ff500ac06ca3d63e17`, including native save/reload, scope, equipment and limb loss. Visual review subsequently identified the rapid-turn pelvis issue, so a focused motion recheck is required on the corrected head. Earlier runs on the original base are historical diagnostics only.
+- Repository CI browser test: 36/36 checks passed on GS02 head `9416816ef4a50352fb9590ff500ac06ca3d63e17`, including native save/reload, scope, equipment and limb loss. Visual review subsequently identified the rapid-turn pelvis issue, and the corrected head `4854a4a33d30db845e936304500810b7f22aa201` passed the focused browser recheck (11/11). Maximum reversal pelvis drop is now 0.0501 rather than 0.7864 units, with planted-sole displacement below 0.000001 units. Earlier runs on the original base are historical diagnostics only.
 - Sustained SwiftShader comparison: discontinued after the user requested cutting costly, low-value tasks. It is not a performance PASS. The full manual workflow remains available.
 - Pixel Fold hardware and native desktop GPU performance: UNVERIFIED.
 
@@ -44,3 +44,7 @@ Performance samples use actual render submission timestamps: 10 seconds warm-up,
 Push verification runs on the work branch before a Ready PR is created, as required by policy v5. CI artifacts retain screenshots and video for 30 days; `verification.json` records the exact artifact, image hashes and review findings. To reduce the cost of repeated verification, normal character CI checks the changed movement poses; the full comparison remains available through manual `full_review` dispatch. Existing deployment CI is unchanged. A numeric CI success alone is not Golden Master acceptance.
 
 The initial work branch remains as history. The final branch was created directly from the refreshed develop SHA; no merge, force push, or wholesale old-tree replacement was performed. All inherited GS02, Tilt-Shift, UI and deployment changes are preserved.
+
+Final motion CI: https://github.com/charukun/bloodline-legacy/actions/runs/34272867392
+
+Full GS02 functional evidence: https://github.com/charukun/bloodline-legacy/actions/runs/34269501297/artifacts/10073879788

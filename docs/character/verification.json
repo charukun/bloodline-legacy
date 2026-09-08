@@ -63,5 +63,22 @@
     "estimatedAdditionalMiB": 5.74
   },
   "nativeHardwarePerformance": "UNVERIFIED",
-  "softwarePerformance": "Discontinued under the user instruction to cut costly, low-value tasks; not a PASS."
+  "softwarePerformance": "Discontinued under the user instruction to cut costly, low-value tasks; not a PASS.",
+  "finalMotion": {
+    "head": "4854a4a33d30db845e936304500810b7f22aa201",
+    "ci": "https://github.com/charukun/bloodline-legacy/actions/runs/34272867392",
+    "artifact": "https://github.com/charukun/bloodline-legacy/actions/runs/34272867392/artifacts/10074747173",
+    "artifactSHA256": "b93ca5499d155e293bb5a5f1fad108b882ea077956a4a8c7c161a4c3d1557685",
+    "passed": 11,
+    "failed": 0,
+    "reversalMaxPelvisDrop": 0.05011414572546791,
+    "maxPlantedSlip": 4.807176885670647e-09,
+    "runtimeSHA256": "f5a88aac66e78dc82fb6e902310868300c0f3bfc70e0012392ca1e9b21eea8ec"
+  },
+  "finalLocalChecks": {
+    "nodePassed": 56,
+    "assetPassed": 22,
+    "buildBytes": 5451220,
+    "deployIntegrity": "PASS"
+  }
 }
