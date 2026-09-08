@@ -12,7 +12,10 @@ export async function verifySkillSlice(page,evidence,viewport) {
  await page.locator('[data-context="activity"][data-value="observe"]').click();
  report.discovery=await page.evaluate(()=>{const q=window.AERIN_QA,p=q.player(),before=p.skillLife.discovered.length;for(let i=0;i<9000&&p.skillLife.discovered.length===before;i++)q.sim().tick(1/30);return p.skillLife.discovered.at(-1);});
  assert.ok(report.discovery?.id&&report.discovery.reasons.some(r=>r.includes('鍛冶')),'A real activity must create an explained discovery');
- await page.locator('#skill-revelation.named').waitFor({state:'visible'});
+ // Software WebGL screenshots may take longer than the nonmodal reveal.
+ // Freeze the existing RAF only after its real UI has revealed the name;
+ // keep the actual handlers and storage path, then reload into normal RAF.
+ await page.waitForFunction(()=>{const a=window.AERIN_QA.app,el=document.getElementById('skill-revelation');if(el?.classList.contains('visible')&&el.classList.contains('named')){a.closed=true;return true;}return false;});
  await page.screenshot({path:prefix+'-discovery.png'});
  await page.locator('.reveal-open').click();
  const id=report.discovery.id,active=await page.evaluate(id=>window.AERIN_QA.player().skills.includes(id),id);
