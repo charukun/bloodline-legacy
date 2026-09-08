@@ -36,7 +36,7 @@ class UI {
  restoreFocus(mark){if(!mark)return;const n=mark.id?[...this.root.querySelectorAll('[id]')].find(n=>n.id===mark.id):[...this.root.querySelectorAll('button,summary,[tabindex]')].find(n=>mark.attrs.length&&mark.attrs.every(([k,v])=>n.getAttribute(k)===v));if(n&&!n.disabled)n.focus({preventScroll:true});}
  modalKey(e){
   if(!this.modal)return;
-  if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();this.root.querySelector('.panel-back')?.click();return;}
+  if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();this.root.querySelector('.panel-back,.panel-close')?.click();return;}
   if(e.key!=='Tab'||this.modal==='skills')return;
   const nodes=[...this.root.querySelectorAll('button:not(:disabled),input:not(:disabled):not([type="file"]),summary,[tabindex="0"]')].filter(n=>!n.closest('[hidden]')&&(!n.closest('details:not([open])')||n.tagName==='SUMMARY'));
   const first=nodes[0],last=nodes.at(-1);
@@ -73,7 +73,7 @@ class UI {
   for(const n of [this.hud,this.clan])n.inert=true;this.g.renderer.canvas.inert=type!=='skills';
   this.root.className='modal-root visible '+type;
   if(this.hudDock)this.hud.appendChild(this.hudDock);
-  this.root.innerHTML=`<section id="game-panel" class="game-panel ${['body','lineage','onboarding','wounds'].includes(type)?'parchment':''}" role="dialog" aria-modal="${type!=='skills'}" aria-label="${ESC(title)}"><header class="panel-head"><button class="panel-back" aria-label="戻る">${icon('back')}</button><h2>${label(title)}</h2><button class="panel-close" aria-label="閉じる">${icon('close')}</button></header><div class="panel-content">${html}</div></section>`;
+  this.root.innerHTML=`<section id="game-panel" class="game-panel ${['body','lineage','onboarding','wounds'].includes(type)?'parchment':''}" role="dialog" aria-modal="${type!=='skills'}" aria-label="${ESC(title)}">${type==='skills'?'':`<header class="panel-head"><button class="panel-back" aria-label="戻る">${icon('back')}</button><h2>${label(title)}</h2><button class="panel-close" aria-label="閉じる">${icon('close')}</button></header>`}<div class="panel-content">${html}</div></section>`;
   if(type==='skills'){
    const panel=this.root.querySelector('.game-panel');
    const measure=()=>{if(this.modal!=='skills')return;const h=this.g.renderer.canvas.clientHeight||innerHeight;const top=panel.offsetHeight?h-panel.offsetHeight-(parseFloat(getComputedStyle(this.root).paddingBottom)||0):0;this.skillPanelTop=top>0?clamp(top/h,.25,.8):.40;};
@@ -81,10 +81,10 @@ class UI {
    queueMicrotask(measure);
   }
   this.mountDock(this.g.screen==='game'&&!['death','onboarding'].includes(type));
-  this.root.querySelector('.panel-back').onclick=()=>this.back();this.root.querySelector('.panel-close').onclick=()=>this.closeModal();
+  const back=this.root.querySelector('.panel-back'),close=this.root.querySelector('.panel-close');if(back)back.onclick=()=>this.back();if(close)close.onclick=()=>this.closeModal();
   if(current===type)this.root.querySelector('.panel-content').scrollTop=scroll;
   const generation=this.focusGeneration=(this.focusGeneration||0)+1;
-  queueMicrotask(()=>{if(this.modal!==type||this.focusGeneration!==generation)return;this.root.querySelector('.panel-back')?.focus({preventScroll:true});if(current===type)this.restoreFocus(focus);});
+  queueMicrotask(()=>{if(this.modal!==type||this.focusGeneration!==generation)return;this.root.querySelector('.panel-back,.panel-close')?.focus({preventScroll:true});if(current===type)this.restoreFocus(focus);});
  }
  back(){
   const previous=this.navigation.pop();if(!previous){this.closeModal();return;}
@@ -116,12 +116,13 @@ class UI {
   const colors=['#9aba8f','#d8b67c','#a8aec6','#c48d75','#86b4b0','#c7bb89','#bc9bba','#a7a286'];
   this.skillColors=Object.fromEntries(ids.map((id,i)=>[id,colors[i%colors.length]]));
   const sum=ids.reduce((n,id)=>n+(weights[id]||0),0);
-  document.getElementById('skills-content').innerHTML=`<div class="phase-tabs" role="tablist" aria-label="技の段とパッシブ">${[...PHASES,'パッシブ'].map((name,i)=>`<button role="tab" data-phase="${i}" aria-controls="skill-page" aria-selected="${this.phase===i}" class="${this.phase===i?'chosen':''}">${i<3?label(name):'<span>パッシブ</span>'}</button>`).join('')}</div>
+  document.getElementById('skills-content').innerHTML=`<div class="skill-tabs-row"><div class="phase-tabs" role="tablist" aria-label="技の段とパッシブ">${[...PHASES,'パッシブ'].map((name,i)=>`<button role="tab" data-phase="${i}" aria-controls="skill-page" aria-selected="${this.phase===i}" class="${this.phase===i?'chosen':''}">${i<3?label(name):'<span>パッシブ</span>'}</button>`).join('')}</div><button id="skills-close" class="panel-close" aria-label="閉じる">${icon('close')}</button></div>
    <div id="skill-page" class="skill-overview ${passive?'passive-page':''}" role="tabpanel" aria-label="${passive?'パッシブ':PHASES[this.phase]}">
     <div class="skill-balance">${passive?`<div class="passive-emblem">${icon('leaf')}<strong>身についた心得</strong><span>常に働く力</span></div>`:'<div id="pie-wrap"></div><p class="balance-hint">輪の境目を動かして配分</p><div id="pie-legend" class="pie-legend visually-hidden"></div>'}</div>
     <div class="skill-description"><div id="skill-detail" class="skill-detail"><span>${passive?'経験から、心得が芽生える。':'この段で使う技を選ぼう。'}</span></div><div id="skill-choice"></div></div>
    </div>
    <div class="skill-list-scroll" tabindex="0" aria-label="習得した技">${[...p.skills,...p.passives].some(id=>!skillById(id))?'<p class="skill-compatibility" role="status">この版では表示できない技があります。技の記録は保持されています。最新版で記録を開いてください。</p>':''}<div class="skill-grid">${ids.length?ids.map((id,i)=>{const sk=skillById(id),locked=!passive&&skillRestriction(p,sk),enabled=passive||weights[id]>0;return`<div class="skill-cell ${enabled?'enabled':''} ${this.detail===id?'selected':''}" style="--ink:${this.skillColors[id]}"><button ${passive?'data-passive':'data-skill'}="${id}" class="skill-tile ${locked?'restricted':''}" aria-pressed="${this.detail===id}" aria-controls="skill-detail" aria-label="${ESC(sk.name)}の説明${enabled?'・'+(passive?'常時有効':'採用中'):''}"><span class="skill-number">${passive?'常':i+1}</span><span class="skill-sigil">${icon(schoolIcon(sk.school))}</span><span class="skill-name">${ESC(sk.name)}</span><span class="skill-allocation">${passive?'常時有効':enabled?Math.round(weights[id]/sum*100)+'%':'未採用'}</span></button></div>`;}).join(''):`<div class="phase-empty">${passive?'まだ、心得は芽生えていない。':'まだ、この段の技はない。'}</div>`}</div></div>`;
+  document.getElementById('skills-close').onclick=()=>this.closeModal();
   this.root.querySelectorAll('[data-phase]').forEach(b=>b.onclick=()=>{this.phase=+b.dataset.phase;this.detail=null;this.root.querySelector('.skill-list-scroll').scrollTop=0;this.root.querySelector('#skill-detail').scrollTop=0;this.renderSkills();});
   this.root.querySelectorAll('[data-skill],[data-passive]').forEach(b=>b.onclick=()=>this.describeSkill(+(b.dataset.skill||b.dataset.passive)));
   if(!passive)this.drawPie(ids,weights);if(this.detail!==null)this.describeSkill(this.detail);this.root.querySelector('.skill-list-scroll').scrollTop=listScroll;this.root.querySelector('#skill-detail').scrollTop=detailScroll;this.restoreFocus(focus);
