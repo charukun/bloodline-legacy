@@ -18,7 +18,7 @@ assert(local || (parsed.protocol === 'https:' && parsed.hostname.startsWith(envi
 const expected = JSON.parse(await fs.readFile(path.join(root,'deploy/out',environment,'version.json')));
 const evidence = path.join(root,'deploy/evidence',environment,local?'local':'published');
 await fs.mkdir(evidence,{recursive:true});
-let server, browser, api;
+let server, browser, api, activePage;
 const report = {environment, url:parsed.origin, expected, passed:false, viewports:[]};
 try {
   if (local) server = spawn(process.execPath, ['deploy/node_modules/wrangler/bin/wrangler.js','dev','--config',`deploy/wrangler.${environment}.json`,'--port','4173','--ip','127.0.0.1','--local'],
@@ -54,6 +54,9 @@ try {
   for (const viewport of [{width:1280,height:800},{width:393,height:852}]) {
     const context = await browser.newContext({viewport,deviceScaleFactor:1});
     const page = await context.newPage();
+    activePage=page;
+    // Software WebGL on shared CI runners can block input while a village is built.
+    page.setDefaultTimeout(120000);
     const record = {viewport,errors:[],consoleErrors:[],failedRequests:[],httpErrors:[]};
     report.viewports.push(record);
     page.on('pageerror',e=>record.errors.push(e.message));
@@ -103,9 +106,15 @@ try {
     assert.deepEqual(record.failedRequests,[],'Asset/network request failures');
     assert.deepEqual(record.httpErrors,[],'Browser 404/HTTP failures');
     await context.close();
+    activePage=null;
   }
   report.passed=true;
   console.log(`Smoke verification passed: ${environment} (${expected.mode}) ${parsed.origin}`);
+} catch(error) {
+  report.failure=String(error);
+  if(activePage) await activePage.screenshot({path:path.join(evidence,'failure.png'),timeout:15000}).catch(()=>{});
+  console.error(JSON.stringify(report,null,2));
+  throw error;
 } finally {
   await fs.writeFile(path.join(evidence,'smoke.json'),JSON.stringify(report,null,2)+'\n');
   await browser?.close();
