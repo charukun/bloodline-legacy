@@ -25,9 +25,25 @@ class Renderer{
   for(const [type,rows]of buckets){const g=this.geometry(type),data=new Float32Array(rows.length*21);for(let i=0;i<rows.length;i++)data.set(rows[i],i*21);gl.bindVertexArray(g.vao);gl.bindBuffer(gl.ARRAY_BUFFER,g.instance);gl.bufferData(gl.ARRAY_BUFFER,data,gl.DYNAMIC_DRAW);gl.drawArraysInstanced(gl.TRIANGLES,0,g.count,rows.length);this.stats.calls++;this.stats.triangles+=g.count/3*rows.length;if(!shadow)this.stats.instances+=rows.length;}
  }
 
- matrix(){const c=this.camera,aspect=this.width/this.height;this.viewHeight=c.zoom/Math.min(1,aspect*.90);this.viewWidth=this.viewHeight*aspect;const target=[c.x,1.0,c.z],distance=38,eye=[c.x+Math.sin(c.yaw)*Math.cos(c.pitch)*distance,1.0+Math.sin(c.pitch)*distance,c.z+Math.cos(c.yaw)*Math.cos(c.pitch)*distance];this.eye=eye;this.view=rLookAt(eye,target);this.vp=rMultiply(rOrtho(-this.viewWidth/2,this.viewWidth/2,-this.viewHeight/2,this.viewHeight/2,.1,120),this.view);this.unitsToClip=2/Math.min(this.viewWidth,this.viewHeight);const shadowCenter=[c.x,0,c.z],lightEye=[c.x-22,38,c.z+19];this.lightVP=rMultiply(rOrtho(-24,24,-24,24,.1,100),rLookAt(lightEye,shadowCenter));}
+ // Composition only: the world and the ordinary camera-follow target do not move.
+ framePanel(snapshot,dt,options={}){
+  if(options.portrait||options.clan||options.freezeCamera){this.panelShift=0;return;}
+  const c=this.camera,p=snapshot.player,top=options.skillPanelTop;let target=0;
+  if(p&&Number.isFinite(top)&&top>0){
+   const foe=snapshot.actors?.find(e=>e.id===p.autoFight&&e.alive),x=p.x+(foe?(foe.x-p.x)*.5:0),z=p.z+(foe?(foe.z-p.z)*.5:0);
+   const height=c.zoom/Math.min(1,this.width/this.height*.90),pitch=Math.sin(c.pitch);
+   const up=Math.cos(c.pitch)*(1.1-(c.y??1))-pitch*(Math.sin(c.yaw)*(x-c.x)+Math.cos(c.yaw)*(z-c.z));
+   target=((.5-clamp(top*.53,.14,.36))*height-up)/Math.max(.2,pitch);
+  }
+  const blend=options.reducedMotion?1:-Math.expm1(-Math.max(0,dt)/.10);
+  this.panelShift=(this.panelShift||0)+(target-(this.panelShift||0))*blend;
+  if(Math.abs(this.panelShift)<.0001)this.panelShift=0;
+ }
+ matrix(){const c=this.camera,aspect=this.width/this.height;this.viewHeight=c.zoom/Math.min(1,aspect*.90);this.viewWidth=this.viewHeight*aspect;
+ const x=c.x+Math.sin(c.yaw)*(this.panelShift||0),z=c.z+Math.cos(c.yaw)*(this.panelShift||0),y=c.y??1;
+ this.viewCenter={x,z,y};const target=[x,y,z],distance=38,eye=[x+Math.sin(c.yaw)*Math.cos(c.pitch)*distance,y+Math.sin(c.pitch)*distance,z+Math.cos(c.yaw)*Math.cos(c.pitch)*distance];this.eye=eye;this.view=rLookAt(eye,target);this.vp=rMultiply(rOrtho(-this.viewWidth/2,this.viewWidth/2,-this.viewHeight/2,this.viewHeight/2,.1,120),this.view);this.unitsToClip=2/Math.min(this.viewWidth,this.viewHeight);const shadowCenter=[c.x,0,c.z],lightEye=[c.x-22,38,c.z+19];this.lightVP=rMultiply(rOrtho(-24,24,-24,24,.1,100),rLookAt(lightEye,shadowCenter));}
  screenToWorld(dx,dy){const y=this.camera.yaw,p=this.camera.pitch;return{x:Math.cos(y)*dx+Math.sin(y)*dy/Math.sin(p),z:-Math.sin(y)*dx+Math.cos(y)*dy/Math.sin(p)};}
- pointToWorld(x,y){const dx=(x/this.width-.5)*this.viewWidth,dy=(y/this.height-.5)*this.viewHeight;const v=this.screenToWorld(dx,dy);return{x:this.camera.x+v.x-Math.sin(this.camera.yaw)/Math.tan(this.camera.pitch),z:this.camera.z+v.z-Math.cos(this.camera.yaw)/Math.tan(this.camera.pitch)};}
+ pointToWorld(x,y){const dx=(x/this.width-.5)*this.viewWidth,dy=(y/this.height-.5)*this.viewHeight;const v=this.screenToWorld(dx,dy),c=this.viewCenter||this.camera,viewY=c.y??1;return{x:c.x+v.x-viewY*Math.sin(this.camera.yaw)/Math.tan(this.camera.pitch),z:c.z+v.z-viewY*Math.cos(this.camera.yaw)/Math.tan(this.camera.pitch)};}
  project(x,y,z){const m=this.vp;if(!m)return{x:-999,y:-999,visible:false};const xx=m[0]*x+m[4]*y+m[8]*z+m[12],yy=m[1]*x+m[5]*y+m[9]*z+m[13],zz=m[2]*x+m[6]*y+m[10]*z+m[14];return{x:(xx+1)*this.width/2,y:(1-yy)*this.height/2,visible:Math.abs(xx)<1.15&&Math.abs(yy)<1.15&&Math.abs(zz)<1};}
  effect(ev,t){if(['hit','wound','partbreak','blocked','guard','parry','skill','death','status','release','released','learn'].includes(ev.type)){this.effects.push({...ev,born:t,life:ev.type==='partbreak'?1.25:ev.type==='skill'?1.1:.8});if(this.effects.length>100)this.effects.splice(0,20);}}
  combatFX(snapshot,t){const entities=[...snapshot.players||[],...snapshot.actors||[]];if(snapshot.player&&!entities.some(x=>x.id===snapshot.player.id))entities.push(snapshot.player);const find=id=>entities.find(x=>x.id===id);for(const p of entities){if(p.alive===false)continue;const sk=skillById(p.pendingSkill?.id??p.attackSkill);const pt=t;
@@ -45,7 +61,7 @@ class Renderer{
  this.diorama.update(snapshot,dt,options);
  if(options.clan&&options.preview){const c=options.preview;this.camera.x+=(c.x-this.camera.x)*Math.min(1,dt*8);this.camera.z+=(c.z-this.camera.z)*Math.min(1,dt*8);this.camera.zoom+=(4.2-this.camera.zoom)*Math.min(1,dt*8);this.camera.yaw=.12;this.camera.pitch=.24;}
  else if(p&&!options.freezeCamera){const foe=snapshot.actors?.find(e=>e.id===p.autoFight&&e.alive);if(foe&&this.combatTarget!==foe.id){const axis=Math.atan2(foe.x-p.x,foe.z-p.z),wrap=n=>Math.atan2(Math.sin(n),Math.cos(n)),a=axis+Math.PI/2,b=axis-Math.PI/2;this.combatYaw=Math.abs(wrap(a-this.camera.yaw))<Math.abs(wrap(b-this.camera.yaw))?a:b;this.combatTarget=foe.id;}if(!foe)this.combatTarget=null;const yaw=options.yaw??(foe?this.combatYaw:.42),cx=p.x+(foe?(foe.x-p.x)*.35:0),cz=p.z+(foe?(foe.z-p.z)*.35-1:-1.5);this.camera.x+=(cx-this.camera.x)*Math.min(1,dt*6);this.camera.z+=(cz-this.camera.z)*Math.min(1,dt*6);this.camera.zoom+=((foe?13.5:16-this.diorama.blend*.8)+(options.zoomOffset||0)-this.camera.zoom)*Math.min(1,dt*3);const dy=Math.atan2(Math.sin(yaw-this.camera.yaw),Math.cos(yaw-this.camera.yaw));this.camera.yaw+=dy*Math.min(1,dt*3);this.camera.pitch+=(.68+this.diorama.blend*.10-this.camera.pitch)*Math.min(1,dt*4);}
- this.matrix();this.stats={calls:0,triangles:0,instances:0,lodInstances:0,resolution:this.canvas.width+'×'+this.canvas.height,scale:this.scale,meshTypes:this.geo.size};this.dynamic.clear();this.fxBatches.clear();this.impactFX.clear();
+ this.framePanel(snapshot,dt,options);this.matrix();this.stats={calls:0,triangles:0,instances:0,lodInstances:0,resolution:this.canvas.width+'×'+this.canvas.height,scale:this.scale,meshTypes:this.geo.size};this.dynamic.clear();this.fxBatches.clear();this.impactFX.clear();
  let entities=[...snapshot.actors||[],...snapshot.players||[]];if(p&&!entities.some(e=>e.id===p.id))entities.push(p);if(options.clan&&options.preview)entities=[options.preview];entities.sort((a,b)=>(a.id===p?.id)-(b.id===p?.id));
  for(const e of entities){if(Math.hypot(e.x-this.camera.x,e.z-this.camera.z)>33)continue;const lod=Math.hypot(e.x-this.camera.x,e.z-this.camera.z)>18;this.art.low=lod;let et=t;this.art.doll(e,et,e.id===p?.id);this.art.statuses(e,t);if(e.id===p?.id)this.art.parentScene(e,t);}
  this.combatFX(snapshot,t);

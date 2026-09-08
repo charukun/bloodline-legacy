@@ -19,5 +19,6 @@ let style=(await fs.readFile(path.join(root,'src/ui/base.css'),'utf8'))+'\n'+awa
 style+='\n'+await fs.readFile(path.join(root,'src/skills/skills.css'),'utf8');
 style+='\n'+await fs.readFile(path.join(root,'src/ui/interaction.css'),'utf8')+'\n'+await fs.readFile(path.join(root,'src/ui/lineage.css'),'utf8');
 style=style.replace(/asset:([a-z-]+\.png)/g,(_,name)=>`data:image/png;base64,${assets[name]}`);
+style+='\n'+await fs.readFile(path.join(root,'src/ui/skills-panel.css'),'utf8');
 let html=await fs.readFile(path.join(root,'src/shell.html'),'utf8');html=html.replace('/*__STYLE__*/',style).replace('/*__SCRIPT__*/',`'use strict';\n(async()=>{\n${code}\n})();`.replace(/<\/script/gi,'<\\/script'));
 await fs.mkdir(path.join(root,'dist'),{recursive:true});await fs.writeFile(path.join(root,'dist/index.html'),html);await fs.writeFile(path.join(root,'dist/source-manifest.json'),JSON.stringify({name:'継ぎ火の谷',visualBuild:'VS-01',simulationVersion:'0.6.0',modules:order,assets:Object.keys(assets)},null,2));console.log('Built '+Buffer.byteLength(html)+' bytes from '+order.length+' source modules');
