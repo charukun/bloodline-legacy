@@ -11,7 +11,7 @@ import {fileURLToPath} from 'node:url';
 import {chromium} from '../deploy/node_modules/playwright/index.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const mode=process.env.CHARACTER_MODE||'all';
-assert(['all','functional','performance','motion','reference'].includes(mode),'Unknown verification mode');
+assert(['all','functional','performance','motion','reference','polish'].includes(mode),'Unknown verification mode');
 const out=path.join(root,'verification/current',mode);
 await fs.mkdir(out,{recursive:true});
 const files={before:await fs.readFile(process.env.CHARACTER_BASELINE),after:await fs.readFile(path.join(root,'dist/index.html'))};
@@ -32,7 +32,7 @@ const groundedSlip=rows=>Math.max(0,...rows.slice(1).flatMap((s,i)=>s.feet.map((
   const previous=rows[i].feet[j];
   return !f.swing&&!previous.swing?Math.hypot(f.actual[0]-previous.actual[0],f.actual[2]-previous.actual[2]):0;
 })));
-let browser,page;
+let browser,page;const pairedPages=[];
 async function fixture(page,{close=false}={}){
   await page.evaluate(({close})=>{
     const a=AERIN_QA.app,p=AERIN_QA.player();a.closed=true;a.stopInput();a.ui.closeModal();
@@ -57,7 +57,7 @@ async function shot(name){await page.screenshot({path:path.join(out,name+'.png')
 try{
   browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
   for(const version of mode==='motion'?['after']:['before','after']){
-    const context=await browser.newContext({viewport:{width:1000,height:900},deviceScaleFactor:1,...(mode==='performance'?{}:{recordVideo:{dir:out,size:{width:1000,height:900}}})});
+    const context=await browser.newContext({viewport:{width:1000,height:900},deviceScaleFactor:1,...(['performance','polish'].includes(mode)?{}:{recordVideo:{dir:out,size:{width:1000,height:900}}})});
     page=await context.newPage();page.setDefaultTimeout(120000);
     const record=report.versions[version]={errors:[],consoleErrors:[],states:[],performance:[]};
     page.on('pageerror',e=>record.errors.push(e.message));
@@ -69,6 +69,22 @@ try{
     for(let i=0;i<3;i++)await page.locator('#guide-next').click();
     await page.waitForFunction('AERIN_QA.app.screen==="game"');
     check(version+' native onboarding',await page.evaluate(()=>AERIN_QA.player().prologue));
+    if(mode==='polish'){
+      await fixture(page);await shot(version+'-gameplay');await fixture(page,{close:true});
+      // Same open stretch of existing paving for both close views; no scene
+      // object is hidden or moved to make the model look better.
+      await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();p.x=0;p.z=-6;a.renderer.camera.x=0;a.renderer.camera.z=-6;a.snapshot=a.decorate(a.sim.snapshot(p.id,a.seq));a.renderer.render(a.snapshot,0,{freezeCamera:true});});await shot(version+'-close');
+      if(version==='after'){
+        await page.evaluate(()=>{const a=AERIN_QA.app;a.renderer.camera.yaw=.85;a.renderer.render(a.snapshot,0,{freezeCamera:true});});await shot('after-quarter');
+        await page.keyboard.down('d');await page.evaluate(()=>characterStep(8));await page.keyboard.up('d');await shot('after-run');
+        check('updated gloves and boots retain finite joints',await page.evaluate(()=>AERIN_QA.app.renderer.characterMaster.palette.every(Number.isFinite)));
+      }
+      check(version+' shader and game loop',record.errors.length===0&&await page.evaluate(()=>!!AERIN_QA.stats().characterMaster&&!AERIN_QA.app.frameError&&AERIN_QA.app.renderer.gl.getError()===0));
+      await page.setViewportSize({width:393,height:852});await fixture(page);await shot(version+'-mobile-gameplay');
+      // Keep both contexts ready, turn recording off, and alternate sample
+      // order to distinguish character cost from host/encoder scheduling.
+      pairedPages.push({version,page,context,record});continue;
+    }
     if(mode==='reference'){
       await fixture(page);await shot(version+'-gameplay');
       check(version+' master dispatch and no blur',await page.evaluate(()=>!!AERIN_QA.stats().characterMaster&&!AERIN_QA.app.renderer.diorama.active));
@@ -129,7 +145,7 @@ try{
     record.stats=await page.evaluate(()=>AERIN_QA.stats());
     check(version+' WebGL has no error',await page.evaluate(()=>AERIN_QA.app.renderer.gl.getError()===0));
     check(version+' comparison has no diorama blur',await page.evaluate(()=>AERIN_QA.app.renderer.diorama.mode==='normal'&&!AERIN_QA.app.renderer.diorama.active));
-    check(version+' target renderer dispatch',!!record.stats.characterMaster===(version==='after'));
+    check(version+' target renderer dispatch',!!record.stats.characterMaster);
     await fixture(page,{close:true});await shot(version+'-close');
     if(version==='after'){
       for(const [label,yaw]of [['quarter',1.1],['side',1.82],['back',3.2]]){
@@ -233,6 +249,20 @@ try{
     check(version+' no game frame exception',await page.evaluate(()=>!AERIN_QA.app.frameError));
     if(page.video())record.video=path.basename(await page.video().path());await context.close();
     await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));
+  }
+  if(mode==='polish'){
+    for(const p of pairedPages)p.record.performance={samples:[],recording:false,viewport:[393,852]};
+    for(let round=0;round<30;round++){
+      const order=round%2?[...pairedPages].reverse():pairedPages;
+      for(const p of order){
+        const ms=await p.page.evaluate(()=>{const a=AERIN_QA.app,g=a.renderer.gl;g.finish();const t=performance.now();a.renderer.render(a.snapshot,1/30,{freezeCamera:true});g.finish();return performance.now()-t;});
+        if(round>=6)p.record.performance.samples.push(ms);
+      }
+    }
+    for(const p of pairedPages){const data=p.record.performance,s=[...data.samples].sort((a,b)=>a-b);data.medianMs=s[Math.floor(s.length*.5)];data.p95Ms=s[Math.floor(s.length*.95)];await p.context.close();}
+    const before=report.versions.before.performance,after=report.versions.after.performance;
+    report.performanceComparison={method:'Alternating AB/BA; 6 warmup + 24 synchronized whole frames per version; no video recording',medianChangeMs:after.medianMs-before.medianMs,medianRatio:after.medianMs/before.medianMs,p95Ratio:after.p95Ms/before.p95Ms};flush();
+    check('bounded paired median has no material regression',after.medianMs<=Math.max(before.medianMs*1.05,before.medianMs+.5),report.performanceComparison);
   }
   report.passed=true;
 }catch(e){report.failure=e.stack;console.error(e);if(page)await shot('failure').catch(()=>{});process.exitCode=1;}

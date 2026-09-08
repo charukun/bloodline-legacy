@@ -1,6 +1,6 @@
 # Young protagonist CM01 review
 
-Status: ready for integration review. Visual and regression evidence is available; hardware performance remains unverified, so unconditional Golden Master acceptance is not claimed.
+Historical record: this document describes CM01 in PR #12. Its acceptance and measurements do not apply to the reference reconstruction on `work/character-reference-master-20260909`; see `REFERENCE-review.md`.
 
 ## Authority and scope
 

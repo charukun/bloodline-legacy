@@ -8,6 +8,14 @@ on:
         default: false
   push:
     branches: ['work/character-reference-master-*']
+    paths:
+      - 'src/character/**'
+      - 'public/assets/character/**'
+      - 'tests/character*'
+      - 'tools/generate_character.py'
+      - '.github/workflows/character-visual.yml'
+      - 'build.mjs'
+      - 'package*.json'
   pull_request:
     branches: [develop]
     paths:
@@ -51,7 +59,7 @@ jobs:
         timeout-minutes: 20
         env:
           CHARACTER_BASELINE: /tmp/character-baseline/dist/index.html
-          CHARACTER_MODE: ${{ inputs.full_review && 'functional' || 'reference' }}
+          CHARACTER_MODE: ${{ inputs.full_review && 'functional' || 'polish' }}
         run: node tests/character-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
