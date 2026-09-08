@@ -5,7 +5,7 @@ const SkillPresentation = (() => {
   const el=document.createElement('aside');el.className='skill-revelation';el.id='skill-revelation';el.setAttribute('role','status');el.setAttribute('aria-live','polite');
   el.innerHTML='<span class="reveal-overline">記憶が、技になる</span><p class="reveal-memory"></p><div class="reveal-name"></div><small class="reveal-english"></small><button class="reveal-open">心の采配へ</button>';
   document.body.appendChild(el);ui.skillReveal=el;
-  el.querySelector('button').onclick=()=>{const d=BL_SKILL_CATALOG.byId.get(ui.skillRevealEvent?.id);ui.skills();if(d&&!d.passive){ui.phase=d.phase;ui.renderSkills();ui.describeSkill(d.id);}clear(ui);};
+  el.querySelector('button').onclick=()=>{const d=BL_SKILL_CATALOG.byId.get(ui.skillRevealEvent?.id);ui.skills();if(d){ui.phase=d.passive?3:d.phase;ui.renderSkills();ui.describeSkill(d.id);}clear(ui);};
   return el;
  }
  function clear(ui) { ui.skillReveal?.classList.remove('visible');ui.skillRevealEvent=null; }
