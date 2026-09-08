@@ -183,8 +183,6 @@ class UI {
   if(target&&Math.hypot(target.x-p.x,target.z-p.z)<15){const fill=Math.round(clamp((target.hp??50)/(target.hpMax||50),0,1)*100);add('target','target-label',target,target.elite?4.3:head(target),'',`<span>${ESC(target.name||'交戦中')}</span><i class="target-meter"><i style="width:${fill}%"></i></i>`,10);}
   const statuses=uiActiveStatuses(p,t);if(statuses)add('status','status-caption',p,head(p),statuses,'',-91);
   for(const a of [...s.players,...s.actors])if(a.alive&&a.speechUntil>t&&a.speech&&Math.hypot(a.x-p.x,a.z-p.z)<13)add('speech:'+a.id,'speech-bubble',a,head(a),a.speech,'',-50);
-  const nearby=(r.labels||[]).filter(b=>Math.hypot(b.x-p.x,b.z-p.z)<10).sort((a,b)=>Math.hypot(a.x-p.x,a.z-p.z)-Math.hypot(b.x-p.x,b.z-p.z)).slice(0,2);
-  for(const b of nearby)add('building:'+b.text+':'+b.x+':'+b.z,'building-label',b,b.y,b.text);
   this.floatLines=this.floatLines.filter(e=>t-e.born<4.6);
   const latest=new Map();for(const e of this.floatLines)if(e.type!=='speech')latest.set(e.player,e);
   for(const e of latest.values()){const a=s.players.find(a=>a.id===e.player);if(a&&Math.hypot(a.x-p.x,a.z-p.z)<14)add('progress:'+e.player,'progress-float',a,head(a)+.3,e.text,'',p.combo?-125:-40);}
@@ -194,4 +192,3 @@ class UI {
   for(const [key,n] of this.worldNodes)if(!live.has(key)){n.remove();this.worldNodes.delete(key);}
  }
 }
-
