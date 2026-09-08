@@ -53,6 +53,28 @@ test('production is a holding page until explicitly released',async()=>{
     await assert.rejects(build('production','local-recovery',dir),/boolean/);
   } finally {await fs.rm(dir,{recursive:true,force:true});}
 });
+test('document fallback serves the real asset without masking missing assets',async()=>{
+  for (const environment of Object.keys(environments)) {
+    for (const method of ['GET','HEAD']) {
+      for (const pathname of ['/','/index.html']) {
+        const request=new Request(`https://test.invalid${pathname}`,{method});
+        const asset=new Response(method==='HEAD'?null:'<p>Actual deployed document</p>',
+          {headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache','ETag':'"deployed"'}});
+        let requested;
+        const response=await worker.fetch(request,{APP_ENV:environment,ASSETS:{fetch:async incoming=>{requested=incoming;return asset;}}});
+        assert.equal(requested,request);
+        assert.equal(response,asset,'Keep asset status, headers and bytes intact');
+        assert.equal(response.status,200);
+      }
+    }
+    const missing=await worker.fetch(new Request('https://test.invalid/missing.glb'),
+      {APP_ENV:environment,ASSETS:{fetch:async()=>{throw Error('Do not route missing models to the document');}}});
+    assert.equal(missing.status,404);
+    const unavailable=new Response('Asset unavailable',{status:404});
+    assert.equal(await worker.fetch(new Request('https://test.invalid/'),
+      {APP_ENV:environment,ASSETS:{fetch:async()=>unavailable}}),unavailable,'Do not turn a real missing document into a false 200');
+  }
+});
 test('a failed game build throws and cannot leave a stale deployable index',async()=>{
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),'bloodline-failed-build-'));
   try {
