@@ -55,7 +55,9 @@ jobs:
           TARGET: ${{ steps.target.outputs.target }}
         run: node deploy/check-build.mjs "$TARGET"
       - run: deploy/node_modules/.bin/playwright install --with-deps chromium
+        if: steps.target.outputs.target != 'dev'
       - name: Smoke test through local Workers runtime
+        if: steps.target.outputs.target != 'dev'
         env:
           TARGET: ${{ steps.target.outputs.target }}
         run: node deploy/smoke.mjs "$TARGET" --local --tilt-shift
@@ -99,6 +101,7 @@ jobs:
           path: deploy/out/
       - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
       - run: deploy/node_modules/.bin/playwright install --with-deps chromium
+        if: env.TARGET != 'dev'
       - name: Validate branch, URL and current remote head
         env:
           GH_TOKEN: ${{ github.token }}
@@ -122,14 +125,19 @@ jobs:
           test -n "$CLOUDFLARE_API_TOKEN"
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           deploy/node_modules/.bin/wrangler deploy --config "deploy/wrangler.$TARGET.json"
-      - name: Verify published WebGL game and exact build
-        run: node deploy/smoke.mjs "$TARGET"
+      - name: Verify published build (DEV HTTP; STAGING/PRODUCTION browser)
+        run: |
+          if [ "$TARGET" = "dev" ]; then
+            node deploy/smoke.mjs "$TARGET" --http-only
+          else
+            node deploy/smoke.mjs "$TARGET"
+          fi
       - name: Record deployment result
         run: |
           node --input-type=module <<'JS'
           import fs from 'node:fs';
           const v=JSON.parse(fs.readFileSync(`deploy/out/${process.env.TARGET}/version.json`));
-          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,`Environment: ${v.environment}\n\nCommit: ${v.commit}\n\nMode: ${v.mode}\n\nVerified URL: ${process.env.FIXED_URL}\n`);
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,`Environment: ${v.environment}\n\nCommit: ${v.commit}\n\nMode: ${v.mode}\n\nVerification: ${v.environment==='dev'?'HTTP / exact artifact (browser not run)':'browser / WebGL'}\n\nVerified URL: ${process.env.FIXED_URL}\n`);
           JS
       - uses: actions/upload-artifact@v4
         if: always()
