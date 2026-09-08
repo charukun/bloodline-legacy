@@ -2,7 +2,7 @@
 
 Base: develop `4b9693364c5687ffc04bf57101c80394738fe59c` (camera PR #17 merged).
 Branch: `work/plaza-surface-performance-20260909`.
-Project Sources: Common Development Policy v5; Implementation Prompt v2; user reference `1000002824.png` and explicit request to fix well collision and improve visual quality/rendering cost. The user's GitHub workflow and v5 supersede the older implementation prompt's handoff-only rule. User requested a playable preview before this PR; **PR creation waits for that review**.
+Project Sources: Common Development Policy v5; Implementation Prompt v2; user reference `1000002824.png` and explicit request to fix well collision and improve visual quality/rendering cost. The user's GitHub workflow and v5 supersede the older implementation prompt's handoff-only rule. User reviewed the supplied playable preview and explicitly requested PR creation on 2026-09-09. PR-time develop is `fad97fc` (Skill Motion PR #18); its changed files do not overlap this work. Integration and CI should verify the combined result.
 
 ## Changes
 
@@ -55,6 +55,6 @@ An earlier run had a clear baseline median of 59.56 ms: normal-frame timing is n
 - New collision tests: 3 village seeds × 16 approach directions, ordinary move and dash commands, backing away, complete square perimeter, old-save recovery, actor knockback radius and front-room isolation.
 - Rendering tests: finite geometry, deterministic art, district bounds and walking relief, roof shadow retained, unchanged character passes, upload-buffer reuse and correct live-row counts, terrain submission across positions/camera angles/aspect ratios.
 - Native EGL links main, depth, post, rain and character material shaders; clear/rain renders inspected.
-- UNVERIFIED: live browser WebGL2, Pixel Fold GPU/frame pacing, touch feel and on-device collision/visual confirmation. This environment has no local Chromium executable; existing tests and native EGL were used as authorized. The downloadable preview runs the actual built game and awaits user review before PR.
+- UNVERIFIED: live browser WebGL2, Pixel Fold GPU/frame pacing, touch feel and on-device collision/visual confirmation. This environment has no local Chromium executable; existing tests and native EGL were used as authorized. The downloadable preview runs the actual built game; the user approved it for PR submission. This is not a measured hardware FPS result.
 
 Reproduction: `node tests/export_scene.mjs <checkout> <output> '{"width":540,"height":960,"x":1.8,"z":16,"age":14,"gameplayCamera":true}'`; add `"weather":"rain"` for rain. `tests/render_offline.py` consumes those exports and the matching checkout's assets. Never render a baseline with the changed packed atlas.
