@@ -34,7 +34,7 @@ const SKINS = [
  {id:'forest',name:'常緑の守り',color:'#a9bb72',metal:'#d7d3a6',cloak:'#446858'}
 ];
 const SCHOOLS = [
- {id:'sword',name:'武術道場',short:'武術道場',x:-12,z:7,r:5,color:'#c8b18b'},
+ {id:'sword',name:'武術道場',short:'武術道場',x:-6.5,z:17.7,r:5,color:'#c8b18b'},
  {id:'magic',name:'木洩れ日の図書館',short:'図書館',x:-12,z:-6,r:5,color:'#a8bcba'},
  {id:'church',name:'灯守の教会',short:'教会',x:-3,z:-10,r:5,color:'#e4d591'},
  {id:'armory',name:'村の武具棚',short:'武器庫',x:10,z:7,r:5,color:'#9fadb9'},
@@ -122,6 +122,8 @@ function makeVillage(seed=1) {
  }
  const mirror=rng()<.5?-1:1;return {seed,houses,schools:SCHOOLS.map(x=>({...x,x:x.x*mirror,z:x.z+(x.id==='church'?0:(rng()-.5)*1.2)})),port:{x:0,z:28},gate:{x:0,z:-29}};
 }
+// Open forecourt: inside the dojo activity area and the village shore boundary.
+function villagePracticePosition(map){const dojo=map.schools.find(s=>s.id==='sword');return {x:dojo.x,z:dojo.z+3};}
 const ZONES = [
  {name:'白樺の渡り',sub:'THE BIRCH MARCH',ground:'#6c8970',tree:'#75946e'},
  {name:'霧鳴りの峡谷',sub:'THE HOLLOW WIND',ground:'#657f7d',tree:'#799b98'},
@@ -335,7 +337,7 @@ class Simulation {
   for(let i=0;i<4;i++){const g=this.actor('guard',-10.5+i*7,-32);g.lane=i;r.actors.push(g);const e=this.actor(['crawler','wraith','maw','goblin'][i],-10.5+i*7,-39,i===2?1:0);e.lane=i;r.actors.push(e);}
   r.actors.push(this.actor('stag',-19,-38,1),this.actor('mushroom',18,-42,0));
   // No ambient villagers. Parents are rendered only for the opening scene.
-  for(const key of ['sword']){const s=r.map.schools.find(s=>s.id===key),e=this.actor('dummy',s.x,s.z+2);e.z=s.z+4.25;e.x=s.x+3.2;e.name='稽古人形';r.actors.push(e);}
+  const spot=villagePracticePosition(r.map),dummy=this.actor('dummy',spot.x,spot.z);dummy.name='稽古人形';r.actors.push(dummy);
  }
  preparePlayer(p){
   p.health??=100;p.statuses??={};p.statusClock=this.time;p.lastHurtAt??=-100;
@@ -912,7 +914,7 @@ class Simulation {
  }
  snapshot(id,after=0){const p=this.players.get(id);if(!p)return null;const r=this.getRoom(p);return {version:VERSION,t:this.time,seq:this.seq,mode:this.mode,player:p,room:{id:r.id,kind:r.kind,seed:r.seed,code:r.code,name:r.name,stage:r.stage,kills:r.kills,quota:r.quota,cleared:r.cleared,clans:r.clans,bossDefeated:r.bossDefeated,partySize:r.partySize,fields:r.fields||[],items:r.items||[],abandoned:r.abandoned},actors:r.actors,players:[...this.players.values()].filter(q=>q.room===r.id),boatIn:this.boatInterval-this.time%this.boatInterval,yearSeconds:this.yearSeconds,legacy:this.legacy(p.owner),events:this.events.filter(e=>e.seq>after&&(e.room===r.id||e.player===id))};}
  exportState(){const data={schema:3,version:VERSION,seed:this.seed,rngState:this.rng.getState(),mode:this.mode,time:this.time,seq:this.seq,eid:this.eid,roomSeq:this.roomSeq,rooms:[...this.rooms],players:[...this.players].map(([id,p])=>[id,{...p,speech:'',speechUntil:0}]),legacies:this.legacies,abandoned:this.abandoned};return JSON.parse(JSON.stringify(data));}
- static restore(data){if(data?.schema!==3||!Array.isArray(data.players)||!Array.isArray(data.rooms)||data.players.length>200)throw Error('この改修より前の進行中データは別保管されています。');const s=new Simulation({seed:data.seed,mode:data.mode});s.time=+data.time||0;s.seq=+data.seq||0;s.eid=+data.eid||0;s.roomSeq=+data.roomSeq||1;s.rooms=new Map(data.rooms);s.players=new Map(data.players);s.legacies=data.legacies||{};s.abandoned=data.abandoned||[];if(Number.isInteger(data.rngState))s.rng.setState(data.rngState);for(const p of s.players.values()){if(!s.rooms.has(p.room))throw Error('村の記録がありません。');p.attackBufferedUntil=0;p.attackStep??=null;p.hitReactAt??=0;p.hitReactUntil??=0;p.hitDir??=0;p.hitSeverity??=null;p.input={x:0,z:0};p.guard=false;p.guardPending=false;p.speech='';p.speechUntil=0;s.preparePlayer(p);p.dash=null;p.autoFight=null;p.chain=null;p.pendingSkill=null;p.combo=null;p.attackStep=null;p.action=p.seated?'sit':'idle';SkillSystem.restore(s,p);}for(const r of s.rooms.values()){if(r.kind==='village')r.map=makeVillage(r.seed);r.actors=r.actors.filter(a=>a.kind!=='villager');for(const a of r.actors){if(a.kind==='archer')a.kind='soldier';if(a.kind==='mage')a.kind='goblin';a.statuses??={};a.hp??=a.kind==='guard'?130:a.elite?120:70;a.hpMax??=a.hp;a.npcResolveMax??=a.kind==='guard'?18:14;if(data.version!==VERSION)a.npcResolve=a.npcResolveMax;}}for(const l of Object.values(s.legacies))l.archive=l.archive.filter(id=>skillById(id));return s;}
+ static restore(data){if(data?.schema!==3||!Array.isArray(data.players)||!Array.isArray(data.rooms)||data.players.length>200)throw Error('この改修より前の進行中データは別保管されています。');const s=new Simulation({seed:data.seed,mode:data.mode});s.time=+data.time||0;s.seq=+data.seq||0;s.eid=+data.eid||0;s.roomSeq=+data.roomSeq||1;s.rooms=new Map(data.rooms);s.players=new Map(data.players);s.legacies=data.legacies||{};s.abandoned=data.abandoned||[];if(Number.isInteger(data.rngState))s.rng.setState(data.rngState);for(const p of s.players.values()){if(!s.rooms.has(p.room))throw Error('村の記録がありません。');p.attackBufferedUntil=0;p.attackStep??=null;p.hitReactAt??=0;p.hitReactUntil??=0;p.hitDir??=0;p.hitSeverity??=null;p.input={x:0,z:0};p.guard=false;p.guardPending=false;p.speech='';p.speechUntil=0;s.preparePlayer(p);p.dash=null;p.autoFight=null;p.chain=null;p.pendingSkill=null;p.combo=null;p.attackStep=null;p.action=p.seated?'sit':'idle';SkillSystem.restore(s,p);}for(const r of s.rooms.values()){if(r.kind==='village'){r.map=makeVillage(r.seed);const spot=villagePracticePosition(r.map);for(const a of r.actors)if(a.kind==='dummy'){a.x=a.homeX=spot.x;a.z=a.homeZ=spot.z;}}r.actors=r.actors.filter(a=>a.kind!=='villager');for(const a of r.actors){if(a.kind==='archer')a.kind='soldier';if(a.kind==='mage')a.kind='goblin';a.statuses??={};a.hp??=a.kind==='guard'?130:a.elite?120:70;a.hpMax??=a.hp;a.npcResolveMax??=a.kind==='guard'?18:14;if(data.version!==VERSION)a.npcResolve=a.npcResolveMax;}}for(const l of Object.values(s.legacies))l.archive=l.archive.filter(id=>skillById(id));return s;}
 }
 
 

@@ -29,3 +29,19 @@ rendered the actual shader/draw-batch output for before/after slash and thrust.
 These are pose snapshots, not browser interaction or hardware frame-pacing
 measurements. The repository's latest fast DEV CI intentionally skips browser
 smoke. Real-device motion/feel should be judged in the supplied standalone HTML.
+
+## Follow-up: visible dojo forecourt
+
+The dojo now sits beside the front of the square (base x=-6.5, z=17.7),
+with the practice dummy three units in front. Seed mirroring and jitter remain;
+other schools, houses, shore bounds and RNG consumption are unchanged.
+Map-driven art, collisions and building labels follow the same position.
+Existing saves move the same dummy (including its home anchor) to the forecourt,
+preserving its ID, wounds and the player's skills/loadout. This follow-up touches
+`src/legacy/core.js`; it does not change combat timing or damage.
+
+Two regression tests cover both mirrored layouts, eight approach directions,
+actual contact-led practice combat and repeated old-save restore. Offline EGL
+captures of both layouts confirm that roofs stay behind the training area.
+Latest develop `6f3101a` was merged into this WORK branch before the relocation;
+the approved sharper VFX remains included in the standalone build.
