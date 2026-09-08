@@ -37,6 +37,7 @@ Integration WORK: this PR includes #6 as an ancestor dependency. Integrate #6 fi
 - `git diff --check`: PASS.
 - Regression includes dock order/toggle/switching, inert separation, focus, real `Game.start` new life with single inheritance, truthful missing records, historic/current equipment separation, two slots, long history/paging/queue lifecycle, help preference, state-driven updates, existing movement/rest/chat/save behavior and Tilt-Shift settings/suspension.
 - Existing CI browser smoke is left enabled; its result will be reported on the PR. It is not the deferred full visual/device acceptance suite.
+- Existing Tilt-Shift browser test now asserts Escape restores Settings, then closes Settings through the active dock button before its unchanged movement checks. This updates the navigation precondition without weakening movement, framebuffer, save or rendering assertions.
 
 ## Changed responsibilities
 
