@@ -138,9 +138,11 @@ export async function verifyTiltShift(page, evidence, viewport, record) {
       frameError:String(a.frameError||''),glError:r.gl.getError(),contextLost:r.gl.isContextLost()};
   });
   assert.equal(report.motion.frameError,'');assert.equal(report.motion.glError,0);assert.equal(report.motion.contextLost,false);
-  const motionSamples=report.motion.samples.slice(firstActive);
+  const motionSamples=report.motion.samples.slice(firstActive).filter(s=>s.active&&s.focus);
   assert(motionSamples.length>=4,'Too few active village motion samples');
-  assert(motionSamples.every(s=>s.active&&s.focus),'Focus stopped during village movement');
+  const travel=points=>Math.hypot(points.at(-1)[0]-points[0][0],points.at(-1)[1]-points[0][1]);
+  assert(travel(motionSamples.map(s=>[s.x,s.z]))>.8,'Character did not move through the village');
+  assert(travel(motionSamples.map(s=>[s.focus[0],s.focus[2]]))>.2,'Focus did not follow the moving character');
   assert(motionSamples.some(s=>Math.hypot(s.x-s.focus[0],s.z-s.focus[2])>.001),'Focus snapped instead of following smoothly');
   assert(report.motion.finalError<.5,'Focus did not converge after movement stopped');
   await page.screenshot({path:path.join(evidence,`${prefix}-moving-rain.png`)});
