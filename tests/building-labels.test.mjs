@@ -19,7 +19,7 @@ function fixture(){
  }
  const root=new Node();
  const context=vm.createContext({document,console,performance,requestAnimationFrame(){},innerWidth:960,innerHeight:720});
- for(const file of ['legacy/render_math.js','render/renderer-base.js','legacy/ui.js','ui/building-labels.js','legacy/game.js'])
+ for(const file of ['legacy/render_math.js','render/renderer-base.js','ui/presentation.js','legacy/ui.js','ui/building-labels.js','legacy/game.js'])
   vm.runInContext(fs.readFileSync(new URL('../src/'+file,import.meta.url),'utf8'),context);
  const {BuildingLabels,Renderer,Game,UI}=vm.runInContext('({BuildingLabels,Renderer,Game,UI})',context);
  const renderer=Object.assign(Object.create(Renderer.prototype),{
@@ -53,7 +53,7 @@ test('building names follow every rendered frame while the HUD stays throttled',
    accumulator:0,sinceSave:0,seq:0,sim:{tick(){ticks++;}},
    audio:{setListener(){},updateFootsteps(){}},updateMove(){},saveWorld(){}
   });
-  const ui=Object.assign(Object.create(f.UI.prototype),{g:game,floatLines:[],portraitQueue:[],
+  const ui=Object.assign(Object.create(f.UI.prototype),{g:game,floatLines:[],portraitQueue:[],worldNodes:new Map(),
    update(s){hudUpdates++;this.updateWorldLabels(s);},toast(){}});
   game.ui=ui;
   // A moving camera projects the same world anchor differently on every frame.

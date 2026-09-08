@@ -1,0 +1,1667 @@
+{
+  "version": 1,
+  "families": [
+    {
+      "key": "hammer",
+      "tags": [
+        "weight",
+        "rhythm",
+        "craft"
+      ],
+      "requiresExperience": [
+        [
+          "craft",
+          "weight"
+        ]
+      ],
+      "color": "#dcab72",
+      "rarity": 1,
+      "inheritance": {
+        "bias": 0.22,
+        "copy": false
+      },
+      "action": {
+        "cost": 9,
+        "fatigue": 0.7,
+        "charge": 0.22,
+        "swing": 0.4,
+        "recovery": 0.56,
+        "reach": 2.15,
+        "arc": 1.6,
+        "power": 0.72,
+        "hits": 1,
+        "anim": "slash",
+        "school": "life",
+        "requires": [
+          "rightArm"
+        ],
+        "weapon": -1
+      },
+      "variants": [
+        {
+          "id": 60000,
+          "key": "opening",
+          "phase": 0,
+          "ja": "炉打ち",
+          "en": "Hearth Knock",
+          "desc": "短く叩いて重心を崩す。威力は控えめ。",
+          "descEn": "A short blow upsets balance without much damage.",
+          "action": {
+            "anim": "slam",
+            "power": 0.38,
+            "breakPower": 1.3,
+            "charge": 0.24,
+            "stagger": 1.35
+          },
+          "entry": [],
+          "exit": [
+            "offbalance"
+          ]
+        },
+        {
+          "id": 60001,
+          "key": "turn",
+          "phase": 1,
+          "ja": "鉄返し",
+          "en": "Iron Rebound",
+          "desc": "反動を返して二度打つ。崩れた相手を拾いやすい。",
+          "descEn": "Return the recoil in two blows; catches an unbalanced foe.",
+          "action": {
+            "anim": "double",
+            "hits": 2,
+            "power": 0.48,
+            "cost": 14,
+            "swing": 0.57
+          },
+          "entry": [
+            "offbalance"
+          ],
+          "exit": [
+            "rhythm"
+          ],
+          "connection": {
+            "charge": 0.68,
+            "tracking": 0.42
+          }
+        },
+        {
+          "id": 60002,
+          "key": "close",
+          "phase": 2,
+          "ja": "炉底割り",
+          "en": "Hearthbreaker",
+          "desc": "深く振り下ろして構えを砕く。外すと隙が大きい。",
+          "descEn": "A committed downward strike breaks guards; a miss leaves you open.",
+          "action": {
+            "anim": "slam",
+            "charge": 0.55,
+            "power": 1.55,
+            "cost": 23,
+            "breakPower": 3,
+            "recovery": 1.15
+          },
+          "entry": [
+            "rhythm"
+          ],
+          "exit": [
+            "offbalance"
+          ],
+          "connection": {
+            "recovery": 0.68,
+            "knockback": 0.35
+          }
+        }
+      ]
+    },
+    {
+      "key": "thread",
+      "tags": [
+        "patience",
+        "precision",
+        "craft"
+      ],
+      "requiresExperience": [
+        [
+          "care",
+          "patience",
+          "craft"
+        ]
+      ],
+      "color": "#bcb7d0",
+      "rarity": 1,
+      "inheritance": {
+        "bias": 0.22,
+        "copy": false
+      },
+      "action": {
+        "cost": 9,
+        "fatigue": 0.7,
+        "charge": 0.22,
+        "swing": 0.4,
+        "recovery": 0.56,
+        "reach": 2.15,
+        "arc": 1.6,
+        "power": 0.72,
+        "hits": 1,
+        "anim": "slash",
+        "school": "life",
+        "requires": [
+          "rightArm"
+        ],
+        "weapon": -1
+      },
+      "variants": [
+        {
+          "id": 60010,
+          "key": "opening",
+          "phase": 0,
+          "ja": "糸通し",
+          "en": "Thread the Needle",
+          "desc": "細く踏み込む一撃。正面以外には届きにくい。",
+          "descEn": "A precise forward strike with a narrow line of contact.",
+          "action": {
+            "anim": "thrust",
+            "arc": 0.6,
+            "reach": 2.7,
+            "step": 0.25,
+            "power": 0.62
+          },
+          "entry": [],
+          "exit": [
+            "close"
+          ],
+          "affinities": [
+            "net",
+            "care"
+          ]
+        },
+        {
+          "id": 60011,
+          "key": "turn",
+          "phase": 1,
+          "ja": "綾返し",
+          "en": "Woven Return",
+          "desc": "二つの拍子で打ち返す。近くの相手と繋がる。",
+          "descEn": "Two alternating beats weave into a nearby foe.",
+          "action": {
+            "anim": "cross",
+            "hits": 2,
+            "power": 0.44,
+            "swing": 0.5,
+            "cost": 12
+          },
+          "entry": [
+            "close"
+          ],
+          "exit": [
+            "rhythm"
+          ],
+          "connection": {
+            "reach": 0.3,
+            "tracking": 0.6
+          },
+          "affinities": [
+            "net",
+            "care"
+          ]
+        },
+        {
+          "id": 60012,
+          "key": "close",
+          "phase": 2,
+          "ja": "結び止め",
+          "en": "Last Knot",
+          "desc": "低く払って足を鈍らせる。広くは届かない。",
+          "descEn": "A low sweep briefly slows the target in front.",
+          "action": {
+            "anim": "slide",
+            "status": "slow",
+            "duration": 1.7,
+            "power": 0.64,
+            "cost": 12,
+            "arc": 1.1,
+            "recovery": 0.42
+          },
+          "entry": [
+            "rhythm"
+          ],
+          "exit": [
+            "close"
+          ],
+          "connection": {
+            "cost": 0.78,
+            "recovery": 0.8
+          },
+          "affinities": [
+            "net",
+            "care"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "footwork",
+      "tags": [
+        "play",
+        "light",
+        "rhythm"
+      ],
+      "requiresExperience": [
+        [
+          "play",
+          "light",
+          "rhythm"
+        ]
+      ],
+      "color": "#bdd09c",
+      "rarity": 1,
+      "inheritance": {
+        "bias": 0.22,
+        "copy": false
+      },
+      "action": {
+        "cost": 9,
+        "fatigue": 0.7,
+        "charge": 0.22,
+        "swing": 0.4,
+        "recovery": 0.56,
+        "reach": 2.15,
+        "arc": 1.6,
+        "power": 0.72,
+        "hits": 1,
+        "anim": "slash",
+        "school": "life",
+        "requires": [
+          "rightArm"
+        ],
+        "weapon": -1
+      },
+      "variants": [
+        {
+          "id": 60020,
+          "key": "opening",
+          "phase": 0,
+          "ja": "毬拍子",
+          "en": "Skipping Beat",
+          "desc": "弾むように近づき、小さく打つ。",
+          "descEn": "A bouncing step carries a light strike forward.",
+          "action": {
+            "anim": "kick",
+            "requires": [
+              "rightLeg"
+            ],
+            "step": 0.45,
+            "power": 0.48,
+            "cost": 7
+          },
+          "entry": [],
+          "exit": [
+            "rhythm"
+          ]
+        },
+        {
+          "id": 60021,
+          "key": "turn",
+          "phase": 1,
+          "ja": "くるり舞",
+          "en": "Turning Dance",
+          "desc": "回りながら二度払う。周囲の相手も巻き込む。",
+          "descEn": "Two circular blows can catch nearby enemies.",
+          "action": {
+            "anim": "spin",
+            "hits": 2,
+            "arc": 3.6,
+            "maxTargets": 2,
+            "power": 0.37,
+            "cost": 14,
+            "swing": 0.6
+          },
+          "entry": [
+            "rhythm"
+          ],
+          "exit": [
+            "close"
+          ],
+          "connection": {
+            "reach": 0.3,
+            "tracking": 0.6
+          }
+        },
+        {
+          "id": 60022,
+          "key": "close",
+          "phase": 2,
+          "ja": "遊び終い",
+          "en": "Playful Farewell",
+          "desc": "素早く蹴って構え直す。消耗は小さい。",
+          "descEn": "A quick finishing kick returns to a ready stance.",
+          "action": {
+            "anim": "kick",
+            "requires": [
+              "rightLeg"
+            ],
+            "power": 0.68,
+            "cost": 6,
+            "recovery": 0.22,
+            "charge": 0.12
+          },
+          "entry": [
+            "close"
+          ],
+          "exit": [
+            "rhythm"
+          ],
+          "connection": {
+            "cost": 0.78,
+            "recovery": 0.8
+          }
+        }
+      ]
+    },
+    {
+      "key": "trail",
+      "tags": [
+        "explore",
+        "track",
+        "precision"
+      ],
+      "requiresExperience": [
+        [
+          "explore",
+          "track"
+        ]
+      ],
+      "color": "#a4c5ad",
+      "rarity": 1,
+      "inheritance": {
+        "bias": 0.22,
+        "copy": false
+      },
+      "action": {
+        "cost": 9,
+        "fatigue": 0.7,
+        "charge": 0.22,
+        "swing": 0.4,
+        "recovery": 0.56,
+        "reach": 2.15,
+        "arc": 1.6,
+        "power": 0.72,
+        "hits": 1,
+        "anim": "slash",
+        "school": "life",
+        "requires": [
+          "rightArm"
+        ],
+        "weapon": -1
+      },
+      "variants": [
+        {
+          "id": 60030,
+          "key": "opening",
+          "phase": 0,
+          "ja": "足跡突き",
+          "en": "Trail Point",
+          "desc": "一歩先へ届く突き。狭い間合いを縫う。",
+          "descEn": "A long narrow thrust reaches one step farther.",
+          "action": {
+            "anim": "thrust",
+            "reach": 2.9,
+            "arc": 0.7,
+            "step": 0.4,
+            "cost": 9
+          },
+          "entry": [],
+          "exit": [
+            "close"
+          ],
+          "affinities": [
+            "weapon",
+            "precision"
+          ]
+        },
+        {
+          "id": 60031,
+          "key": "turn",
+          "phase": 1,
+          "ja": "追い枝",
+          "en": "Following Bough",
+          "desc": "角度を変えて追い打つ。近い相手を逃しにくい。",
+          "descEn": "Turn into a follow-up against a nearby target.",
+          "action": {
+            "anim": "zigzag",
+            "step": 0.35,
+            "hits": 2,
+            "power": 0.42,
+            "cost": 13,
+            "swing": 0.55
+          },
+          "entry": [
+            "close"
+          ],
+          "exit": [
+            "offbalance"
+          ],
+          "connection": {
+            "reach": 0.3,
+            "tracking": 0.6
+          },
+          "affinities": [
+            "weapon",
+            "precision"
+          ]
+        },
+        {
+          "id": 60032,
+          "key": "close",
+          "phase": 2,
+          "ja": "獣道断ち",
+          "en": "Trail Sever",
+          "desc": "長く届く一撃で締める。空振り後の戻りは遅い。",
+          "descEn": "A long finishing cut takes time to recover after a miss.",
+          "action": {
+            "anim": "slash",
+            "reach": 3.1,
+            "arc": 1.0,
+            "power": 1.26,
+            "cost": 17,
+            "recovery": 0.86
+          },
+          "entry": [
+            "offbalance"
+          ],
+          "exit": [
+            "close"
+          ],
+          "connection": {
+            "cost": 0.78,
+            "recovery": 0.8
+          },
+          "affinities": [
+            "weapon",
+            "precision"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "contest",
+      "tags": [
+        "combat",
+        "weight",
+        "tension"
+      ],
+      "requiresExperience": [
+        [
+          "combat"
+        ]
+      ],
+      "color": "#cf9b87",
+      "rarity": 1,
+      "inheritance": {
+        "bias": 0.22,
+        "copy": false
+      },
+      "action": {
+        "cost": 9,
+        "fatigue": 0.7,
+        "charge": 0.22,
+        "swing": 0.4,
+        "recovery": 0.56,
+        "reach": 2.15,
+        "arc": 1.6,
+        "power": 0.72,
+        "hits": 1,
+        "anim": "slash",
+        "school": "life",
+        "requires": [
+          "rightArm"
+        ],
+        "weapon": -1
+      },
+      "variants": [
+        {
+          "id": 60040,
+          "key": "opening",
+          "phase": 0,
+          "ja": "間割り",
+          "en": "Opening Wedge",
+          "desc": "低く打ち込み、押し合いの隙を作る。",
+          "descEn": "Drive a low blow into the opening of an exchange.",
+          "action": {
+            "anim": "thrust",
+            "breakPower": 1.5,
+            "power": 0.44,
+            "cost": 9,
+            "stagger": 1.35
+          },
+          "entry": [],
+          "exit": [
+            "offbalance"
+          ]
+        },
+        {
+          "id": 60041,
+          "key": "turn",
+          "phase": 1,
+          "ja": "せめぎ返し",
+          "en": "Contested Return",
+          "desc": "崩れた構えへ重ねて打ち込む。",
+          "descEn": "A forceful return presses an unbalanced guard.",
+          "action": {
+            "anim": "cross",
+            "hits": 2,
+            "power": 0.55,
+            "cost": 15,
+            "swing": 0.55
+          },
+          "entry": [
+            "offbalance"
+          ],
+          "exit": [
+            "rhythm"
+          ],
+          "connection": {
+            "reach": 0.3,
+            "tracking": 0.6
+          }
+        },
+        {
+          "id": 60042,
+          "key": "close",
+          "phase": 2,
+          "ja": "断ち拍子",
+          "en": "Decisive Beat",
+          "desc": "溜めて叩き、強固な構えも崩す。消耗は大きい。",
+          "descEn": "A committed heavy blow can break a formidable guard.",
+          "action": {
+            "anim": "slam",
+            "charge": 0.45,
+            "breakPower": 3,
+            "power": 1.2,
+            "cost": 22,
+            "recovery": 0.9
+          },
+          "entry": [
+            "rhythm"
+          ],
+          "exit": [
+            "offbalance"
+          ],
+          "connection": {
+            "cost": 0.78,
+            "recovery": 0.8
+          }
+        }
+      ]
+    },
+    {
+      "key": "patient",
+      "tags": [
+        "patience",
+        "observe",
+        "rest"
+      ],
+      "requiresExperience": [
+        [
+          "patience",
+          "rest",
+          "study",
+          "tension"
+        ]
+      ],
+      "color": "#9eafb0",
+      "rarity": 1,
+      "inheritance": {
+        "bias": 0.22,
+        "copy": false
+      },
+      "action": {
+        "cost": 9,
+        "fatigue": 0.7,
+        "charge": 0.22,
+        "swing": 0.4,
+        "recovery": 0.56,
+        "reach": 2.15,
+        "arc": 1.6,
+        "power": 0.72,
+        "hits": 1,
+        "anim": "slash",
+        "school": "life",
+        "requires": [
+          "rightArm"
+        ],
+        "weapon": -1
+      },
+      "variants": [
+        {
+          "id": 60050,
+          "key": "opening",
+          "phase": 0,
+          "ja": "待ち針",
+          "en": "Patient Needle",
+          "desc": "小さく刺して次の拍子へ備える。",
+          "descEn": "A small precise strike prepares the next beat.",
+          "action": {
+            "anim": "thrust",
+            "arc": 0.8,
+            "power": 0.35,
+            "cost": 5,
+            "recovery": 0.35
+          },
+          "entry": [],
+          "exit": [
+            "rhythm"
+          ],
+          "affinities": [
+            "defeat",
+            "rest"
+          ]
+        },
+        {
+          "id": 60051,
+          "key": "turn",
+          "phase": 1,
+          "ja": "息継ぎ打ち",
+          "en": "Breath Between",
+          "desc": "大振りせずに繋ぐ。長い連携でも息を残しやすい。",
+          "descEn": "An economical linking blow leaves breath for later.",
+          "action": {
+            "anim": "slash",
+            "power": 0.52,
+            "cost": 5,
+            "charge": 0.13,
+            "swing": 0.38
+          },
+          "entry": [
+            "rhythm"
+          ],
+          "exit": [
+            "close"
+          ],
+          "connection": {
+            "reach": 0.3,
+            "tracking": 0.6
+          },
+          "affinities": [
+            "defeat",
+            "rest"
+          ]
+        },
+        {
+          "id": 60052,
+          "key": "close",
+          "phase": 2,
+          "ja": "静の掌",
+          "en": "Quiet Palm",
+          "desc": "近い相手を押し崩し、短く終える。",
+          "descEn": "A close palm blow breaks balance and settles quickly.",
+          "action": {
+            "anim": "counter",
+            "breakPower": 1.7,
+            "power": 0.45,
+            "cost": 7,
+            "requires": [
+              "leftArm"
+            ],
+            "recovery": 0.24
+          },
+          "entry": [
+            "close"
+          ],
+          "exit": [
+            "offbalance"
+          ],
+          "connection": {
+            "cost": 0.78,
+            "recovery": 0.8
+          },
+          "affinities": [
+            "defeat",
+            "rest"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "bell",
+      "tags": [
+        "memory",
+        "rhythm",
+        "bell"
+      ],
+      "requiresExperience": [
+        [
+          "bell"
+        ],
+        [
+          "rhythm",
+          "combat",
+          "craft",
+          "play"
+        ]
+      ],
+      "color": "#ceb778",
+      "rarity": 0.7,
+      "inheritance": {
+        "bias": 0.22,
+        "copy": false
+      },
+      "action": {
+        "cost": 9,
+        "fatigue": 0.7,
+        "charge": 0.22,
+        "swing": 0.4,
+        "recovery": 0.56,
+        "reach": 2.15,
+        "arc": 1.6,
+        "power": 0.72,
+        "hits": 1,
+        "anim": "slash",
+        "school": "life",
+        "requires": [
+          "rightArm"
+        ],
+        "weapon": -1
+      },
+      "variants": [
+        {
+          "id": 60060,
+          "key": "opening",
+          "phase": 0,
+          "ja": "鈴触れ",
+          "en": "Bell Touch",
+          "desc": "軽い一撃が、遅い次の響きを誘う。",
+          "descEn": "A light touch sets the rhythm for a later resonance.",
+          "action": {
+            "anim": "thrust",
+            "power": 0.38,
+            "cost": 6
+          },
+          "entry": [],
+          "exit": [
+            "ringing"
+          ],
+          "affinities": [
+            "family"
+          ]
+        },
+        {
+          "id": 60061,
+          "key": "turn",
+          "phase": 1,
+          "ja": "残響打ち",
+          "en": "Echoing Blow",
+          "desc": "間をおいて二度響く。相手が離れると二打目を外す。",
+          "descEn": "Two separated blows; the second can miss a departing foe.",
+          "action": {
+            "anim": "double",
+            "hits": 2,
+            "swing": 0.85,
+            "power": 0.58,
+            "cost": 14,
+            "reach": 2.05
+          },
+          "entry": [
+            "ringing"
+          ],
+          "exit": [
+            "rhythm"
+          ],
+          "connection": {
+            "reach": 0.3,
+            "tracking": 0.6
+          },
+          "affinities": [
+            "family"
+          ]
+        },
+        {
+          "id": 60062,
+          "key": "close",
+          "phase": 2,
+          "ja": "鳴り納め",
+          "en": "Closing Chime",
+          "desc": "響きを重ねて振り切る。大きな隙が残る。",
+          "descEn": "Finish the resonance with a committed, slow-recovering sweep.",
+          "action": {
+            "anim": "slam",
+            "power": 1.4,
+            "cost": 19,
+            "charge": 0.42,
+            "recovery": 0.95,
+            "breakPower": 2
+          },
+          "entry": [
+            "rhythm"
+          ],
+          "exit": [
+            "ringing"
+          ],
+          "connection": {
+            "cost": 0.78,
+            "recovery": 0.8
+          },
+          "affinities": [
+            "family"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "feather",
+      "tags": [
+        "feather",
+        "light",
+        "explore"
+      ],
+      "requiresExperience": [
+        [
+          "feather"
+        ],
+        [
+          "light",
+          "explore",
+          "track",
+          "play"
+        ]
+      ],
+      "color": "#b7cfce",
+      "rarity": 0.7,
+      "inheritance": {
+        "bias": 0.22,
+        "copy": false
+      },
+      "action": {
+        "cost": 9,
+        "fatigue": 0.7,
+        "charge": 0.22,
+        "swing": 0.4,
+        "recovery": 0.56,
+        "reach": 2.15,
+        "arc": 1.6,
+        "power": 0.72,
+        "hits": 1,
+        "anim": "slash",
+        "school": "life",
+        "requires": [
+          "rightArm"
+        ],
+        "weapon": -1
+      },
+      "variants": [
+        {
+          "id": 60070,
+          "key": "opening",
+          "phase": 0,
+          "ja": "羽先払い",
+          "en": "Feathertip",
+          "desc": "浅く払って、近い間合いを保つ。",
+          "descEn": "A shallow sweep keeps the exchange close.",
+          "action": {
+            "anim": "slash",
+            "power": 0.4,
+            "cost": 5,
+            "arc": 2.4
+          },
+          "entry": [],
+          "exit": [
+            "close"
+          ]
+        },
+        {
+          "id": 60071,
+          "key": "turn",
+          "phase": 1,
+          "ja": "風羽返し",
+          "en": "Turning Feather",
+          "desc": "軽く二度返す。接近した相手へ向く。",
+          "descEn": "Two light reversals work best at close range.",
+          "action": {
+            "anim": "double",
+            "hits": 2,
+            "power": 0.36,
+            "cost": 10,
+            "charge": 0.12,
+            "swing": 0.45
+          },
+          "entry": [
+            "close"
+          ],
+          "exit": [
+            "rhythm"
+          ],
+          "connection": {
+            "reach": 0.3,
+            "tracking": 0.6
+          }
+        },
+        {
+          "id": 60072,
+          "key": "close",
+          "phase": 2,
+          "ja": "落羽",
+          "en": "Falling Feather",
+          "desc": "跳ねて打ち下ろす。着地には小さな隙がある。",
+          "descEn": "A rising motion ends in a downward strike and exposed landing.",
+          "action": {
+            "anim": "leap",
+            "step": 0.45,
+            "power": 1.1,
+            "cost": 15,
+            "recovery": 0.68
+          },
+          "entry": [
+            "rhythm"
+          ],
+          "exit": [
+            "offbalance"
+          ],
+          "connection": {
+            "cost": 0.78,
+            "recovery": 0.8
+          }
+        }
+      ]
+    },
+    {
+      "key": "stone",
+      "tags": [
+        "stone",
+        "weight",
+        "memory"
+      ],
+      "requiresExperience": [
+        [
+          "stone"
+        ],
+        [
+          "weight",
+          "combat",
+          "explore",
+          "study"
+        ]
+      ],
+      "color": "#c0b2a0",
+      "rarity": 0.7,
+      "inheritance": {
+        "bias": 0.22,
+        "copy": false
+      },
+      "action": {
+        "cost": 9,
+        "fatigue": 0.7,
+        "charge": 0.22,
+        "swing": 0.4,
+        "recovery": 0.56,
+        "reach": 2.15,
+        "arc": 1.6,
+        "power": 0.72,
+        "hits": 1,
+        "anim": "slash",
+        "school": "life",
+        "requires": [
+          "rightArm"
+        ],
+        "weapon": -1
+      },
+      "variants": [
+        {
+          "id": 60080,
+          "key": "opening",
+          "phase": 0,
+          "ja": "石据え",
+          "en": "Set the Stone",
+          "desc": "重心を落として打つ。軽い構えを崩す。",
+          "descEn": "A grounded blow breaks a light stance.",
+          "action": {
+            "anim": "slam",
+            "breakPower": 1.6,
+            "power": 0.3,
+            "cost": 8,
+            "stagger": 1.35
+          },
+          "entry": [],
+          "exit": [
+            "offbalance"
+          ]
+        },
+        {
+          "id": 60081,
+          "key": "turn",
+          "phase": 1,
+          "ja": "転がし返し",
+          "en": "Rolling Return",
+          "desc": "崩れた相手へ連続して重さを乗せる。",
+          "descEn": "Roll two weighty blows into an unbalanced enemy.",
+          "action": {
+            "anim": "cross",
+            "hits": 2,
+            "power": 0.5,
+            "cost": 15,
+            "swing": 0.62
+          },
+          "entry": [
+            "offbalance"
+          ],
+          "exit": [
+            "rhythm"
+          ],
+          "connection": {
+            "charge": 0.68,
+            "tracking": 0.42
+          }
+        },
+        {
+          "id": 60082,
+          "key": "close",
+          "phase": 2,
+          "ja": "礎落とし",
+          "en": "Foundation Drop",
+          "desc": "重さを一点へ落とす。硬い構えにも通じる。",
+          "descEn": "Drop weight into one point to break a strong guard.",
+          "action": {
+            "anim": "slam",
+            "breakPower": 3,
+            "power": 1.25,
+            "cost": 21,
+            "charge": 0.55,
+            "recovery": 1.0
+          },
+          "entry": [
+            "rhythm"
+          ],
+          "exit": [
+            "offbalance"
+          ],
+          "connection": {
+            "recovery": 0.68,
+            "knockback": 0.35
+          }
+        }
+      ]
+    },
+    {
+      "key": "ember",
+      "tags": [
+        "charcoal",
+        "craft",
+        "memory"
+      ],
+      "requiresExperience": [
+        [
+          "charcoal"
+        ],
+        [
+          "craft",
+          "weight",
+          "study"
+        ]
+      ],
+      "color": "#de996d",
+      "rarity": 0.55,
+      "inheritance": {
+        "bias": 0.22,
+        "copy": false
+      },
+      "action": {
+        "cost": 9,
+        "fatigue": 0.7,
+        "charge": 0.22,
+        "swing": 0.4,
+        "recovery": 0.56,
+        "reach": 2.15,
+        "arc": 1.6,
+        "power": 0.72,
+        "hits": 1,
+        "anim": "slash",
+        "school": "life",
+        "requires": [
+          "rightArm"
+        ],
+        "weapon": -1
+      },
+      "variants": [
+        {
+          "id": 60090,
+          "key": "opening",
+          "phase": 0,
+          "ja": "炭掻き",
+          "en": "Ember Rake",
+          "desc": "低く広く払って、次の火種を残す。",
+          "descEn": "A broad low sweep prepares the next ember.",
+          "action": {
+            "anim": "slide",
+            "arc": 2.6,
+            "power": 0.4,
+            "cost": 8
+          },
+          "entry": [],
+          "exit": [
+            "ember"
+          ]
+        },
+        {
+          "id": 60091,
+          "key": "turn",
+          "phase": 1,
+          "ja": "熾し返し",
+          "en": "Rekindling",
+          "desc": "細かな二打で火種を拾う。触れた相手に熱を残す。",
+          "descEn": "Two small blows kindle a brief burn on contact.",
+          "action": {
+            "anim": "double",
+            "hits": 2,
+            "power": 0.35,
+            "status": "burn",
+            "duration": 1.2,
+            "cost": 15
+          },
+          "entry": [
+            "ember"
+          ],
+          "exit": [
+            "rhythm"
+          ],
+          "connection": {
+            "reach": 0.3,
+            "tracking": 0.6
+          }
+        },
+        {
+          "id": 60092,
+          "key": "close",
+          "phase": 2,
+          "ja": "灰かぶり",
+          "en": "Ashfall",
+          "desc": "灰を落とすように叩く。短く相手の力を削ぐ。",
+          "descEn": "A downward strike briefly weakens the target.",
+          "action": {
+            "anim": "slam",
+            "status": "weak",
+            "duration": 1.5,
+            "power": 0.9,
+            "cost": 16,
+            "charge": 0.4
+          },
+          "entry": [
+            "rhythm"
+          ],
+          "exit": [
+            "offbalance"
+          ],
+          "connection": {
+            "cost": 0.78,
+            "recovery": 0.8
+          }
+        }
+      ]
+    },
+    {
+      "key": "weave",
+      "tags": [
+        "craft",
+        "combat",
+        "cross"
+      ],
+      "requiresExperience": [
+        [
+          "craft",
+          "care"
+        ],
+        [
+          "combat",
+          "study"
+        ]
+      ],
+      "color": "#c6b18c",
+      "rarity": 0.65,
+      "inheritance": {
+        "bias": 0.22,
+        "copy": false
+      },
+      "action": {
+        "cost": 9,
+        "fatigue": 0.7,
+        "charge": 0.22,
+        "swing": 0.4,
+        "recovery": 0.56,
+        "reach": 2.15,
+        "arc": 1.6,
+        "power": 0.72,
+        "hits": 1,
+        "anim": "slash",
+        "school": "life",
+        "requires": [
+          "rightArm"
+        ],
+        "weapon": -1
+      },
+      "variants": [
+        {
+          "id": 60100,
+          "key": "opening",
+          "phase": 0,
+          "ja": "打ち合わせ",
+          "en": "Meeting Blows",
+          "desc": "仕事で覚えた拍子を、敵の構えへ合わせる。",
+          "descEn": "Bring a practiced working rhythm into an enemy guard.",
+          "action": {
+            "anim": "counter",
+            "power": 0.45,
+            "cost": 7,
+            "breakPower": 1.3
+          },
+          "entry": [],
+          "exit": [
+            "rhythm"
+          ]
+        },
+        {
+          "id": 60101,
+          "key": "turn",
+          "phase": 1,
+          "ja": "縫い崩し",
+          "en": "Seam Break",
+          "desc": "拍子を拾い、狭い一点を崩す。",
+          "descEn": "Follow a rhythm into a narrow break in the stance.",
+          "action": {
+            "anim": "thrust",
+            "arc": 0.7,
+            "breakPower": 2.2,
+            "power": 0.7,
+            "cost": 12
+          },
+          "entry": [
+            "rhythm"
+          ],
+          "exit": [
+            "offbalance"
+          ],
+          "connection": {
+            "reach": 0.3,
+            "tracking": 0.6
+          }
+        },
+        {
+          "id": 60102,
+          "key": "close",
+          "phase": 2,
+          "ja": "折り返し三打",
+          "en": "Threefold Return",
+          "desc": "崩れを三つの打撃へ変える。長くその場へ留まる。",
+          "descEn": "Three blows exploit lost balance but commit you to the exchange.",
+          "action": {
+            "anim": "cross",
+            "hits": 3,
+            "power": 0.48,
+            "swing": 0.85,
+            "cost": 21,
+            "recovery": 0.7
+          },
+          "entry": [
+            "offbalance"
+          ],
+          "exit": [
+            "rhythm"
+          ],
+          "connection": {
+            "cost": 0.78,
+            "recovery": 0.8
+          }
+        }
+      ]
+    },
+    {
+      "key": "unexpected",
+      "tags": [
+        "explore",
+        "rest",
+        "cross"
+      ],
+      "requiresExperience": [
+        [
+          "explore",
+          "track"
+        ],
+        [
+          "rest",
+          "patience",
+          "pray"
+        ]
+      ],
+      "color": "#9eb4a8",
+      "rarity": 0.5,
+      "inheritance": {
+        "bias": 0.22,
+        "copy": false
+      },
+      "action": {
+        "cost": 9,
+        "fatigue": 0.7,
+        "charge": 0.22,
+        "swing": 0.4,
+        "recovery": 0.56,
+        "reach": 2.15,
+        "arc": 1.6,
+        "power": 0.72,
+        "hits": 1,
+        "anim": "slash",
+        "school": "life",
+        "requires": [
+          "rightArm"
+        ],
+        "weapon": -1
+      },
+      "variants": [
+        {
+          "id": 60110,
+          "key": "opening",
+          "phase": 0,
+          "ja": "木陰の間",
+          "en": "Underleaf Pause",
+          "desc": "慌てず小さく踏み込む。近さを次へ残す。",
+          "descEn": "An unhurried small step leaves the next exchange close.",
+          "action": {
+            "anim": "thrust",
+            "step": 0.28,
+            "power": 0.4,
+            "cost": 6
+          },
+          "entry": [],
+          "exit": [
+            "close"
+          ]
+        },
+        {
+          "id": 60111,
+          "key": "turn",
+          "phase": 1,
+          "ja": "流れ枝",
+          "en": "Drifting Bough",
+          "desc": "大きく弧を描き、二人までを巻き込む。",
+          "descEn": "A flowing arc can catch two nearby targets.",
+          "action": {
+            "anim": "spin",
+            "arc": 3.5,
+            "maxTargets": 2,
+            "power": 0.66,
+            "cost": 11,
+            "swing": 0.52
+          },
+          "entry": [
+            "close"
+          ],
+          "exit": [
+            "rhythm"
+          ],
+          "connection": {
+            "reach": 0.3,
+            "tracking": 0.6
+          }
+        },
+        {
+          "id": 60112,
+          "key": "close",
+          "phase": 2,
+          "ja": "夕凪返し",
+          "en": "Evening Stillness",
+          "desc": "静かに強く打ち下ろす。外すと戻りが遅い。",
+          "descEn": "A calm heavy fall lands hard but recovers slowly after a miss.",
+          "action": {
+            "anim": "slam",
+            "power": 1.55,
+            "charge": 0.52,
+            "cost": 20,
+            "recovery": 1.1,
+            "breakPower": 2.8
+          },
+          "entry": [
+            "rhythm"
+          ],
+          "exit": [
+            "offbalance"
+          ],
+          "connection": {
+            "cost": 0.78,
+            "recovery": 0.8
+          }
+        }
+      ]
+    },
+    {
+      "key": "knot",
+      "tags": [
+        "net",
+        "care",
+        "precision"
+      ],
+      "requiresExperience": [
+        [
+          "net"
+        ],
+        [
+          "care",
+          "track",
+          "combat"
+        ]
+      ],
+      "color": "#a5c9bb",
+      "rarity": 0.65,
+      "inheritance": {
+        "bias": 0.22,
+        "copy": false
+      },
+      "action": {
+        "cost": 9,
+        "fatigue": 0.6,
+        "charge": 0.27,
+        "swing": 0.4,
+        "recovery": 0.55,
+        "reach": 1.85,
+        "arc": 1.4,
+        "power": 0.45,
+        "hits": 1,
+        "anim": "thrust",
+        "school": "life",
+        "requires": [
+          "rightArm"
+        ],
+        "weapon": -1
+      },
+      "variants": [
+        {
+          "id": 60120,
+          "key": "opening",
+          "phase": 0,
+          "ja": "糸口",
+          "en": "Loose End",
+          "desc": "短く差し込み、結び目のように相手の足を迷わせる。",
+          "descEn": "A short thrust tangles the opponent's footing.",
+          "entry": [],
+          "exit": [
+            "close"
+          ],
+          "action": {
+            "status": "slow",
+            "duration": 1.4
+          }
+        },
+        {
+          "id": 60121,
+          "key": "turn",
+          "phase": 1,
+          "ja": "絡め返し",
+          "en": "Knot Turn",
+          "desc": "近づいた相手の足元を払う。遠い相手は拾えない。",
+          "descEn": "Sweep a nearby opponent's footing; cannot catch a distant target.",
+          "entry": [
+            "close"
+          ],
+          "exit": [
+            "offbalance"
+          ],
+          "action": {
+            "anim": "kick",
+            "power": 0.3,
+            "breakPower": 1.4,
+            "cost": 12,
+            "reach": 1.65,
+            "requires": [
+              "rightLeg"
+            ]
+          },
+          "connection": {
+            "breakPower": 0.35,
+            "recovery": 0.72
+          }
+        },
+        {
+          "id": 60122,
+          "key": "close",
+          "phase": 2,
+          "ja": "結び解き",
+          "en": "Untying",
+          "desc": "崩れを拾って押し離す。結末を、次の間合いに変える。",
+          "descEn": "Catch an imbalance and push away, making space for the next exchange.",
+          "entry": [
+            "offbalance"
+          ],
+          "exit": [
+            "rhythm"
+          ],
+          "action": {
+            "anim": "slash",
+            "power": 0.55,
+            "cost": 11,
+            "knockback": 0.55,
+            "recovery": 0.65
+          },
+          "connection": {
+            "knockback": 0.4,
+            "cost": 0.82
+          }
+        }
+      ]
+    }
+  ],
+  "passives": [
+    {
+      "id": 60900,
+      "key": "hearth_breath",
+      "ja": "炉辺の息",
+      "en": "Hearth Breath",
+      "desc": "仕事の合間に覚えた呼吸。自然に息が戻りやすい。",
+      "descEn": "A working rhythm helps breath return naturally.",
+      "tags": [
+        "craft",
+        "rest",
+        "patience"
+      ],
+      "requiresExperience": [
+        [
+          "craft"
+        ],
+        [
+          "rest",
+          "patience"
+        ]
+      ],
+      "effect": "regen",
+      "value": 0.45,
+      "action": {},
+      "color": "#c7c09b",
+      "inheritance": {
+        "bias": 0.16,
+        "copy": false
+      }
+    },
+    {
+      "id": 60901,
+      "key": "quiet_capacity",
+      "ja": "静穏の余白",
+      "en": "Quiet Reserve",
+      "desc": "落ち着いた暮らしが、疲れた息の上限を少し戻す。",
+      "descEn": "Quiet habits help recover a little exhausted stamina capacity.",
+      "tags": [
+        "pray",
+        "rest",
+        "patience"
+      ],
+      "requiresExperience": [
+        [
+          "pray",
+          "rest"
+        ],
+        [
+          "patience"
+        ]
+      ],
+      "effect": "capRegen",
+      "value": 0.1,
+      "action": {},
+      "color": "#c7c09b",
+      "inheritance": {
+        "bias": 0.16,
+        "copy": false
+      }
+    },
+    {
+      "id": 60902,
+      "key": "weight_memory",
+      "ja": "重みの記憶",
+      "en": "Remembered Weight",
+      "desc": "経験した押し合いに、少しだけ踏みとどまる。",
+      "descEn": "Remembered contests give a small advantage in a clash.",
+      "tags": [
+        "combat",
+        "weight"
+      ],
+      "requiresExperience": [
+        [
+          "combat"
+        ],
+        [
+          "weight"
+        ]
+      ],
+      "effect": "clash",
+      "value": 0.06,
+      "action": {},
+      "color": "#c7c09b",
+      "inheritance": {
+        "bias": 0.16,
+        "copy": false
+      }
+    },
+    {
+      "id": 60903,
+      "key": "work_economy",
+      "ja": "手仕事の無駄なし",
+      "en": "Economy of Labor",
+      "desc": "重い技を扱うとき、少しだけ息を節約する。",
+      "descEn": "Spend slightly less breath on heavy techniques.",
+      "tags": [
+        "craft",
+        "care",
+        "weight"
+      ],
+      "requiresExperience": [
+        [
+          "craft"
+        ],
+        [
+          "care",
+          "weight"
+        ]
+      ],
+      "effect": "heavyCost",
+      "value": 0.07,
+      "action": {},
+      "color": "#c7c09b",
+      "inheritance": {
+        "bias": 0.16,
+        "copy": false
+      }
+    }
+  ]
+}
