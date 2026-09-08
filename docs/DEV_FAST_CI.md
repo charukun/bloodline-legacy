@@ -1,0 +1,11 @@
+# DEV CIの待ち時間短縮
+
+通常のdevelop向けPR・develop push・DEV対象feature/manual CIでは、ブラウザのインストールと公開前のブラウザ検証を実行しない。Build、単体テスト、JS構文・埋め込みAsset照合は維持する。
+
+DEV公開後は `node deploy/smoke.mjs dev --http-only` でHTTPのみ確認する。manifestの全文commitと環境、公開HTMLのSHA256、MIME、cache、offline health、存在しないAssetの404、未実装APIの501を確認する。ブラウザやWebGL描画を確認した結果として扱わない。ゲームの見た目・操作はユーザーのDEV確認で行う。
+
+staging/main向けPRとSTAGING/PRODUCTIONでは既存のブラウザ検証を維持する。branch mapping、Build失敗時のDeploy禁止、最新head確認、Secrets、Production公開flagは変更しない。通常PR/develop pushからProductionへdeployしない。
+
+直近のDEV実行ではブラウザ準備と検証に約5分46秒かかっていた。その処理を省くが、queueやprovider待ちがあるため公開所要時間は保証しない。
+
+Integration WORK: このPRをdevelopへ統合後、CIのブラウザ関連stepがskipされ、公開HTTP検証が成功することを確認する。Build Version PR #10との統合では、同PRのVersion表示assertionをbrowser block内に維持する。HTTPモードもversion.jsonとHTML hashの一致を確認する。公開後のVersion画面表示assertionはDEVでは実行されない。

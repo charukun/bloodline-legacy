@@ -1,7 +1,7 @@
 name: Bloodline Legacy CI and deployment
 on:
   push:
-    branches: [develop, staging, main, 'feature/**']
+    branches: [develop, staging, main, 'feature/**', 'work/skill-system-*']
   pull_request:
     branches: [develop, staging, main]
   workflow_dispatch:
@@ -10,22 +10,23 @@ permissions:
   contents: read
 
 # Let an in-progress deployment and its verification finish together.
-# A queued older commit is rejected by the current-head check below.
+# Stale PR verification is safe to cancel when the same PR receives a newer head.
 concurrency:
   group: bloodline-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
     name: Build and verify
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     outputs:
       target: ${{ steps.target.outputs.target }}
       suffix: ${{ steps.target.outputs.suffix }}
     steps:
       - uses: actions/checkout@v6
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
@@ -46,10 +47,11 @@ jobs:
       - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
       - run: npm test --prefix deploy
       - run: node --test tests/tilt-shift.test.mjs
-      - name: Verify UI presentation and simulation regression
+      - name: Verify UI, skill and simulation regression
         run: |
           npm ci --ignore-scripts --no-audit --no-fund
           npm test
+          node tests/skills/lives.mjs
       - name: Build deployment
         env:
           TARGET: ${{ steps.target.outputs.target }}
@@ -59,7 +61,9 @@ jobs:
           TARGET: ${{ steps.target.outputs.target }}
         run: node deploy/check-build.mjs "$TARGET"
       - run: deploy/node_modules/.bin/playwright install --with-deps chromium
+        if: steps.target.outputs.target != 'dev'
       - name: Smoke test through local Workers runtime
+        if: steps.target.outputs.target != 'dev'
         env:
           TARGET: ${{ steps.target.outputs.target }}
         run: node deploy/smoke.mjs "$TARGET" --local --tilt-shift
@@ -103,6 +107,7 @@ jobs:
           path: deploy/out/
       - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
       - run: deploy/node_modules/.bin/playwright install --with-deps chromium
+        if: env.TARGET != 'dev'
       - name: Validate branch, URL and current remote head
         env:
           GH_TOKEN: ${{ github.token }}
@@ -126,14 +131,19 @@ jobs:
           test -n "$CLOUDFLARE_API_TOKEN"
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           deploy/node_modules/.bin/wrangler deploy --config "deploy/wrangler.$TARGET.json"
-      - name: Verify published WebGL game and exact build
-        run: node deploy/smoke.mjs "$TARGET"
+      - name: Verify published build (DEV HTTP; STAGING/PRODUCTION browser)
+        run: |
+          if [ "$TARGET" = "dev" ]; then
+            node deploy/smoke.mjs "$TARGET" --http-only
+          else
+            node deploy/smoke.mjs "$TARGET"
+          fi
       - name: Record deployment result
         run: |
           node --input-type=module <<'JS'
           import fs from 'node:fs';
           const v=JSON.parse(fs.readFileSync(`deploy/out/${process.env.TARGET}/version.json`));
-          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,`Environment: ${v.environment}\n\nCommit: ${v.commit}\n\nMode: ${v.mode}\n\nVerified URL: ${process.env.FIXED_URL}\n`);
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,`Environment: ${v.environment}\n\nCommit: ${v.commit}\n\nMode: ${v.mode}\n\nVerification: ${v.environment==='dev'?'HTTP / exact artifact (browser not run)':'browser / WebGL'}\n\nVerified URL: ${process.env.FIXED_URL}\n`);
           JS
       - uses: actions/upload-artifact@v4
         if: always()
