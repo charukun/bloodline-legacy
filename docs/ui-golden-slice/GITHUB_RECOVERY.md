@@ -98,3 +98,7 @@ The separately authorized managed connector was rechecked: identity remained `ch
 This is now blocked by both the execution environment's network policy and the connector's effective GitHub write permissions. No new device code was requested from the owner because that would not resolve the observed network policy denial. No token, alternate host, proxy, copied credential from another WORK, or browser workaround was used to circumvent it.
 
 The original three commits, the recovery-diagnosis commit `34c5c61`, and this follow-up remain on the same local branch. The fallback bundle is updated to preserve all commits, plus the complete patch and source snapshot. This is an authorization/environment blocker, not completion of the UI acceptance gates. Once an authorized environment can reach GitHub, resume from the preserved branch and follow the push → PR → CI → browser verification flow without resetting the work.
+
+## Resolution (2026-09-08)
+
+The managed GitHub App installation was restored with WRITE access. The remote work branch was created and updated through the GitHub connector, then PR #6 was opened against `develop` as Ready for review. CI run #22 passed; no merge was performed. The shell Git transport remains without an interactive credential, but it is no longer the publication path for this worktree.

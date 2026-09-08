@@ -9,7 +9,7 @@ Status: **BLOCKED (GitHub WRITE) + VALIDATION_PENDING / Fallback review handoff 
 - BASE_COMMIT: `9ee25afc5f67e142adc313813b4289d157d47935`
 - HEAD_BRANCH: `work/golden-ui-20260908`
 - GitHub connector metadata and branch API read succeeded; a fresh git clone matched this SHA.
-- Common development policy: Project Sources v4, SHA256 `d877a663810644c9904c2b4da1c4cee5127ca8bae3dd93fdefc085adf8e78d55`.
+- Common development policy: Project Sources v5, SHA256 `d877a663810644c9904c2b4da1c4cee5127ca8bae3dd93fdefc085adf8e78d55`.
 - Implementation prompt: Project Sources v2.0 (2026-09-08), SHA256 `bea1a3afa6fb07f241f44ada4c5349d1c36142a952eabd82bbdc69e30fcd64ab`.
 - The explicit UI WORK instruction and policy v4 supersede the older prompt's no-commit/handoff-only workflow. Commit/push/PR are authorized; merging is not.
 - Confirmed UI decisions come from the user's full task. No separate complete specification file was supplied beyond the prompt and references. Unspecified simulation behavior is preserved as observed behavior, not redefined from old HTML.
@@ -103,3 +103,11 @@ TOUCHED_AREAS: `UI.constructor`, HUD/`showGame`/`update`, `updateContext`, `upda
 
 Recovery follow-up: official GitHub CLI device authorization was started and the owner reported successful code entry. CLI completion was subsequently blocked by the execution environment's GitHub API network policy; the network permission request was automatically rejected and no CLI credential file was persisted. Managed connector branch creation still returns 403. All existing commits are retained. Full evidence and exact errors are in `GITHUB_RECOVERY.md`; no additional user device authorization is requested while this network blocker remains.
 - Integration continuation is packaged with fixed-base source payload, patch, portable git bundle, manifest and instructions. Do not treat this as a finished Golden UI playtest.
+
+## Final GitHub and CI state (2026-09-08)
+
+This section supersedes the earlier blocked-state notes. The managed GitHub App installation was restored with repository WRITE access. The exact local source trees were transferred to `work/golden-ui-20260908`, preserving the five local commits as an equivalent five-commit remote sequence.
+
+- Pull request: #6, base `develop`, Ready for review, no merge performed.
+- CI: run #22 (`34262953294`) passed. It completed build, package tests, UI/simulation regression checks, asset validation, and local Workers runtime smoke coverage at desktop and mobile viewports. Deployment was correctly skipped for the pull-request event.
+- Remaining acceptance gates: human-operated browser playtest across the requested viewport matrix, same-condition before/after screenshot review, save/reload on a real HTTP origin, and measured frame-pacing capture. The available cloud browser did not provide WebGL 2, so these remain explicitly pending rather than inferred from CI.
