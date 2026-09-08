@@ -1,7 +1,8 @@
 /* Event-driven life experience. Uses its own saved RNG; never the combat/world RNG. */
 const BloodlineSkills = (() => {
  'use strict';
- const REVISION = 2, MAX_JOURNAL = 96, MAX_CONTEXTS = 192;
+ const REVISION = 3, MAX_JOURNAL = 96, MAX_CONTEXTS = 192;
+ const ACTIVE_PACING = Object.freeze({gain:.4,threshold:3.65,perKnown:.25,maxThreshold:9.5,cooldown:105,perKnownSeconds:15,maxCooldown:300,cost:4.6,perKnownCost:.35});
  const TAGS = new Set(['weight','rhythm','craft','care','patience','play','light','explore','track','precision','combat','tension','observe','rest','study','pray','read','memory','bell','feather','stone','charcoal','net','cross','family','defeat','weapon']);
  const finite = (v, fallback = 0) => Number.isFinite(v) ? v : fallback;
  const object = v => v && typeof v === 'object' && !Array.isArray(v) ? v : {};
@@ -17,7 +18,7 @@ const BloodlineSkills = (() => {
   return items.at(-1);
  }
  function create(seed, life) {
-  return {version:1,revision:REVISION,life:String(life),lifeSeed:hash(seed+':'+life),rng:hash(seed+':'+life),experience:{},recent:{},contexts:{},acceptedAt:{},journal:[],discovered:[],memories:{},inheritedTags:[],charge:0,lastDiscovery:-100,lastEvent:-100,serial:0,unread:[],seenRegions:[],sampleAt:0,sampleX:null,sampleZ:null,connections:{},equipmentSeen:[],inspiration:{route:null,sourceSerials:[]}};
+  return {version:1,revision:REVISION,life:String(life),lifeSeed:hash(seed+':'+life),rng:hash(seed+':'+life),experience:{},recent:{},contexts:{},acceptedAt:{},journal:[],discovered:[],memories:{},charge:0,lastDiscovery:-100,lastOpportunity:-100,activeInspiration:{charge:0,lastDiscovery:-100,rng:hash(seed+':'+life+':active')},lastEvent:-100,serial:0,unread:[],seenRegions:[],sampleAt:0,sampleX:null,sampleZ:null,connections:{},equipmentSeen:[],inheritedTags:[],inspiration:{route:null,sourceSerials:[]}};
  }
  function restore(raw,seed,life) {
   const s=create(seed,life);
@@ -32,6 +33,9 @@ const BloodlineSkills = (() => {
   for(const [k,m] of Object.entries(object(raw.memories))) if(TAGS.has(k)&&m&&typeof m.text==='string') s.memories[k]={text:m.text.slice(0,180),at:finite(m.at),origin:m.origin==='family'?'family':'found'};
   for(const k of ['charge','lastDiscovery','lastEvent','serial','sampleAt']) s[k]=finite(raw[k],s[k]);
   s.charge=Math.max(0,Math.min(s.charge,12));s.serial=Math.max(0,Math.floor(s.serial));
+  s.lastOpportunity=finite(raw.lastOpportunity,s.lastDiscovery);
+  const active=object(raw.activeInspiration);
+  s.activeInspiration={charge:Math.max(0,Math.min(finite(active.charge,s.charge*ACTIVE_PACING.gain),12)),lastDiscovery:finite(active.lastDiscovery,s.lastDiscovery),rng:Number.isInteger(active.rng)&&active.rng>0?active.rng>>>0:hash(s.lifeSeed+':active')};
   for(const k of ['sampleX','sampleZ']) s[k]=Number.isFinite(raw[k])?raw[k]:null;
   s.seenRegions=list(raw.seenRegions).filter(x=>typeof x==='string').slice(-96);
   s.inheritedTags=validTags(raw.inheritedTags).slice(0,6);s.equipmentSeen=list(raw.equipmentSeen).filter(x=>typeof x==='string').slice(0,64);
@@ -96,14 +100,16 @@ const BloodlineSkills = (() => {
    for(const tag of Object.keys(state.recent))state.recent[tag]*=.89;
    for(const tag of tags){state.experience[tag]=Math.min(10000,(state.experience[tag]||0)+gain);state.recent[tag]=Math.min(12,(state.recent[tag]||0)+gain);}
    // Inspiration matures from accepted experience; it is not XP or a level-up currency.
-   state.lastEvent=at;state.serial++;state.charge=Math.min(12,state.charge+.35+.5*gain);
+   const inspirationGain=.35+.5*gain;
+   state.lastEvent=at;state.serial++;state.charge=Math.min(12,state.charge+inspirationGain);
+   const active=state.activeInspiration;active.charge=Math.min(12,active.charge+inspirationGain*ACTIVE_PACING.gain);
    const record={at,kind:String(event.kind),context:key,tags,text:event.text.slice(0,180),serial:state.serial};
    state.journal.push(record);if(state.journal.length>MAX_JOURNAL)state.journal.shift();
    if(event.memento&&TAGS.has(event.memento)&&!state.memories[event.memento])state.memories[event.memento]={text:record.text,at,origin:event.origin||'found'};
    state.inheritedTags=validTags(context.inheritedTags).slice(0,6);
-   if(context.age<4||context.prologue||state.charge<3.65||at-state.lastDiscovery<30)return null;
+   if(context.age<4||context.prologue||state.charge<3.65||at-state.lastOpportunity<30)return null;
    const pool=this.pool(state,{...event,tags},context);if(!pool.length)return null;
-   const chance=Math.min(.92,.24+Math.max(0,state.charge-3.65)*.14+Math.max(0,at-state.lastDiscovery-90)*.001);
+   const chance=Math.min(.92,.24+Math.max(0,state.charge-3.65)*.14+Math.max(0,at-state.lastOpportunity-90)*.001);
    if(next(state)>chance)return null;
    const recentFamilies=state.discovered.slice(-5).map(d=>d.family);
    const routeFor=v=>v.def.requiresExperience.length>1?'cross':v.def.tags.some(t=>tags.includes(t)&&!['memory','patience','rhythm'].includes(t))?'main':'deviation';
@@ -116,13 +122,28 @@ const BloodlineSkills = (() => {
     const familiar=1/(1+recentFamilies.filter(x=>x===f.family).length*.6);
     return d.rarity*(.55+focus*.35+history*.1)*({main:1,cross:1.7,deviation:.28}[route])*inherited*familiar*affinity*lifeBias;
    };
-   const family=pick(pool,familyWeight,state);if(!family)return null;
+   let family=pick(pool,familyWeight,state);if(!family)return null;
    const phases=new Set([0,...(context.known||[]).map(id=>this.byId.get(id)).filter(d=>d&&!d.passive).map(d=>d.phase)]);
-   const selected=pick(family.variants,v=>(!v.def.passive&&!phases.has(v.def.phase)?1.5:1)*v.def.rarity,state),d=selected.def;
+   const variantWeight=v=>(!v.def.passive&&!phases.has(v.def.phase)?1.5:1)*v.def.rarity;
+   let selected=pick(family.variants,variantWeight,state);
+   // Preserve the original opportunity cadence and mixed pool for passives.
+   // A still-maturing active idea spends this opportunity, never grants a passive instead.
+   state.lastOpportunity=at;state.charge=Math.max(0,state.charge-4.6);
+   if(!selected.def.passive){
+    const known=new Set([...(context.known||[]),...state.discovered.map(d=>d.id)]),count=[...known].filter(id=>{const d=this.byId.get(id);return d&&!d.passive;}).length;
+    const threshold=Math.min(ACTIVE_PACING.maxThreshold,ACTIVE_PACING.threshold+count*ACTIVE_PACING.perKnown),interval=Math.min(ACTIVE_PACING.maxCooldown,ACTIVE_PACING.cooldown+count*ACTIVE_PACING.perKnownSeconds);
+    if(active.charge<threshold||at-active.lastDiscovery<interval)return null;
+    const lastFamily=state.discovered.findLast(d=>!this.byId.get(d.id)?.passive)?.family;
+    const activePool=pool.map(f=>({...f,variants:f.variants.filter(v=>!v.def.passive)})).filter(f=>f.variants.length);
+    family=pick(activePool,f=>familyWeight(f)*(routeFor(f.variants[0])==='cross'?1.6:1)*(f.family===lastFamily?.35:1),active);
+    selected=pick(family.variants,variantWeight,active);
+    active.charge=Math.max(0,active.charge-ACTIVE_PACING.cost-count*ACTIVE_PACING.perKnownCost);active.lastDiscovery=at;
+   }
+   const d=selected.def;
    const proof=[...selected.proof];
    for(const tag of tags)if(state.memories[tag]&&proof.length<3&&!proof.some(r=>r.text===state.memories[tag].text))proof.push({...state.memories[tag],serial:0});
    const discovery={id:d.id,key:d.key,family:d.family,at,reasons:[...new Set(proof.map(r=>r.text))],trigger:record.serial,tags:[...d.tags],route:routeFor(selected),sourceSerials:proof.map(r=>r.serial).filter(Boolean)};
-   state.discovered.push(discovery);state.unread.push(d.id);state.lastDiscovery=at;state.charge=Math.max(0,state.charge-4.6);
+   state.discovered.push(discovery);state.unread.push(d.id);state.lastDiscovery=at;
    state.inspiration={route:discovery.route,sourceSerials:discovery.sourceSerials};return discovery;
   }
  }
