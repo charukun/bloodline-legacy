@@ -19,6 +19,7 @@ const SkillSystem = (() => {
  const identity=p=>p.id+':'+p.gen+':'+p.appearanceSeed;
  function prepare(sim,p) {
   if(!p.skillLife) { p.skillLife=BloodlineSkills.create(sim.seed,identity(p));p.skillLife.sampleAt=sim.time;p.skillLife.equipmentSeen.push(p.weapon+':'+p.armor+':'+p.shield); }
+  p.skillLifeNotice??='';
  }
  function restore(sim,p) {
   const raw=p.skillLife;p.skillLifeNotice='';
