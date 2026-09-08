@@ -3,29 +3,29 @@ npm warn Unknown env config "http-proxy". This will stop working in the next maj
 > tsugibi_visualslice@1.0.0 test
 > node --test tests/ui.test.cjs
 
-✔ wounds cannot be presented as good health even at health=100 (111.597027ms)
-✔ status expiry, rest and fatigue are derived without changing the player (28.872653ms)
-✔ life notification survives simultaneous discoveries in either arrival order (23.097263ms)
-✔ notice queue remains bounded and duplicate notices are not stacked (19.343766ms)
-✔ pickup presents item name, then sends the existing command and respects two slots (42.042662ms)
-✔ inventory shows two stable slots, current equipment in text, and discard updates only one slot (37.209623ms)
-✔ equipment age and rack-distance rules are enforced by real Simulation commands (33.261429ms)
-✔ modal navigation restores parent, scroll and focus and isolates the background (27.86441ms)
-✔ Escape returns one level; Tab stays inside modal; rerender does not grow navigation (37.142609ms)
-✔ keyboard typing and pointer down during modal cannot begin game movement or rest (22.7524ms)
-✔ talk uses surrounding speech and preserves the existing wake behavior (23.239888ms)
-✔ world labels show only the engaged target and are removed after disengagement (26.528109ms)
-✔ combo phase and skill share a callout and status text follows real status data (25.008199ms)
-✔ static snapshot causes zero redundant HUD and world-label DOM mutations (19.521347ms)
-✔ presentation updates cannot mutate game state or save payload (16.244327ms)
-✔ skill toggle and keyboard pie adjustment use existing weight commands and preserve focus (100.664509ms)
-✔ genealogy renders only real records, retains single-skill inheritance and escapes names (53.68173ms)
-✔ real save/restore retains inventory, equipment, wounds, age and recorded lineage (35.274491ms)
-✔ showGame invalidates caches across repeated lives and restores all HUD nodes (120.828467ms)
-✔ new onboarding can close and call done once, while settings help returns to settings (24.170507ms)
-✔ existing 480ms long press rests; pointercancel clears pending rest; moving wakes (1017.750366ms)
-✔ opening a modal cancels an already pending long press (519.378078ms)
-✔ skill restrictions refresh when shield equipment changes without closing the menu (25.188504ms)
+✔ wounds cannot be presented as good health even at health=100 (121.719889ms)
+✔ status expiry, rest and fatigue are derived without changing the player (30.928608ms)
+✔ life notification survives simultaneous discoveries in either arrival order (21.288191ms)
+✔ notice queue remains bounded and duplicate notices are not stacked (19.095671ms)
+✔ pickup presents item name, then sends the existing command and respects two slots (31.692111ms)
+✔ inventory shows two stable slots, current equipment in text, and discard updates only one slot (30.830854ms)
+✔ equipment age and rack-distance rules are enforced by real Simulation commands (42.466781ms)
+✔ modal navigation restores parent, scroll and focus and isolates the background (32.007405ms)
+✔ Escape returns one level; Tab stays inside modal; rerender does not grow navigation (40.135512ms)
+✔ keyboard typing and pointer down during modal cannot begin game movement or rest (23.679444ms)
+✔ talk uses surrounding speech and preserves the existing wake behavior (21.166398ms)
+✔ world labels show only the engaged target and are removed after disengagement (30.656708ms)
+✔ combo phase and skill share a callout and status text follows real status data (15.989401ms)
+✔ static snapshot causes zero redundant HUD and world-label DOM mutations (22.744619ms)
+✔ presentation updates cannot mutate game state or save payload (17.6952ms)
+✔ skill toggle and keyboard pie adjustment use existing weight commands and preserve focus (61.347557ms)
+✔ genealogy renders only real records, retains single-skill inheritance and escapes names (29.429852ms)
+✔ real save/restore retains inventory, equipment, wounds, age and recorded lineage (16.911148ms)
+✔ showGame invalidates caches across repeated lives and restores all HUD nodes (67.778577ms)
+✔ new onboarding can close and call done once, while settings help returns to settings (22.784488ms)
+✔ existing 480ms long press rests; pointercancel clears pending rest; moving wakes (1015.739831ms)
+✔ opening a modal cancels an already pending long press (519.22209ms)
+✔ skill restrictions refresh when shield equipment changes without closing the menu (24.083999ms)
 ℹ tests 23
 ℹ suites 0
 ℹ pass 23
@@ -33,4 +33,4 @@ npm warn Unknown env config "http-proxy". This will stop working in the next maj
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 2877.893929
+ℹ duration_ms 2783.681465
