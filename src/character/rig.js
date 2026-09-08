@@ -18,7 +18,7 @@ class RigRenderer{
   // Crossfade at state boundaries, not across a confirmed impact freeze.
   const state=frame.p.alive===false?'death':frame.p.hitReactUntil>frame.t?'hit':frame.p.activity?.kind||frame.p.action||'idle';
   if(rec.state!==state){rec.transition=frame.t;rec.state=state;rec.from=rec.parts?.map(p=>({...p,m:[...p.m]}));}
-  const blend=(frame.p.hitstopUntil>frame.t||state==='hit'||state==='death')?1:clamp((frame.t-(rec.transition??frame.t))/.10,0,1);
+  const blend=(SkillMotion.clock(frame.p,frame.t)?.stage==='attack'||frame.p.hitstopUntil>frame.t||state==='hit'||state==='death')?1:clamp((frame.t-(rec.transition??frame.t))/.10,0,1);
   for(let j=0;j<frame.parts.length;j++){const p=frame.parts[j],old=rec.from?.[j];let matrix=p.m;if(old&&blend<1){matrix=p.m.map((v,k)=>v*blend+old.m[k]*(1-blend));}rec.palette.set(matrix,j*24);rec.palette.set(p.c,j*24+16);rec.palette[j*24+20]=p.surf;}
   rec.parts=frame.parts;rec.lastT=frame.t;rec.owner=frame.p;rec.lastFrame=this.r.frame;gl.bindTexture(gl.TEXTURE_2D,rec.texture);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,6,frame.parts.length,gl.RGBA,gl.FLOAT,rec.palette);this.active.push(rec);
   // Dead actors/old generations never accumulate GPU resources without a bound.
@@ -29,5 +29,42 @@ class RigRenderer{
  }
 }
 const BASE_DOLL=VillageArt.prototype.doll;
+// Two-bone contact for the original age/race rigs. This submits the same leg
+// meshes and equipment; no extra draw calls, colliders, or gameplay root motion.
+VillageArt.prototype.skillGround=function(p,pose,t,scale){
+ const r=this.r,root=this.root,motionT=p.renderPoseTime??t;
+ this.skillFeet??=new Map();let rec=this.skillFeet.get(p.id);
+ if(!rec||rec.room!==p.room){rec={room:p.room,feet:[]};this.skillFeet.set(p.id,rec);}
+ const dt=clamp(motionT-(rec.t??motionT),0,.1);
+ if(motionT<(rec.t??motionT)||motionT-(rec.t??motionT)>.35)rec.drop=0;
+ rec.t=motionT;
+ if(this.skillFeet.size>48)for(const [id,value]of this.skillFeet)if(motionT-value.t>2)this.skillFeet.delete(id);
+ let drop=0;rec.targets=[];
+ for(const side of [1,-1]){
+  const foot=SkillMotion.foot(p,pose,motionT,side,rec.feet,scale);
+  const ground=Math.max(SkillMotion.groundAt(r,...foot.anchor),SkillMotion.groundAt(r,foot.anchor[0]+Math.sin(foot.yaw)*.15*scale,foot.anchor[1]+Math.cos(foot.yaw)*.15*scale));
+  const H=[0,1,2].map(i=>root[12+i]+root[i]*side*.21+root[4+i]*1.08),F=[foot.anchor[0],ground+.125*scale+foot.lift,foot.anchor[1]];
+  const horizontal=Math.hypot(H[0]-F[0],H[2]-F[2]);
+  if(p.wounds?.[side===1?'rightLeg':'leftLeg']?.severity!=='lost')drop=Math.max(drop,H[1]-F[1]-Math.sqrt(Math.max(.01,(1.024*scale)**2-horizontal**2)));
+  rec.targets[side===1?0:1]={foot,ground,F};
+ }
+ rec.drop=Math.max(drop,(rec.drop||0)*Math.exp(-dt*14));this.root=[...root];this.root[13]-=rec.drop;
+};
+VillageArt.prototype.skillLeg=function(p,pose,t,side,scale,pants){
+ const root=this.root,rec=this.skillFeet.get(p.id),{foot,ground,F}=rec.targets[side===1?0:1];
+ const H=[0,1,2].map(i=>root[12+i]+root[i]*side*.21+root[4+i]*1.08);
+ const diff=F.map((v,i)=>v-H[i]),raw=Math.hypot(...diff),L1=.505*scale,L2=.521*scale;
+ const len=clamp(raw,.1*scale,L1+L2-.0001),D=diff.map(v=>v/(raw||1));
+ const along=(L1*L1-L2*L2+len*len)/(2*len),height=Math.sqrt(Math.max(0,L1*L1-along*along));
+ const forward=[Math.sin(p.dir||0),0,Math.cos(p.dir||0)],dot=forward.reduce((s,v,i)=>s+v*D[i],0),pole=forward.map((v,i)=>v-D[i]*dot),pl=Math.hypot(...pole)||1;
+ const K=H.map((v,i)=>v+D[i]*along+pole[i]/pl*height),actual=H.map((v,i)=>v+D[i]*len);
+ const segment=(a,b)=>{const d=b.map((v,i)=>v-a[i]),l=Math.hypot(...d);return rModel(...a,scale,scale,scale,Math.atan2(d[0],d[2]),0,-Math.acos(clamp(-d[1]/l,-1,1)));};
+ this.root=segment(H,K);this.S(0,-.25,0,.16,.29,.17,pants);
+ this.root=segment(K,actual);this.S(0,-.22,0,.14,.25,.14,pants);
+ this.root=rModel(...actual,scale,scale,scale,foot.yaw);
+ this.B(0,.03,.075,.29,.29,.44,'#9b886b',0,0,0,8);this.B(0,.17,.025,.3,.12,.30,'#c1aa82',0,0,0,0);this.B(0,-.103,.07,.31,.045,.45,'#7f755b');
+ this.root=root;
+ (rec.debug??=[])[side===1?0:1]={side,swing:foot.swing,actual,target:F,error:Math.hypot(...actual.map((v,i)=>v-F[i])),soleY:actual[1]-.1255*scale,floor:ground};
+};
 VillageArt.prototype.gait=function(p,t){if(!this.gaits)this.gaits=new Map();let g=this.gaits.get(p.id);if(!g){g={x:p.x,z:p.z,phase:0};this.gaits.set(p.id,g);}const d=Math.hypot(p.x-g.x,p.z-g.z);if(d<1.5){const scale=p.age<10?.65:p.age<18?.88:1;g.phase+=d/(1.84*scale)*TAU;}g.x=p.x;g.z=p.z;return Math.sin(g.phase);};
 VillageArt.prototype.doll=function(p,t,local){const human=['player','guard','parent','portrait'].includes(p.kind||'player');if(!human||p.prologue||!this.r.rigs)return BASE_DOLL.call(this,p,t,local);this.r.rigs.begin(p,t);try{BASE_DOLL.call(this,p,t,local);}finally{this.r.rigs.end();}};
