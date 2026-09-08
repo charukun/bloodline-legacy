@@ -7,7 +7,10 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "node build.mjs",
+    "test": "node --test tests/skills/*.test.mjs deploy/infrastructure.test.mjs",
+    "test:skills:lives": "node tests/skills/lives.mjs",
+    "test:skills:performance": "node tests/skills/performance.mjs"
   },
   "keywords": [],
   "author": "",

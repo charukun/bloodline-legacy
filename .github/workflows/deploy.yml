@@ -1,7 +1,7 @@
 name: Bloodline Legacy CI and deployment
 on:
   push:
-    branches: [develop, staging, main, 'feature/**']
+    branches: [develop, staging, main, 'feature/**', 'work/skill-system-*']
   pull_request:
     branches: [develop, staging, main]
   workflow_dispatch:
@@ -45,6 +45,10 @@ jobs:
           JS
       - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
       - run: npm test --prefix deploy
+      - name: Verify life skills and produce playtest fixtures
+        run: |
+          node --test tests/skills/*.test.mjs
+          node tests/skills/lives.mjs
       - name: Build deployment
         env:
           TARGET: ${{ steps.target.outputs.target }}

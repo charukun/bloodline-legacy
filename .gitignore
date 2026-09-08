@@ -1,0 +1,6 @@
+node_modules/
+dist/
+deploy/out/
+deploy/evidence/
+deploy/.wrangler/
+tests/skills/generated/

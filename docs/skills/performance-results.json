@@ -1,0 +1,27 @@
+{
+  "runtime": "v24.19.0",
+  "platform": "linux",
+  "kind": "CPU simulation and candidate processing only; no render or device FPS claim",
+  "baseTick": {
+    "samples": 5400,
+    "median": 0.008532999999999902,
+    "p95": 0.009323999999992338,
+    "p99": 0.024266000000011445,
+    "max": 1.0489940000000217
+  },
+  "skillTick": {
+    "samples": 5400,
+    "median": 0.008552000000008775,
+    "p95": 0.01220800000004374,
+    "p99": 0.04210199999999986,
+    "max": 0.7056839999999625
+  },
+  "indexMs": 18.325436000000025,
+  "tenThousandCandidates": {
+    "samples": 120,
+    "median": 4.028047000000015,
+    "p95": 7.109160999999972,
+    "p99": 11.186884999999961,
+    "max": 11.701188000000002
+  }
+}
