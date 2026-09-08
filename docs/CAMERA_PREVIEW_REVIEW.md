@@ -46,5 +46,13 @@ scene+shadow calls 66→67, steady scene calls 45→46. There are no new GPU pas
 textures or buffers. Counts vary with visible content; these are not FPS.
 Browser visuals, device input feel, hardware frame pacing and foreground
 occlusion at every possible location remain UNVERIFIED. Tilt-Shift is retained.
-The supplied standalone preview is for user review before creating this PR,
-following the user's earlier request to try camera/movement changes first.
+The user reviewed the standalone preview and requested PR submission.
+
+## PR preparation
+
+Refreshed develop to `07f44280de7304adfb8ffba3129a6bd9bbead59d`, retaining
+the portrait/bottom and landscape/right consciousness panels from PRs #15/#16.
+Resolved the render-loop conflict in this order: ordinary follow → panel
+composition → projection. Both behaviors and the updated ground picking are
+preserved. An added integration regression covers both orientations and panel
+closing with the new reference angle. Build and **143/143 tests PASS**.

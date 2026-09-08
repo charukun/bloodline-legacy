@@ -38,7 +38,7 @@ test('standalone preview restores a new catalog skill and attacks at age 14',t=>
  g.sim=restored;const player=restored.players.get(p.id),dummy=restored.getRoom(player).actors.find(a=>a.kind==='dummy');
  Object.assign(player,{x:dummy.x,z:dummy.z-1.1,dir:0});
  g.snapshot=g.decorate(restored.snapshot(p.id));g.ui.skills();
- assert.equal(w.document.querySelectorAll('.phase-tabs button').length,3);
+ assert.equal(w.document.querySelectorAll('.phase-tabs button').length,4);
  assert.ok(w.document.querySelector(`[data-skill="${def.id}"]`));
  assert.equal(w.document.querySelector('.skill-compatibility'),null);
  for(let i=1;i<=180;i++)g.frame(1000+i*1000/60);
@@ -54,7 +54,7 @@ test('unknown saved skill cannot blank the modal or silently change recorded ski
  p.skills=[4000,999999];p.phaseWeights=[{4000:0,999999:1},{},{}];p.weights=p.phaseWeights[0];
  const before=JSON.stringify({skills:p.skills,weights:p.phaseWeights});
  g.ui.skills();
- assert.equal(w.document.querySelectorAll('.phase-tabs button').length,3);
+ assert.equal(w.document.querySelectorAll('.phase-tabs button').length,4);
  assert.ok(w.document.querySelector('[data-skill="4000"]'));
  assert.match(w.document.querySelector('.skill-compatibility').textContent,/記録は保持/);
  assert.equal(JSON.stringify({skills:p.skills,weights:p.phaseWeights}),before);

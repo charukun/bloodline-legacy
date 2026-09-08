@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-const context=vm.createContext({console,performance});
+const context=vm.createContext({console,performance,clamp:(n,a,b)=>Math.max(a,Math.min(n,b))});
 for(const name of ['legacy/render_math.js','render/renderer-base.js','render/adapter.js'])
  vm.runInContext(fs.readFileSync(new URL('../src/'+name,import.meta.url),'utf8'),context);
 const Renderer=vm.runInContext('SliceRenderer',context);
@@ -88,5 +88,23 @@ test('camera freeze, portraits, zoom and world input projection keep their contr
  for(const [x,z] of [[5,16],[0,10],[8,20]]){
   const q=f.r.project(x,0,z),world=f.r.pointToWorld(q.x,q.y);
   assert.ok(Math.hypot(world.x-x,world.z-z)<1e-5,'tap projection must match rendered ground');
+ }
+});
+
+test('reference follow and current skill panel framing compose in portrait and landscape',()=>{
+ for(const [w,h,options] of [[540,960,{skillPanelTop:.4}],[1000,640,{skillPanelLeft:.56}]]){
+  const f=fixture(w,h),foe={id:'foe',x:2,z:16,alive:true};
+  f.p.autoFight=foe.id;f.s.actors=[foe];
+  for(let i=1;i<=120;i++){
+   f.s.t=i/60;f.frame();f.r.framePanel(f.s,1/60,options);f.r.matrix();
+   const q=f.r.project(f.p.x,0,f.p.z),hit=f.r.pointToWorld(q.x,q.y);
+   assert.ok(Math.hypot(hit.x-f.p.x,hit.z-f.p.z)<1e-5,'picking matches the composed camera');
+  }
+  const focus=f.r.project(1,1.1,16);
+  if(options.skillPanelTop)assert.ok(Math.abs(focus.y/h-.4*.53)<.001);
+  else assert.ok(Math.abs(focus.x/w-.56*.5)<.001);
+  assert.ok(Math.abs(f.r.camera.yaw-.3)<1e-9,'panel does not restore the encounter orbit');
+  for(let i=0;i<120;i++){f.s.t+=1/60;f.frame();f.r.framePanel(f.s,1/60,{});f.r.matrix();}
+  assert.equal(f.r.panelShift,0);assert.equal(f.r.panelShiftSide,0);
  }
 });
