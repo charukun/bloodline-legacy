@@ -1,0 +1,8 @@
+node_modules/
+dist/
+deploy/out/
+deploy/node_modules/
+deploy/evidence/
+.wrangler/
+__pycache__/
+tests/current/

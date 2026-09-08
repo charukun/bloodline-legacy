@@ -7,10 +7,16 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm run build && node --test tests/golden-slice.test.mjs deploy/infrastructure.test.mjs",
+    "dev": "vite",
+    "build": "node build.mjs"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "@napi-rs/canvas": "0.1.100",
+    "vite": "7.3.6"
+  }
 }
