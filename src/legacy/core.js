@@ -1,7 +1,7 @@
 
 /* Shared, renderer-independent simulation. All gameplay decisions stay here. */
 const VERSION = '0.6.0';
-const GAME_TITLE='継ぎ火の谷';
+const GAME_TITLE='血脈の系譜';
 const EQUIP_AGE=7;
 const MAX_ITEMS=2;
 const DASH={speed:1.72,cost:9,start:3};
@@ -378,7 +378,8 @@ class Simulation {
   p.input={x:0,z:0};p.autoFight=null;p.combo=null;p.pendingSkill=null;p.chain=null;p.attackStep=null;p.retreatUntil=0;p.attackBufferedUntil=0;
   p.action='idle';p.actionStarted=this.time;p.actionUntil=this.time;p.cooldown=this.time;p.stun=0;
   // Spawn outside the house's collision hull, even when restoring a v5 opening.
-  const r=this.getRoom(p),dir=p.introDir??p.dir;
+  const r=this.getRoom(p),dir=p.dir;
+  p.introX=p.x;p.introZ=p.z;p.introDir=dir;
   p.x=(p.introX??p.x)+Math.sin(dir)*.82;p.z=(p.introZ??p.z)+Math.cos(dir)*.82;this.bound(p,r);
   p.farewellStage=0;this.motherSay(p,FAREWELL_LINES[0],4.4);
   this.emit('released',{player:p.id,room:p.room,x:p.x,z:p.z});return true;
@@ -530,7 +531,6 @@ class Simulation {
   if(cmd.type==='move'){
    const x=+cmd.x,z=+cmd.z;if(!Number.isFinite(x)||!Number.isFinite(z))return false;
    this.stopDash(p);const l=Math.hypot(x,z);p.lastInput=this.time;
-   if(p.prologue){p.input={x:0,z:0};return true;}
    p.input={x:x/Math.max(1,l),z:z/Math.max(1,l)};
    if(l>.1){this.stopActivity(p);this.wake(p);}return true;
   }
@@ -591,18 +591,33 @@ class Simulation {
   return base*injuryModifiers(p).move*(p.age<15?.8:1);
  }
  collisionRadius(a){return a.kind==='player'?.42:a.kind==='dummy'?.40:a.kind==='boss'?1.35:a.elite?1.05:['maw','stag'].includes(a.kind)?.65:.44;}
- moveAttackStep(p,r,dx,dz){
-  // Small swept substeps stop at scenery and living bodies, rather than teleporting through them.
+ moveAttackStep(p,r,dx,dz,slide=false){
+  // Small swept substeps retain the existing scenery and body collision hulls.
   const steps=Math.max(1,Math.ceil(Math.hypot(dx,dz)/.045)),sx=dx/steps,sz=dz/steps;
   const bodies=[...r.actors,...this.players.values()].filter(a=>a!==p&&a.alive&&(a.kind!=='player'||a.room===r.id));
+  const sceneryBlocked=q=>{const bounded={...q};this.bound(bounded,r);return Math.hypot(bounded.x-q.x,bounded.z-q.z)>1e-6;};
+  const bodyBlocked=q=>bodies.some(a=>{const before=dist(a,p),after=dist(a,q),radius=this.collisionRadius(p)+this.collisionRadius(a);return after<radius&&after<before-.000001;});
   let travelled=0;
   for(let i=0;i<steps;i++){
-   const q={x:p.x+sx,z:p.z+sz},bounded={...q};this.bound(bounded,r);
-   if(Math.hypot(bounded.x-q.x,bounded.z-q.z)>.000001)break;
-   if(bodies.some(a=>{const before=dist(a,p),after=dist(a,q),radius=this.collisionRadius(p)+this.collisionRadius(a);return after<radius&&after<before-.000001;}))break;
-   p.x=q.x;p.z=q.z;travelled+=Math.hypot(sx,sz);
+   let q={x:p.x+sx,z:p.z+sz};
+   if(sceneryBlocked(q)){
+    if(!slide)break;
+    // Only locomotion slides; attack lunge and retreat keep their stop-on-contact behavior.
+    const axes=Math.abs(sx)>Math.abs(sz)?[[sx,0],[0,sz]]:[[0,sz],[sx,0]];
+    q=axes.filter(([x,z])=>Math.hypot(x,z)>1e-8).map(([x,z])=>({x:p.x+x,z:p.z+z})).find(a=>!sceneryBlocked(a)&&!bodyBlocked(a));
+    if(!q)break;
+   }else if(bodyBlocked(q))break;
+   travelled+=Math.hypot(q.x-p.x,q.z-p.z);p.x=q.x;p.z=q.z;
   }
   return travelled;
+ }
+ moveWalk(p,r,dx,dz){return this.moveAttackStep(p,r,dx,dz,true);}
+ tickCarriedMove(p,r,dt){
+  if(this.time-p.lastInput>1.5)p.input={x:0,z:0};
+  const l=Math.hypot(p.input.x,p.input.z),speed=3.8*ACTION_TUNING.move;
+  const moved=l>.001?this.moveWalk(p,r,p.input.x*speed*dt,p.input.z*speed*dt):0;
+  if(l>.1)p.dir=Math.atan2(p.input.x,p.input.z);
+  p.action=moved>1e-6?'run':'idle';p.zone=this.getArea(p);this.bound(p,r);
  }
  tickAttackStep(p){
   const a=p.attackStep;if(!a||!p.alive||!p.pendingSkill||p.stun>this.time)return;if(hasStatus(p,'root',this.time)){p.attackStep=null;return;}
@@ -794,7 +809,7 @@ class Simulation {
    // Lifetime is checked before rescue, including simultaneous arrival/death.
    if(p.age+p.ageFraction>=p.lifespan){this.die(p,'寿命');continue;}
    if(p.rescueAt&&this.time>=p.rescueAt){this.returnHome(p);r=this.getRoom(p);}
-   this.tickRecovery(p,dt);this.tickExploration(p,dt);if(this.tickHitStop(p,dt)){this.bound(p,r);continue;}if(p.prologue){p.input={x:0,z:0};continue;}this.tickAutoCombat(p,r,dt);this.tickChain(p);
+   this.tickRecovery(p,dt);this.tickExploration(p,dt);if(this.tickHitStop(p,dt)){this.bound(p,r);continue;}if(p.prologue){this.tickCarriedMove(p,r,dt);continue;}this.tickAutoCombat(p,r,dt);this.tickChain(p);
    this.tickAttackStep(p);
    if(p.pendingSkill&&this.time>=p.pendingSkill.at)this.releaseSkill(p);
    if(p.combo&&!p.pendingSkill&&p.combo.awaitUntil&&this.time>=p.actionUntil){
@@ -815,7 +830,7 @@ class Simulation {
     let speed=(p.age<4?3.8:p.age<15?4.5:5.15)*ACTION_TUNING.move*(p.dash?DASH.speed:1)*(1+effectsOf(p,'walk'))*(p.age>65?1-(p.age-65)*.004:1)*mods.move*(hasStatus(p,'slow',this.time)?.5:1)*(hasStatus(p,'root',this.time)||p.seated?0:1)*(p.guard?.42:1)*(p.pendingSkill?ACTION_TUNING.moveCharge:p.combo?ACTION_TUNING.moveCombo:p.cooldown>this.time?ACTION_TUNING.moveRecovery:1);
     if(p.retreatUntil>this.time&&!hasStatus(p,'root',this.time)){this.moveAttackStep(p,r,-Math.sin(p.dir)*p.retreatSpeed*dt*mods.move,-Math.cos(p.dir)*p.retreatSpeed*dt*mods.move);}
     else if(p.attackStep&&p.combo){this.moveAttackStep(p,r,p.input.x*speed*dt,p.input.z*speed*dt);}
-    else if(l>.001&&speed>0){const moved=this.moveAttackStep(p,r,p.input.x*speed*dt,p.input.z*speed*dt);if(p.dash){p.dash.blocked=moved<.002?(p.dash.blocked||0)+dt:0;if(p.dash.blocked>.18){this.stopDash(p);p.input={x:0,z:0};}}}
+    else if(l>.001&&speed>0){const moved=this.moveWalk(p,r,p.input.x*speed*dt,p.input.z*speed*dt);if(p.dash){p.dash.blocked=moved<.002?(p.dash.blocked||0)+dt:0;if(p.dash.blocked>.18){this.stopDash(p);p.input={x:0,z:0};}}}
     if(p.guard){const e=r.actors.filter(e=>e.alive&&(enemiesOnly(e)||e.kind==='dummy')&&(!e.neutral||e.aggro)&&dist(e,p)<7).sort((a,b)=>dist(a,p)-dist(b,p))[0];if(e)p.dir=Math.atan2(e.x-p.x,e.z-p.z);}
     else if(l>.1&&!p.pendingSkill&&!p.combo)p.dir=Math.atan2(p.input.x,p.input.z);
     if(p.actionUntil<=this.time&&!p.pendingSkill)p.action=p.seated?'sit':p.activity?(ACTIVITY_DEFS[this.getArea(p)]?.motion||p.activity):p.guard?(l>.1?'guardWalk':'guard'):l>.1?(p.dash?'dash':'run'):'idle';
