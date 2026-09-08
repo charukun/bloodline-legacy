@@ -1,0 +1,138 @@
+name: Bloodline Legacy CI and deployment
+on:
+  push:
+    branches: [develop, staging, main, 'feature/**']
+  pull_request:
+    branches: [develop, staging, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Let an in-progress deployment and its verification finish together.
+# A queued older commit is rejected by the current-head check below.
+concurrency:
+  group: bloodline-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      target: ${{ steps.target.outputs.target }}
+      suffix: ${{ steps.target.outputs.suffix }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Select environment
+        id: target
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import {environmentForBranch} from './deploy/config.mjs';
+          const target=environmentForBranch(process.env.EVENT_NAME==='pull_request'?process.env.BASE_REF:process.env.REF_NAME)||'dev';
+          fs.appendFileSync(process.env.GITHUB_OUTPUT,`target=${target}\nsuffix=${target.toUpperCase()}\n`);
+          JS
+      - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
+      - run: npm test --prefix deploy
+      - name: Build deployment
+        env:
+          TARGET: ${{ steps.target.outputs.target }}
+        run: node deploy/build.mjs "$TARGET"
+      - name: Validate build and embedded WebGL assets
+        env:
+          TARGET: ${{ steps.target.outputs.target }}
+        run: node deploy/check-build.mjs "$TARGET"
+      - run: deploy/node_modules/.bin/playwright install --with-deps chromium
+      - name: Smoke test through local Workers runtime
+        env:
+          TARGET: ${{ steps.target.outputs.target }}
+        run: node deploy/smoke.mjs "$TARGET" --local
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deploy-${{ github.sha }}
+          path: deploy/out/
+          if-no-files-found: error
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-local-${{ github.run_id }}-${{ github.run_attempt }}
+          path: deploy/evidence/
+          retention-days: 7
+
+  deploy:
+    name: Deploy and verify ${{ needs.build.outputs.target }}
+    needs: build
+    # Enable each environment only after its source/hosting audit and account setup.
+    # Repository-level secrets avoid requiring paid private-repo Environments.
+    if: >-
+      github.event_name == 'push' &&
+      vars[format('CICD_ENABLED_{0}', needs.build.outputs.suffix)] == 'true' &&
+      contains(fromJSON('["refs/heads/develop","refs/heads/staging","refs/heads/main"]'), github.ref)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TARGET: ${{ needs.build.outputs.target }}
+      FIXED_URL: ${{ vars[format('FIXED_URL_{0}', needs.build.outputs.suffix)] }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@v4
+        with:
+          name: deploy-${{ github.sha }}
+          path: deploy/out/
+      - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
+      - run: deploy/node_modules/.bin/playwright install --with-deps chromium
+      - name: Validate branch, URL and current remote head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          node --input-type=module <<'JS'
+          import {assertDeployment,environments} from './deploy/config.mjs';
+          assertDeployment(process.env.TARGET,process.env.REF_NAME,process.env.EVENT_NAME);
+          const u=new URL(process.env.FIXED_URL);
+          if(u.protocol!=='https:' || u.username || u.password || u.pathname!=='/' || u.search || u.hash || !u.hostname.startsWith(environments[process.env.TARGET].worker+'.') || !u.hostname.endsWith('.workers.dev')) throw Error('Confirm the correct fixed Worker URL before deploying');
+          JS
+          current_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$REF_NAME" --jq .object.sha)"
+          test "$current_sha" = "$GITHUB_SHA"
+      - name: Deploy tested artifact to selected Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets[format('CLOUDFLARE_API_TOKEN_{0}', needs.build.outputs.suffix)] }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          WRANGLER_SEND_METRICS: 'false'
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          deploy/node_modules/.bin/wrangler deploy --config "deploy/wrangler.$TARGET.json"
+      - name: Verify published WebGL game and exact build
+        run: node deploy/smoke.mjs "$TARGET"
+      - name: Record deployment result
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const v=JSON.parse(fs.readFileSync(`deploy/out/${process.env.TARGET}/version.json`));
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,`Environment: ${v.environment}\n\nCommit: ${v.commit}\n\nMode: ${v.mode}\n\nVerified URL: ${process.env.FIXED_URL}\n`);
+          JS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-published-${{ github.run_id }}-${{ github.run_attempt }}
+          path: deploy/evidence/
+          retention-days: 7
