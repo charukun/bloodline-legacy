@@ -21,14 +21,18 @@ Animation follows existing `artPose`, `hitPose`, actions and clocks. Foot phase 
 
 ## Current verification
 
-- `node build.mjs`: PASS, 20 modules, 4,930,675 bytes.
-- `npm test`: PASS, 20 tests (14 character/numeric/regression, six deployment infrastructure).
+- `node build.mjs`: PASS, 20 modules, 4,931,590 bytes.
+- `npm test`: PASS, 22 tests (16 character/numeric/regression, six deployment infrastructure).
 - `python tests/character_asset_validation.py`: PASS, 22 asset checks.
 - Cloud preview: HTTP delivery works; its browser cannot create WebGL2. No visual PASS is claimed from that environment.
-- Repository CI browser test: pending first execution. It runs both the fixed base and this branch with the same fixture, HTTP origin, native localStorage, real input handlers and SwiftShader.
+- Repository CI browser test: first run in progress at https://github.com/charukun/bloodline-legacy/actions/runs/34263890891 (initial commit `2fda38b8350af57b69083249766537834a253daf`). It runs both the fixed base and this branch with the same fixture, HTTP origin, native localStorage, real input handlers and SwiftShader. Subsequent fixes require another run.
 - Pixel Fold hardware and native desktop GPU performance: UNVERIFIED.
 
 Numeric runtime tests use a mocked graphics API; they do not validate shader compilation or the rendered appearance. Asset validation checks structural integrity, not commercial visual quality.
+
+Two further defects were reproduced and fixed during review: grounded soles sliding up to 0.141 game units per sample when stopping, and stride phase restarting when the same 30 Hz simulation snapshot was rendered twice. Stopping now uses a lifted recovery step; duplicate render samples preserve gait state. Both failures have regression tests. These changes affect presentation only.
+
+`source-audit.json` records 29 byte-identical pre-existing source/asset files and the six current Project Sources. `asset-reproduction.json` records a fresh, independent regeneration matching all five generated asset files exactly.
 
 ## Evidence protocol
 

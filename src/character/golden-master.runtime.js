@@ -63,7 +63,9 @@ const CM01 = (()=>{
   }
   update(p,t){if(!eligible(p,true)){this.lastFrame=-1;return;}const start=performance.now(),r=this.r;this.owner=p;this.lastFrame=r.frame;let st=this.state;
    if(!st||st.id!==p.id||t<st.t||t-st.t>.35||Math.hypot(p.x-st.x,p.z-st.z)>1.5){st=this.state={id:p.id,t,x:p.x,z:p.z,phase:0,speed:0,feet:[],lastQ:null};}
-   const dt=Math.max(0,Math.min(.1,t-st.t)),dx=p.x-st.x,dz=p.z-st.z,d=Math.hypot(dx,dz),moving=['run','guardWalk','dash'].includes(p.action)&&d>1e-7,vel=dt>0?d/dt:st.speed;
+   // Simulation snapshots run at 30 Hz; extra render frames must not restart
+   // the gait merely because no new authoritative movement sample arrived.
+   const dt=Math.max(0,Math.min(.1,t-st.t)),dx=p.x-st.x,dz=p.z-st.z,d=Math.hypot(dx,dz),moving=['run','guardWalk','dash'].includes(p.action)&&(d>1e-7||dt===0&&st.moving),vel=dt>0?d/dt:st.speed;
    if(dt>0)st.speed+=( (moving?vel:0)-st.speed)*(1-Math.exp(-dt*18));
    const run=!!p.dash||st.speed>3.1,gaitWeight=clamp(st.speed/.65,0,1),stride=run?(p.dash?3.65:3.05):1.60;
    const duty=run?(p.dash?.285:.34):.62, gaitMode=run?'run':'walk';
@@ -105,13 +107,20 @@ const CM01 = (()=>{
     let foot=st.feet[si];if(!foot){foot=st.feet[si]={anchor:toWorld(side*.165,.025),swing:false,start:toWorld(side*.165,.025),target:toWorld(side*.165,.025),lift:0,yaw:facing,startPhase:0};}
     const normalized=((st.phase+(si?.5:0))%1+1)%1,isSwing=normalized>duty&&gaitWeight>.12;
     const desired=toWorld(side*.177,.025+(guard?side*.08:0));
-    if(isSwing){
+    if(!moving){
+     // Recover a stationary stance with an actual small step. Interpolating a
+     // planted anchor on the floor makes both soles skate when motion stops.
+     const turn=Math.atan2(Math.sin(facing-foot.yaw),Math.cos(facing-foot.yaw));
+     const needsStep=Math.hypot(...V.sub(foot.anchor,desired))>.045||Math.abs(turn)>.22;
+     if(!foot.settle&&(foot.swing||(needsStep&&!st.feet.some(f=>f?.settle))))foot.settle={from:[...foot.anchor],to:desired,yaw:foot.yaw,turn,lift:foot.lift,elapsed:0};
+     if(foot.settle){const step=foot.settle;step.elapsed+=dt;const u=clamp(step.elapsed/.24,0,1);foot.anchor=V.lerp(step.from,step.to,smooth(u));foot.lift=step.lift*(1-u)+Math.sin(Math.PI*u)*.11;foot.yaw=step.yaw+step.turn*smooth(u);foot.swing=u<1;if(u>=1){foot.settle=null;foot.lift=0;}}
+     else{foot.swing=false;foot.lift=0;}
+    }else if(isSwing){
      if(!foot.swing){foot.start=[...foot.anchor];foot.startPhase=normalized;foot.target=toWorld(side*.18,.025+stride*(1-normalized+duty*.5));foot.swing=true;}
      const predicted=toWorld(side*.18,.025+stride*(1-normalized+duty*.5));foot.target=V.lerp(foot.target,predicted,1-Math.exp(-dt*22));
      const u=clamp((normalized-foot.startPhase)/Math.max(.001,1-foot.startPhase),0,1);foot.anchor=V.lerp(foot.start,foot.target,smooth(u));foot.lift=Math.sin(Math.PI*u)*(run?.27:.17)*gaitWeight;foot.yaw=facing;
     }else{
      if(foot.swing){foot.anchor=[...foot.target];foot.swing=false;}foot.lift=0;
-     if(gaitWeight<.12){foot.anchor=V.lerp(foot.anchor,desired,dt>0?1-Math.exp(-dt*12):0);foot.yaw=facing;}
     }
     const floor=Math.max(this.groundAt(foot.anchor[0],foot.anchor[1]),this.groundAt(foot.anchor[0]+Math.sin(foot.yaw)*.15,foot.anchor[1]+Math.cos(foot.yaw)*.15));
     const worldAnkle=[foot.anchor[0],floor+.125+foot.lift,foot.anchor[1]];

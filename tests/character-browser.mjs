@@ -9,7 +9,9 @@ import assert from 'node:assert/strict';
 import {fileURLToPath} from 'node:url';
 import {chromium} from '../deploy/node_modules/playwright/index.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-const out=path.join(root,'verification/current');
+const mode=process.env.CHARACTER_MODE||'all';
+assert(['all','functional','performance'].includes(mode),'Unknown verification mode');
+const out=path.join(root,'verification/current',mode);
 await fs.mkdir(out,{recursive:true});
 const files={before:await fs.readFile(process.env.CHARACTER_BASELINE),after:await fs.readFile(path.join(root,'dist/index.html'))};
 const server=http.createServer((req,res)=>{
@@ -21,7 +23,7 @@ const server=http.createServer((req,res)=>{
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const origin='http://127.0.0.1:'+server.address().port;
-const report={base:'9ee25afc5f67e142adc313813b4289d157d47935',head:process.env.GITHUB_SHA||null,checks:[],versions:{},passed:false,
+const report={mode,base:'9ee25afc5f67e142adc313813b4289d157d47935',head:process.env.GITHUB_SHA||null,checks:[],versions:{},passed:false,
   limitations:['SwiftShader is software rendering, not Desktop GPU or Pixel Fold performance approval.','Screenshots and videos require visual review; numeric success is not Golden Master approval.']};
 const check=(name,ok,details)=>{report.checks.push({name,pass:!!ok,details});assert(ok,name+' '+JSON.stringify(details||''));console.log('PASS '+name);};
 let browser,page;
@@ -36,8 +38,11 @@ async function fixture(page,{close=false}={}){
     a.renderer.camera=close?{x:0,z:4,zoom:4.6,yaw:.28,pitch:.25}:{x:0,z:2.5,zoom:16,yaw:.42,pitch:.68};
     if(a.renderer.characterMaster)a.renderer.characterMaster.state=null;
     a.renderer.render(a.snapshot,1/30,{freezeCamera:true});a.ui.update(a.snapshot);
+    window.characterTrace=[];
     window.characterStep=(n,draw=true)=>{for(let i=0;i<n;i++){a.updateMove();a.sim.tick(1/30);a.snapshot=a.decorate(a.sim.snapshot(a.playerId,a.seq));
-      if(draw)a.renderer.render(a.snapshot,1/30,{freezeCamera:true});}a.ui.update(a.snapshot);};
+      if(draw){a.renderer.render(a.snapshot,1/30,{freezeCamera:true});const cm=a.renderer.characterMaster;
+        if(a.renderer.stats.characterMaster)window.characterTrace.push({t:a.sim.time,x:p.x,z:p.z,action:p.action,metrics:{...cm.metrics},finite:cm.palette.every(Number.isFinite),feet:structuredClone(cm.footDebug)});}
+    }a.ui.update(a.snapshot);};
   },{close});
   // Drain the old, now-closed frame callback before starting a new live loop.
   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
@@ -58,6 +63,7 @@ try{
     for(let i=0;i<3;i++)await page.locator('#guide-next').click();
     await page.waitForFunction('AERIN_QA.app.screen==="game"');
     check(version+' native onboarding',await page.evaluate(()=>AERIN_QA.player().prologue));
+    if(mode!=='performance'){
     await fixture(page);await shot(version+'-gameplay');
     record.stats=await page.evaluate(()=>AERIN_QA.stats());
     check(version+' WebGL has no error',await page.evaluate(()=>AERIN_QA.app.renderer.gl.getError()===0));
@@ -74,11 +80,23 @@ try{
     const move=await page.evaluate(()=>({x:AERIN_QA.player().x,z:AERIN_QA.player().z,animation:AERIN_QA.stats().characterMaster?.animation}));
     await shot(version+'-run');await page.keyboard.up('d');
     check(version+' keyboard movement',Math.hypot(move.x,move.z-4)>.5,move);record.states.push(move);
+    if(version==='after'){
+      record.runContact=await page.evaluate(()=>characterTrace);
+      check('run joints and support reach',record.runContact.length>0&&record.runContact.every(s=>s.finite&&s.metrics.pelvisDrop<.38&&s.feet.filter(f=>!f.swing).every(f=>f.error<.035)));
+      await page.keyboard.down('a');await page.evaluate(()=>characterStep(30));await shot('after-turn');await page.keyboard.up('a');
+      record.turnContact=await page.evaluate(()=>characterTrace.slice(-30));
+      check('turn keeps finite joints',record.turnContact.every(s=>s.finite));
+      await page.evaluate(()=>characterStep(30));await shot('after-run-stop');record.stopContact=await page.evaluate(()=>characterTrace.slice(-30));
+    }
     await fixture(page);
     await page.mouse.move(550,470);await page.mouse.down();await page.mouse.move(565,470);
     await page.evaluate(()=>characterStep(24));await shot(version+'-walk');
     const walk=await page.evaluate(()=>({x:AERIN_QA.player().x,z:AERIN_QA.player().z,animation:AERIN_QA.stats().characterMaster?.animation}));
     check(version+' pointer walk',Math.hypot(walk.x,walk.z-4)>.1,walk);record.states.push(walk);await page.mouse.up();
+    if(version==='after'){
+      record.walkContact=await page.evaluate(()=>characterTrace);
+      check('walk joints and support reach',record.walkContact.length>0&&record.walkContact.every(s=>s.finite&&s.metrics.pelvisDrop<.38&&s.feet.filter(f=>!f.swing).every(f=>f.error<.035)));
+    }
     await fixture(page);
     await page.mouse.move(550,470);await page.mouse.down();await page.waitForTimeout(600);await page.mouse.up();
     check(version+' long press rests',await page.evaluate(()=>AERIN_QA.player().seated));await page.evaluate(()=>characterStep(15));await shot(version+'-rest');
@@ -116,9 +134,10 @@ try{
     await page.reload({waitUntil:'load'});await page.waitForFunction('window.AERIN_QA && AERIN_QA.app.renderer.frame>2');await page.locator('#begin-life').click();await page.waitForFunction('AERIN_QA.app.screen==="game"');
     const restored=await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();return {id:p.id,name:p.name,age:p.age,gender:p.gender,race:p.race,legacy:JSON.stringify(a.sim.legacy(p.owner)),keys:Object.keys(localStorage)};});
     check(version+' native save reload',JSON.stringify(saved)===JSON.stringify(restored),{saved,restored});
+    }
     // Actual render-loop timestamps, no simulation-clamped dt, no instantaneous FPS averaging.
     // Three steady village runs plus separate rain/combat scenes, all 30 seconds after warm-up.
-    for(const scenario of ['clear-1','clear-2','clear-3','rain','combat']){
+    for(const scenario of mode==='functional'?[]:['clear-1','clear-2','clear-3','rain','combat']){
       await fixture(page);
       await page.evaluate(scenario=>{const a=AERIN_QA.app,p=AERIN_QA.player();if(scenario==='rain')a.renderer.weather.setOverride('rain');
         if(scenario==='combat'){const d=a.sim.getRoom(p).actors.find(e=>e.kind==='dummy');p.x=d.x;p.z=d.z+1.3;}

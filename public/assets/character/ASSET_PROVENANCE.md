@@ -1,6 +1,6 @@
 # CM01 asset provenance
 
-CM01の新しいモデル、スキンウェイト、テクスチャは、この依頼で `tools/generate_character.py` により制作した。外部配布モデル、既存作品のキャラクター、Visual Referenceの画像ピクセルは取り込んでいない。
+CM01のモデル、スキンウェイト、テクスチャは、前セッションで `tools/generate_character.py` により制作した候補を、今回のGitHub基準commitと照合して移植した。外部配布モデル、既存作品のキャラクター、Visual Referenceの画像ピクセルは取り込んでいない。旧検証結果は今回の品質承認として使用していない。
 
 既存ゲームの武器・盾・Environmentは変更していない。それらの既存の出典・ライセンスは元プロジェクトのものを維持する。
 

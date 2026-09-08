@@ -40,6 +40,25 @@ test('turn, teleport, and time rewind reset visual contact state safely',()=>{
   assert(values.every(v=>v.palette.every(Number.isFinite)));
   assert(values.every(v=>v.metrics.pelvisDrop<.38));
 });
+test('stopping settles feet with a lift instead of sliding a grounded sole',()=>{
+  for(const speed of [1.2,3.8]){
+    const points=Array.from({length:121},(_,i)=>({...player(),time:i/30,z:4+Math.min(i,45)/30*speed,action:i<=45?'run':'idle'}));
+    const {values}=poseSequence(points);
+    let slip=0;
+    for(let i=47;i<values.length;i++)for(let side=0;side<2;side++){
+      const a=values[i-1].feet[side],b=values[i].feet[side];
+      if(a&&!a.swing&&b&&!b.swing)slip=Math.max(slip,Math.hypot(b.actual[0]-a.actual[0],b.actual[2]-a.actual[2]));
+    }
+    assert(slip<.012,`grounded stop slip at ${speed}: ${slip}`);
+  }
+});
+test('rendering a 30 Hz movement snapshot twice preserves gait phase',()=>{
+  const points=Array.from({length:61},(_,i)=>({...player(),time:i/30,z:4+i/30*3.8,action:'run'}));
+  const once=poseSequence(points),twice=poseSequence(points.flatMap(p=>[p,{...p}]));
+  assert(Math.abs(once.c.state.phase-twice.c.state.phase)<1e-8,'extra render restarted the stride');
+  const a=once.values.at(-1).palette,b=twice.values.at(-1).palette;
+  assert(a.every((v,i)=>Math.abs(v-b[i])<1e-5),'pose depends on render sampling rate');
+});
 test('six requested states are sampled from existing motion clocks',()=>{
   const fixtures=[{name:'idle',p:{}},{name:'combat_idle',p:{autoFight:'foe'}},{name:'attack',p:{action:'attack',attackSkill:4100,actionStarted:0,actionUntil:1}},{name:'hit',p:{hitReactAt:0,hitReactUntil:1,hitPart:'torso',hitSeverity:'heavy'}}];
   for(const f of fixtures){const {values}=poseSequence([{...player(),...f.p,time:.1}]);assert.equal(values[0].metrics.animation,f.name);assert(values[0].palette.every(Number.isFinite));}

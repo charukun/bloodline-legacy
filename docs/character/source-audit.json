@@ -1,0 +1,183 @@
+{
+  "base": "9ee25afc5f67e142adc313813b4289d157d47935",
+  "scope": "All pre-existing src/ and public/assets/ files remain byte-identical. New character module and character assets are additive.",
+  "protected": [
+    {
+      "path": "public/assets/ASSET_LICENSE.txt",
+      "sha256": "0c846cbebf644e79e94a8aa22843b391d34bac88bf26be49af2a3d09bb360275",
+      "unchanged": true
+    },
+    {
+      "path": "public/assets/cloth-panel.png",
+      "sha256": "a260e72a8c675c1961ec5da23d0ea374b424b891b029bbdd4e5bf381b2678615",
+      "unchanged": true
+    },
+    {
+      "path": "public/assets/detail-atlas.png",
+      "sha256": "19e99f04a2af78c80de9937c522a06ebaa80477443012333c5ee717bd4978aee",
+      "unchanged": true
+    },
+    {
+      "path": "public/assets/material-atlas.png",
+      "sha256": "422e7c3cda99c67c2bed5a9135b7f150581d90762735dfd7c695f31c1efda7d7",
+      "unchanged": true
+    },
+    {
+      "path": "public/assets/parchment.png",
+      "sha256": "e16e086d1c7ec42d675fb9719e6346d06214c10c4d5eb155f1baeffc834f1748",
+      "unchanged": true
+    },
+    {
+      "path": "public/assets/village-kit.glb",
+      "sha256": "b4fc5422e9f711da3deba54086d8409e780f4b08f40938fd4d263a2c909ee2c5",
+      "unchanged": true
+    },
+    {
+      "path": "src/assets/loader.js",
+      "sha256": "8ecdc6475472480308bc1a349957da33f9b46e6ec799b39d02dcc7ff6a94762d",
+      "unchanged": true
+    },
+    {
+      "path": "src/audio/ambience.js",
+      "sha256": "446afc96e4a4b33141d002156fde67e993cd5ec3c8e1ff30c9102b502a42ccc8",
+      "unchanged": true
+    },
+    {
+      "path": "src/bootstrap.js",
+      "sha256": "cf9515ef1dba2ccbb3e996ab1a14802dc8f20e4fe368ebf8df75f81fa9c4d5f5",
+      "unchanged": true
+    },
+    {
+      "path": "src/character/rig.js",
+      "sha256": "2744aca413e042a9a12d991e49f133370004e7977509c71b216968c3447ac64d",
+      "unchanged": true
+    },
+    {
+      "path": "src/legacy/art.js",
+      "sha256": "ac6a698d717578a28d4e164d7f03d7a4b46899c4c5a5d360f45dab121726b310",
+      "unchanged": true
+    },
+    {
+      "path": "src/legacy/audio.js",
+      "sha256": "9a66cedf25538ecf67432f983c9d53610f7d28bc5d968049f58f2add95da369e",
+      "unchanged": true
+    },
+    {
+      "path": "src/legacy/core.js",
+      "sha256": "90e83e93071dc380c90b0fc62961b73266c720cda7bfccf16761f51ff1478853",
+      "unchanged": true
+    },
+    {
+      "path": "src/legacy/dialogue.js",
+      "sha256": "ee99f8d9df14467423d9c099c7002e71088db8c318f2b1ffea34d412be2c4ce8",
+      "unchanged": true
+    },
+    {
+      "path": "src/legacy/game.js",
+      "sha256": "c303632e6cb8408a16397412139ef853fada21a0f86e26e641662c20fa0cfdb5",
+      "unchanged": true
+    },
+    {
+      "path": "src/legacy/labels.js",
+      "sha256": "e67241174be9d1b8c5945c75e0883b31d9c705ab70dc7d25a25d300ae95f6322",
+      "unchanged": true
+    },
+    {
+      "path": "src/legacy/motion.js",
+      "sha256": "981e0ca759b1a7cd0d05c90ea1046591f973b4aca507756005a188927cd70b84",
+      "unchanged": true
+    },
+    {
+      "path": "src/legacy/render_math.js",
+      "sha256": "02e821166ec562f1046580f741ae8c546dd2881135bac0b08d49eacfedc656ce",
+      "unchanged": true
+    },
+    {
+      "path": "src/legacy/renderer.js",
+      "sha256": "9730289b1ce2c6a263f2468f2fd685e3e0dfda5f21d16309b1b51cdb20eab936",
+      "unchanged": true
+    },
+    {
+      "path": "src/legacy/ui.js",
+      "sha256": "0740ee0a40d441011d2ec9b4a6c9956a96f848cdc600c01b2c2767659b41187b",
+      "unchanged": true
+    },
+    {
+      "path": "src/render/adapter.js",
+      "sha256": "27e1d4c1f205c1749a1b4460fea4827ef7f6df002955ac209b358e92f55d9397",
+      "unchanged": true
+    },
+    {
+      "path": "src/render/combat-presentation.js",
+      "sha256": "17ac34d3d545dc8eabd9c04d5edd3f4676aeb8a92adb80e3a70861e7431b9dd9",
+      "unchanged": true
+    },
+    {
+      "path": "src/render/renderer-base.js",
+      "sha256": "2d7ae0eb4952f4e46f93eef672a8293f686b71a0a31c5bbf5b9bfce2bfd76300",
+      "unchanged": true
+    },
+    {
+      "path": "src/render/shaders.js",
+      "sha256": "684aee8fdfe3c59d50054cfecf7c1e3c6280332178b50aa3586b91cfafeff8be",
+      "unchanged": true
+    },
+    {
+      "path": "src/shell.html",
+      "sha256": "54d39f346d20ca83e1af3a6fb003081a34ac5327fe78bc5a804a4ef8f167ade0",
+      "unchanged": true
+    },
+    {
+      "path": "src/ui/base.css",
+      "sha256": "b72a7c5bc0687eb3004eedb3e3e4ec935ee579c04c330faa29fdb261359ede00",
+      "unchanged": true
+    },
+    {
+      "path": "src/ui/world-skin.css",
+      "sha256": "0917b2372a2f879cdf874375cc4ee2bfbb7812bc43907d760a77a84b18ba2777",
+      "unchanged": true
+    },
+    {
+      "path": "src/weather/weather.js",
+      "sha256": "240e8601f9dffea80efd76313c0276e457ee81474f9dea35308f0f9d43da4a01",
+      "unchanged": true
+    },
+    {
+      "path": "src/world/environment.js",
+      "sha256": "322ad10dc51699a76b3a428214bc103921eb635543b4e783adc15cc0cc7552d3",
+      "unchanged": true
+    }
+  ],
+  "projectSources": [
+    {
+      "file": "02-file_00000000ff2c8206a608810096492e6d.png",
+      "bytes": 2222826,
+      "sha256": "1a07cd1e0b5a21b8c8e8147fae736c5b593e87e9ed1cf7d464e7e2f932fd2753"
+    },
+    {
+      "file": "03-file_000000008e08820693ee766cb1158bb3.png",
+      "bytes": 2334851,
+      "sha256": "4654ba2383110d8bcc5c1839643c5c81d1a6eabdfd863795766b21f00cbafb64"
+    },
+    {
+      "file": "04-file_000000004fa08206847d9893485abe3d.png",
+      "bytes": 2373625,
+      "sha256": "c56b43284da67857ee3bb06a4d168df1ec1451d1ba975fb7aa713f4208f59b28"
+    },
+    {
+      "file": "05-20260908_035546_504.mp4",
+      "bytes": 38354112,
+      "sha256": "6abd622477679bcea89a42c888a3da818899fce311b28622c071728519723fb6"
+    },
+    {
+      "file": "06-Bloodline_Legacy_Implementation_Prompt-1.txt",
+      "bytes": 46947,
+      "sha256": "bea1a3afa6fb07f241f44ada4c5349d1c36142a952eabd82bbdc69e30fcd64ab"
+    },
+    {
+      "file": "07-Bloodline_Legacy_Common_Development_Policy_v5_Ready_PR-1-.txt",
+      "bytes": 7708,
+      "sha256": "8087f72b1d2844140752651bc86076be1ba234e9a96f8d7791814586b5ad7df9"
+    }
+  ]
+}
