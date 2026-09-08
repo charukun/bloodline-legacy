@@ -10,10 +10,10 @@ permissions:
   contents: read
 
 # Let an in-progress deployment and its verification finish together.
-# A queued older commit is rejected by the current-head check below.
+# Stale PR verification is safe to cancel when the same PR receives a newer head.
 concurrency:
   group: bloodline-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
