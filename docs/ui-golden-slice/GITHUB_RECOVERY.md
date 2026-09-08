@@ -82,3 +82,19 @@ The CLI uses a dedicated, mode-0700 temporary configuration directory outside th
 See the official [GitHub CLI authentication documentation](https://cli.github.com/manual/gh_auth_login). The remaining owner authentication is a real GitHub authorization requirement; it is not an additional approval imposed by the development policy.
 
 After successful authentication, push only the existing work branch, create a PR with base `develop`, then validate the resulting CI. No merge is authorized. Remaining browser, matched screenshot, mobile and frame-pacing gates remain as recorded in `SESSION_RECORD.md` until actually executed against this work branch.
+
+## Follow-up after the owner completed device authorization
+
+The owner reported successful entry of this session's device code. Retrieving the CLI completion then failed at the execution boundary:
+
+```text
+Unified exec process failed: Network access to "https://api.github.com:443" was blocked by policy.
+```
+
+A read-only GitHub API connectivity probe was requested with escalated execution permission. The execution policy rejected that request because `sandbox_approval`, `rules`, `skill_approval`, and `request_permissions` are disabled. The probe did not execute. The dedicated CLI `hosts.yml` was absent when checked, so this WORK cannot claim that CLI credentials were persisted or that authentication completed in the shell.
+
+The separately authorized managed connector was rechecked: identity remained `charukun`, its exposed installations list remained empty, and this exact work branch was still absent. Its attempt to create `work/golden-ui-20260908` from the recorded base again returned the complete refs HTTP 403 error quoted above.
+
+This is now blocked by both the execution environment's network policy and the connector's effective GitHub write permissions. No new device code was requested from the owner because that would not resolve the observed network policy denial. No token, alternate host, proxy, copied credential from another WORK, or browser workaround was used to circumvent it.
+
+The original three commits, the recovery-diagnosis commit `34c5c61`, and this follow-up remain on the same local branch. The fallback bundle is updated to preserve all commits, plus the complete patch and source snapshot. This is an authorization/environment blocker, not completion of the UI acceptance gates. Once an authorized environment can reach GitHub, resume from the preserved branch and follow the push → PR → CI → browser verification flow without resetting the work.

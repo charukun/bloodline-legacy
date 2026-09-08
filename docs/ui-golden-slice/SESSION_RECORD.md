@@ -100,4 +100,6 @@ TOUCHED_AREAS: `UI.constructor`, HUD/`showGame`/`update`, `updateContext`, `upda
 - GitHub connector `create_blob` and `create_branch`: both returned GitHub HTTP 403 `Resource not accessible by integration`.
 - Repository metadata's `permissions.push=true` describes account permissions; it did not establish the integration's actual write access.
 - No remote work branch, pushed commit, PR or new CI run was created. No merge was attempted.
+
+Recovery follow-up: official GitHub CLI device authorization was started and the owner reported successful code entry. CLI completion was subsequently blocked by the execution environment's GitHub API network policy; the network permission request was automatically rejected and no CLI credential file was persisted. Managed connector branch creation still returns 403. All existing commits are retained. Full evidence and exact errors are in `GITHUB_RECOVERY.md`; no additional user device authorization is requested while this network blocker remains.
 - Integration continuation is packaged with fixed-base source payload, patch, portable git bundle, manifest and instructions. Do not treat this as a finished Golden UI playtest.
