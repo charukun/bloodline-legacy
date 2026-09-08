@@ -1,0 +1,30 @@
+{
+  "generator": "tools/generate_character.py",
+  "independentRegeneration": [
+    {
+      "file": "cm01-base.png",
+      "identical": true,
+      "sha256": "215cf4101ffbece3269dc1cdb2910f357112bb3118054361bdd22f6cc25637ec"
+    },
+    {
+      "file": "cm01-normal.png",
+      "identical": true,
+      "sha256": "6cf16eb84b4853e6505b936f9c12b088f6685cb833409ab270d9ed5ba2a6773a"
+    },
+    {
+      "file": "cm01-orm.png",
+      "identical": true,
+      "sha256": "fed4d7b8efea5b5986e97b5a029c5cee270ca78389aeb6f947e72c5ccbf0995e"
+    },
+    {
+      "file": "young-human-male-cm01.glb",
+      "identical": true,
+      "sha256": "e524a572eca8a4872d808fbb558a1c3cf371457cb8059fcb8077279526bab9be"
+    },
+    {
+      "file": "cm01-manifest.json",
+      "identical": true,
+      "sha256": "b962a31e67cd2d7a873791103eb0276517eadf2ab97ead0cbdc56b5c34de81f8"
+    }
+  ]
+}
