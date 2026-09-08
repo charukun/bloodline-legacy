@@ -7,10 +7,15 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test tests/*.test.mjs deploy/infrastructure.test.mjs",
+    "dev": "vite",
+    "build": "node build.mjs"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "vite": "7.3.6"
+  }
 }

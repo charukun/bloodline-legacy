@@ -1,0 +1,4 @@
+# Authoring / validation only. No new package is needed in the game runtime.
+numpy>=1.24,<3
+scipy>=1.10,<2
+Pillow>=9.5,<13

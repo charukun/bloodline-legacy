@@ -20,7 +20,7 @@ if (manifest.mode === 'game') {
   assert(scripts.length > 0, 'JavaScript missing');
   for (const [, source] of scripts) execFileSync(process.execPath, ['--check','--input-type=commonjs'], {input:source, stdio:['pipe','inherit','inherit']});
   const assets = JSON.parse(text.match(/const VISUAL_ASSETS=(\{[^\n]+\});/)?.[1] || 'null');
-  assert(assets && Object.keys(assets).length === 5, 'Embedded asset contract changed');
+  assert(assets && Object.keys(assets).length === 6, 'Embedded asset contract changed');
   for (const [name, data] of Object.entries(assets)) assert.deepEqual(Buffer.from(data,'base64'), await fs.readFile(path.join(root,'public/assets',name)), name);
   const glb = Buffer.from(assets['village-kit.glb'],'base64');
   assert.equal(glb.readUInt32LE(0),0x46546c67);

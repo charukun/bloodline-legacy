@@ -1,0 +1,49 @@
+name: Character visual verification
+on:
+  push:
+    branches: ['work/character-golden-master-*']
+  pull_request:
+    branches: [develop]
+    paths:
+      - 'src/character/**'
+      - 'public/assets/character/**'
+      - 'tests/character*'
+      - 'tools/generate_character.py'
+      - '.github/workflows/character-visual.yml'
+permissions:
+  contents: read
+concurrency:
+  group: character-visual-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  character:
+    name: Character build, input and visual evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm test
+      - run: node build.mjs
+      - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
+      - run: deploy/node_modules/.bin/playwright install --with-deps chromium
+      - name: Build the fixed implementation baseline
+        run: |
+          git worktree add --detach /tmp/character-baseline 9ee25afc5f67e142adc313813b4289d157d47935
+          node /tmp/character-baseline/build.mjs
+      - name: Render and exercise both revisions
+        env:
+          CHARACTER_BASELINE: /tmp/character-baseline/dist/index.html
+        run: node tests/character-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: character-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: verification/current/
+          if-no-files-found: error
+          retention-days: 30
