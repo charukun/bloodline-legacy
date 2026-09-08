@@ -5,9 +5,9 @@
 | Branch | 移行後の正式な役割 | 現在の実施状態 |
 | --- | --- | --- |
 | develop | Development / Implementation Source of Truth、DEV配信 | 基準commitから作成。GitHub Actionsで全35ファイルSHA256照合成功 |
-| staging | Pre-production、STAGING配信 | 未作成 |
-| main | Production、PRODUCTION配信 | READMEのみ。初回照合でref保持を確認 |
-| work/current-handoff | Initial handoff import / historical branch | 保持。移行が確認されるまでは既存コードの復旧元 |
+| staging | Pre-production、STAGING配信 | DEV公開検証済みf07c632から作成、同SHAをread-back。固定URLで公開WebGL smoke PASS |
+| main | Production、PRODUCTION配信 | 既存README/履歴を保持。固定URLで待機ページ公開・smoke PASS。正式ゲーム未公開 |
+| work/current-handoff | Initial handoff import / historical branch | 保持。初期handoffのhistorical branch。新規開発の正本には使わない |
 
 基準commit: `383a1eef7adde83c22073c74982052b3a75a2b5c`。
 PR #1 `Import current Bloodline Legacy game handoff`: Open / 未merge（認証済みWeb UIでも確認）。本セッションからmerge/close/変更していない。
@@ -17,6 +17,8 @@ PR #1 `Import current Bloodline Legacy game handoff`: Open / 未merge（認証�
 検証commit: `52409ba735fb495c10252bc9eb060ca351745d1b`。[Actions証跡](https://github.com/charukun/bloodline-legacy/actions/runs/34174723377)。
 `completed=true`, handoff verifiedFiles=35/totalFiles=35、develop verifiedFiles=35/totalFiles=55、sourceOfTruth=developをログで確認。追加20ファイルはCI/CD設定・運用文書。指定handoff履歴の保持、生成物不在、main ref不変、PR #1 Open/未mergeもscriptで確認した。
 初回照合stepは成功後に通常workflowから削除した。移行スクリプトと成功ログは保持。Repository variable VERIFY_INITIAL_HANDOFFはUI更新・削除が保存されずtrueのままだが、通常workflowから参照しないため動作に影響しない。後続WORKは不要変数として整理できる。通常開発時に元35ファイルの内容を固定し続けない。
+
+DEV公開検証はcommit `f07c632db03af2d5cb2fb1f25e01431b8d4ff085` の [run #6](https://github.com/charukun/bloodline-legacy/actions/runs/34182505263) で成功。staging初期refは同じ完全SHAに作成しread-backした。以降の基盤文書更新ではゲーム内容を変更しない。
 
 ## 切替の成立条件（実施手順）
 

@@ -2,11 +2,11 @@
 
 対象: `charukun/bloodline-legacy` / Bloodline Legacy（血脈の系譜）。
 
-移行の基準はcommit `383a1eef7adde83c22073c74982052b3a75a2b5c`。`BRANCH_STRATEGY.md` と `deploy/migrate-branches.mjs` に従いdevelopを作成・read-back後、正式なImplementation Source of Truthをdevelopへ切り替える。mainはProduction、stagingはPre-production、work/current-handoffは初期搬入のhistorical branchとする。
+完了済みの初回移行の基準はcommit `383a1eef7adde83c22073c74982052b3a75a2b5c`。`BRANCH_STRATEGY.md` と `deploy/migrate-branches.mjs` でdevelop作成と全35ファイルread-backを完了し、正式なImplementation Source of Truthはdevelopへ切替済み。mainはProduction、stagingはPre-production、work/current-handoffは初期搬入のhistorical branchとする。
 
-**develop移行・全35ファイルread-back・CI/CD設定反映済み。Cloudflareへは未接続です。**
+**3環境の自動配信は接続済み。DEV・STAGINGは固定URLで公開後PC/モバイルWebGL smoke成功。PRODUCTIONは待機ページ公開・smoke成功、正式ゲーム未公開。実績はDEPLOYMENT.mdを参照。**
 初回作業の正確な順序・反映一覧は `GITHUB_CICD_INSTRUCTIONS.md` を使用してください。
-まず `DEPLOYMENT.md` の初回セットアップを完了し、DEV/STAGING実URLのゲーム起動確認結果を追記してください。このファイルがあるだけで「自動公開可能」と判断しないこと。
+通常の開発反映は以下のDEV運用を使う。3つのSecretsと環境別公開ゲートは設定済み。STAGING/PRODUCTIONを通常反映で自動昇格しない。
 
 ## 初回の設定反映
 
@@ -14,7 +14,7 @@
 2. 復旧35ファイルは `RECOVERY_SOURCE_SHA256.json` にハッシュ記録済み。最新GitHubとの差を確認し、古いゲームコードを上書きしない。
 3. 今回の配布物は新規の `.github/workflows/deploy.yml`, `deploy/`, `docs/` のみ。ゲームソース35ファイルは含めず、変更しない。
 4. 同名設定が既にある場合は盲目的に上書きせず統合する。`work/current-handoff` の既存PRを勝手にmainへmergeしない。
-5. `develop`/`staging`を安全に用意し、配信先とSecretsを設定する。完了まではCICD_ENABLEDをtrueにしない。
+5. `develop`/`staging`を安全に用意し、配信先とSecretsを設定する。環境ごとの接続確認が完了するまで、対応するCICD_ENABLED_DEV / CICD_ENABLED_STAGING / CICD_ENABLED_PRODUCTIONをtrueにしない。
 6. 本番初期値は `deploy/release.json` のproduction=false。本番基盤と待機URLは用意するが開発版を正式公開しない。
 7. `docs/DEPLOYMENT.md` の実績欄を更新し、接続済みURLと検証commitを記録する。
 
