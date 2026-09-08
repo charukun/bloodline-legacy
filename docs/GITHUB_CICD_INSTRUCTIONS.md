@@ -4,18 +4,17 @@
 
 ## 現在地と完了条件
 
-2026-09-08、CI/CD WORKが認証済みWeb UIで以下を実行・確認した。
+2026-09-08 JST。GitHub最新実装の正本は **develop**。初回移行は完了しているので再作成・復旧ソースによる上書きをしない。
 
-- PR #1 `Import current Bloodline Legacy game handoff` はOpen/未merge、main向けのhistorical import PR。変更していない。
-- `work/current-handoff` HEADは `383a1eef7adde83c22073c74982052b3a75a2b5c`。mainより13 commits/34ファイル追加。
-- 同HEADから `develop` を作成し、GitHub画面で指定SHAへの一致をread-back確認した。その後CI/CD専用ファイルの追加を開始した。元ゲーム35ファイルへの変更なし。
-- 全35ファイルの再取得・SHA256照合はGitHub Actions内で成功済み（commit `52409ba735fb495c10252bc9eb060ca351745d1b`、[run](https://github.com/charukun/bloodline-legacy/actions/runs/34174723377)）。handoff35/develop35の一致、履歴保持、生成物不在、main/PR #1保持を確認。正式Source of Truthはdevelop。Cloud BrowserのZIP取得制限は回避せず、外部転送なしの検証で完了した。
-- staging未作成、mainはREADMEのみのまま。Cloudflareはセキュリティ検証画面で停止、Worker/URL/Secret未設定。
-- 復旧ソースBuild、DEV/STAGING asset byte照合、本番待機ページBuild、基盤テスト5件はPASS。GitHub ActionsでもBuild/基盤5テスト/asset照合はPASS。WebGL smokeのガイド操作timeoutは修正後[run #3](https://github.com/charukun/bloodline-legacy/actions/runs/34175045157)でPASS。公開検証は未実施。
+- 基準: `work/current-handoff` commit `383a1eef7adde83c22073c74982052b3a75a2b5c`。PR #1はOpen/未mergeのhistorical import PRとして保持。
+- 全35ファイルのGitHub read-back・SHA256/bytes・履歴・生成物不在: [初回run](https://github.com/charukun/bloodline-legacy/actions/runs/34174723377) でPASS。
+- DEVのBuild/基盤5テスト/asset照合/ローカルWebGL/Cloudflare公開/固定URLのPC・モバイルWebGL smoke: commit `f07c632db03af2d5cb2fb1f25e01431b8d4ff085`、[run #6](https://github.com/charukun/bloodline-legacy/actions/runs/34182505263) で全PASS。
+- stagingはこのDEV検証済みcommitから作成し、同じ完全SHAをread-back確認済み。
+- mainは既存READMEと履歴を保持し、CI/CDとproduction=falseの待機ページ基盤のみを追加。ゲームは未投入。
+- `CLOUDFLARE_API_TOKEN_DEV`、account ID、3固定URLのVariables、`CICD_ENABLED_DEV=true` は登録/read-back済み。
+- 残作業はSTAGING/PRODUCTION token登録、対応ゲート有効化、対象branch push、各URLの公開検証。具体的な人間操作は `DEPLOYMENT.md` の「残る2環境の接続」。DEVの公開確認を最初からやり直す必要はない。
 
-CI/CD設定20ファイルはdevelopへ反映済み。初回read-backも成功したため初回専用stepと追加PR読取権限を通常workflowから削除した。公開ゲートCICD_ENABLED=falseはread-back確認済み。残作業はCloudflare接続、DEV実URL検証、その後のstaging作成と本番待機基盤。
-
-この文書の「未完了」は初回引継ぎ時点。必ず現在のGitHub状態を読み、既に反映されたファイルを重複commitしない。
+以下は再開・再現手順。現在のGitHub状態を読み、実施済み作業を重複commitしない。CI/CDファイルはこの文書のある最新GitHub branchを正本とする。古い配布ZIPはそのまま上書きしない。
 
 ## A. ソースの移行確認
 
@@ -43,7 +42,7 @@ node deploy/migrate-branches.mjs --verify-develop
 
 ## B. 追加ファイルと配置先
 
-配布ZIPの相対パスをRepositoryルートへそのまま配置する。既存ファイルがあれば差分を読み統合し、ゲーム35ファイルを入れ替えない。
+未反映の環境だけ、検証済みdevelopの下記CI/CDファイルを同じ相対パスへ配置する。既存ファイルがあれば差分を読み統合し、ゲーム35ファイルを入れ替えない。
 
 | 配置先 | 内容 |
 | --- | --- |
@@ -70,17 +69,17 @@ node deploy/migrate-branches.mjs --verify-develop
 - Settings → Actions → General: Actionsを有効にし、`actions/checkout`, `setup-node`, `upload-artifact`, `download-artifact` の実行を許可。通常workflowはcontents:readのみを使用する。不要なwrite権限を付けない。
 - Settings → Secrets and variables → Actions → Variables: 下表のRepository variablesを登録。
 - 同ページのSecrets: 下表のRepository secretsを登録。値をsource/チャット/ログへ貼らない。
-- `CICD_ENABLED` は初期false。Cloudflare既存資産確認、全URL確認、Secrets登録、ソース照合が完了してからtrue。
+- `CICD_ENABLED_DEV` / `CICD_ENABLED_STAGING` / `CICD_ENABLED_PRODUCTION` は環境別の公開ゲート。対象環境の既存資産確認、URL確認、Secret登録、ソース確認が完了してから対応する変数だけtrue。
 - default branch mainは変更不要。実装の参照先は文書でdevelopと指定する。
 - 利用プランで可能ならstaging/mainのbranch rulesでPRとBuild and verifyを要求する。有料機能導入や請求承認を勝手に行わない。
 
 | 種別 | 名称 | 値の決定元 |
 | --- | --- | --- |
-| Variable | CICD_ENABLED | 初期false、接続準備完了後true |
+| Variable | CICD_ENABLED_DEV / CICD_ENABLED_STAGING / CICD_ENABLED_PRODUCTION | 環境別に初期false/未設定、接続準備完了後true |
 | Variable | CLOUDFLARE_ACCOUNT_ID | 対象Cloudflare accountの実ID |
 | Variable | FIXED_URL_DEV | DEV Workerの実在workers.dev固定URL |
-| Variable | FIXED_URL_STAGING | STAGING Workerの実在workers.dev固定URL |
-| Variable | FIXED_URL_PRODUCTION | PRODUCTION Workerの実在workers.dev固定URL |
+| Variable | FIXED_URL_STAGING | STAGING Workerの固定URL（公開はSecret登録後） |
+| Variable | FIXED_URL_PRODUCTION | PRODUCTION Workerの固定URL（公開はSecret登録後） |
 | Secret | CLOUDFLARE_API_TOKEN_DEV | 対象accountのWorkers配信用token |
 | Secret | CLOUDFLARE_API_TOKEN_STAGING | STAGING用token |
 | Secret | CLOUDFLARE_API_TOKEN_PRODUCTION | PRODUCTION用token |
@@ -91,7 +90,7 @@ node deploy/migrate-branches.mjs --verify-develop
 
 採用方式はGitHub Actions → Cloudflare Workers Static Assets、独立した3 Worker。Cloudflare側Git自動Buildを同時に有効にして二重配信しない。Private GitHubソースの取得はActionsのGITHUB_TOKENが担当するためCloudflareのGitHub App authorizationは本方式には必須ではない。
 
-CI/CD WORK側でDashboardのセキュリティ検証/ログイン完了後、対象account、既存Workers/Pages/domain、名前の衝突、workers.dev subdomainを調査する。衝突がなければ下記3 WorkerのURLを確定しGitHub Variablesへ登録する。既存Productionを置換しない。
+Cloud Browserの検証ループを反復しない。ユーザーの通常Chromeで対象account、Workers & Pagesのプロジェクト未作成、workers.dev subdomainを確認した。以後はGitHub SecretsとActionsから接続する。衝突がなければ下記3 WorkerのURLを確定しGitHub Variablesへ登録する。既存Productionを置換しない。
 
 | Branch | 環境 | Worker |
 | --- | --- | --- |
@@ -115,7 +114,7 @@ node deploy/smoke.mjs dev --local
 原ゲームbuildは `node build.mjs`、出力 `dist/index.html`。配信対象はadapter生成の `deploy/out/dev/` のみ。元package.jsonのplaceholder testを本テストと取り違えない。
 
 1. 上記設定をdevelopへcommit/push。まずBuild and verify成功を確認する。
-2. Cloudflareの準備完了後CICD_ENABLED=trueとし、developへ検証記録等の通常commitをpush。手動Run workflowはCIのみなので初回Deployの起点にしない。
+2. Cloudflareの準備完了後CICD_ENABLED_DEV=trueとし、developへ検証記録等の通常commitをpush。手動Run workflowはCIのみなので初回Deployの起点にしない。
 3. pushした**完全なSHA**の `Bloodline Legacy CI and deployment` を確認。Build and verify、Deploy and verify devの両方successが必要。skippedを成功扱いしない。
 4. Actions summaryのDEV固定URLを開く。version.jsonのcommit=push SHA、environment=dev、mode=game、HTML hashを確認。
 5. 一族画面→開始→ガイド→ゲーム/HUD。WebGL2、console/page/network error、画像decode、画面表示、mobile393×852を確認。smoke artifactのJSONとPNGを確認し結果を記録する。
@@ -129,7 +128,7 @@ node deploy/migrate-branches.mjs --staging
 
 ## F. mainのProduction基盤
 
-mainへゲームをmergeしない。CI/CD専用の上記ファイルだけをmainからの新しい基盤branchに追加する。PR #1は使わない。production=falseでBuild/Testを通し、インフラ専用差分（src/public/build.mjs/package.json等のゲーム追加がない）を確認してmainへ通常反映する。mainへのpushがProduction待機ページのみを配信する。固定URLで待機文、version.environment=production、mode=holding、commitを確認する。
+mainへゲームをmergeしない。CI/CD専用ファイルはmainへ反映済み。追加の基盤差分がある場合はmainの現在HEADを保って通常commitする。PR #1は使わない。production=falseでBuild/Testを通し、src/public/原build.mjs/原package.json等のゲーム追加がないことを確認する。mainへのpushがProduction待機ページのみを配信する。固定URLで待機文、version.environment=production、mode=holding、commitを確認する。
 
 初回正式リリースは別の明示的な昇格指示で、検証済みstagingのゲームをmainへ昇格しproductionをboolean trueに変更する。DEV/STAGING反映に伴う自動Production昇格は行わない。
 
@@ -149,6 +148,8 @@ Build/Test失敗時はneeds:buildでDeployを止める。失敗assertを削除�
 
 禁止: force push、history rewrite、branch削除、PR #1の勝手なmerge/close、mainへの開発版直接投入、既存Production/domain/data破壊、Secret埋込み。404をRepository不存在と断定しない。
 
-最新CI実績: commit `ec44df84d04ab1a31756f7a35a399db033ddac8a`、[run #3](https://github.com/charukun/bloodline-legacy/actions/runs/34175045157)、Build/Test/ローカルWorkers配信のdesktop/mobile WebGL smoke PASS。公開ゲートfalseのためDeploy skipped。固定URLでの公開検証は未実施。
+現在の接続先account: `980d243c0a980bdc2ddbbee89e901db5`、workers.dev subdomain: `c-okamoto.workers.dev`。固定URLと最新検証結果は `DEPLOYMENT.md` を参照。
 
-設定上の残件: Repository variable VERIFY_INITIAL_HANDOFF=trueが残っている。Web UIでの値更新・削除が保存されなかったため、完了済みの初回専用stepをworkflowから削除して参照を終了した。この変数は通常CI/CDに影響しない。後続WORKで不要変数として整理できる。
+旧 `CICD_ENABLED` と `VERIFY_INITIAL_HANDOFF` は通常workflowから参照しない。公開ゲートは環境ごとの `CICD_ENABLED_DEV` / `CICD_ENABLED_STAGING` / `CICD_ENABLED_PRODUCTION`。STAGING/PRODUCTIONはtoken登録・対象ソース確認後だけtrueにする。
+
+Production基盤CI: commit `3dd66907e5368e6b96e9dc3225409498e751da59`、[run #8](https://github.com/charukun/bloodline-legacy/actions/runs/34183224349)。mainへのpushでBuild and verify（基盤テスト・holding build・ローカル配信smoke）が成功。Cloudflare接続前のためDeployはskipped。ゲームの正式リリースは行っていない。
