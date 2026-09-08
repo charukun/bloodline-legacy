@@ -288,3 +288,11 @@ function ailmentPose(p,t){
  if(has('bleed')){o.pitch+=.04;o.head+=.04;}
  return o;
 }
+
+function parentWorldPose(p,t){
+ if(!p?.alive||(!p.prologue&&t>p.introUntil+5))return null;
+ t=p.renderPoseTime??t;
+ if(p.prologue)return {x:p.x,z:p.z,dir:p.dir,age:34,race:p.race,alive:true};
+ const age=t-(p.releaseAt||0),u=clamp((age-5)/5,0,1),ix=p.introX??p.x,iz=p.introZ??p.z,hx=p.introHomeX??ix-2.8,hz=p.introHomeZ??iz;
+ return {x:ix+(hx-ix)*u,z:iz+(hz-iz)*u,dir:age>5?Math.atan2(hx-ix,hz-iz):(p.introDir??p.dir??0),age:34,race:p.race,alive:true};
+}
