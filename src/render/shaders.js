@@ -40,14 +40,14 @@ void main(){vec3 N=normalize(vNormal),L=normalize(vec3(-.48,.85,.42)),V=normaliz
  else if(surf>17.5&&surf<18.5){slot=10.;rough=.81;tile=2.;}
  else if(surf>18.5&&surf<19.5){slot=11.;rough=.73;}
  vec3 an=abs(N);vec2 uv=an.y>an.x&&an.y>an.z?vWorld.xz:an.z>an.x?vWorld.xy:vWorld.zy;
- uv=fract(uv*tile);vec2 auv=(vec2(mod(slot,4.),floor(slot/4.))+(.025+uv*.95))*.25;vec4 tex=golden?vec4(.59,.59,.59,.9):texture(materialAtlas,auv);vec4 norm=texture(detailAtlas,auv);pigment*=mix(.72,1.18,tex.r);rough=clamp(rough*mix(.80,1.1,tex.a),.12,1.);ao=mix(.78,1.,norm.a);
+ uv=fract(uv*tile);vec2 auv=(vec2(mod(slot,4.),floor(slot/4.))+(.025+uv*.95))*.25;vec4 tex=golden?vec4(.59,.59,.59,.9):texture(materialAtlas,auv);vec4 norm=golden?vec4(.5,.5,1.,1.):texture(detailAtlas,auv);pigment*=mix(.72,1.18,tex.r);rough=clamp(rough*mix(.80,1.1,tex.a),.12,1.);ao=mix(.78,1.,norm.a);
  if(golden){float k=floor(authored-20.+.5);vec2 plane=an.y>an.x&&an.y>an.z?vWorld.xz:an.z>an.x?vWorld.xy:vWorld.zy;
   vec2 guv=fract(plane*(k==1.?vec2(.48,.54):k==2.?vec2(.63,.35):vec2(.75)));
   vec4 authoredTex=texture(goldenAtlas,(vec2(mod(k,2.),floor(k/2.))*256.+8.+guv*239.)/512.);
-  pigment*=mix(.66,1.34,authoredTex.r);rough=authoredTex.a;
+  pigment*=mix(.66,1.34,authoredTex.r);rough=authoredTex.a;norm.xy=authoredTex.gb;
   if(k<1.5&&vWorld.y<.65){float damp=1.-smoothstep(.12,.65,vWorld.y);pigment=mix(pigment,pigment*vec3(.79,.86,.71),damp*.32);if(terrainEnabled>.5)ao*=texture(terrainMap,(vWorld.xz+vec2(48.,55.))/96.).g;}
  }
- vec2 bump=(norm.xy*2.-1.)*(skin?.035:foliage?.04:.19);if(an.y>an.x&&an.y>an.z)N=normalize(N+vec3(bump.x,0.,bump.y));else if(an.z>an.x)N=normalize(N+vec3(bump.x,bump.y,0.));else N=normalize(N+vec3(0.,bump.y,bump.x));
+ vec2 bump=(norm.xy*2.-1.)*(golden?1.:skin?.035:foliage?.04:.19);if(an.y>an.x&&an.y>an.z)N=normalize(N+vec3(bump.x,0.,bump.y));else if(an.z>an.x)N=normalize(N+vec3(bump.x,bump.y,0.));else N=normalize(N+vec3(0.,bump.y,bump.x));
  if(surf>11.5&&surf<12.5){if(terrainEnabled>.5){vec4 ground=texture(terrainMap,(vWorld.xz+vec2(48.,55.))/96.);float grit=tex.r;vec3 grass=mix(vec3(.33,.40,.22),vec3(.49,.53,.32),ground.b);vec3 soil=mix(vec3(.51,.40,.29),vec3(.71,.61,.44),ground.b);pigment=mix(grass,soil,ground.r)*(.90+grit*.13);ao*=ground.g;rough=.94;}else pigment*=.80;}
  if(water){float wave=sin(vWorld.x*2.3+time*.75)*cos(vWorld.z*1.8-time*.48);N=normalize(N+vec3(sin(vWorld.z*3.+time)*.13,0.,cos(vWorld.x*2.+time)*.1));pigment=mix(vec3(.14,.30,.33),vec3(.32,.49,.47),wave*.5+.5);rough=.19;}
  bool canWet=surf>7.5&&!skin&&!foliage;float w=canWet?wetness*clamp(N.y*.65+.4,.1,1.):0.;rough=mix(rough,max(.19,rough*.34),w);pigment*=1.-w*.21;
