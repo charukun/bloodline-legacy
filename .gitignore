@@ -6,3 +6,4 @@ deploy/evidence/
 .wrangler/
 __pycache__/
 tests/current/
+verification/current/

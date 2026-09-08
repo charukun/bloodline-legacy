@@ -7,7 +7,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "npm run build && node --test tests/golden-slice.test.mjs deploy/infrastructure.test.mjs tests/ui.test.cjs",
+    "test": "npm run build && node --test tests/*.test.mjs tests/ui.test.cjs deploy/infrastructure.test.mjs",
     "dev": "vite",
     "build": "node build.mjs"
   },
