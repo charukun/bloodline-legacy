@@ -1,0 +1,161 @@
+{
+  "mode": "polish",
+  "base": "187bab5b4aae5236e44e9a20f9f0c972d62b3148",
+  "head": "17d0c8b870270d32bf6eb0e233542e19e4cbfddf",
+  "checks": [
+    {
+      "name": "before native onboarding",
+      "pass": true
+    },
+    {
+      "name": "before shader and game loop",
+      "pass": true
+    },
+    {
+      "name": "after native onboarding",
+      "pass": true
+    },
+    {
+      "name": "updated gloves and boots retain finite joints",
+      "pass": true
+    },
+    {
+      "name": "after shader and game loop",
+      "pass": true
+    },
+    {
+      "name": "bounded paired median has no material regression",
+      "pass": true,
+      "details": {
+        "method": "Alternating AB/BA; 6 warmup + 24 synchronized whole frames per version; no video recording",
+        "medianChangeMs": -0.39999999999417923,
+        "medianRatio": 0.9701492537317647,
+        "p95Ratio": 0.7296296296300608
+      }
+    }
+  ],
+  "versions": {
+    "before": {
+      "errors": [],
+      "consoleErrors": [],
+      "states": [],
+      "performance": {
+        "samples": [
+          15.10000000000582,
+          17,
+          13.299999999988358,
+          27.60000000000582,
+          25.60000000000582,
+          27,
+          19.39999999999418,
+          13.5,
+          13.39999999999418,
+          12.799999999988358,
+          12.400000000023283,
+          7.300000000017462,
+          11.799999999988358,
+          14.60000000000582,
+          13.39999999999418,
+          19.900000000023283,
+          12.300000000017462,
+          13.099999999976717,
+          12.60000000000582,
+          12.599999999976717,
+          12.5,
+          12.599999999976717,
+          17,
+          12.60000000000582
+        ],
+        "recording": false,
+        "viewport": [
+          393,
+          852
+        ],
+        "medianMs": 13.39999999999418,
+        "p95Ms": 27
+      },
+      "backend": {
+        "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+        "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "dpr": 1,
+        "viewport": [
+          1000,
+          900
+        ]
+      }
+    },
+    "after": {
+      "errors": [],
+      "consoleErrors": [],
+      "states": [],
+      "performance": {
+        "samples": [
+          14.200000000011642,
+          12,
+          15.199999999982538,
+          12.5,
+          19.70000000001164,
+          28.60000000000582,
+          15.799999999988358,
+          12,
+          12.799999999988358,
+          12,
+          12.199999999982538,
+          12.099999999976717,
+          13.800000000017462,
+          13,
+          11.89999999999418,
+          13,
+          13.099999999976717,
+          14.39999999999418,
+          12.900000000023283,
+          13.700000000011642,
+          12.300000000017462,
+          12.5,
+          14.39999999999418,
+          12.5
+        ],
+        "recording": false,
+        "viewport": [
+          393,
+          852
+        ],
+        "medianMs": 13,
+        "p95Ms": 19.70000000001164
+      },
+      "backend": {
+        "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+        "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "dpr": 1,
+        "viewport": [
+          1000,
+          900
+        ]
+      }
+    }
+  },
+  "passed": true,
+  "limitations": [
+    "SwiftShader is software rendering, not Desktop GPU or Pixel Fold performance approval.",
+    "Screenshots and videos require visual review; numeric success is not Golden Master approval."
+  ],
+  "lastScreenshot": "after-mobile-gameplay",
+  "performanceComparison": {
+    "method": "Alternating AB/BA; 6 warmup + 24 synchronized whole frames per version; no video recording",
+    "medianChangeMs": -0.39999999999417923,
+    "medianRatio": 0.9701492537317647,
+    "p95Ratio": 0.7296296296300608
+  },
+  "visualAcceptance": {
+    "accepted": false,
+    "remaining": [
+      "Coarse angular hair locks",
+      "Visible forehead faceting",
+      "Simplified scarf and clothing"
+    ],
+    "quarterView": "partly occluded by scene geometry",
+    "physicalDevicePerformance": "unverified"
+  },
+  "workflowRun": "https://github.com/charukun/bloodline-legacy/actions/runs/34284026628",
+  "artifactSha256": "06e6df253c7fb1d2f6b779515d014865563a3ba35c59334eee7777c473fa8069"
+}

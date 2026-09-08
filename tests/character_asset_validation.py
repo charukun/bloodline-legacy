@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Validate the authored GLB without network packages or renderer assumptions."""
 from pathlib import Path
-import json,struct,hashlib
+import json,struct,hashlib,io
+from PIL import Image
 import numpy as np
 root=Path(__file__).resolve().parents[1]
 b=(root/'public/assets/character/young-human-male-cm01.glb').read_bytes()
@@ -34,10 +35,20 @@ for lod,m in enumerate(g['meshes']):
   f=faces[cursor:cursor+part['triangles']];cursor+=part['triangles']
   if part['name'] in ['upper eyelid','eyebrow','mouth expression','lower lip']:
    stroke_areas.extend(np.linalg.norm(np.cross(v[f[:,1]]-v[f[:,0]],v[f[:,2]]-v[f[:,0]]),axis=1))
- check(f'LOD{lod} facial strokes retain real thickness',len(stroke_areas)>0 and min(stroke_areas)>1e-11)
+ check(f'LOD{lod} facial stroke triangles are nondegenerate',len(stroke_areas)>0 and min(stroke_areas)>1e-11)
 check('LOD geometry reduction',len(acc(g['meshes'][1]['primitives'][0]['indices']))<len(acc(g['meshes'][0]['primitives'][0]['indices']))*.55)
 check('asset hash matches manifest',hashlib.sha256(b).hexdigest()==json.loads((root/'public/assets/character/cm01-manifest.json').read_text())['sha256'])
 check('reference revision stays inside reviewed CM01 geometry budget',all(len(acc(m['primitives'][0]['attributes']['POSITION']))<=nv and len(acc(m['primitives'][0]['indices']))<=nt*3 for m,(nv,nt) in zip(g['meshes'],[(13534,24431),(6568,11230)])))
 check('reference revision stays inside reviewed CM01 transfer budget',len(b)<=2315212,{'bytes':len(b),'budget':2315212})
+atlas_ok=True
+for im in g['images']:
+ view=g['bufferViews'][im['bufferView']];start=off+view.get('byteOffset',0)
+ embedded=b[start:start+view['byteLength']]
+ companion=(root/'public/assets/character'/f"{im['name']}.png").read_bytes()
+ try:
+  decoded=Image.open(io.BytesIO(companion));decoded.load()
+  atlas_ok=atlas_ok and decoded.size==(512,512) and companion==embedded
+ except OSError:atlas_ok=False
+check('companion atlases decode and match embedded images',atlas_ok)
 print(json.dumps({'checks':checks,'passed':sum(c['pass'] for c in checks),'total':len(checks)},indent=2))
 assert all(c['pass'] for c in checks),'Asset validation failed'

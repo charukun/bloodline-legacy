@@ -123,7 +123,7 @@ class Mesh:
   if name in ['upper eyelid','eyebrow','mouth expression','lower lip']:
    # Seat the centreline, then sweep its actual thickness. Projecting every
    # finished vertex onto the skin collapses front/back faces onto each other
-   # and produces zero-area triangles and flickering, dotted facial strokes.
+   # and loses the relief of facial strokes.
    relief={'upper eyelid':.015,'eyebrow':.009,'mouth expression':.006,'lower lip':.008}[name]
    for c in curve:c[2]=head_front(c[0],c[1])+relief
   sides=self.steps(sides,6);verts=[];uv=[];faces=[];ref=np.asarray(normal,float)
