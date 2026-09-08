@@ -9,7 +9,8 @@ import {verifySkillSlice} from '../tests/skills/browser-contract.mjs';
 
 const environment = process.argv[2];
 assert(environments[environment], 'Unknown environment');
-const local = process.argv[3] === '--local';
+const local = process.argv.includes('--local');
+const httpOnly = process.argv.includes('--http-only');
 const base = local ? 'http://127.0.0.1:4173' : process.env.FIXED_URL;
 assert(base, 'FIXED_URL must be the provider-confirmed stable environment URL');
 const parsed = new URL(base);
@@ -20,7 +21,7 @@ const expected = JSON.parse(await fs.readFile(path.join(root,'deploy/out',enviro
 const evidence = path.join(root,'deploy/evidence',environment,local?'local':'published');
 await fs.mkdir(evidence,{recursive:true});
 let server, browser, api, activePage;
-const report = {environment, url:parsed.origin, expected, passed:false, viewports:[]};
+const report = {environment, url:parsed.origin, expected, verification:httpOnly?'http':'browser', passed:false, viewports:[]};
 try {
   if (local) server = spawn(process.execPath, ['deploy/node_modules/wrangler/bin/wrangler.js','dev','--config',`deploy/wrangler.${environment}.json`,'--port','4173','--ip','127.0.0.1','--local'],
     {cwd:root,stdio:['ignore','inherit','inherit']});
@@ -51,8 +52,8 @@ try {
   assert.deepEqual(await health.json(),{online:false,environment});
   assert.equal((await api.get('/assets/deployment-smoke-missing.glb')).status(),404,'Missing model must not receive HTML fallback');
   assert.equal((await api.post('/api/join',{data:{}})).status(),501,'Online API must not reach another environment');
-  browser = await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
-  for (const viewport of [{width:1280,height:800},{width:393,height:852}]) {
+  if (!httpOnly) browser = await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+  for (const viewport of httpOnly ? [] : [{width:1280,height:800},{width:393,height:852}]) {
     const context = await browser.newContext({viewport,deviceScaleFactor:1});
     const page = await context.newPage();
     activePage=page;
@@ -115,7 +116,7 @@ try {
     activePage=null;
   }
   report.passed=true;
-  console.log(`Smoke verification passed: ${environment} (${expected.mode}) ${parsed.origin}`);
+  console.log(`Smoke verification passed (${httpOnly?'HTTP':'browser'}): ${environment} (${expected.mode}) ${parsed.origin}`);
 } catch(error) {
   report.failure=String(error);
   if(activePage) await activePage.screenshot({path:path.join(evidence,'failure.png'),timeout:15000}).catch(()=>{});
