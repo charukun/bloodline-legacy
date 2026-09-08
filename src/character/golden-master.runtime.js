@@ -78,7 +78,7 @@ const CM01 = (()=>{
    if(moving&&!st.moving){st.phase=duty*.5+d/stride;for(const foot of st.feet)if(foot)foot.settle=null;}
    else if(moving)st.phase+=d/stride;
    st.moving=moving;st.gaitMode=gaitMode;
-   const phase=st.phase*TAU,pose=artPose(p,t),reaction=hitPose(p,t),ail=ailmentPose(p,t),guard=p.guard||p.guardUntil>t||p.autoFight;
+   const phase=st.phase*TAU,reaction=damagePose(r,p,t),pose=damageArtPose(r,p,t,artPose(p,t)),ail=ailmentPose(p,t),guard=p.guard||p.guardUntil>t||p.autoFight;
    const fall=!p.alive?smooth((t-(p.deathAt??t))/1.12):0;const sampledGround=this.groundAt(p.x,p.z);if(!Number.isFinite(st.ground))st.ground=sampledGround;st.ground+=(sampledGround-st.ground)*(1-Math.exp(-dt*14));const baseY=p.baseY!=null?p.baseY:st.ground-.020;
    const rootQ=Q.euler(pose.pitch+reaction.pitch+ail.pitch+fall*1.48,(p.dir||0)+pose.yaw,pose.roll+reaction.roll+ail.roll);
    const rootM=matrix([p.x+reaction.x,baseY+pose.y+ail.y-reaction.drop,p.z+reaction.z],rootQ);
@@ -86,15 +86,16 @@ const CM01 = (()=>{
    const qi=(name,x=0,y=0,z=0)=>q[asset.names.indexOf(name)]=Q.euler(x,y,z);
    const sway=Math.sin(phase),breathe=Math.sin(t*1.8+1.1);
    offset[1]=[.011*Math.sin(t*.7)*(1-gaitWeight),-.030-gaitWeight*(run?.106:.072)+Math.cos(phase*2)*.016*gaitWeight,0];
-   qi('pelvis',0,Math.sin(phase)*.055*gaitWeight,.018*Math.sin(phase)*gaitWeight);
-   qi('spine',pose.torso+reaction.torso*.65+(run?.10:.035)*gaitWeight+breathe*.007,-sway*.068*gaitWeight,0);
-   qi('chest',0,-sway*.028*gaitWeight,.015*Math.sin(t*.9)*(1-gaitWeight));
+   qi('pelvis',0,Math.sin(phase)*.055*gaitWeight+reaction.yaw*.3,.018*Math.sin(phase)*gaitWeight);
+   qi('spine',pose.torso+reaction.torso*.65+(run?.10:.035)*gaitWeight+breathe*.007,-sway*.068*gaitWeight+reaction.yaw*.7,reaction.torsoRoll*.5);
+   qi('chest',reaction.torso*.35,-sway*.028*gaitWeight,.015*Math.sin(t*.9)*(1-gaitWeight)+reaction.torsoRoll*.5);
    qi('neck',-.02+pose.head*.3+reaction.head*.3+ail.head*.3,Math.sin(t*.41)*.023*(1-gaitWeight));
-   qi('head',pose.head*.7+reaction.head*.7+ail.head*.7,-sway*.024*gaitWeight,Math.sin(t*.73)*.008);
+   qi('head',pose.head*.7+reaction.head*.7+ail.head*.7,-sway*.024*gaitWeight,Math.sin(t*.73)*.008+reaction.headRoll);
    scale[3]=[1+breathe*.0025,1+breathe*.003,1+breathe*.005];
    const blinkU=(t+1.73)%4.73,blink=hasStatus(p,'sleep',t)||p.action==='sleep'?0.08:blinkU<.15?Math.max(.06,Math.abs(blinkU/.075-1)):1;scale[7]=[1,blink,1];scale[8]=[1,blink,1];
    for(const side of [1,-1]){const s=side===1?'R':'L',key=side===1?'rightArm':'leftArm';let ax=-.055-sway*side*(run?.61:.36)*gaitWeight+reaction[key]+ail.arm,az=-side*.13;
-    if(pose.active){ax=pose[key]+reaction[key]+ail.arm;az=pose[key+'Z']-side*.10;}else if(guard){ax=-.66-sway*side*.10*gaitWeight;az=-side*.16;}
+    if(pose.active){ax=pose[key]+reaction[key]+ail.arm;az=pose[key+'Z']-side*.10;}else if(guard){ax=-.66-sway*side*.10*gaitWeight;az=-side*.16;ax+=reaction[key];}
+    az+=reaction[key+'Z'];
     if(p.action==='carry'){ax=-1.12;az=-side*.26;}if(p.action==='wave'&&side===1){ax=-2.3;az=.15+Math.sin(t*5)*.18;}
     qi('arm.'+s,ax,side*.025,az);qi('elbow.'+s,-.18-(run?.32:0)*gaitWeight-(guard?.24:0)-Math.max(0,-ax-1)*.14,0,0);qi('hand.'+s,-.04,0,side*.035);qi('fingers.'+s,p.weapon>=0&&side===1?-.28:0);qi('thumb.'+s,0,0,p.weapon>=0&&side===1?-.20:0);
    }
@@ -110,8 +111,16 @@ const CM01 = (()=>{
    for(const side of [1,-1]){const si=side===1?0:1,s=side===1?'R':'L',ti=asset.names.indexOf('thigh.'+s),ki=ti+1,fi=ti+2,toi=ti+3;const facing=p.dir||0,cs=Math.cos(facing),sn=Math.sin(facing),toWorld=(x,z)=>[p.x+cs*x+sn*z,p.z-sn*x+cs*z];
     let foot=st.feet[si];if(!foot){foot=st.feet[si]={anchor:toWorld(side*.165,.025),swing:false,start:toWorld(side*.165,.025),target:toWorld(side*.165,.025),lift:0,yaw:facing,startPhase:0};}
     const normalized=((st.phase+(si?.5:0))%1+1)%1,isSwing=normalized>duty&&gaitWeight>.12;
-    const desired=toWorld(side*.177,.025+(guard?side*.08:0));
-    if(!moving){
+    let desired=toWorld(side*.177,.025+(guard?side*.08:0));
+    const bracing=useGroundIK&&!moving&&reaction.amount>0;
+    const footKey=side===1?'rightFoot':'leftFoot';
+    if(bracing){
+     if(!foot.damageAnchor)foot.damageAnchor=[...foot.anchor];
+     const sx=reaction[footKey+'X'],sz=reaction[footKey+'Z'];
+     foot.anchor=[foot.damageAnchor[0]+cs*sx+sn*sz,foot.damageAnchor[1]-sn*sx+cs*sz];
+     foot.lift=reaction[footKey+'Lift'];foot.swing=foot.lift>1e-6;foot.settle=null;
+    }else if(!moving){
+     foot.damageAnchor=null;
      // Recover a stationary stance with an actual small step. Interpolating a
      // planted anchor on the floor makes both soles skate when motion stops.
      const turn=Math.atan2(Math.sin(facing-foot.yaw),Math.cos(facing-foot.yaw));
@@ -120,10 +129,12 @@ const CM01 = (()=>{
      if(foot.settle){const step=foot.settle;step.elapsed+=dt;const u=clamp(step.elapsed/.24,0,1);foot.anchor=V.lerp(step.from,step.to,smooth(u));foot.lift=step.lift*(1-u)+Math.sin(Math.PI*u)*.11;foot.yaw=step.yaw+step.turn*smooth(u);foot.swing=u<1;if(u>=1){foot.settle=null;foot.lift=0;}}
      else{foot.swing=false;foot.lift=0;}
     }else if(isSwing){
+     foot.damageAnchor=null;
      if(!foot.swing){foot.start=[...foot.anchor];foot.startPhase=normalized;foot.target=toWorld(side*.18,.025+stride*(1-normalized+duty*.5));foot.swing=true;}
      const predicted=toWorld(side*.18,.025+stride*(1-normalized+duty*.5));foot.target=V.lerp(foot.target,predicted,1-Math.exp(-dt*22));
      const u=clamp((normalized-foot.startPhase)/Math.max(.001,1-foot.startPhase),0,1);foot.anchor=V.lerp(foot.start,foot.target,smooth(u));foot.lift=Math.sin(Math.PI*u)*(run?.27:.17)*gaitWeight;foot.yaw=facing;
     }else{
+     foot.damageAnchor=null;
      if(foot.swing){foot.anchor=[...foot.target];foot.swing=false;}foot.lift=0;
     }
     // A reversal can move the hip away before the scheduled toe-off. Release
