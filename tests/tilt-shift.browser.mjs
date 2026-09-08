@@ -3,14 +3,15 @@ import path from 'node:path';
 
 // Run against the built game in CI's existing Chromium/Workers smoke session.
 // QA changes only the disposable browser save; production code stays untouched.
-export async function verifyTiltShift(page, evidence, viewport) {
+export async function verifyTiltShift(page, evidence, viewport, record) {
   const prefix = `${viewport.width}x${viewport.height}-tilt`;
   const report = {passed:false, renderer:'CI Chromium / SwiftShader', stills:[]};
+  record.tiltShift=report; // Retain partial evidence if a later assertion fails.
   const defaults = await page.evaluate(() => {
     const q=window.AERIN_QA, a=q.app, r=a.renderer;
     const result={mode:r.diorama.mode,dof:r.diorama.dof,passes:r.stats.dofPasses};
     a.closed=true; a.stopInput(); a.ui.closeModal();
-    q.age(17); q.place(0,0); q.step(1);
+    q.age(17); q.place(0,0); q.step(1); a.ui.update(a.snapshot);
     r.setQuality('medium'); r.effects=[]; r.weather.setOverride('clear');
     window.__tiltFixture={snapshot:structuredClone(a.snapshot),camera:{x:0,z:-1.5,zoom:16,yaw:.42,pitch:.68},buffers:{}};
     return result;
@@ -79,8 +80,10 @@ export async function verifyTiltShift(page, evidence, viewport) {
   }
 
   // Exercise the actual settings handlers and modal/input path.
-  const saved=await page.evaluate(()=>({profile:JSON.stringify(AERIN_QA.app.profile),world:JSON.stringify(AERIN_QA.sim().exportState())}));
   await page.locator('[data-menu="settings"]').click();
+  // Opening any existing menu stops input and updates lastInput. Compare the
+  // toggles with that established modal state, not the pre-menu input timestamp.
+  const saved=await page.evaluate(()=>({profile:JSON.stringify(AERIN_QA.app.profile),world:JSON.stringify(AERIN_QA.sim().exportState())}));
   await page.locator('[data-diorama-mode="normal"]').click();
   await page.locator('[data-diorama-mode="tilt-shift"]').click();
   await page.locator('[data-diorama-dof="off"]').click();

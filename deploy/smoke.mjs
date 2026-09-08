@@ -103,7 +103,7 @@ try {
     await page.screenshot({path:path.join(evidence,`${viewport.width}x${viewport.height}.png`)});
     if(local && expected.mode==='game' && process.argv.includes('--tilt-shift')) {
       const {verifyTiltShift}=await import('../tests/tilt-shift.browser.mjs');
-      record.tiltShift=await verifyTiltShift(page,evidence,viewport);
+      await verifyTiltShift(page,evidence,viewport,record);
     }
     assert.deepEqual(record.errors,[],'JavaScript page errors');
     assert.deepEqual(record.consoleErrors,[],'Browser console errors');
