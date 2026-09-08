@@ -38,3 +38,18 @@ URL policy. No alternate browser route is used. Visual layout, touch feel and
 device frame pacing require the delivered standalone HTML to be tried in a
 browser. The existing fast DEV CI checks build/tests; it does not run browser
 smoke or provision a branch Preview URL. Integration WORK owns merging.
+
+## Landscape follow-up
+
+Base `develop` / `460d51d`; WORK `work/skill-system-landscape-panel-20260909`.
+Landscape uses a full-height right panel (46vw, bounded 300–600px) with the
+same headerless tabs, description and five-column list. Portrait retains the
+lower panel. ResizeObserver measures the relevant panel edge after rotation;
+the camera eases both its screen-horizontal and screen-vertical offsets, and
+closing clears both. Ground picking uses the composed camera throughout.
+Narrow SVG viewports now account for letterboxing when dragging wheel weights.
+
+`npm test`: 136 PASS. Added landscape framing / rotate / close / picking checks
+at 852×393, 740×720 and 1920×1080 with three yaws; panel measurement transitions;
+and a real weight command driven through a letterboxed wheel. Browser/device
+interaction remains subject to the confirmation scope above.

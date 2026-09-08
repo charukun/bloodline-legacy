@@ -33,6 +33,49 @@ test('camera motion is independent of refresh rate, excluded from portraits, and
  r.framePanel(s,.016,{skillPanelTop:.4,reducedMotion:true});r.framePanel(s,.016,{portrait:true});assert.equal(r.panelShift,0);
 });
 
+test('landscape frames combat left, keeps picking accurate through rotation, and restores both axes',()=>{
+ for(const [width,height,left]of [[852,393,.53],[740,720,.53],[1920,1080,.68]])for(const yaw of [.42,-1.25,2.75]){
+  const r=camera(width,height,yaw),s={player:{x:6.5,z:21,autoFight:'dummy'},actors:[{id:'dummy',x:7.6,z:20,alive:true}]},original=JSON.stringify([s,r.camera]),focus={x:7.05,z:20.5},before=r.project(focus.x,1.1,focus.z);
+  r.framePanel(s,1/60,{skillPanelLeft:left});r.matrix();const first=r.project(focus.x,1.1,focus.z);
+  assert.ok(first.x<before.x&&before.x-first.x<width*.09,'horizontal slide starts without snapping');
+  const settle=options=>{for(let i=0;i<120;i++){r.framePanel(s,1/60,options);r.matrix();const screen=r.project(6,0,20),ground=r.pointToWorld(screen.x,screen.y);assert.ok(Math.hypot(ground.x-6,ground.z-20)<.00001,'ground picking stays aligned during transition');}};
+  settle({skillPanelLeft:left});assert.ok(Math.abs(r.project(focus.x,1.1,focus.z).x/width-left*.5)<.001);
+  assert.ok(Math.abs(r.project(focus.x,1.1,focus.z).y-before.y)<.01,'side panel preserves vertical framing');
+  r.width=393;r.height=852;settle({skillPanelTop:.38});assert.ok(Math.abs(r.project(focus.x,1.1,focus.z).y/852-.38*.53)<.001);assert.equal(r.panelShiftSide,0);
+  r.width=width;r.height=height;settle({skillPanelLeft:left});assert.equal(r.panelShift,0);assert.ok(Math.abs(r.project(focus.x,1.1,focus.z).x/width-left*.5)<.001);
+  settle({});const after=r.project(focus.x,1.1,focus.z);assert.ok(Math.hypot(after.x-before.x,after.y-before.y)<.01);assert.equal(JSON.stringify([s,r.camera]),original);
+  r.framePanel(s,.016,{skillPanelLeft:left,reducedMotion:true});assert.ok(r.panelShiftSide>0);r.framePanel(s,.016,{portrait:true});assert.equal(r.panelShiftSide,0);
+ }
+});
+
+test('panel resize updates the active framing axis and closing clears it',async t=>{
+ const {ui,g,d,w}=fixture(t);let resize,disconnected=false;
+ w.ResizeObserver=class{constructor(fn){resize=fn;}observe(){}disconnect(){disconnected=true;}};
+ let width=393,height=852,panelWidth=381,panelHeight=528;
+ Object.defineProperties(g.renderer.canvas,{clientWidth:{get:()=>width},clientHeight:{get:()=>height}});
+ ui.skills();const panel=d.querySelector('.game-panel');
+ Object.defineProperties(panel,{offsetWidth:{get:()=>panelWidth},offsetHeight:{get:()=>panelHeight}});
+ ui.root.style.paddingBottom='6px';ui.root.style.paddingRight='6px';await flush();
+ assert.ok(Math.abs(ui.skillPanelTop-318/852)<.001);assert.equal(ui.skillPanelLeft,null);
+ width=852;height=393;panelWidth=392;panelHeight=381;resize();
+ assert.equal(ui.skillPanelTop,null);assert.ok(Math.abs(ui.skillPanelLeft-454/852)<.001);
+ width=393;height=852;panelWidth=381;panelHeight=528;resize();
+ assert.equal(ui.skillPanelLeft,null);assert.ok(ui.skillPanelTop>0);
+ ui.closeModal();assert.equal(ui.skillPanelTop,null);assert.equal(ui.skillPanelLeft,null);assert.equal(disconnected,true);
+});
+
+test('wheel drag uses the visible circle when a narrow panel letterboxes the SVG',async t=>{
+ const {sim,p,ui,d,w,sync}=fixture(t);sim.learn(p,4001);p.phaseWeights[0]={4000:1,4001:1};sync();ui.skills();await flush();
+ const svg=d.getElementById('balance-pie');svg.setPointerCapture=()=>{};
+ svg.getBoundingClientRect=()=>({left:100,top:200,width:120,height:200});
+ const send=(target,type,x,y)=>{const e=new w.MouseEvent(type,{clientX:x,clientY:y,bubbles:true,cancelable:true});Object.defineProperty(e,'pointerId',{value:1});target.dispatchEvent(e);};
+ const radius=67*120/208;
+ send(svg.querySelector('[data-handle]'),'pointerdown',160,300+radius);
+ send(svg,'pointermove',160-Math.SQRT1_2*radius,300+Math.SQRT1_2*radius);
+ send(svg,'pointerup',160-Math.SQRT1_2*radius,300+Math.SQRT1_2*radius);
+ const weights=p.phaseWeights[0];assert.ok(Math.abs(weights[4000]/(weights[4000]+weights[4001])-.625)<.001);
+});
+
 test('passives have their own page and inspection never changes active phase weights',async t=>{
  const {sim,p,ui,d,sync}=fixture(t);sim.learn(p,60900);sync();ui.skills();await flush();
  assert.equal(d.querySelectorAll('[data-phase]').length,4);assert.ok(d.querySelector('.skill-overview #pie-wrap'));assert.ok(d.querySelector('.skill-overview #skill-detail'));

@@ -68,7 +68,7 @@ class UI {
   if(!current){this.g.stopInput();this.returnFocus=document.activeElement;this.navigation=[];}
   else if(current!==type&&!this.navigating&&!this.menuSwitch)this.navigation.push({type:current,phase:this.phase,focus,scroll});
   if(current&&current!==type&&type!=='skills')this.g.stopInput();
-  this.skillPanelObserver?.disconnect();this.skillPanelTop=null;
+  this.skillPanelObserver?.disconnect();this.skillPanelTop=null;this.skillPanelLeft=null;
   this.pieDragging=false;this.portraitQueue=this.portraitQueue.filter(q=>q.node.id==='hud-portrait');this.modal=type;if(this.g.renderer.diorama)this.g.renderer.diorama.suspended=type==='lineage';
   for(const n of [this.hud,this.clan])n.inert=true;this.g.renderer.canvas.inert=type!=='skills';
   this.root.className='modal-root visible '+type;
@@ -76,7 +76,11 @@ class UI {
   this.root.innerHTML=`<section id="game-panel" class="game-panel ${['body','lineage','onboarding','wounds'].includes(type)?'parchment':''}" role="dialog" aria-modal="${type!=='skills'}" aria-label="${ESC(title)}">${type==='skills'?'':`<header class="panel-head"><button class="panel-back" aria-label="戻る">${icon('back')}</button><h2>${label(title)}</h2><button class="panel-close" aria-label="閉じる">${icon('close')}</button></header>`}<div class="panel-content">${html}</div></section>`;
   if(type==='skills'){
    const panel=this.root.querySelector('.game-panel');
-   const measure=()=>{if(this.modal!=='skills')return;const h=this.g.renderer.canvas.clientHeight||innerHeight;const top=panel.offsetHeight?h-panel.offsetHeight-(parseFloat(getComputedStyle(this.root).paddingBottom)||0):0;this.skillPanelTop=top>0?clamp(top/h,.25,.8):.40;};
+   const measure=()=>{
+    if(this.modal!=='skills')return;const canvas=this.g.renderer.canvas,w=canvas.clientWidth||innerWidth,h=canvas.clientHeight||innerHeight,style=getComputedStyle(this.root);
+    if(w>h){const left=panel.offsetWidth?w-panel.offsetWidth-(parseFloat(style.paddingRight)||0):0;this.skillPanelLeft=left>0?clamp(left/w,.25,.88):.54;this.skillPanelTop=null;}
+    else{const top=panel.offsetHeight?h-panel.offsetHeight-(parseFloat(style.paddingBottom)||0):0;this.skillPanelTop=top>0?clamp(top/h,.25,.8):.40;this.skillPanelLeft=null;}
+   };
    if(typeof ResizeObserver!=='undefined'){this.skillPanelObserver=new ResizeObserver(measure);this.skillPanelObserver.observe(panel);this.skillPanelObserver.observe(this.g.renderer.canvas);}
    queueMicrotask(measure);
   }
@@ -93,7 +97,7 @@ class UI {
  }
  closeModal(){
   const closing=this.modal,returnId=this.returnFocus?.id;
-  this.skillPanelObserver?.disconnect();this.skillPanelTop=null;
+  this.skillPanelObserver?.disconnect();this.skillPanelTop=null;this.skillPanelLeft=null;
   this.pieDragging=false;this.modal=null;if(this.g.renderer.diorama)this.g.renderer.diorama.suspended=false;this.detail=null;this.navigation=[];this.focusGeneration=(this.focusGeneration||0)+1;
   if(this.hudDock)this.hud.appendChild(this.hudDock);
   this.root.replaceChildren();this.root.className='modal-root';this.mountDock(false);
@@ -150,7 +154,7 @@ class UI {
  drawPie(ids,weights){const markup=this.pieMarkup(ids,weights),wrap=document.getElementById('pie-wrap');wrap.innerHTML=`<svg id="balance-pie" viewBox="0 0 208 200" aria-label="${PHASES[this.phase]}の技の配分">${markup.svg}</svg>`;document.getElementById('pie-legend').innerHTML=markup.legend;const svg=document.getElementById('balance-pie');let drag=null;
   const preview=w=>{const m=this.pieMarkup(ids,w);svg.innerHTML=m.svg;document.getElementById('pie-legend').innerHTML=m.legend;};
   svg.onpointerdown=e=>{const h=e.target.closest('[data-handle]');if(!h||this.pieEntries.length<2)return;e.preventDefault();const entries=[...this.pieEntries],sum=entries.reduce((n,id)=>n+weights[id],0),vals=entries.map(id=>weights[id]/sum),index=+h.dataset.handle;drag={entries,index,vals,before:vals.slice(0,index).reduce((a,b)=>a+b,0),initial:{...weights},pid:e.pointerId};this.pieDragging=true;svg.setPointerCapture(e.pointerId);};
-  svg.onpointermove=e=>{if(!drag||e.pointerId!==drag.pid)return;e.preventDefault();const r=svg.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*208,y=(e.clientY-r.top)/r.height*200,a=(Math.atan2(y-100,x-104)+Math.PI/2+TAU)%TAU/TAU,both=drag.vals[drag.index]+drag.vals[drag.index+1],minimum=Math.min(.005,both*.1),v=clamp(a-drag.before,minimum,both-minimum),w={...drag.initial};drag.entries.forEach((id,i)=>w[id]=(i===drag.index?v:i===drag.index+1?both-v:drag.vals[i])*100);drag.pending=w;preview(w);};
+  svg.onpointermove=e=>{if(!drag||e.pointerId!==drag.pid)return;e.preventDefault();const r=svg.getBoundingClientRect(),scale=Math.min(r.width/208,r.height/200)||1,x=(e.clientX-r.left-(r.width-208*scale)/2)/scale,y=(e.clientY-r.top-(r.height-200*scale)/2)/scale,a=(Math.atan2(y-100,x-104)+Math.PI/2+TAU)%TAU/TAU,both=drag.vals[drag.index]+drag.vals[drag.index+1],minimum=Math.min(.005,both*.1),v=clamp(a-drag.before,minimum,both-minimum),w={...drag.initial};drag.entries.forEach((id,i)=>w[id]=(i===drag.index?v:i===drag.index+1?both-v:drag.vals[i])*100);drag.pending=w;preview(w);};
   const finish=e=>{if(!drag||e.pointerId!==drag.pid)return;if(e.type==='pointerup'&&drag.pending)this.g.command({type:'weights',phase:this.phase,weights:drag.pending});drag=null;this.pieDragging=false;this.renderSkills();};svg.onpointerup=finish;svg.onpointercancel=finish;svg.onlostpointercapture=e=>{if(drag)finish({...e,type:'pointercancel',pointerId:e.pointerId});};
   svg.onkeydown=e=>{const h=e.target.closest('[data-handle]');if(!h||!['ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();e.stopPropagation();const ent=this.pieEntries,i=+h.dataset.handle,sum=ent.reduce((n,id)=>n+weights[id],0),w=Object.fromEntries(ids.map(id=>[id,(weights[id]||0)/sum*100])),d=e.key==='ArrowRight'?1:-1,both=w[ent[i]]+w[ent[i+1]];w[ent[i]]=clamp(w[ent[i]]+d,.5,both-.5);w[ent[i+1]]=both-w[ent[i]];this.g.command({type:'weights',phase:this.phase,weights:w});this.renderSkills();};
  }
