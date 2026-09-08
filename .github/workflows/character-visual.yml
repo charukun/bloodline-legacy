@@ -13,6 +13,7 @@ on:
       - 'public/assets/character/**'
       - 'tests/character*'
       - 'tools/generate_character.py'
+      - 'tools/character_sculpture.py'
       - '.github/workflows/character-visual.yml'
       - 'build.mjs'
       - 'package*.json'
@@ -23,6 +24,7 @@ on:
       - 'public/assets/character/**'
       - 'tests/character*'
       - 'tools/generate_character.py'
+      - 'tools/character_sculpture.py'
       - '.github/workflows/character-visual.yml'
 permissions:
   contents: read

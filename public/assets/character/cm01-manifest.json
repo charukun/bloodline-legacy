@@ -7,17 +7,17 @@
   "lods": [
     {
       "lod": 0,
-      "vertices": 13495,
-      "triangles": 24000,
-      "parts": 120
+      "vertices": 13493,
+      "triangles": 23622,
+      "parts": 143
     },
     {
       "lod": 1,
-      "vertices": 6459,
-      "triangles": 10796,
-      "parts": 120
+      "vertices": 6182,
+      "triangles": 10208,
+      "parts": 130
     }
   ],
-  "bytes": 2301780,
-  "sha256": "5c5e6ac7fa60882e1bc29e9f5173dcaf1051f0c6e060451e991e509662b3702a"
+  "bytes": 2275364,
+  "sha256": "89b2132ea56554d926255110586b36648bce0d973f0125eac15b86e0ac6fe5d9"
 }

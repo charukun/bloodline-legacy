@@ -73,9 +73,12 @@ try{
       await fixture(page);await shot(version+'-gameplay');await fixture(page,{close:true});
       // Same open stretch of existing paving for both close views; no scene
       // object is hidden or moved to make the model look better.
-      await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();p.x=0;p.z=-6;a.renderer.camera.x=0;a.renderer.camera.z=-6;a.snapshot=a.decorate(a.sim.snapshot(p.id,a.seq));a.renderer.render(a.snapshot,0,{freezeCamera:true});});await shot(version+'-close');
+      await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();p.x=0;p.z=17;a.renderer.camera.x=0;a.renderer.camera.z=17;a.snapshot=a.decorate(a.sim.snapshot(p.id,a.seq));a.renderer.render(a.snapshot,0,{freezeCamera:true});});await shot(version+'-close');
       if(version==='after'){
-        await page.evaluate(()=>{const a=AERIN_QA.app;a.renderer.camera.yaw=.85;a.renderer.render(a.snapshot,0,{freezeCamera:true});});await shot('after-quarter');
+        for(const [view,yaw] of [['quarter',.85],['side',1.82],['back',3.2]]){
+          await page.evaluate(yaw=>{const a=AERIN_QA.app;a.renderer.camera.yaw=yaw;a.renderer.render(a.snapshot,0,{freezeCamera:true});},yaw);await shot('after-'+view);
+        }
+        await page.evaluate(()=>{const a=AERIN_QA.app;a.renderer.camera.yaw=.28;a.renderer.render(a.snapshot,0,{freezeCamera:true});});
         await page.keyboard.down('d');await page.evaluate(()=>characterStep(8));await page.keyboard.up('d');await shot('after-run');
         check('updated gloves and boots retain finite joints',await page.evaluate(()=>AERIN_QA.app.renderer.characterMaster.palette.every(Number.isFinite)));
       }
