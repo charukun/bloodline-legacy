@@ -107,6 +107,11 @@ export async function verifyTiltShift(page, evidence, viewport, record) {
   });
   assert.deepEqual(report.exclusions,{village:true,attack:false,outside:false,clan:false});
 
+  // Golden UI keeps nested modal history, so Escape from lineage returns to
+  // settings. Close that parent before exercising real movement input.
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(()=>AERIN_QA.app.ui.modal===null);
+
   // Resume the real application frame loop, then move using its keyboard input.
   await page.evaluate(()=>{
     const q=AERIN_QA,a=q.app,r=a.renderer;
