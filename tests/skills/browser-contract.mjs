@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 export async function verifySkillSlice(page,evidence,viewport) {
  const prefix=path.join(evidence,`skills-${viewport.width}`),report={fixture:'Age/location/time may be prepared through existing QA. Gift, activity, loadout and detail use real UI. No direct skill grant.'};
+ const initial=await page.evaluate(()=>{const a=window.AERIN_QA.app;return {world:a.sim.exportState(),profile:structuredClone(a.profile),playerId:a.playerId};});
  await page.evaluate(()=>{const q=window.AERIN_QA,p=q.player();p.prologue=true;p.releaseAt=q.sim().time+300;p.giftOffer=['bell','stone','feather'];q.app.ui.lastGifts=null;});
  await page.locator('[data-gift="bell"]').click();
  assert.equal(await page.evaluate(()=>window.AERIN_QA.player().skillLife.memories.bell.origin),'family');
@@ -37,5 +38,8 @@ export async function verifySkillSlice(page,evidence,viewport) {
  }
  report.metrics=await page.evaluate(()=>{const a=window.AERIN_QA.app,r=a.renderer,g=r.gl,ext=g.getExtension('WEBGL_debug_renderer_info');return {stats:r.stats,frame:r.frame,backend:ext?g.getParameter(ext.UNMASKED_RENDERER_WEBGL):g.getParameter(g.RENDERER),frameError:a.frameError?.message||null,overflow:document.documentElement.scrollWidth>innerWidth+2};});
  assert.equal(report.metrics.frameError,null);assert.equal(report.metrics.overflow,false);
+ // Leave the next independent renderer smoke in the original scene, without
+ // carrying a combat fixture, open menu or active activity across test suites.
+ await page.evaluate(f=>{const a=window.AERIN_QA.app,s=a.sim.constructor.restore(f.world);a.sim=s;a.profile=f.profile;a.playerId=f.playerId;a.seq=s.seq;a.snapshot=a.decorate(s.snapshot(a.playerId,s.seq));a.ui.closeModal();a.ui.showGame();a.saveProfile();a.saveWorld();},initial);
  return report;
 }

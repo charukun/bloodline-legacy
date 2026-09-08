@@ -6,6 +6,7 @@
 - BASE_BRANCH: `develop`.
 - BASE_COMMIT: `9ee25afc5f67e142adc313813b4289d157d47935` (fetched and checked again 2026-09-08 UTC).
 - WORK_BRANCH: `work/skill-system-life-slice-20260908`.
+- During verification, develop advanced to `07352ad8b46ef5d39b18ac0082c854bab7e4309e` (Tilt-Shift). This commit was merged **into the WORK branch**. Both module sets, UI hooks and independent browser suites are retained; develop itself was not changed.
 - Specification authority: this WORK's user instruction (life experience / inspiration / combo / bloodline constraints); attached Common Development Policy **v5 Ready PR** (`libfile_4c6a969ad0208191b8cdef61320275dc`); Implementation Prompt v2.0 (`libfile_84e08a1e3d6481918c7eb33574935e32`) applies to technical verification. Its older no-GitHub/handoff-only policy is superseded by the user and v5. No newer game-spec text was found in the available source search.
 - Legacy reference: `Bloodline_Legacy_Skill_Slice_Handoff.zip`, Library version 1, `libfile_c5efeb9e9d8c8191a9a7097d5a6ccaaf`; archive CRC verified. Its recovery core/bootstrap/build were not used as implementation authority. The catalog, pure-engine design and regression cases were reviewed and adapted; the narrow integration was implemented against the exact develop core.
 - Existing standalone source, UI and renderer architecture remain. No environment, shader, rig, input recognizer or bootstrap replacement.
@@ -55,6 +56,8 @@ The comparison harness initially reused mutable restored objects between fights,
 Three lives acquired distinct explained sets. A life is allowed to lack one phase; it is not silently gifted a finisher. Footsteps/play life: changing learned loadout from `羽先払い → 綾返し → 夕凪返し` to `羽先払い → 追い枝 → 夕凪返し` changed crawler win time from 12.0s/health65 to 10.6s/health100. It had fewer successful links, showing that link count alone is not the win condition. Across another common pool, the best elite result used a different middle skill than the best crawler/soldier result; another legal combination lost. No global optimal build is claimed from these fixtures.
 
 ## External gates / limitations
+
+First branch CI exposed a shallow-checkout issue: the fixed baseline used by compatibility tests was unavailable. The checkout now fetches history. Skill tests and build then passed on GitHub. After incorporating Tilt-Shift, local skill/render tests passed 45/45; the combined standalone contains 23 modules (~1.89 MB). The deployment tests add six cases. Final CI evidence is linked in the Ready PR.
 
 Agent Cloud Browser rejected local HTTP URLs and the shared file URL under its URL policy. No policy-bypassing local browser execution was used. Agent-managed local Browser/Visual verification is therefore unverified. The repository CI's own existing smoke workflow is the independent build/test gate; its extension covers real gift/activity/revelation/loadout/detail, origin save reload, and three learned-life combat fixtures at desktop/mobile viewports. Its result must be recorded from the actual run before Ready PR submission.
 

@@ -50,6 +50,7 @@ jobs:
         run: |
           node --test tests/skills/*.test.mjs
           node tests/skills/lives.mjs
+      - run: node --test tests/tilt-shift.test.mjs
       - name: Build deployment
         env:
           TARGET: ${{ steps.target.outputs.target }}
@@ -62,7 +63,7 @@ jobs:
       - name: Smoke test through local Workers runtime
         env:
           TARGET: ${{ steps.target.outputs.target }}
-        run: node deploy/smoke.mjs "$TARGET" --local
+        run: node deploy/smoke.mjs "$TARGET" --local --tilt-shift
       - uses: actions/upload-artifact@v4
         with:
           name: deploy-${{ github.sha }}
