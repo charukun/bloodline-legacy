@@ -2,6 +2,10 @@
 
 Base: `develop` / `7cccafa9f25b55e8ac5704f54237626058b1dc55`.
 WORK: `work/skill-system-battle-panel-20260909`.
+During delivery, develop advanced to `bf955ba` (diorama bokeh / motion
+interpolation). This update is merged into the WORK branch. The render path
+retains interpolated snapshots plus panel framing; unknown-skill preservation
+and its compatibility notice remain in the five-column list area.
 
 The consciousness panel now occupies the lower screen. Its upper row pairs the
 allocation wheel with the selected technique's description; the independently
@@ -22,7 +26,7 @@ controls do not send movement to the world. Switching to an ordinary modal
 stops world input. Wardrobe retains its current layout until the user evaluates
 the camera interaction, as requested.
 
-Validation: `npm test` passes 124 cases, including four new camera / real
+Validation: `npm test` passes 133 cases after integration, including four new camera / real
 simulation / UI tests. Camera projection and inverse ground picking cover
 393×852, 740×720 and 852×393 with multiple yaws; transition rate covers
 30 / 60 / 120 Hz. Existing movement, rest, inventory, equipment, save/restore,

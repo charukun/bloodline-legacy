@@ -51,7 +51,7 @@ test('building names follow every rendered frame while the HUD stays throttled',
   const game=Object.assign(Object.create(f.Game.prototype),{
    renderer:f.renderer,snapshot:f.snapshot,screen:'game',lastFrame:0,lastUI:0,
    accumulator:0,sinceSave:0,seq:0,sim:{tick(){ticks++;}},
-   audio:{setListener(){},updateFootsteps(){}},updateMove(){},saveWorld(){}
+   motionInterpolation:{capture(){},reset(){},sample:s=>s},audio:{setListener(){},updateFootsteps(){}},updateMove(){},saveWorld(){}
   });
   const ui=Object.assign(Object.create(f.UI.prototype),{g:game,floatLines:[],portraitQueue:[],worldNodes:new Map(),
    update(s){hudUpdates++;this.updateWorldLabels(s);},toast(){}});

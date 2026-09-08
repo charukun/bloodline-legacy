@@ -68,3 +68,36 @@ test('new texture is original, deterministic and present in the embedded build',
   const html=await fs.readFile(repository+'/dist/index.html','utf8');
   assert.ok(html.includes(png.toString('base64')));assert.ok(html.includes('class GoldenArt extends VillageArt'));
 });
+
+test('terrain stays submitted across village positions, camera rotations and aspect ratios',()=>{
+  const r=scene.r,oldGL=r.gl,oldCamera={...r.camera},oldWidth=r.width,oldHeight=r.height;
+  const terrain=new Map([['slice-terrain',r.static.get('slice-terrain')]]);
+  let draws=0;
+  r.gl={...oldGL,drawArraysInstanced(){draws++;}};
+  try{
+    for(const [width,height] of [[640,1000],[1000,640]])for(const yaw of [.42,2.1]){
+      r.width=width;r.height=height;
+      for(const [x,z] of [[0,-29],[0,-38],[-28,-19],[28,-19],[-25,7],[25,7],[0,25],[1.8,16]]){
+        Object.assign(r.camera,{x,z:z-1.5,yaw,zoom:16});r.matrix();
+        for(const shadow of [false,true]){
+          draws=0;r.drawBatches(terrain,{},shadow);
+          assert.equal(draws,1,`terrain missing at ${x},${z}, ${width}x${height}, yaw ${yaw}, shadow ${shadow}`);
+        }
+      }
+    }
+  }finally{r.gl=oldGL;r.width=oldWidth;r.height=oldHeight;r.camera=oldCamera;r.matrix();}
+});
+
+test('batched grout bounds cover its real footprint and offscreen meshes still cull',()=>{
+  const r=scene.r,oldCamera={...r.camera};
+  try{
+    const m=r.static.get('golden:grout')[0],bounds=r.geometryBounds('golden:grout');
+    assert.ok(bounds.extent[0]*m[0]>10&&bounds.extent[2]*m[10]>10,'scaled grout footprint');
+    // Origin is outside the view, but pavement at the southern end is visible.
+    Object.assign(r.camera,{x:0,z:23,zoom:8,yaw:0});r.matrix();
+    assert.equal(r.visible(m,r.vp,.09,bounds),true);
+    const distant=m.slice();distant[12]+=1000;
+    assert.equal(r.visible(distant,r.vp,.09,bounds),false);
+    assert.equal(r.geometryBounds('golden:grout'),bounds,'static bounds are cached');
+  }finally{r.camera=oldCamera;r.matrix();}
+});

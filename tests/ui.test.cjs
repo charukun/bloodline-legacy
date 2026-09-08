@@ -51,8 +51,8 @@ test('long histories are paged, all records remain reachable, and queues do not 
 test('hide-help preference persists and dismissing one guide is not a persistent setting',t=>{
  const {ui,d,g}=fixture(t);ui.lineage();d.querySelector('[data-dismiss-guide]').click();assert.equal(d.querySelector('.book-guide').hidden,true);assert.ok(!g.profile.hideLineageHelp);ui.lineage();const box=d.getElementById('hide-lineage-help');box.checked=true;box.dispatchEvent(new d.defaultView.Event('change'));ui.lineage();assert.equal(d.querySelector('.book-guide'),null);assert.equal(g.profile.hideLineageHelp,true);
 });
-test('Tilt-Shift controls and lineage suspension survive the UI integration',t=>{
- const {ui,g,d}=fixture(t);ui.settings();d.querySelector('[data-diorama-mode="tilt-shift"]').click();assert.equal(g.renderer.diorama.mode,'tilt-shift');d.querySelector('[data-diorama-dof="strong"]').click();assert.equal(g.renderer.diorama.dof,'strong');d.getElementById('lineage-nav').click();assert.equal(g.renderer.diorama.suspended,true);ui.closeModal();assert.equal(g.renderer.diorama.suspended,false);
+test('Tilt-Shift has strength controls only and preserves lineage suspension',t=>{
+ const {ui,g,d}=fixture(t);ui.settings();assert.equal(d.querySelector('[data-diorama-mode]'),null);assert.equal(d.querySelector('[data-diorama-dof="off"]'),null);assert.equal(g.renderer.diorama.mode,'tilt-shift');d.querySelector('[data-diorama-dof="strong"]').click();assert.equal(g.renderer.diorama.dof,'strong');d.getElementById('lineage-nav').click();assert.equal(g.renderer.diorama.suspended,true);ui.closeModal();assert.equal(g.renderer.diorama.suspended,false);
 });
 test('wounds cannot be presented as good health even at health=100',t=>{
  const {p,api}=fixture(t);

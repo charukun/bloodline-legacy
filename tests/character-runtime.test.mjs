@@ -78,6 +78,26 @@ test('rendering a 30 Hz movement snapshot twice preserves gait phase',()=>{
   const a=once.values.at(-1).palette,b=twice.values.at(-1).palette;
   assert(a.every((v,i)=>Math.abs(v-b[i])<1e-5),'pose depends on render sampling rate');
 });
+
+test('interpolated render positions retain CM01 movement speed between simulation ticks',()=>{
+  vm.runInContext(fs.readFileSync(new URL('../src/render/motion-interpolation.js',import.meta.url),'utf8'),context);
+  const Motion=vm.runInContext('MotionInterpolation',context);
+  for(const hz of [30,60,120]){
+    const r=renderer(),c=new cm.Character(r),p={...player(),room:'village',action:'run'};
+    const room={id:'village',actors:[]},sim={time:0,players:new Map([[p.id,p]]),getRoom:()=>room};
+    const motion=new Motion();let tick=0;
+    for(let frame=0;frame<=hz*2;frame++){
+      const now=frame/hz,wanted=Math.floor(now*30+1e-8)+1;
+      while(tick<wanted){motion.capture(sim,p.id);sim.time=++tick/30;p.z=4+sim.time*3.8;}
+      const snapshot={t:sim.time,player:p,players:[p],actors:[],room};
+      const rendered=motion.sample(snapshot,now*30-(tick-1));
+      r.frame++;c.update(rendered.player,rendered.t);
+      assert.equal(rendered.t,sim.time,'combat time remains authoritative');
+    }
+    assert.ok(Math.abs(c.state.speed-3.8)<.01,`${hz} Hz estimated speed ${c.state.speed}`);
+    assert.equal(c.state.gaitMode,'run');
+  }
+});
 test('accelerating from rest through walk and run preserves planted world anchors',()=>{
   for(const speed of [3.8,5.665,6.8]){
     const points=Array.from({length:91},(_,i)=>({...player(),time:i/30,z:4+Math.max(0,i-3)/30*speed,action:i>3?'run':'idle',dash:speed>6&&i>3?{}:null}));
