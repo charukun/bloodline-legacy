@@ -45,6 +45,10 @@ jobs:
           JS
       - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
       - run: npm test --prefix deploy
+      - name: Verify UI presentation and simulation regression
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm test
       - name: Build deployment
         env:
           TARGET: ${{ steps.target.outputs.target }}
