@@ -9,7 +9,7 @@
   "scripts": {
     "build": "node build.mjs",
     "dev": "vite",
-    "test": "npm run build && node --test tests/skills/*.test.mjs tests/tilt-shift.test.mjs tests/golden-slice.test.mjs deploy/infrastructure.test.mjs tests/ui.test.cjs",
+    "test": "npm run build && node --test tests/character-runtime.test.mjs tests/skills/*.test.mjs tests/tilt-shift.test.mjs tests/golden-slice.test.mjs deploy/infrastructure.test.mjs tests/ui.test.cjs",
     "test:skills:lives": "node tests/skills/lives.mjs",
     "test:skills:performance": "node tests/skills/performance.mjs"
   },

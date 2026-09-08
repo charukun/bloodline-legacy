@@ -7,3 +7,4 @@ deploy/.wrangler/
 __pycache__/
 tests/current/
 tests/skills/generated/
+verification/current/

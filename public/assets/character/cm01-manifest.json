@@ -1,0 +1,23 @@
+{
+  "generator": "generate_character.py",
+  "bones": 31,
+  "drawsPerPass": 1,
+  "materials": 1,
+  "atlasResolution": 512,
+  "lods": [
+    {
+      "lod": 0,
+      "vertices": 13534,
+      "triangles": 24431,
+      "parts": 100
+    },
+    {
+      "lod": 1,
+      "vertices": 6568,
+      "triangles": 11230,
+      "parts": 100
+    }
+  ],
+  "bytes": 2315212,
+  "sha256": "e524a572eca8a4872d808fbb558a1c3cf371457cb8059fcb8077279526bab9be"
+}
