@@ -177,3 +177,49 @@ test('attack and hit clocks remain unchanged after character sampling',()=>{
   for(let i=0;i<30;i++)c.update(frozen(JSON.parse(JSON.stringify(p))),10+i/30);
   assert.equal(JSON.stringify(sim.exportState()),before);
 });
+
+test('damage overlays authored skill joints and grounded feet without replacing either motion',()=>{
+  const time=1.31,skill={...player(),time,action:'attack',attackSkill:60020,currentSkill:60020,actionStarted:1,actionUntil:2};
+  const hit={...skill,hitReactAt:1.2,hitReactUntil:1.92,hitMotionId:1,hitPart:'leftArm',hitDir:Math.PI/2,hitSeverity:'heavy',hitStrength:1};
+  const skillOnly=poseSequence([skill]).values[0],damageOnly=poseSequence([{...player(),time,hitReactAt:1.2,hitReactUntil:1.92,hitMotionId:1,hitPart:'leftArm',hitDir:Math.PI/2,hitSeverity:'heavy',hitStrength:1}]).values[0];
+  const combined=poseSequence([hit]).values[0];
+  const difference=(a,b)=>Math.max(...a.map((v,i)=>Math.abs(v-b[i])));
+  assert.equal(combined.metrics.animation,'hit');
+  assert(combined.palette.every(Number.isFinite));
+  assert(difference(combined.palette,skillOnly.palette)>.01,'damage contribution was erased');
+  assert(difference(combined.palette,damageOnly.palette)>.01,'authored skill contribution was erased');
+  assert(combined.feet.every(f=>f.error<.035&&f.soleY>=f.floor-.006),'combined foot targets remain grounded and reachable');
+});
+
+test('directional strong hits keep support soles grounded through recoil and recovery',()=>{
+ for(const part of ['head','torso','rightArm','leftLeg'])for(const direction of [0,Math.PI/2,Math.PI,-Math.PI/2]){
+  const points=Array.from({length:91},(_,i)=>({...player(),time:1+i/60,hitReactAt:1,hitReactUntil:1.72,hitMotionId:1,hitPart:part,hitDir:direction,hitSeverity:'heavy',hitStrength:1}));
+  const {values}=poseSequence(points);let slip=0;
+  for(let i=1;i<values.length;i++)for(let side=0;side<2;side++){
+   const a=values[i-1].feet[side],b=values[i].feet[side];
+   if(!a.swing&&!b.swing)slip=Math.max(slip,Math.hypot(b.actual[0]-a.actual[0],b.actual[2]-a.actual[2]));
+  }
+  assert(slip<.012,`${part} ${direction} support slip ${slip}`);
+  assert(values.every(v=>v.feet.every(f=>f.error<.035&&f.soleY>=f.floor-.006)),'finite reach and no ground penetration');
+  assert(values.every(v=>v.palette.every(Number.isFinite)));
+ }
+});
+test('alternating repeated hits preserve continuous foot targets and settle by the existing deadline',()=>{
+ let fields={};const points=Array.from({length:151},(_,i)=>{
+  const time=1+i/120;if(i%12===0&&i<96)fields={hitReactAt:time,hitReactUntil:time+.72,hitMotionId:i/12+1,hitDir:i%24?Math.PI/2:-Math.PI/2};
+  return {...player(),time,...fields,hitPart:'leftLeg',hitSeverity:'heavy',hitStrength:1};
+ });
+ const {values}=poseSequence(points);
+ for(let i=1;i<values.length;i++)for(let j=0;j<2;j++)assert(Math.hypot(...values[i].feet[j].actual.map((x,k)=>x-values[i-1].feet[j].actual[k]))<.06,'no foot teleport on re-hit');
+ assert(values.every(v=>v.palette.every(Number.isFinite)));
+});
+
+test('interrupted attack releases the last arm pose beneath immediate impact without changing deadlines',()=>{
+ const r=renderer(),c=new cm.Character(r),p={...player(),action:'attack',attackSkill:4100,actionStarted:.7,actionUntil:1.5};
+ for(let i=0;i<12;i++){r.frame++;c.update({...p},.8+i/60);}
+ const arm=cm.asset.names.indexOf('arm.R'),old=c.transforms[arm];
+ const hit={...p,action:'hit',hitReactAt:.99,hitReactUntil:1.71,hitMotionId:1,hitSeverity:'heavy',hitPart:'torso',hitDir:Math.PI};
+ r.frame++;c.update(hit,.99);const next=c.transforms[arm];
+ assert(Math.hypot(...[0,1,2].map(k=>old[k]-next[k]))<.5,'arm cannot snap to bind pose at contact');
+ assert.equal(hit.actionUntil,1.5);assert.equal(hit.hitReactUntil,1.71);
+});

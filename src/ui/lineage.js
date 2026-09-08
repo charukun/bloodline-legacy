@@ -35,7 +35,7 @@ class UILineage {
  }
  markup(clan=false){
   const legacy=this.g.getLegacy(),p=this.g.profile,records=[...(legacy.records||[])].reverse(),current=this.current();
-  return `<div class="family-book"><div class="book-title"><span class="book-emblem" aria-hidden="true">${icon('leaf')}</span><div><span class="book-eyebrow">${ESC(p.clan||'一族')}の記録</span><h2>血の系譜</h2><p>つながる想いが、あしたをつくる。</p></div></div>${!p.hideLineageHelp?`<aside class="book-guide"><span aria-hidden="true">${icon('book')}</span><div><p>命を終えると、最も使った技がひとつ、系譜に刻まれます。</p><small>受け継がれるのは、技だけじゃない。生きた証だよ。</small><label><input id="hide-lineage-help" type="checkbox">次回から表示しない</label></div><button class="guide-dismiss" data-dismiss-guide aria-label="系譜の説明を閉じる">${icon('close')}</button></aside>`:''}${this.banners(clan,records,current)}<div class="book-spread">${this.recordsMarkup(records,legacy)}<aside class="book-sidebar">${this.selection(legacy)}${this.currentMarkup(current,clan)}${clan?`<section class="birth-chapter"><h3>${this.g.canResume()?'次の命の名前':'新しい命の名前'}</h3><label for="life-name">名</label><input id="life-name" maxlength="12" placeholder="風にまかせる" value="${ESC(p.name)}"><p>名前を空けておくと、風が名付けます。</p></section>`:''}</aside></div></div>`;
+  return `<div class="family-book"><div class="book-title"><span class="book-emblem" aria-hidden="true">${icon('leaf')}</span><div><span class="book-eyebrow">${ESC(p.clan||'一族')}の記録</span><h2>血脈の系譜</h2><p>つながる想いが、あしたをつくる。</p></div></div>${!p.hideLineageHelp?`<aside class="book-guide"><span aria-hidden="true">${icon('book')}</span><div><p>命を終えると、最も使った技がひとつ、系譜に刻まれます。</p><small>受け継がれるのは、技だけじゃない。生きた証だよ。</small><label><input id="hide-lineage-help" type="checkbox">次回から表示しない</label></div><button class="guide-dismiss" data-dismiss-guide aria-label="系譜の説明を閉じる">${icon('close')}</button></aside>`:''}${this.banners(clan,records,current)}<div class="book-spread">${this.recordsMarkup(records,legacy)}<aside class="book-sidebar">${this.selection(legacy)}${this.currentMarkup(current,clan)}${clan?`<section class="birth-chapter"><h3>${this.g.canResume()?'次の命の名前':'新しい命の名前'}</h3><label for="life-name">名</label><input id="life-name" maxlength="12" placeholder="風にまかせる" value="${ESC(p.name)}"><p>名前を空けておくと、風が名付けます。</p></section>`:''}</aside></div></div>`;
  }
  renderClan(){
   const ui=this.ui,scroll=ui.clan.scrollTop;
@@ -55,7 +55,7 @@ class UILineage {
  open(){
   if(this.ui.modal!=='lineage')this.limit=12;
   this.signature=this.liveSignature();
-  this.ui.open('lineage','血の系譜',this.markup());this.bind(this.ui.root,false);
+  this.ui.open('lineage','血脈の系譜',this.markup());this.bind(this.ui.root,false);
  }
  liveSignature(){
   const p=this.current(),l=this.g.getLegacy();

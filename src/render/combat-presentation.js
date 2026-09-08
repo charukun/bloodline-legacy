@@ -23,7 +23,7 @@ class CombatPresentation{
    Math.atan2(d[0],d[2]),0,Math.atan2(Math.hypot(d[0],d[2]),d[1]),4,alpha,r.fxBatches);
  }
  cut(a,skill,beat,duration,full){
-  const r=this.r,shape=skill.animation||'slash',age=(beat-.43)*duration;
+  const r=this.r,shape=SkillMotion.shape(skill),age=(beat-.43)*duration;
   // The pose cuts from .25 to .43 of each beat; no luminous arc in recovery.
   if(beat<.27||age>.085)return;
   const sweep=clamp((beat-.27)/.16,0,1),fade=age<0?.35+sweep*.65:(1-age/.085)**2;
@@ -38,7 +38,7 @@ class CombatPresentation{
   if(['slam','leap','judgement'].includes(shape)){
    this.needle(local(0,2.05,.35),local(0,1.8-sweep*1.35,reach*.8),.055,color,fade*.85);return;
   }
-  if(['cast','roar','counter','backflip'].includes(shape))return;
+  if(['cast','roar','counter','backflip','bow'].includes(shape))return;
   // Shared, continuous, feather-thin ribbon; both ends taper to a point.
   const spin=shape==='spin'||shape==='eclipse',arc=spin?2.4:1.5;
   const odd=(shape==='cross'||shape==='double')&&Math.floor(full)%2?-1:1;
@@ -52,7 +52,7 @@ class CombatPresentation{
    }
    RG_CACHE.set(key,{positions:new Float32Array(P),normals:new Float32Array(N),count:P.length/3,radius:1});
   }
-  const head=-(spin?2.3:1.12)+(spin?4.6:2.25)*sweep;
+  const head=(-(spin?2.3:1.12)+(spin?4.6:2.25)*sweep)*odd;
   r.add(key,a.x,shape==='kick'?.6:1.13,a.z,reach,reach,reach,color,dir+head,spin?.08:.25*odd,0,4,fade*.88,r.fxBatches);
  }
  forget(id){
@@ -67,8 +67,8 @@ class CombatPresentation{
    if(a.telegraph){const q=a.telegraph,u=clamp((t-q.started)/Math.max(.01,q.at-q.started),0,1);for(let j=0;j<3;j++)r.add('gltf:spark-streak',a.x+Math.sin(q.dir??a.dir)*(.8+j*.22),.28,a.z+Math.cos(q.dir??a.dir)*(.8+j*.22),.45,.24,.2,'#db9c63',-(q.dir??a.dir),0,Math.PI/2,4,.2+u*.42,r.fxBatches);}
    let trail=this.trails.get(a.id);const attacking=a.action==='attack'&&a.actionUntil>t&&skill;
    if(attacking){
-    const duration=Math.max(.01,(a.actionUntil-a.actionStarted)/(skill.hits||1));
-    const full=(t-a.actionStarted)/duration,beat=full%1;
+    const clock=SkillMotion.clock(a,t,skill);
+    const duration=clock.duration,beat=clock.beat,full=clock.index+beat;
     this.cut(a,skill,beat,duration,full);
     const tip=r.weaponTips?.get(a.id);
     if(tip&&beat>=.25&&beat<=.48){
