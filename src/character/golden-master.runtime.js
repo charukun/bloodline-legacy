@@ -56,11 +56,8 @@ const CM01 = (()=>{
    this.textures=asset.images.map(i=>{const tx=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tx);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,i);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.generateMipmap(gl.TEXTURE_2D);return tx;});
    this.boneTex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,this.boneTex);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA32F,4,asset.bind.length,0,gl.RGBA,gl.FLOAT,null);this.palette=new Float32Array(asset.bind.length*16);this.transforms=asset.bind.map(()=>rModel());this.globalQ=asset.bind.map(()=>Q.identity());this.lastFrame=-1;this.state=null;this.lod=0;this.silhouette=false;
   }
-  groundAt(x,z){
-   const r=this.r;let y=r.sceneKey.startsWith('village')?.10+.007*Math.sin(x*.8)*Math.cos(z*.7):.10;
-   if(this.groundKey!==r.sceneKey){this.groundKey=r.sceneKey;this.groundCells=new Map();for(const [type,rows]of r.static){if(!['rbox','box','softbox','golden:stone'].includes(type))continue;for(const m of rows){const sx=Math.hypot(m[0],m[2]),sz=Math.hypot(m[8],m[10]),sy=Math.abs(m[5]);if(m[13]<.06||m[13]>.32||sy>.26||sx>8||sz>8)continue;const radius=(sx+sz)*.5;for(let ix=Math.floor(m[12]-radius);ix<=Math.floor(m[12]+radius);ix++)for(let iz=Math.floor(m[14]-radius);iz<=Math.floor(m[14]+radius);iz++){const key=ix+','+iz;if(!this.groundCells.has(key))this.groundCells.set(key,[]);this.groundCells.get(key).push(m);}}}}
-   for(const m of this.groundCells.get(Math.floor(x)+','+Math.floor(z))||[]){const det=m[0]*m[10]-m[8]*m[2];if(Math.abs(det)<1e-8)continue;const dx=x-m[12],dz=z-m[14],u=(dx*m[10]-dz*m[8])/det,v=(dz*m[0]-dx*m[2])/det;const edge=Math.max(Math.abs(u),Math.abs(v));if(edge<.50)y=Math.max(y,m[13]+Math.abs(m[5])*.5-.014*(1-smooth((.50-edge)/.09)));}return y;
-  }
+  groundAt(x,z){return SkillMotion.groundAt(this.r,x,z);}
+
   update(p,t){if(!eligible(p,true)){this.lastFrame=-1;return;}const start=performance.now(),r=this.r;this.owner=p;this.lastFrame=r.frame;let st=this.state;
    const motionT=Number.isFinite(p.renderPoseTime)?p.renderPoseTime:t;
    if(!st||st.id!==p.id||t<st.t||t-st.t>.35||Math.hypot(p.x-st.x,p.z-st.z)>1.5){st=this.state={id:p.id,t,motionT,x:p.x,z:p.z,phase:0,speed:0,feet:[],lastQ:null};}
@@ -81,37 +78,39 @@ const CM01 = (()=>{
    const phase=st.phase*TAU,pose=artPose(p,t),reaction=hitPose(p,t),ail=ailmentPose(p,t),guard=p.guard||p.guardUntil>t||p.autoFight;
    const fall=!p.alive?smooth((t-(p.deathAt??t))/1.12):0;const sampledGround=this.groundAt(p.x,p.z);if(!Number.isFinite(st.ground))st.ground=sampledGround;st.ground+=(sampledGround-st.ground)*(1-Math.exp(-dt*14));const baseY=p.baseY!=null?p.baseY:st.ground-.020;
    const rootQ=Q.euler(pose.pitch+reaction.pitch+ail.pitch+fall*1.48,(p.dir||0)+pose.yaw,pose.roll+reaction.roll+ail.roll);
-   const rootM=matrix([p.x+reaction.x,baseY+pose.y+ail.y-reaction.drop,p.z+reaction.z],rootQ);
+   const rootM=matrix([p.x+reaction.x+Math.cos(p.dir||0)*(pose.weightX||0)+Math.sin(p.dir||0)*(pose.weightZ||0),baseY+pose.y+ail.y-reaction.drop,p.z+reaction.z-Math.sin(p.dir||0)*(pose.weightX||0)+Math.cos(p.dir||0)*(pose.weightZ||0)],rootQ);
    const q=asset.bind.map(()=>Q.identity()),offset=asset.bind.map(()=>[0,0,0]),scale=asset.bind.map(()=>[1,1,1]);
    const qi=(name,x=0,y=0,z=0)=>q[asset.names.indexOf(name)]=Q.euler(x,y,z);
    const sway=Math.sin(phase),breathe=Math.sin(t*1.8+1.1);
    offset[1]=[.011*Math.sin(t*.7)*(1-gaitWeight),-.030-gaitWeight*(run?.106:.072)+Math.cos(phase*2)*.016*gaitWeight,0];
    qi('pelvis',0,Math.sin(phase)*.055*gaitWeight,.018*Math.sin(phase)*gaitWeight);
-   qi('spine',pose.torso+reaction.torso*.65+(run?.10:.035)*gaitWeight+breathe*.007,-sway*.068*gaitWeight,0);
+   qi('spine',pose.torso+reaction.torso*.65+(run?.10:.035)*gaitWeight+breathe*.007,(pose.torsoYaw||0)-sway*.068*gaitWeight,0);
    qi('chest',0,-sway*.028*gaitWeight,.015*Math.sin(t*.9)*(1-gaitWeight));
-   qi('neck',-.02+pose.head*.3+reaction.head*.3+ail.head*.3,Math.sin(t*.41)*.023*(1-gaitWeight));
+   qi('neck',-.02+pose.head*.3+reaction.head*.3+ail.head*.3,-(pose.torsoYaw||0)*.65+Math.sin(t*.41)*.023*(1-gaitWeight));
    qi('head',pose.head*.7+reaction.head*.7+ail.head*.7,-sway*.024*gaitWeight,Math.sin(t*.73)*.008);
    scale[3]=[1+breathe*.0025,1+breathe*.003,1+breathe*.005];
    const blinkU=(t+1.73)%4.73,blink=hasStatus(p,'sleep',t)||p.action==='sleep'?0.08:blinkU<.15?Math.max(.06,Math.abs(blinkU/.075-1)):1;scale[7]=[1,blink,1];scale[8]=[1,blink,1];
    for(const side of [1,-1]){const s=side===1?'R':'L',key=side===1?'rightArm':'leftArm';let ax=-.055-sway*side*(run?.61:.36)*gaitWeight+reaction[key]+ail.arm,az=-side*.13;
     if(pose.active){ax=pose[key]+reaction[key]+ail.arm;az=pose[key+'Z']-side*.10;}else if(guard){ax=-.66-sway*side*.10*gaitWeight;az=-side*.16;}
     if(p.action==='carry'){ax=-1.12;az=-side*.26;}if(p.action==='wave'&&side===1){ax=-2.3;az=.15+Math.sin(t*5)*.18;}
-    qi('arm.'+s,ax,side*.025,az);qi('elbow.'+s,-.18-(run?.32:0)*gaitWeight-(guard?.24:0)-Math.max(0,-ax-1)*.14,0,0);qi('hand.'+s,-.04,0,side*.035);qi('fingers.'+s,p.weapon>=0&&side===1?-.28:0);qi('thumb.'+s,0,0,p.weapon>=0&&side===1?-.20:0);
+    qi('arm.'+s,ax,side*.025,az);qi('elbow.'+s,pose[side===1?'rightElbow':'leftElbow']??(-.18-(run?.32:0)*gaitWeight-(guard?.24:0)-Math.max(0,-ax-1)*.14),0,0);qi('hand.'+s,pose[side===1?'rightWrist':'leftWrist']??-.04,0,side*.035);qi('fingers.'+s,p.weapon>=0&&side===1?-.28:0);qi('thumb.'+s,0,0,p.weapon>=0&&side===1?-.20:0);
    }
    qi('hair',Math.sin(t*4)*.008+gaitWeight*Math.sin(phase-1)*.025,0,0);
    qi('mantle',-.04-gaitWeight*.16+Math.sin(t*2)*.015,Math.sin(phase-.5)*gaitWeight*.06,0);qi('mantle.tip',-.07+Math.sin(phase-1)*gaitWeight*.12,0,Math.sin(t*2.3)*.025);qi('coat.R',Math.sin(phase-.6)*gaitWeight*.06);qi('coat.L',-Math.sin(phase-.6)*gaitWeight*.06);
    // Rotational blending preserves orthonormal transforms, unlike matrix-entry lerp.
-   const amount=reaction.amount>.1||fall>0?1:1-Math.exp(-dt*22);
+   const amount=pose.motionClock?.stage==='attack'||reaction.amount>.1||fall>0?1:1-Math.exp(-dt*22);
    if(st.lastQ)for(let i=1;i<q.length;i++)q[i]=Q.slerp(st.lastQ[i],q[i],amount);st.lastQ=q.map(v=>[...v]);
    const localM=asset.bind.map(()=>rModel()),globalM=asset.bind.map(()=>rModel());
    for(let i=0;i<q.length;i++){const par=asset.parents[i],translation=V.add(V.sub(asset.bind[i],par>=0?asset.bind[par]:[0,0,0]),offset[i]);localM[i]=matrix(translation,q[i],scale[i]);globalM[i]=par>=0?rMultiply(globalM[par],localM[i]):localM[i];this.globalQ[i]=par>=0?Q.mul(this.globalQ[par],q[i]):q[i];}
-   const useGroundIK=!p.seated&&!p.activity&&fall===0&&Math.abs(pose.y)<.22&&Math.abs(pose.rightLeg)<1.2&&Math.abs(pose.leftLeg)<1.2;
+   const useGroundIK=!p.seated&&!p.activity&&fall===0&&(pose.skillMotion||Math.abs(pose.y)<.22&&Math.abs(pose.rightLeg)<1.2&&Math.abs(pose.leftLeg)<1.2);
+   if(pose.skillMotion&&!st.skillFeet)st.skillFeet=st.feet.map(f=>f?{anchor:[...f.anchor],yaw:f.yaw,t,motionT,rootX:p.x,rootZ:p.z,lift:0}:null);
+   if(!pose.skillMotion)st.skillFeet=null;
    let contactError=0,contacts=0;this.footDebug=[];const targets=[];
    for(const side of [1,-1]){const si=side===1?0:1,s=side===1?'R':'L',ti=asset.names.indexOf('thigh.'+s),ki=ti+1,fi=ti+2,toi=ti+3;const facing=p.dir||0,cs=Math.cos(facing),sn=Math.sin(facing),toWorld=(x,z)=>[p.x+cs*x+sn*z,p.z-sn*x+cs*z];
     let foot=st.feet[si];if(!foot){foot=st.feet[si]={anchor:toWorld(side*.165,.025),swing:false,start:toWorld(side*.165,.025),target:toWorld(side*.165,.025),lift:0,yaw:facing,startPhase:0};}
     const normalized=((st.phase+(si?.5:0))%1+1)%1,isSwing=normalized>duty&&gaitWeight>.12;
     const desired=toWorld(side*.177,.025+(guard?side*.08:0));
-    if(!moving){
+    if(pose.skillMotion){ /* Shared combat footwork is applied below. */ }else if(!moving){
      // Recover a stationary stance with an actual small step. Interpolating a
      // planted anchor on the floor makes both soles skate when motion stops.
      const turn=Math.atan2(Math.sin(facing-foot.yaw),Math.cos(facing-foot.yaw));
@@ -131,6 +130,7 @@ const CM01 = (()=>{
     // toward an unreachable old anchor. Only an airborne foot is repositioned.
     const reach=Math.hypot(foot.anchor[0]-desired[0],foot.anchor[1]-desired[1]);
     if(moving&&reach>.60){foot.swing=true;foot.lift=Math.max(foot.lift,.055);foot.anchor=desired.map((v,i)=>v+(foot.anchor[i]-v)*.60/reach);}
+    if(pose.skillMotion){const planted=SkillMotion.foot(p,pose,motionT,side,st.skillFeet);Object.assign(foot,planted,{target:[...planted.anchor],settle:null});}
     const floor=Math.max(this.groundAt(foot.anchor[0],foot.anchor[1]),this.groundAt(foot.anchor[0]+Math.sin(foot.yaw)*.15,foot.anchor[1]+Math.cos(foot.yaw)*.15));
     const worldAnkle=[foot.anchor[0],floor+.125+foot.lift,foot.anchor[1]];
     targets.push({side,si,s,ti,ki,fi,toi,foot,floor,worldAnkle});
