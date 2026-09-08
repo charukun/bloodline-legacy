@@ -2,9 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import {compileCatalog} from '../tools/skill-catalog.mjs';
 
 const ctx=vm.createContext({console,performance,requestAnimationFrame(){}});
-for(const file of ['legacy/dialogue.js','legacy/core.js','render/motion-interpolation.js','legacy/game.js'])
+ctx.BL_SKILL_DEFINITIONS=compileCatalog(JSON.parse(fs.readFileSync(new URL('../src/skills/catalog-source.json',import.meta.url),'utf8')));
+for(const file of ['legacy/dialogue.js','legacy/core.js','skills/engine.js','skills/runtime.js','render/motion-interpolation.js','legacy/game.js'])
  vm.runInContext(fs.readFileSync(new URL('../src/'+file,import.meta.url),'utf8'),ctx);
 const {Simulation,Game,MotionInterpolation}=vm.runInContext('({Simulation,Game,MotionInterpolation})',ctx);
 const STEP=1/30;

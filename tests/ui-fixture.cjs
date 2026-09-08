@@ -2,10 +2,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 const {JSDOM} = require('jsdom');
 const root = path.resolve(__dirname,'..');
-const sourceFiles = ['legacy/dialogue.js','legacy/core.js','ui/presentation.js','legacy/ui.js','legacy/game.js'];
+const sourceFiles = ['legacy/dialogue.js','legacy/core.js','skills/engine.js','skills/runtime.js','ui/presentation.js','legacy/ui.js','legacy/game.js','skills/presentation.js'];
 const flush = () => new Promise(resolve=>queueMicrotask(resolve));
 function fixture(t, uiSource) {
- const code=sourceFiles.map(n=>n==='legacy/ui.js'&&uiSource?uiSource:fs.readFileSync(path.join(root,'src',n),'utf8')).join('\n');
+ const compiler=fs.readFileSync(path.join(root,'tools/skill-catalog.mjs'),'utf8').replaceAll('export ','');
+ const catalog=fs.readFileSync(path.join(root,'src/skills/catalog-source.json'),'utf8');
+ const code=compiler+'\nconst BL_SKILL_DEFINITIONS=compileCatalog('+catalog+');\n'+sourceFiles.map(n=>n==='legacy/ui.js'&&uiSource?uiSource:fs.readFileSync(path.join(root,'src',n),'utf8')).join('\n');
  const dom = new JSDOM('<canvas id="world" tabindex="0"></canvas><div id="clan-screen"></div><div id="hud"></div><div id="world-labels"></div><div id="modal-root"></div><div id="toasts"></div><div id="joystick"><i></i></div>', {url:'https://ui.test/',runScripts:'outside-only'});
  const w = dom.window;
  // DOM unit tests: no browser, GPU, layout or network is simulated or claimed.

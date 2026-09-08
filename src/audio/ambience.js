@@ -9,7 +9,7 @@ class WorldAudio extends AudioEngine{
   if(Number.isFinite(e.x)&&Number.isFinite(e.z)&&this.panNodes.length<24){const pan=c.createPanner(),bus=c.createGain();pan.panningModel='equalpower';pan.distanceModel='inverse';pan.refDistance=5;pan.maxDistance=35;pan.rolloffFactor=.28;pan.positionX.value=e.x;pan.positionY.value=e.type==='step'?.15:1.2;pan.positionZ.value=e.z;bus.connect(pan);pan.connect(old);this.fxBus=bus;this.panNodes.push({pan,bus,end:c.currentTime+2.2});}
   let played=false;try{if(e.type==='step'&&this.listener){const t=c.currentTime;if(t-(this.lastFX.get('step')??-100)>=.11){if(this.rainAmount>.35){this.noise(t,.085,.17,1450,.45);this.noise(t+.008,.13,.11,430,.6);}else if(this.surface==='stone'){this.noise(t,.055,.15,720,1.1);this.tone(46,t,.065,.12,'sine',false,this.fxBus,32);}else this.noise(t,.075,.18,980,.43);this.lastFX.set('step',t);this.effectCount++;played=true;}}
    else if(['pickup','equip','discard'].includes(e.type)){const t=c.currentTime;this.noise(t,.07,.12,e.type==='equip'?1500:700,.75);this.tone(e.type==='equip'?82:76,t,.18,.05,'triangle',false,this.fxBus);played=true;}
-   else played=super.fx(e);
+   else played=SkillPresentation.sound(this,e)||super.fx(e);
   }finally{this.fxBus=old;}return played;
  }
 }

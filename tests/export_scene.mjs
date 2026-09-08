@@ -5,7 +5,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import vm from 'node:vm';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createCanvas, Image } from '@napi-rs/canvas';
 
 export const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -14,6 +14,18 @@ export async function loadScene(root = repository, options = {}) {
   const files = ['legacy/dialogue.js', 'legacy/core.js', 'legacy/render_math.js',
     'legacy/motion.js', 'legacy/art.js', 'render/tilt-shift.js', 'render/shaders.js', 'render/renderer-base.js',
     'assets/loader.js', 'world/environment.js'];
+  // The optional life-skill extension is part of the target core's dependencies.
+  // Frozen pre-skill checkouts remain supported by this diagnostic exporter.
+  let skillDefinitions = [];
+  const hasSkills = await fs.access(path.join(root, 'src/skills/engine.js')).then(() => true, e => {
+    if (e.code === 'ENOENT') return false;
+    throw e;
+  });
+  if (hasSkills) {
+    files.splice(2, 0, 'skills/engine.js', 'skills/runtime.js');
+    const {compileCatalog} = await import(pathToFileURL(path.join(root, 'tools/skill-catalog.mjs')));
+    skillDefinitions = compileCatalog(JSON.parse(await fs.readFile(path.join(root, 'src/skills/catalog-source.json'), 'utf8')));
+  }
   try { await fs.access(path.join(root, 'src/world/golden-slice.js')); files.push('world/golden-slice.js'); } catch {}
   files.push('weather/weather.js', 'character/rig.js', 'render/combat-presentation.js', 'render/adapter.js');
   const assets = {};
@@ -26,7 +38,7 @@ export async function loadScene(root = repository, options = {}) {
     atob: s => Buffer.from(s, 'base64').toString('binary'),
     options: { width: 960, height: 720, x: 1.8, z: 16, zoom: 16, yaw: .42, pitch: .68,
       seed: 7349, time: 0, weather: 'clear', quality: 'medium', ...options },
-    VISUAL_ASSETS: assets,
+    VISUAL_ASSETS: assets, BL_SKILL_DEFINITIONS: skillDefinitions,
   });
   const code = (await Promise.all(files.map(f => fs.readFile(path.join(root, 'src', f), 'utf8')))).join('\n');
   vm.runInContext(code, ctx);
