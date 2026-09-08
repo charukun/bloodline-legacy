@@ -4,7 +4,7 @@
 
 移行の基準はcommit `383a1eef7adde83c22073c74982052b3a75a2b5c`。`BRANCH_STRATEGY.md` と `deploy/migrate-branches.mjs` に従いdevelopを作成・read-back後、正式なImplementation Source of Truthをdevelopへ切り替える。mainはProduction、stagingはPre-production、work/current-handoffは初期搬入のhistorical branchとする。
 
-**develop作成済み。CI/CD設定の反映を進めていますが、Cloudflareへは未接続です。**
+**develop移行・全35ファイルread-back・CI/CD設定反映済み。Cloudflareへは未接続です。**
 初回作業の正確な順序・反映一覧は `GITHUB_CICD_INSTRUCTIONS.md` を使用してください。
 まず `DEPLOYMENT.md` の初回セットアップを完了し、DEV/STAGING実URLのゲーム起動確認結果を追記してください。このファイルがあるだけで「自動公開可能」と判断しないこと。
 

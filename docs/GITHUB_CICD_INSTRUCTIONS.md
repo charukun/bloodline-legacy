@@ -9,9 +9,11 @@
 - PR #1 `Import current Bloodline Legacy game handoff` はOpen/未merge、main向けのhistorical import PR。変更していない。
 - `work/current-handoff` HEADは `383a1eef7adde83c22073c74982052b3a75a2b5c`。mainより13 commits/34ファイル追加。
 - 同HEADから `develop` を作成し、GitHub画面で指定SHAへの一致をread-back確認した。その後CI/CD専用ファイルの追加を開始した。元ゲーム35ファイルへの変更なし。
-- 全35ファイルの再取得・SHA256照合は別WORKへ引継ぎ。Cloud BrowserのZIP取得はURLポリシーで拒否され、回避していない。
+- 全35ファイルの再取得・SHA256照合はGitHub Actions内で成功済み（commit `52409ba735fb495c10252bc9eb060ca351745d1b`、[run](https://github.com/charukun/bloodline-legacy/actions/runs/34174723377)）。handoff35/develop35の一致、履歴保持、生成物不在、main/PR #1保持を確認。正式Source of Truthはdevelop。Cloud BrowserのZIP取得制限は回避せず、外部転送なしの検証で完了した。
 - staging未作成、mainはREADMEのみのまま。Cloudflareはセキュリティ検証画面で停止、Worker/URL/Secret未設定。
-- 復旧ソースBuild、DEV/STAGING asset byte照合、本番待機ページBuild、基盤テスト5件はPASS。GitHub Actions/WebGL自動smoke/公開検証の成功はまだ報告しない。
+- 復旧ソースBuild、DEV/STAGING asset byte照合、本番待機ページBuild、基盤テスト5件はPASS。GitHub ActionsでもBuild/基盤5テスト/asset照合はPASS。WebGL smokeのガイド操作timeoutは修正後[run #3](https://github.com/charukun/bloodline-legacy/actions/runs/34175045157)でPASS。公開検証は未実施。
+
+CI/CD設定20ファイルはdevelopへ反映済み。初回read-backも成功したため初回専用stepと追加PR読取権限を通常workflowから削除した。公開ゲートCICD_ENABLED=falseはread-back確認済み。残作業はCloudflare接続、DEV実URL検証、その後のstaging作成と本番待機基盤。
 
 この文書の「未完了」は初回引継ぎ時点。必ず現在のGitHub状態を読み、既に反映されたファイルを重複commitしない。
 
@@ -33,7 +35,7 @@ node deploy/migrate-branches.mjs --verify-develop
 
 未作成の場合のみ `node deploy/migrate-branches.mjs --develop` を使う。verify-developは書込せず、履歴の祖先関係と全35 blobを再取得して `docs/RECOVERY_SOURCE_SHA256.json` のSHA256/bytesと照合する。`deploy/evidence/migration/verify-develop.json` のcompleted=trueとverifiedFiles=35を確認。refが照合中に進んだら停止して再監査する。
 
-CLIがない場合はRepository variable `VERIFY_INITIAL_HANDOFF=true` を登録し、developへのpushでworkflowの初回read-back stepを実行できる。ソースを外部へ転送せずGitHub Actions内部で同じscriptが全35 blobを検証する。step成功とartifactのcompleted=true/verifiedFiles=35を確認後、変数をfalseへ戻す。通常開発時に元35ファイルのhashへ固定し続けない。
+初回はGitHub Actions内の一時的なread-back stepで成功した。このstepは通常workflowから削除済み。再監査が必要な場合は上記CLI scriptを使用する。
 
 または同じ検証を認証済み経路で実施する。Git treeのrecursive一覧で元35パスを確認し、blobを再取得しSHA256/bytesを照合する。追加CI/CDファイルは許容するが、元ゲーム35ファイルの一致と `dist/`, `node_modules/`, `deploy/out/`, `deploy/evidence/` の不在を確認する。主要ファイルは `build.mjs`, `package.json`, `src/bootstrap.js`, `src/render/renderer-base.js`, `public/assets/village-kit.glb`。単なるbranch名表示だけで全ファイルread-back成功と報告しない。
 
@@ -65,7 +67,7 @@ CLIがない場合はRepository variable `VERIFY_INITIAL_HANDOFF=true` を登録
 
 ## C. GitHub Repository Settings
 
-- Settings → Actions → General: Actionsを有効にし、`actions/checkout`, `setup-node`, `upload-artifact`, `download-artifact` の実行を許可。workflowはcontents:readのみを使用する。不要なwrite権限を付けない。
+- Settings → Actions → General: Actionsを有効にし、`actions/checkout`, `setup-node`, `upload-artifact`, `download-artifact` の実行を許可。通常workflowはcontents:readのみを使用する。不要なwrite権限を付けない。
 - Settings → Secrets and variables → Actions → Variables: 下表のRepository variablesを登録。
 - 同ページのSecrets: 下表のRepository secretsを登録。値をsource/チャット/ログへ貼らない。
 - `CICD_ENABLED` は初期false。Cloudflare既存資産確認、全URL確認、Secrets登録、ソース照合が完了してからtrue。
@@ -74,7 +76,6 @@ CLIがない場合はRepository variable `VERIFY_INITIAL_HANDOFF=true` を登録
 
 | 種別 | 名称 | 値の決定元 |
 | --- | --- | --- |
-| Variable | VERIFY_INITIAL_HANDOFF | 初回のみtrue。Actions内で全35ファイルread-back成功後falseに戻す |
 | Variable | CICD_ENABLED | 初期false、接続準備完了後true |
 | Variable | CLOUDFLARE_ACCOUNT_ID | 対象Cloudflare accountの実ID |
 | Variable | FIXED_URL_DEV | DEV Workerの実在workers.dev固定URL |
@@ -147,3 +148,7 @@ Build/Test失敗時はneeds:buildでDeployを止める。失敗assertを削除�
 通常のGitHub反映WORKは、handoff差分→develop→同SHAのCI/DEV→固定URL→ゲームsmoke→結果報告まで。staging/mainは別途昇格指示がある時だけ。
 
 禁止: force push、history rewrite、branch削除、PR #1の勝手なmerge/close、mainへの開発版直接投入、既存Production/domain/data破壊、Secret埋込み。404をRepository不存在と断定しない。
+
+最新CI実績: commit `ec44df84d04ab1a31756f7a35a399db033ddac8a`、[run #3](https://github.com/charukun/bloodline-legacy/actions/runs/34175045157)、Build/Test/ローカルWorkers配信のdesktop/mobile WebGL smoke PASS。公開ゲートfalseのためDeploy skipped。固定URLでの公開検証は未実施。
+
+設定上の残件: Repository variable VERIFY_INITIAL_HANDOFF=trueが残っている。Web UIでの値更新・削除が保存されなかったため、完了済みの初回専用stepをworkflowから削除して参照を終了した。この変数は通常CI/CDに影響しない。後続WORKで不要変数として整理できる。

@@ -1,18 +1,24 @@
 # Bloodline Legacy — 正式Branch Strategy
 
-指定方針: 2026-09-08 JST。**develop作成済み・全35ファイルの独立したread-back待ち**。
+指定方針: 2026-09-08 JST。**develop移行・全35ファイルread-back完了。正式Source of Truthはdevelop**。
 
 | Branch | 移行後の正式な役割 | 現在の実施状態 |
 | --- | --- | --- |
-| develop | Development / Implementation Source of Truth、DEV配信 | 基準commitから作成しHEAD一致確認済み。全35ファイルの再取得照合は未完了 |
+| develop | Development / Implementation Source of Truth、DEV配信 | 基準commitから作成。GitHub Actionsで全35ファイルSHA256照合成功 |
 | staging | Pre-production、STAGING配信 | 未作成 |
-| main | Production、PRODUCTION配信 | READMEのみ（ユーザーからの確認情報）。変更なし |
+| main | Production、PRODUCTION配信 | READMEのみ。初回照合でref保持を確認 |
 | work/current-handoff | Initial handoff import / historical branch | 保持。移行が確認されるまでは既存コードの復旧元 |
 
 基準commit: `383a1eef7adde83c22073c74982052b3a75a2b5c`。
 PR #1 `Import current Bloodline Legacy game handoff`: Open / 未merge（認証済みWeb UIでも確認）。本セッションからmerge/close/変更していない。
 
-## 切替の成立条件
+## 移行実績
+
+検証commit: `52409ba735fb495c10252bc9eb060ca351745d1b`。[Actions証跡](https://github.com/charukun/bloodline-legacy/actions/runs/34174723377)。
+`completed=true`, handoff verifiedFiles=35/totalFiles=35、develop verifiedFiles=35/totalFiles=55、sourceOfTruth=developをログで確認。追加20ファイルはCI/CD設定・運用文書。指定handoff履歴の保持、生成物不在、main ref不変、PR #1 Open/未mergeもscriptで確認した。
+初回照合stepは成功後に通常workflowから削除した。移行スクリプトと成功ログは保持。Repository variable VERIFY_INITIAL_HANDOFFはUI更新・削除が保存されずtrueのままだが、通常workflowから参照しないため動作に影響しない。後続WORKは不要変数として整理できる。通常開発時に元35ファイルの内容を固定し続けない。
+
+## 切替の成立条件（実施手順）
 
 1. GitHub上でhandoff branchのHEAD、mainとの差分、PR #1、35ファイルを再取得して確認する。
 2. 新規develop refを指定commitに作成する。既存developが見つかった場合は上書きしない。
@@ -24,14 +30,14 @@ PR #1 `Import current Bloodline Legacy game handoff`: Open / 未merge（認証�
 
 ## 再開用の実行スクリプト
 
-`deploy/migrate-branches.mjs` は認証済み `gh` が利用できる環境で実行する。tokenを引数やファイルへ書く必要はない。ネットワーク認証が復旧するまでは実行未確認。
+`deploy/migrate-branches.mjs` は認証済み `gh` が利用できる環境で実行する。tokenを引数やファイルへ書く必要はない。GitHub Actions内で--verify-developの実行成功を確認済み。
 
 ```bash
 node deploy/migrate-branches.mjs --audit
 node deploy/migrate-branches.mjs --verify-develop
 ```
 
-auditとverify-developは読取のみ。現在はdevelop作成済みなのでverify-developを使用し、全35ファイルのblobを再取得してSHA256照合する。--developはdevelopが未作成の場合の初回作成専用で、既存developを上書きしない。main/handoff refとPR #1を保持する。途中で別WORKが変更した場合はその状態を調査し、forceで突破しない。
+auditとverify-developは読取のみ。初回内容を再監査する場合はverify-developを使用し、全35ファイルのblobを再取得してSHA256照合する。--developはdevelopが未作成の場合の初回作成専用で、既存developを上書きしない。main/handoff refとPR #1を保持する。途中で別WORKが変更した場合はその状態を調査し、forceで突破しない。
 
 CI/CDをdevelopへ導入し、DEV公開smoke合格後に:
 

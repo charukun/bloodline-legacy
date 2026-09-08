@@ -1,13 +1,13 @@
 # Bloodline Legacy / 血脈の系譜 — Deployment運用
 
-状態: **develop作成済み・CI/CD設定をdevelopへ導入・Cloudflare接続待ち・未公開**。2026-09-08 JST。
+状態: **develop移行/read-back完了・CI/CD設定反映済み・Cloudflare接続待ち・未公開**。2026-09-08 JST。
 この文書と設定の存在をCI/CD構築完了と扱わないこと。
 
 ## 調査範囲とSource of Truth
 
 GitHubの正本は `charukun/bloodline-legacy`（Private）。Connectorは404だったが、認証済みGitHub Web UIでRepository、PR #1 Open/未merge、handoff HEAD `383a1eef7adde83c22073c74982052b3a75a2b5c`、mainとの差分（13 commits、34追加ファイル、2677行追加）を確認した。READMEを含め35ファイルという別WORKの確認情報と整合する。
 
-2026-09-08にWeb UIでdevelopを同じcommitから作成し、作成後のdevelop HEADが指定commitと完全一致することを確認した。その後、配信用設定をdevelopへ追加している。ゲームソースは変更していない。全35ファイルの独立した再取得・SHA256照合はまだ未完了。ZIPダウンロードはCloud BrowserのURLポリシーで拒否されたため回避せず、GitHub反映WORKへ `node deploy/migrate-branches.mjs --verify-develop` を引き継ぐ。照合後に正式なSource of Truth切替完了を記録する。
+2026-09-08にWeb UIでdevelopを同じcommitから作成し、作成後のdevelop HEADが指定commitと完全一致することを確認した。その後、配信用設定をdevelopへ追加している。ゲームソースは変更していない。全35ファイルの再取得・SHA256照合はGitHub Actions内で成功した。検証commit `52409ba735fb495c10252bc9eb060ca351745d1b`、[実行証跡](https://github.com/charukun/bloodline-legacy/actions/runs/34174723377)。ZIPダウンロードはCloud BrowserのURLポリシーで拒否されたが、ソースを外部へ転送せずActions内でGitHubの全blobを再取得する安全な方式で完了した。正式なDevelopment / Implementation Source of Truthは **develop**。原35ファイルはすべて保持され、追加20ファイルはCI/CD設定と文書。
 
 Cloudflare ChatGPT Desktop App/Pluginは使用しない。Cloudflare Dashboardへ到達したが「セキュリティ検証の実行」で停止。アカウント内部、既存Worker/Pages/domain、subdomain、tokenは未確認。人間によるセキュリティ検証・ログインの完了が必要。
 
@@ -72,7 +72,6 @@ Private repoの有料Environments機能を必須にしない構成。設定場�
 
 | 種別 | 名前 | 用途 |
 | --- | --- | --- |
-| Variable | VERIFY_INITIAL_HANDOFF | 初回のみtrue。Actions内で全35ファイルread-back成功後falseに戻す |
 | Variable | CICD_ENABLED | 初期は未設定/false。既存環境調査・接続設定完了後にtrue |
 | Variable | CLOUDFLARE_ACCOUNT_ID | 対象アカウントID。Secret値ではない |
 | Variable | FIXED_URL_DEV | 実在確認したDEV固定URL |
@@ -157,9 +156,13 @@ GLB・textures・shadersは元HTMLの埋込バイト列が保たれているかb
 - DEV/STAGINGの配信HTMLと原ビルドの完全一致、JS構文、GLB/画像byte一致: PASS。
 - 本番待機ページのビルド、ゲーム混入なし: PASS。
 - branch/event誤配信防止、environment config、API分離、本番release gate、ビルド失敗時の古い配信物除外: Nodeテストで検証。
-- Workflow YAMLのparse・build依存・continue-on-error不在: PASS。GitHub上でのworkflow実行は未実施。
+- GitHub Actions: 初回read-back、依存インストール、基盤5テスト、ゲームBuild、埋込asset検証はPASS。WebGL smokeはガイド操作の30秒timeoutを検出し、CIの操作待機時間と失敗証跡を修正後、[run #3](https://github.com/charukun/bloodline-legacy/actions/runs/34175045157)でPASS。失敗runのDeployはskipped。
 - Wrangler DEV dry-run: 設定・asset4ファイル・bindingの読込とdry-run終了メッセージまで確認。ただしその後のネットワーク許可処理でセッションがキャンセルされ、正常終了コードは未取得。
 - ローカルWrangler起動/CLI認証確認: ネットワーク許可が決定前にキャンセルされたため完了せず。
-- Browser: ローカルURLは `net::ERR_BLOCKED_BY_CLIENT`。今回のゲーム画面確認・mobile検証・自動browser smoke実行は未実施。
+- Cloud BrowserからscratchローカルURLは `net::ERR_BLOCKED_BY_CLIENT`。Actions内のWrangler/ChromiumでHTMLとWebGL起動を確認。ゲーム/HUD・mobile393×852/desktop1280×800、framebuffer、Console/page/network/HTTP error検証は[run #3](https://github.com/charukun/bloodline-legacy/actions/runs/34175045157)でPASS。
 - GitHub Web UI: Private/PR #1/handoff HEADを確認。develop作成後、指定commitの一致を確認。配信用設定をdevelopへ導入。
-- 全35ファイルの独立したread-back、3 Worker作成、固定URL、Cloudflare接続、公開後検証: **未実施**。
+- 全35ファイルread-back: **PASS**。3 Worker作成、固定URL、Cloudflare接続、公開後検証: **未実施**。
+
+最新CI実績: commit `ec44df84d04ab1a31756f7a35a399db033ddac8a`、[run #3](https://github.com/charukun/bloodline-legacy/actions/runs/34175045157)、Build/Test/ローカルWorkers配信のdesktop/mobile WebGL smoke PASS。公開ゲートfalseのためDeploy skipped。固定URLでの公開検証は未実施。
+
+設定上の残件: Repository variable VERIFY_INITIAL_HANDOFF=trueが残っている。Web UIでの値更新・削除が保存されなかったため、完了済みの初回専用stepをworkflowから削除して参照を終了した。この変数は通常CI/CDに影響しない。後続WORKで不要変数として整理できる。

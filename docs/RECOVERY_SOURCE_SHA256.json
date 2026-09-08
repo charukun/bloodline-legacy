@@ -1,7 +1,7 @@
 {
   "source": "/bloodline-legacy/work-handoff/current/",
   "reportedGitCommit": "383a1eef7adde83c22073c74982052b3a75a2b5c",
-  "githubReadBackVerified": false,
+  "githubReadBackVerified": true,
   "files": {
     "README.md": {
       "sha256": "eea0047f6bf6867511fb267e870c01a0c66aa41a01071606ad76ab1efa282a9d",
@@ -143,5 +143,12 @@
       "sha256": "f5aaad8497e0e27320c90295d31f3fecf96b7ed628bcad3c839063884f71fd7c",
       "bytes": 7561
     }
+  },
+  "verification": {
+    "method": "GitHub Actions gh API blob read-back",
+    "run": "https://github.com/charukun/bloodline-legacy/actions/runs/34174723377",
+    "developCommit": "52409ba735fb495c10252bc9eb060ca351745d1b",
+    "verifiedFiles": 35,
+    "sourceOfTruth": "develop"
   }
 }
