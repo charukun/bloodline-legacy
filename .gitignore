@@ -1,9 +1,10 @@
 node_modules/
 dist/
 deploy/out/
-deploy/node_modules/
 deploy/evidence/
+deploy/.wrangler/
 .wrangler/
 __pycache__/
 tests/current/
+tests/skills/generated/
 verification/current/

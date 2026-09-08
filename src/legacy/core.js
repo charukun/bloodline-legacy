@@ -299,7 +299,7 @@ class Simulation {
   this.seed=seed;this.rng=random(seed);this.mode=mode==='normal'?'normal':'demo';this.yearSeconds=this.mode==='normal'?60:20;this.boatInterval=this.yearSeconds*5;
   this.time=0;this.players=new Map();this.rooms=new Map();this.legacies={};this.events=[];this.seq=0;this.eid=0;this.roomSeq=0;this.abandoned=[];this.makeRoom('village');
  }
- emit(type,data={}){this.events.push({seq:++this.seq,t:this.time,type,...data});if(this.events.length>400)this.events.splice(0,100);}
+ emit(type,data={}){const event={seq:++this.seq,t:this.time,type,...data};this.events.push(event);if(this.events.length>400)this.events.splice(0,100);SkillSystem.onEvent(this,event);}
  getRoom(p){return this.rooms.get(p.room);}
  makeRoom(kind,id){
   const index=++this.roomSeq,seed=(this.seed+index*977)>>>0;
@@ -356,6 +356,7 @@ class Simulation {
    p.weights=p.phaseWeights[0];p.bindings=null;p.loadoutVersion=5;p.gestureKit=false;p.autoFight=null;p.chain=null;p.seated=false;
    p.race=(p.race||0)%4;if(p.weapon>=WEAPONS.length)p.weapon=-1;if(p.age<EQUIP_AGE){p.weapon=-1;p.armor=0;p.shield=false;}
   }
+  SkillSystem.prepare(this,p);
  }
  stopDash(p){p.dash=null;}
  stopActivity(p){p.activity=null;p.activitySince=0;p.activityClock=0;}
@@ -386,13 +387,6 @@ class Simulation {
    return;
   }
   if(p.farewellStage>=0&&p.farewellStage<2&&this.time-p.releaseAt>=(p.farewellStage+1)*4){p.farewellStage++;this.motherSay(p,FAREWELL_LINES[p.farewellStage],4.7);}
- }
- offerInsight(p,school,amount=1){
-  p.training[school]=(p.training[school]||0)+amount;
-  if(p.training[school]<24||this.time-(p.lastInsight??-100)<35)return false;
-  const options=TACTICAL_SKILLS.filter(sk=>!sk.passive&&!sk.miracle&&!sk.occult&&!p.skills.includes(sk.id)&&sk.school===school&&!skillRestriction(p,sk));
-  if(!options.length)return false;
-  const sk=options[Math.floor(this.rng()*options.length)];this.learn(p,sk.id);p.training[school]-=24;p.lastInsight=this.time;return true;
  }
  bindGesture(){return false;}
  equip(p,cmd){
@@ -456,7 +450,7 @@ class Simulation {
  tickChain(p){
   const c=p.chain;
   if(c&&p.alive&&p.combo&&p.stun<=this.time){
-   const sk=skillById(c.id),r=this.getRoom(p);
+   const sk=SkillSystem.active(p,c.id),r=this.getRoom(p);
    while(c.next<c.count&&this.time>=c.start+c.next*c.interval){
     const step=this.attackStepDistance(p,sk)/c.count;if(step>0)this.moveAttackStep(p,r,Math.sin(p.dir)*step,Math.cos(p.dir)*step);
     const index=c.next++;this.performStrike(p,r,sk);this.emit('skillbeat',{player:p.id,room:r.id,id:sk.id,index,x:p.x,z:p.z,dir:p.dir});
@@ -502,17 +496,7 @@ class Simulation {
   this.emit(sk.passive?'passive':'insight',{player:p.id,room:p.room,id,x:p.x,z:p.z});if(id===4020)this.learn(p,4050);return true;
  }
  progressDeed(p,key,amount){p.deeds[key]=(p.deeds[key]||0)+amount;}
- tryInsight(p,trigger){
-  if(p.age<4)return;this.progressDeed(p,trigger,1);
-  if(trigger!=='attack')return;
-  const r=this.getRoom(p),foe=r.actors.filter(e=>e.alive&&dist(e,p)<4.7&&(e.kind==='dummy'||enemiesOnly(e))).sort((a,b)=>dist(a,p)-dist(b,p))[0];
-  if(!foe||p.activity)return;
-  const bonus=insightMultiplier(foe),school=gearSchool(p);this.offerInsight(p,school,bonus);
-  if(p.age>=6&&p.deeds.attack>=20)this.learn(p,4100);
-  if(p.age>=8&&p.deeds.attack>=44)this.learn(p,4101);
-  if(p.passives.includes(4060)&&itemAffinity(p).some(sk=>!p.skills.includes(sk.id)))this.offerInsight(p,'magic',bonus*1.1);
-  if(p.inherit.length&&p.deeds.attack>=32)for(const id of p.inherit){const sk=skillById(id);if(sk&&!skillRestriction(p,sk))this.learn(p,id);}
- }
+ tryInsight(p,trigger){if(p.age>=4)this.progressDeed(p,trigger,1);}
  spend(p,cost,fatigue=0){
   if(!Number.isFinite(cost)||cost<0||p.stamina+.0001<cost)return false;
   p.staminaCap=Math.max(STAMINA.minCap,p.staminaCap-Math.max(0,fatigue));p.stamina=Math.min(p.staminaCap,p.stamina-cost);p.lastExertion=this.time;
@@ -549,6 +533,7 @@ class Simulation {
    if(l>.1){this.stopActivity(p);this.wake(p);}return true;
   }
   if(cmd.type==='cancel-buffer'){p.attackBufferedUntil=0;return true;}
+  if(cmd.type==='skill-read'){p.skillLife.unread=[];return true;}
   if(cmd.type==='weights'){const phase=clamp(Math.trunc(+cmd.phase||0),0,2);p.phaseWeights[phase]=v3Weights(p.skills,cmd.weights);for(const key of Object.keys(p.phaseWeights[phase]))if(skillPhase(skillById(key))!==phase)p.phaseWeights[phase][key]=0;p.weights=p.phaseWeights[0];return true;}
   if(cmd.type==='chat'){const text=cleanText(cmd.text,60);if(!text||this.time-p.lastChat<2.5)return false;this.wake(p);this.stopDash(p);p.input={x:0,z:0};p.speech=text;p.speechUntil=this.time+6;p.lastChat=this.time;this.emit('speech',{player:id,room:r.id,text,x:p.x,z:p.z});return true;}
   if(cmd.type==='board'){if(r.kind!=='village'||p.age<15||Math.hypot(p.x,p.z-28)>5)return false;p.queued=!p.queued;p.activity=null;this.emit('board',{player:id,room:r.id,queued:p.queued});return true;}
@@ -632,9 +617,10 @@ class Simulation {
   target.hitDir=source?Math.atan2(target.x-source.x,target.z-source.z):(target.dir||0)+Math.PI;
  }
  beginComboStrike(p,forcedId=null){
-  const sk=forcedId===null?this.chooseSkill(p,p.combo.band):skillById(forcedId);if(sk&&(skillPhase(sk)!==p.combo.band||!p.skills.includes(sk.id)||skillRestriction(p,sk)))return false;if(!sk){this.notice(p,PHASES[p.combo.band]+'の技が出せない');return false;}
+  let sk=forcedId===null?this.chooseSkill(p,p.combo.band):skillById(forcedId);if(sk&&(skillPhase(sk)!==p.combo.band||!p.skills.includes(sk.id)||skillRestriction(p,sk)))return false;if(!sk){this.notice(p,PHASES[p.combo.band]+'の技が出せない');return false;}
   if(p.wounds.rightArm?.severity==='lost'&&p.wounds.leftArm?.severity==='lost'&&!sk.magic&&!sk.retreat)return false;
-  if(!this.spend(p,sk.cost*(sk.school==='heavy'?1-effectsOf(p,'heavyCost'):1),sk.fatigue))return false;
+  sk=SkillSystem.prepareCast(this,p,sk);
+  if(!this.spend(p,sk.cost*(sk.school==='heavy'?1-effectsOf(p,'heavyCost'):1),sk.fatigue)){SkillSystem.reset(p);return false;}
   if(sk.resource)p.ammo[sk.resource]-=sk.amount||1;
   if(sk.coolYears)p.skillReady[sk.id]=p.age+p.ageFraction+sk.coolYears;
   if(sk.sacrifice){p.lifespan-=sk.sacrifice;p.permanentFatigue+=12;if(p.age+p.ageFraction>=p.lifespan){this.die(p,'禁術に命を捧げた');return true;}}
@@ -650,8 +636,10 @@ class Simulation {
   if(timing.charge===0)this.releaseSkill(p);return true;
  }
  releaseSkill(p){
-  if(!p.pendingSkill||!p.alive)return;this.tickAttackStep(p);const sk=skillById(p.pendingSkill.id);p.pendingSkill=null;
+  if(!p.pendingSkill||!p.alive)return;this.tickAttackStep(p);const sk=SkillSystem.active(p,p.pendingSkill.id);p.pendingSkill=null;
   if(!sk||(sk.requires||[]).some(part=>p.wounds[part]?.severity==='lost')){this.finishCombo(p);return;}
+  const target=p.skillCast?.linked?this.getRoom(p).actors.find(e=>e.id===p.skillCast.target&&e.alive):null;
+  if(target&&sk.tracking){const turn=clamp(angleDiff(Math.atan2(target.x-p.x,target.z-p.z),p.dir),-sk.tracking,sk.tracking);p.dir+=turn;}
   const timing=actionTiming(sk);p.action='attack';p.actionStarted=this.time;p.actionUntil=this.time+timing.swing;p.currentSkill=sk.id;
   if(p.combo)p.combo.awaitUntil=this.time+timing.swing+ACTION_TUNING.comboGrace;
   this.emit('skill',{player:p.id,room:p.room,id:sk.id,x:p.x,z:p.z,dir:p.dir});
@@ -661,7 +649,7 @@ class Simulation {
   p.comboQueued=!!p.autoFight||p.comboQueued;if(sk.exit)p.exitPending=sk.exit;
  }
  finishCombo(p){
-  const sk=skillById(p.currentSkill)||book.get(4000);p.attackStep=null;p.chain=null;p.combo=null;p.comboQueued=false;p.pendingSkill=null;p.exitPending=0;p.cooldown=Math.max(p.cooldown,this.time+actionTiming(sk).recovery);p.action='recover';p.actionStarted=this.time;p.actionUntil=p.cooldown;
+  const sk=SkillSystem.active(p,p.currentSkill)||book.get(4000);SkillSystem.reset(p);p.attackStep=null;p.chain=null;p.combo=null;p.comboQueued=false;p.pendingSkill=null;p.exitPending=0;p.cooldown=Math.max(p.cooldown,this.time+actionTiming(sk).recovery);p.action='recover';p.actionStarted=this.time;p.actionUntil=p.cooldown;
   this.emit('recovery',{player:p.id,room:p.room,x:p.x,z:p.z});
  }
  resolveClash(a,b,r){
@@ -669,7 +657,7 @@ class Simulation {
   const physique=p=>p.kind==='player'?([1, .9, 1.32, .86, .76, 1.35,1.08,1.1][p.race]||1)*(p.age<15?.59+p.age*.027:1):p.bodyScale||1;
   const strength=p=>physique(p)+Math.min(.4,(p.experience||0)*.014)+effectsOf(p,'clash')+(p.kind==='boss'?.9:0)+(p.elite?.22:0);
   const chance=clamp(.5+(strength(a)-strength(b))*.30,.12,.88),winner=this.rng()<chance?a:b,loser=winner===a?b:a;
-  for(const p of [a,b]){p.attackStep=null;p.chain=null;p.telegraph=null;p.pendingSkill=null;p.comboQueued=false;p.action='clash';p.actionStarted=this.time;p.actionUntil=this.time+.7;p.stun=this.time+.7;p.clashUntil=this.time+.7;p.clashWith=p===a?b.id:a.id;p.experience=(p.experience||0)+1;if(p.kind==='player'){p.clashes++;p.combo=null;if(p.clashes>=8)this.learn(p,4052);}}
+  for(const p of [a,b]){p.attackStep=null;p.chain=null;p.telegraph=null;p.pendingSkill=null;p.comboQueued=false;p.action='clash';p.actionStarted=this.time;p.actionUntil=this.time+.7;p.stun=this.time+.7;p.clashUntil=this.time+.7;p.clashWith=p===a?b.id:a.id;p.experience=(p.experience||0)+1;if(p.kind==='player'){p.clashes++;p.combo=null;}}
   r.clashResult??=[];r.clashResult.push({at:this.time+.7,winner:winner.id,loser:loser.id});
   this.emit('clash',{room:r.id,player:a.kind==='player'?a.id:b.kind==='player'?b.id:undefined,x:(a.x+b.x)/2,z:(a.z+b.z)/2,winner:winner.id});
  }
@@ -686,7 +674,7 @@ class Simulation {
   for(const e of potential){
    if(Math.abs(angleDiff(Math.atan2(e.x-p.x,e.z-p.z),p.dir))>sk.arc/2&&!['sleep','eclipse','ring'].includes(sk.area))continue;
    if(count++>=(sk.maxTargets||1))break;
-   if(e.kind==='dummy'){e.action='hit';e.actionStarted=this.time;e.actionUntil=this.time+.5;this.reactToHit(e,p,sk.targets[0]);this.impact(p,e,sk.targets[0],sk.power>=2);this.emit('hit',{room:r.id,target:e.id,source:p.id,x:e.x,z:e.z,kind:'practice',part:sk.targets[0],weapon:p.weapon,skill:sk.id});continue;}
+   if(e.kind==='dummy'){e.action='hit';e.actionStarted=this.time;e.actionUntil=this.time+.5;this.reactToHit(e,p,sk.targets[0]);this.impact(p,e,sk.targets[0],sk.power>=2);this.emit('hit',{room:r.id,target:e.id,source:p.id,x:e.x,z:e.z,kind:'practice',part:sk.targets[0],weapon:p.weapon,skill:sk.id});SkillSystem.contact(this,p,e,sk);continue;}
    e.aggro=true;
    if(sk.area==='sleep'){e.sleepUntil=this.time+(e.elite||e.kind==='boss'?1.4:5.5);e.telegraph=null;continue;}
    if(sk.humanoidOnly&&!e.humanoid){this.notice(p,'足払いはこの姿には通じない。');continue;}
@@ -701,7 +689,7 @@ class Simulation {
     e.counterOpportunity=this.time+1;e.action='guard';this.emit('blocked',{room:r.id,x:e.x,z:e.z});continue;
    }
    if(e.kind==='boss'&&!(e.exposedUntil>this.time)&&!sk.magic){this.emit('blocked',{room:r.id,x:e.x,z:e.z});continue;}
-   const part=sk.targets[Math.floor(this.rng()*sk.targets.length)];this.damageActor(e,p,part,(sk.power+(e.exposedUntil>this.time?.5:0))*(hasStatus(p,'weak',this.time)?.65:1),r);if(e.alive&&sk.status&&sk.power>0)this.applyStatus(e,sk.status.id,sk.status.duration,p,r);
+   const part=sk.targets[Math.floor(this.rng()*sk.targets.length)];this.damageActor(e,p,part,(sk.power+(e.exposedUntil>this.time?.5:0))*(hasStatus(p,'weak',this.time)?.65:1),r);if(e.alive&&sk.status&&sk.power>0)this.applyStatus(e,sk.status.id,sk.status.duration,p,r);if(e.alive&&sk.knockback&&e.kind!=='boss')this.moveAttackStep(e,r,Math.sin(p.dir)*sk.knockback,Math.cos(p.dir)*sk.knockback);SkillSystem.contact(this,p,e,sk);
   }
   this.emit('swing',{player:p.id,room:r.id,x:p.x,z:p.z,dir:p.dir,reach:sk.reach,arc:sk.arc,skill:sk.id,weapon:p.weapon});
  }
@@ -776,8 +764,6 @@ class Simulation {
  tickExploration(p,dt){
   if(p.age<4||p.prologue)return;const area=this.getArea(p),moving=!!p.dash||Math.hypot(p.input.x,p.input.z)>.1;
   if(moving)p.enduranceXP=(p.enduranceXP||0)+dt*(p.dash?.13:.06);
-  if(p.age>=6&&!p.skills.includes(4100)){this.learn(p,4100);p.phaseWeights[1][4100]=1;}
-  if(p.age>=8&&!p.skills.includes(4101)){this.learn(p,4101);p.phaseWeights[2][4101]=1;}
   if(p.activity){
    if(ACTIVITY_DEFS[area]?.id!==p.activity||p.autoFight){this.stopActivity(p);return;}
    p.activityClock+=dt;this.progressDeed(p,p.activity,dt);
@@ -785,28 +771,9 @@ class Simulation {
     p.lastActivityLine=n;p.activityNextAt=this.time+4.1+this.rng()*2.3;
     this.emit('progress',{player:p.id,room:p.room,text:lines[n],x:p.x,z:p.z});
    }
-   if(p.activity==='read'){
-    if(p.deeds.read>=60)this.learn(p,4060);
-    if(p.deeds.read>=240&&p.passives.includes(4060))this.learn(p,4330);
-    if(p.passives.includes(4060))this.offerInsight(p,'magic',dt*.17);
-   }
-   if(p.activity==='pray'){
-    if(p.deeds.pray>=45)this.learn(p,4061);
-    if(p.deeds.pray>=100)this.learn(p,4051);
-    if(p.deeds.pray>=150)this.learn(p,4321);
-    if(p.deeds.pray>=220)this.learn(p,4320);
-   }
-   if(p.activity==='study'){
-    if(p.deeds.study>=45)this.learn(p,4062);
-    if(p.deeds.study>=75)this.learn(p,4010);
-    this.offerInsight(p,'unarmed',dt*.17);
-   }
-   if(p.activity==='observe'){if(p.deeds.observe>=65)this.learn(p,4064);this.offerInsight(p,'heavy',dt*.13);}
-   if(p.activity==='play'){if(p.deeds.play>=60)this.learn(p,4063);p.enduranceXP+=dt*.18;this.offerInsight(p,'light',dt*.12);}
-   if(p.activity==='track'){if(p.deeds.track>=80)this.learn(p,4053);this.offerInsight(p,'light',dt*.15);}
-   if(p.activity==='care')this.offerInsight(p,gearSchool(p),dt*.08);
+   if(p.activity==='play')p.enduranceXP+=dt*.18;
   }
-  if(p.clashes>=12)this.learn(p,4052);
+  SkillSystem.sample(this,p);
  }
  bound(p,r){
   if(r.kind==='village'){
@@ -829,7 +796,7 @@ class Simulation {
    this.tickAttackStep(p);
    if(p.pendingSkill&&this.time>=p.pendingSkill.at)this.releaseSkill(p);
    if(p.combo&&!p.pendingSkill&&p.combo.awaitUntil&&this.time>=p.actionUntil){
-    if(p.comboQueued){const sk=skillById(p.currentSkill)||book.get(4000);p.comboQueued=false;
+    if(p.comboQueued){SkillSystem.complete(this,p);const sk=skillById(p.currentSkill)||book.get(4000);p.comboQueued=false;
      const continuation=false;
      if(continuation)p.combo.repeats++;else{p.combo.band++;p.combo.repeats=0;}
      if(p.combo.band>2||p.combo.total>=7||!this.beginComboStrike(p))this.finishCombo(p);
@@ -927,7 +894,7 @@ class Simulation {
   const legacy=this.legacy(p.owner),memory=strongestMemory(p),id=memory===null?null:Number(memory);
   if(id!==null)legacy.archive=[...new Set([...legacy.archive,id])];
   p.bankedSkills=id===null?[]:[id];
-  const record={id:p.id,clan:p.clan,name:p.name,gen:p.gen,age:p.age,skills:[...p.bankedSkills],skill:id,uses:id===null?0:p.skillUses[id],kills:p.kills,cause:p.cause,alive:false,mode:this.mode,appearance:{race:p.race,gender:p.gender,hair:p.hair,skin:p.skin,age:p.age,appearanceSeed:p.appearanceSeed,weapon:p.weapon,armor:p.armor,shield:p.shield,wounds:JSON.parse(JSON.stringify(p.wounds))}};
+  const record={id:p.id,clan:p.clan,name:p.name,gen:p.gen,age:p.age,skills:[...p.bankedSkills],skill:id,uses:id===null?0:p.skillUses[id],kills:p.kills,cause:p.cause,alive:false,mode:this.mode,skillHistory:SkillSystem.remember(p),appearance:{race:p.race,gender:p.gender,hair:p.hair,skin:p.skin,age:p.age,appearanceSeed:p.appearanceSeed,weapon:p.weapon,armor:p.armor,shield:p.shield,wounds:JSON.parse(JSON.stringify(p.wounds))}};
   const n=legacy.records.findIndex(r=>r.id===p.id);if(n>=0)legacy.records[n]=record;else legacy.records.push(record);p.recorded=true;
   this.emit('banked',{player:p.id,room:p.room,skill:id});return true;
  }
@@ -945,7 +912,7 @@ class Simulation {
  }
  snapshot(id,after=0){const p=this.players.get(id);if(!p)return null;const r=this.getRoom(p);return {version:VERSION,t:this.time,seq:this.seq,mode:this.mode,player:p,room:{id:r.id,kind:r.kind,seed:r.seed,code:r.code,name:r.name,stage:r.stage,kills:r.kills,quota:r.quota,cleared:r.cleared,clans:r.clans,bossDefeated:r.bossDefeated,partySize:r.partySize,fields:r.fields||[],items:r.items||[],abandoned:r.abandoned},actors:r.actors,players:[...this.players.values()].filter(q=>q.room===r.id),boatIn:this.boatInterval-this.time%this.boatInterval,yearSeconds:this.yearSeconds,legacy:this.legacy(p.owner),events:this.events.filter(e=>e.seq>after&&(e.room===r.id||e.player===id))};}
  exportState(){const data={schema:3,version:VERSION,seed:this.seed,rngState:this.rng.getState(),mode:this.mode,time:this.time,seq:this.seq,eid:this.eid,roomSeq:this.roomSeq,rooms:[...this.rooms],players:[...this.players].map(([id,p])=>[id,{...p,speech:'',speechUntil:0}]),legacies:this.legacies,abandoned:this.abandoned};return JSON.parse(JSON.stringify(data));}
- static restore(data){if(data?.schema!==3||!Array.isArray(data.players)||!Array.isArray(data.rooms)||data.players.length>200)throw Error('この改修より前の進行中データは別保管されています。');const s=new Simulation({seed:data.seed,mode:data.mode});s.time=+data.time||0;s.seq=+data.seq||0;s.eid=+data.eid||0;s.roomSeq=+data.roomSeq||1;s.rooms=new Map(data.rooms);s.players=new Map(data.players);s.legacies=data.legacies||{};s.abandoned=data.abandoned||[];if(Number.isInteger(data.rngState))s.rng.setState(data.rngState);for(const p of s.players.values()){if(!s.rooms.has(p.room))throw Error('村の記録がありません。');p.attackBufferedUntil=0;p.attackStep??=null;p.hitReactAt??=0;p.hitReactUntil??=0;p.hitDir??=0;p.hitSeverity??=null;p.input={x:0,z:0};p.guard=false;p.guardPending=false;p.speech='';p.speechUntil=0;s.preparePlayer(p);p.dash=null;p.autoFight=null;p.chain=null;p.pendingSkill=null;p.combo=null;p.attackStep=null;p.action=p.seated?'sit':'idle';}for(const r of s.rooms.values()){if(r.kind==='village')r.map=makeVillage(r.seed);r.actors=r.actors.filter(a=>a.kind!=='villager');for(const a of r.actors){if(a.kind==='archer')a.kind='soldier';if(a.kind==='mage')a.kind='goblin';a.statuses??={};a.hp??=a.kind==='guard'?130:a.elite?120:70;a.hpMax??=a.hp;a.npcResolveMax??=a.kind==='guard'?18:14;if(data.version!==VERSION)a.npcResolve=a.npcResolveMax;}}for(const l of Object.values(s.legacies))l.archive=l.archive.filter(id=>skillById(id));return s;}
+ static restore(data){if(data?.schema!==3||!Array.isArray(data.players)||!Array.isArray(data.rooms)||data.players.length>200)throw Error('この改修より前の進行中データは別保管されています。');const s=new Simulation({seed:data.seed,mode:data.mode});s.time=+data.time||0;s.seq=+data.seq||0;s.eid=+data.eid||0;s.roomSeq=+data.roomSeq||1;s.rooms=new Map(data.rooms);s.players=new Map(data.players);s.legacies=data.legacies||{};s.abandoned=data.abandoned||[];if(Number.isInteger(data.rngState))s.rng.setState(data.rngState);for(const p of s.players.values()){if(!s.rooms.has(p.room))throw Error('村の記録がありません。');p.attackBufferedUntil=0;p.attackStep??=null;p.hitReactAt??=0;p.hitReactUntil??=0;p.hitDir??=0;p.hitSeverity??=null;p.input={x:0,z:0};p.guard=false;p.guardPending=false;p.speech='';p.speechUntil=0;s.preparePlayer(p);p.dash=null;p.autoFight=null;p.chain=null;p.pendingSkill=null;p.combo=null;p.attackStep=null;p.action=p.seated?'sit':'idle';SkillSystem.restore(s,p);}for(const r of s.rooms.values()){if(r.kind==='village')r.map=makeVillage(r.seed);r.actors=r.actors.filter(a=>a.kind!=='villager');for(const a of r.actors){if(a.kind==='archer')a.kind='soldier';if(a.kind==='mage')a.kind='goblin';a.statuses??={};a.hp??=a.kind==='guard'?130:a.elite?120:70;a.hpMax??=a.hp;a.npcResolveMax??=a.kind==='guard'?18:14;if(data.version!==VERSION)a.npcResolve=a.npcResolveMax;}}for(const l of Object.values(s.legacies))l.archive=l.archive.filter(id=>skillById(id));return s;}
 }
 
 

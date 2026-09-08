@@ -3,6 +3,7 @@ import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import assert from 'node:assert/strict';
 import {root, sha256} from './build.mjs';
+import {buildInfo} from './build-info.mjs';
 import {environments} from './config.mjs';
 const environment = process.argv[2];
 assert(environments[environment], 'Unknown environment');
@@ -16,6 +17,8 @@ assert(html.length < 25*1024*1024, 'Cloudflare per-asset size limit');
 if (manifest.mode === 'game') {
   assert.deepEqual(html, await fs.readFile(path.join(root, 'dist/index.html')), 'Game bytes changed');
   const text = html.toString();
+  const embedded=JSON.parse(text.match(/const BUILD_INFO=Object\.freeze\(([^\n]+)\);/)?.[1] || 'null');
+  assert.deepEqual(embedded,buildInfo(manifest.baseVersion,environment,manifest.commit),'Screen and deployment identity differ');
   const scripts = [...text.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
   assert(scripts.length > 0, 'JavaScript missing');
   for (const [, source] of scripts) execFileSync(process.execPath, ['--check','--input-type=commonjs'], {input:source, stdio:['pipe','inherit','inherit']});

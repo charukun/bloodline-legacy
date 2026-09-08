@@ -1,12 +1,23 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import {compileCatalog} from './tools/skill-catalog.mjs';
 import {fileURLToPath} from 'node:url';
+import {execFileSync} from 'node:child_process';
+import {buildInfo} from './deploy/build-info.mjs';
 const root=path.dirname(fileURLToPath(import.meta.url));
+const release=JSON.parse(await fs.readFile(path.join(root,'deploy/release.json'),'utf8'));
+const environment=process.env.BLOODLINE_BUILD_ENV || 'local';
+let commit=process.env.BLOODLINE_BUILD_COMMIT;
+if (!commit) { try { commit=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim(); } catch { commit='local-recovery'; } }
+const info=buildInfo(release.baseVersion,environment,commit);
 const assets={};for(const name of ['character/young-human-male-cm01.glb','golden-surfaces.png','village-kit.glb','material-atlas.png','detail-atlas.png','parchment.png','cloth-panel.png'])assets[name]=(await fs.readFile(path.join(root,'public/assets',name))).toString('base64');
-const order=['legacy/dialogue.js','legacy/core.js','legacy/render_math.js','legacy/motion.js','legacy/art.js','render/tilt-shift.js','render/shaders.js','render/renderer-base.js','legacy/audio.js','legacy/labels.js','ui/presentation.js','legacy/ui.js','legacy/game.js','assets/loader.js','world/environment.js','world/golden-slice.js','weather/weather.js','character/rig.js','character/golden-master.runtime.js','render/combat-presentation.js','render/adapter.js','audio/ambience.js','bootstrap.js'];
-let code=`const VISUAL_ASSETS=${JSON.stringify(assets)};\n`;
+const order=['legacy/dialogue.js','legacy/core.js','skills/engine.js','skills/runtime.js','legacy/render_math.js','legacy/motion.js','legacy/art.js','render/tilt-shift.js','render/shaders.js','render/renderer-base.js','legacy/audio.js','legacy/labels.js','ui/presentation.js','ui/lineage.js','legacy/ui.js','ui/building-labels.js','legacy/game.js','assets/loader.js','world/environment.js','world/golden-slice.js','weather/weather.js','character/rig.js','character/golden-master.runtime.js','render/combat-presentation.js','render/adapter.js','audio/ambience.js','skills/presentation.js','bootstrap.js'];
+const skillDefinitions=compileCatalog(JSON.parse(await fs.readFile(path.join(root,'src/skills/catalog-source.json'),'utf8')));
+let code=`const BUILD_INFO=Object.freeze(${JSON.stringify(info)});\nconst BL_SKILL_DEFINITIONS=${JSON.stringify(skillDefinitions)};\nconst VISUAL_ASSETS=${JSON.stringify(assets)};\n`;
 for(const file of order)code+=`\n// SOURCE MODULE: ${file}\n`+await fs.readFile(path.join(root,'src',file),'utf8')+'\n';
-let style=(await fs.readFile(path.join(root,'src/ui/base.css'),'utf8'))+'\n'+await fs.readFile(path.join(root,'src/ui/world-skin.css'),'utf8');style=style.replace(/asset:([a-z-]+\.png)/g,(_,name)=>`data:image/png;base64,${assets[name]}`);
-style+='\n'+await fs.readFile(path.join(root,'src/ui/interaction.css'),'utf8');
+let style=(await fs.readFile(path.join(root,'src/ui/base.css'),'utf8'))+'\n'+await fs.readFile(path.join(root,'src/ui/world-skin.css'),'utf8');
+style+='\n'+await fs.readFile(path.join(root,'src/skills/skills.css'),'utf8');
+style+='\n'+await fs.readFile(path.join(root,'src/ui/interaction.css'),'utf8')+'\n'+await fs.readFile(path.join(root,'src/ui/lineage.css'),'utf8');
+style=style.replace(/asset:([a-z-]+\.png)/g,(_,name)=>`data:image/png;base64,${assets[name]}`);
 let html=await fs.readFile(path.join(root,'src/shell.html'),'utf8');html=html.replace('/*__STYLE__*/',style).replace('/*__SCRIPT__*/',`'use strict';\n(async()=>{\n${code}\n})();`.replace(/<\/script/gi,'<\\/script'));
 await fs.mkdir(path.join(root,'dist'),{recursive:true});await fs.writeFile(path.join(root,'dist/index.html'),html);await fs.writeFile(path.join(root,'dist/source-manifest.json'),JSON.stringify({name:'継ぎ火の谷',visualBuild:'VS-01',simulationVersion:'0.6.0',modules:order,assets:Object.keys(assets)},null,2));console.log('Built '+Buffer.byteLength(html)+' bytes from '+order.length+' source modules');
