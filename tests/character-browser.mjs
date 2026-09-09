@@ -71,7 +71,9 @@ try{
     await page.waitForFunction('window.AERIN_QA && AERIN_QA.app.renderer.frame>2');
     record.backend=await page.evaluate(()=>{const r=AERIN_QA.app.renderer,g=r.gl,e=g.getExtension('WEBGL_debug_renderer_info');return {userAgent:navigator.userAgent,gpu:e?g.getParameter(e.UNMASKED_RENDERER_WEBGL):g.getParameter(g.RENDERER),dpr:devicePixelRatio,viewport:[innerWidth,innerHeight]};});
     await page.locator('#begin-life').click();
-    for(let i=0;i<3;i++)await page.locator('#guide-next').click();
+    const guidePages=await page.locator('.guide-pages i').count();
+    assert(guidePages>0&&guidePages<=10,'native onboarding pages are available');
+    for(let i=0;i<guidePages;i++)await page.locator('#guide-next').click();
     await page.waitForFunction('AERIN_QA.app.screen==="game"');
     check(version+' native onboarding',await page.evaluate(()=>AERIN_QA.player().prologue));
     if(mode==='motion'){
