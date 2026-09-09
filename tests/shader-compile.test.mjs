@@ -9,7 +9,7 @@ const nativeOptions={skip:process.platform!=='linux'?'Native EGL check runs on L
 function programs(){
  const result=[],stop={};
  const context=vm.createContext({console,AssetBank:{load(){}},VillageArt:class{},RigRenderer:class{draw(){}}});
- for(const file of ['src/render/tilt-shift.js','src/render/shaders.js','src/weather/weather.js','src/character/golden-master.runtime.js','src/character/traveler-runtime.js'])vm.runInContext(read(file),context,{filename:file});
+ for(const file of ['src/render/tilt-shift.js','src/render/shaders.js','src/weather/weather.js','src/character/golden-master.runtime.js','src/character/traveler-expression.js','src/character/traveler-runtime.js'])vm.runInContext(read(file),context,{filename:file});
  const rig=read('src/character/rig.js');vm.runInContext(rig.slice(0,rig.indexOf('class RigRenderer')),context);
  result.push(...vm.runInContext(`[
   {name:'world/material',vertex:RVERT,fragment:RFRAG},

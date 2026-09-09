@@ -1,0 +1,28 @@
+{
+  "base": "6cdbacdb627bd10bccf9fb4a06f771881cc5dd3a",
+  "branch": "work/traveler-expression-injury-20260909",
+  "unitTests": {
+    "passed": 490,
+    "failed": 0
+  },
+  "nativeBrowser": {
+    "passed": 27,
+    "failed": 0,
+    "backend": "Chromium / SwiftShader"
+  },
+  "nativeShaderPrograms": 12,
+  "build": "PASS",
+  "deploymentIntegrity": "PASS",
+  "sourceSha256": {
+    "src/character/traveler-model.js": "4cfffad22b0351d7a8ba81a5a9e6386108482af7e8ce8824cf7c780e9c132c59",
+    "src/character/traveler-runtime.js": "26ac6ddd68cb557b18e1cedf3fcae1c324e3bcc8868be402746cc34b0316a484",
+    "src/character/traveler-expression.js": "74783fcffdc100e1d201846ae92c20817c3321aba12567cca1684ba5338e0d92"
+  },
+  "notVerified": [
+    "Pixel Fold / native GPU performance",
+    "Combined runtime after future integration of age PR #56"
+  ],
+  "fixesDuringVerification": [
+    "Reset facial region before the next ear so only actual facial parts deform."
+  ]
+}
