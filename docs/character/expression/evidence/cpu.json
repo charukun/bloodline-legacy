@@ -1,0 +1,102 @@
+{
+  "base": "10fb501e635f953c529dfbfc6898d8c0fd21e66c",
+  "method": "3 alternating pairs, 120 warm-up + 600 measured whole traveler update calls; wounded moving fox, 17 bones. WebGL uploads are stubbed. CPU-only; not device FPS.",
+  "runs": [
+    {
+      "pair": 0,
+      "version": "before",
+      "p50": 0.15546999999992295,
+      "p95": 0.31033800000000156,
+      "max": 1.5344840000000204,
+      "bones": 17,
+      "vertices": [
+        9978,
+        6093
+      ],
+      "triangles": [
+        18936,
+        11450
+      ]
+    },
+    {
+      "pair": 0,
+      "version": "after",
+      "p50": 0.17283099999986007,
+      "p95": 0.33079399999996895,
+      "max": 2.3921009999999114,
+      "bones": 17,
+      "vertices": [
+        9978,
+        6093
+      ],
+      "triangles": [
+        18936,
+        11450
+      ]
+    },
+    {
+      "pair": 1,
+      "version": "after",
+      "p50": 0.17396599999983664,
+      "p95": 0.341132000000016,
+      "max": 2.193243000000166,
+      "bones": 17,
+      "vertices": [
+        9978,
+        6093
+      ],
+      "triangles": [
+        18936,
+        11450
+      ]
+    },
+    {
+      "pair": 1,
+      "version": "before",
+      "p50": 0.17585400000007212,
+      "p95": 0.5195739999999205,
+      "max": 3.5289699999998447,
+      "bones": 17,
+      "vertices": [
+        9978,
+        6093
+      ],
+      "triangles": [
+        18936,
+        11450
+      ]
+    },
+    {
+      "pair": 2,
+      "version": "before",
+      "p50": 0.13427999999976237,
+      "p95": 0.2724079999998139,
+      "max": 1.0294960000001083,
+      "bones": 17,
+      "vertices": [
+        9978,
+        6093
+      ],
+      "triangles": [
+        18936,
+        11450
+      ]
+    },
+    {
+      "pair": 2,
+      "version": "after",
+      "p50": 0.16065400000024965,
+      "p95": 0.3241250000000946,
+      "max": 2.5807819999999992,
+      "bones": 17,
+      "vertices": [
+        9978,
+        6093
+      ],
+      "triangles": [
+        18936,
+        11450
+      ]
+    }
+  ]
+}

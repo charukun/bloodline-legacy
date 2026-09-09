@@ -19,27 +19,43 @@ const overlap=(a,b)=>a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.
 test('all seven activities follow the rendered feet, not the facility or HUD refresh',t=>{
  const {p,g,ui,d,sim,sync}=fixture(t);sim.getRoom(p).actors=[];
  for(const school of g.snapshot.map.schools){
-  Object.assign(p,{x:school.x,z:school.z+1});sync();const row=d.querySelector('[data-anchor=feet]'),button=row.querySelector('[data-context=activity]');assert.equal(button.dataset.facility,school.id);
+  Object.assign(p,g.station(school));sync();const row=d.querySelector('[data-anchor=feet]'),button=row.querySelector('[data-context=activity]');assert.equal(button.dataset.facility,school.id);
   const r=camera(393,852,p.x,p.z,.42);g.renderer=r;ui.updateWorld(g.snapshot);
   const point=r.project(p.x,.2,p.z),box=rect(row);assert.ok(box.top>=point.y+14-1e-8);assert.equal(row.style.display,'');
   const before=row.style.transform,rendered={...g.snapshot,player:{...g.snapshot.player,x:p.x+.013}};ui.updateWorld(rendered);assert.notEqual(row.style.transform,before);assert.equal(row.querySelector('[data-context=activity]'),button);
  }
 });
 
-test('practice is above the real dummy, follows its rendered pose, starts approach and stops combat',t=>{
+test('practice starts above the real dummy and moves the stop action to the player feet',t=>{
  const {p,g,ui,d,sim,sync}=fixture(t),dummy=sim.getRoom(p).actors.find(a=>a.kind==='dummy');Object.assign(p,{x:dummy.x,z:dummy.z+1.1});sync();
  const button=d.querySelector('[data-context=practice]'),row=button.parentElement;assert.equal(d.querySelector('#context [data-context=practice]'),null);assert.equal(row.dataset.anchor,'practice:'+dummy.id);
  g.renderer=camera(393,852,p.x,p.z,.42);ui.updateWorld(g.snapshot);const head=g.renderer.project(dummy.x,2.95,dummy.z);assert.ok(rect(row).bottom<head.y);assert.equal(row.style.display,'');
  const before=row.style.transform,rendered={...g.snapshot,actors:g.snapshot.actors.map(a=>a.id===dummy.id?{...a,x:a.x+.05}:a)};ui.updateWorld(rendered);assert.notEqual(row.style.transform,before);assert.equal(row.querySelector('button'),button);
  button.click();assert.deepEqual({...g.walkTarget},{x:dummy.x,z:dummy.z,until:g.walkTarget.until});
  for(let i=0;i<50;i++)sim.tick(1/30);sync();assert.equal(p.autoFight,dummy.id);assert.ok(sim.events.some(e=>e.type==='hit'&&e.kind==='practice'));
- const stop=d.querySelector('[data-context=practice]');assert.match(stop.textContent,/やめる/);stop.click();assert.equal(p.autoFight,null);
+ const stop=d.querySelector('[data-context=practice]');assert.match(stop.textContent,/やめる/);assert.equal(stop.parentElement.dataset.anchor,'feet');assert.equal(row.isConnected,false);stop.click();assert.equal(p.autoFight,null);
+ sync();assert.equal(d.querySelector('[data-context=practice]').parentElement.dataset.anchor,'practice:'+dummy.id);
+});
+
+test('practice stop stays below skill names through camera orbit and portrait/landscape resize',t=>{
+ const {p,g,ui,d,w,sim,sync}=fixture(t),dummy=sim.getRoom(p).actors.find(a=>a.kind==='dummy');Object.assign(p,{x:dummy.x,z:dummy.z+1.1});
+ for(let i=0;i<120&&!p.combo;i++)sim.tick(1/30);sync();assert.equal(p.autoFight,dummy.id);assert.ok(p.combo);
+ for(const [width,height]of [[320,568],[393,852],[852,393],[1280,720]])for(let i=0;i<16;i++){
+  const yaw=i*Math.PI/8;w.innerWidth=width;w.innerHeight=height;Object.assign(p,g.station(g.snapshot.map.schools.find(s=>s.id==='sword')));dummy.x=p.x-Math.sin(yaw)*1.2;dummy.z=p.z-Math.cos(yaw)*1.2;g.renderer=camera(width,height,p.x,p.z,yaw);sync();
+  const stop=d.querySelector('[data-context=practice]'),row=stop.parentElement,callout=d.querySelector('.combat-callout');
+  assert.equal(row.style.display,'');assert.equal(row.dataset.anchor,'feet');assert.ok(row.querySelector('[data-context=activity]'),'nearby facility shares the foot row');
+  assert.ok(callout.querySelector('span').textContent,'current skill name remains present');
+  // The callout ends at its projected top coordinate (translateY(-100%)).
+  assert.ok(rect(row).top>parseFloat(callout.style.top)+14,`${width}x${height} ${yaw}`);
+  assert.ok(rect(row).top>=g.renderer.project(p.x,.2,p.z).y+14-1e-8);
+  const before=row.style.transform,rendered={...g.snapshot,player:{...g.snapshot.player,x:p.x+.05}};ui.updateWorld(rendered);assert.notEqual(row.style.transform,before);assert.equal(row.querySelector('[data-context=practice]'),stop);
+ }
 });
 
 test('facility foot row and practice button stay separate through orbit and portrait/landscape resize',t=>{
  const {p,g,ui,d,sim,sync}=fixture(t),dummy=sim.getRoom(p).actors.find(a=>a.kind==='dummy');
  for(const [width,height]of [[320,568],[393,852],[852,393],[1280,720]])for(let i=0;i<16;i++){
-  const yaw=i*Math.PI/8;Object.assign(p,{x:dummy.x+Math.sin(yaw)*1.2,z:dummy.z+Math.cos(yaw)*1.2});sync();g.renderer=camera(width,height,p.x,p.z,yaw);ui.updateWorld(g.snapshot);
+  const yaw=i*Math.PI/8,school=g.snapshot.map.schools.find(s=>s.id==='sword');Object.assign(p,g.station(school));dummy.x=p.x+.8;dummy.z=p.z+.8;sync();g.renderer=camera(width,height,p.x,p.z,yaw);ui.updateWorld(g.snapshot);
   const feet=d.querySelector('[data-anchor=feet]'),target=d.querySelector('[data-context=practice]').parentElement;
   assert.equal(feet.style.display,'',`${width}x${height} ${yaw}`);assert.equal(target.style.display,'');
   assert.ok(!overlap(rect(feet),rect(target)),`${width}x${height} ${yaw}`);

@@ -65,7 +65,7 @@ test('review vitality, broken part and motion controls are independent in all po
  const result=h.run(`(()=>{
   const sim=new Simulation({seed:7349}),templates=Object.fromEntries(Object.keys(ENEMY_FORMS).map(k=>[k,sim.actor(k,0,0)])),before=JSON.stringify(templates),rows=[];
   for(const pose of ['sequence','idle','attack','run','guard','hit','death'])for(const time of [0,1.4,9.3,11])for(const vitality of [100,52,0])for(const brokenPart of ['none','rightArm','leftLeg']){
-   const p=EnemyReview.sample(templates,{form:'all',count:33,pose,time,vitality,brokenPart}).actors;
+   const p=EnemyReview.sample(templates,{form:'all',count:EnemyReview.forms.length,pose,time,vitality,brokenPart}).actors;
    rows.push(...p.map(a=>({ratio:a.hp/a.hpMax,parts:Object.keys(a.wounds),expected:vitality/100,brokenPart})));
   }
   return {rows,unchanged:before===JSON.stringify(templates)};
@@ -74,7 +74,7 @@ test('review vitality, broken part and motion controls are independent in all po
  for(const row of result.rows){assert(Math.abs(row.ratio-row.expected)<1e-12);assert.deepEqual(Array.from(row.parts),row.brokenPart==='none'?[]:[row.brokenPart]);}
 });
 
-test('all 33 forms retain finite, bounded staged marks without mutating actors',()=>{
+test('all catalog forms retain finite, bounded staged marks without mutating actors',()=>{
  for(const form of forms){h.ctx.form=form;
   for(const part of ['head','torso','rightArm','leftArm','rightLeg','leftLeg']){h.ctx.part=part;
    const clean=h.run(`damageFixture(form,'clean',part)`);assert.equal(clean.batches.filter(b=>b.type.startsWith('enemy:')&&['enemy:stain','enemy:split','enemy:break-rim'].includes(b.type)).length,0,form.id);
@@ -122,23 +122,29 @@ test('existing snapshot/save damage data restores identical presentation without
   room.actors=Object.values(ENEMY_FORMS).flat().map((f,i)=>EnemyReview.damage({...sim.actor(f.kind,i,-34),enemyForm:f.id},['light','medium','heavy','lost'][i%4],'rightArm'));
   const rng=sim.rng.getState(),expected=room.actors.map(EnemyDamage.state),encoded=JSON.stringify(sim.exportState());
   room.actors.forEach(p=>EnemyDamage.state(p));const unchanged=rng===sim.rng.getState()&&encoded===JSON.stringify(sim.exportState());
-  const saved=Simulation.restore(JSON.parse(encoded)).getRoom(player).actors.map(EnemyDamage.state);
+  const restored=Simulation.restore(JSON.parse(encoded)).getRoom(player).actors;
+  const saved=room.actors.map(p=>EnemyDamage.state(restored.find(q=>q.id===p.id)));
   return{expected,saved,unchanged};
  })()`);
  assert(result.unchanged);assert.deepEqual(plain(result.saved),plain(result.expected));
 });
 
 
-test('real repeated combat damage matches pinned develop wounds, HP, events and RNG',()=>{
+test('adult repeated combat damage matches pinned develop wounds, HP, events and RNG',()=>{
  const ctx=vm.createContext({console,BL_SKILL_DEFINITIONS:h.ctx.BL_SKILL_DEFINITIONS});
  const core=execFileSync('git',['show','8050da52899d5fd3761ca1f51383be2aea80c99d:src/legacy/core.js'],{encoding:'utf8'});
  vm.runInContext(fs.readFileSync(new URL('../src/legacy/dialogue.js',import.meta.url),'utf8')+'\n'+core,ctx);
  for(const f of ['engine','runtime'])vm.runInContext(fs.readFileSync(new URL('../src/skills/'+f+'.js',import.meta.url),'utf8'),ctx);
  const script=`(()=>{const s=new Simulation({seed:7349}),p=s.addPlayer('combat-damage',{owner:'combat-damage'}),room=s.getRoom(p),results=[];
+ // Gate-care explicitly changes child damage. Keep this renderer-invariance
+ // comparison at adult maturity; gate-care tests separately exercise ages 4-15.
+ p.age=18;p.ageFraction=0;
  for(const kind of ['goblin','soldier','elite','crawler','maw','wraith','boss','stag','mushroom']){
  const e=s.actor(kind,0,0);room.actors=[e];
  for(const [part,power]of [['rightArm',.5],['torso',1],['head',2],['leftLeg',3]]){s.time+=1;s.damageActor(e,p,part,power,room);results.push(JSON.parse(JSON.stringify(e)));}
  }return {results,rng:s.rng.getState(),events:s.events};})()`;
- const clean=v=>JSON.parse(JSON.stringify(v,(k,val)=>['enemyForm','name'].includes(k)?undefined:val));
+ // The rescue lifecycle now records dead explicitly; normalize only the absent
+ // legacy marker for already-dead actors, retaining every living/downed state.
+ const clean=v=>JSON.parse(JSON.stringify(v,(k,val)=>val&&val.alive===false&&!Object.hasOwn(val,'lifeState')?{...val,lifeState:'dead'}:['enemyForm','name'].includes(k)?undefined:val));
  assert.deepEqual(clean(h.run(script)),clean(vm.runInContext(script,ctx)));
 });

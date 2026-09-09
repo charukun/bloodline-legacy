@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import {compileCatalog} from './tools/skill-catalog.mjs';
+import {compileCatalog,catalogProgram} from './tools/skill-catalog.mjs';
 import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {buildInfo} from './deploy/build-info.mjs';
@@ -16,11 +16,18 @@ const info=buildInfo(release.baseVersion,environment,commit);
 const live={...LiveContract,...await liveBuild(root)};
 const assets={};for(const name of ['enemies/sentinel.glb','character/young-human-male-cm01.glb','plaza-craft.glb','plaza-craft-color.png','plaza-craft-detail.png','golden-surfaces.png','village-kit.glb','material-atlas.png','detail-atlas.png','parchment.png','cloth-panel.png'])assets[name]=(await fs.readFile(path.join(root,'public/assets',name))).toString('base64');
 const musicCatalog=JSON.parse(await fs.readFile(path.join(root,'public/assets/music/manifest.json'),'utf8')),musicAssets={};
-for(const track of musicCatalog.tracks)musicAssets[track.id]=(await fs.readFile(path.join(root,'public/assets/music',track.file))).toString('base64');
-const order=['live/contract.mjs','live/client.js','account/client.js','legacy/dialogue.js','legacy/core.js','skills/engine.js','skills/runtime.js','legacy/render_math.js','legacy/motion.js','legacy/art.js','render/tilt-shift.js','render/shaders.js','render/renderer-base.js','legacy/audio.js','legacy/labels.js','ui/presentation.js','ui/lineage/theatre.js','ui/lineage.js','ui/talk-fan.js','legacy/ui.js','ui/building-labels.js','render/motion-interpolation.js','legacy/game.js','assets/plaza-craft.js','assets/loader.js','world/environment.js','world/golden-slice.js','weather/weather.js','character/rig.js','character/golden-master.runtime.js','character/traveler-model.js','character/traveler-clip-data.js','character/traveler-clips.js','character/traveler-age.js','character/traveler-runtime.js','enemies/damage.js','enemies/weakness.js','enemies/sentinel.js','enemies/equipment.js','enemies/bestiary.js','render/combat-presentation.js','render/adapter.js','audio/ambience.js','audio/score.js','skills/presentation.js','bootstrap.js'];
+const musicChunks=JSON.parse(await fs.readFile(path.join(root,'public/assets/music/game-music.json'),'utf8'));
+const musicPack=await fs.readFile(path.join(root,'public/assets/music',musicChunks.file));
+for(const track of musicCatalog.tracks){
+ if(musicChunks.sourceHashes[track.id]!==track.sha256)throw Error('Regenerate game music chunks: python tools/audio/pack_game_music.py');
+ track.chunks=musicChunks.tracks[track.id];
+ musicAssets[track.id]=track.chunks.map(c=>musicPack.subarray(c.offset,c.offset+c.bytes).toString('base64'));
+}
+const order=['live/contract.mjs','live/client.js','account/client.js','legacy/dialogue.js','legacy/core.js','skills/engine.js','skills/runtime.js','legacy/render_math.js','legacy/motion.js','legacy/art.js','render/tilt-shift.js','render/shaders.js','render/renderer-base.js','legacy/audio.js','legacy/labels.js','ui/presentation.js','ui/lineage/theatre.js','ui/lineage.js','ui/talk-fan.js','legacy/ui.js','ui/building-labels.js','render/motion-interpolation.js','legacy/game.js','assets/plaza-craft.js','assets/loader.js','world/environment.js','world/golden-slice.js','weather/weather.js','character/rig.js','character/golden-master.runtime.js','character/traveler-model.js','character/traveler-clip-data.js','character/traveler-clips.js','character/traveler-age.js','character/traveler-expression.js','character/traveler-runtime.js','enemies/damage.js','enemies/weakness.js','enemies/sentinel.js','enemies/equipment.js','enemies/bestiary.js','enemies/fauna.js','render/combat-presentation.js','render/adapter.js','audio/ambience.js','audio/buffer-deck.js','audio/score.js','skills/presentation.js','bootstrap.js'];
 const skillDefinitions=compileCatalog(JSON.parse(await fs.readFile(path.join(root,'src/skills/catalog-source.json'),'utf8')));
+const skillProgram=catalogProgram(JSON.parse(await fs.readFile(path.join(root,'src/skills/catalog-source.json'),'utf8')));
 const lineage=await buildLineage(root);
-let code=`const LIVE_BUILD=Object.freeze(${JSON.stringify(live)});\nconst LINEAGE_VIEW=${JSON.stringify(lineage.data)};\nconst BUILD_INFO=Object.freeze(${JSON.stringify(info)});\nconst BL_SKILL_DEFINITIONS=${JSON.stringify(skillDefinitions)};\nconst VISUAL_ASSETS=${JSON.stringify(assets)};\n`;
+let code=`const LIVE_BUILD=Object.freeze(${JSON.stringify(live)});\nconst LINEAGE_VIEW=${JSON.stringify(lineage.data)};\nconst BUILD_INFO=Object.freeze(${JSON.stringify(info)});\n${skillProgram}\nconst VISUAL_ASSETS=${JSON.stringify(assets)};\n`;
 code+=`const MUSIC_CATALOG=${JSON.stringify(musicCatalog)};\nconst MUSIC_ASSETS=${JSON.stringify(musicAssets)};\n`;
 order.splice(order.indexOf('render/combat-presentation.js'),0,'render/skill-silk.js','render/skill-arcane.js','render/skill-effects.js');
 for(const file of order)code+=`\n// SOURCE MODULE: ${file}\n`+(await fs.readFile(path.join(root,'src',file),'utf8')).replace(/^export /gm,'')+'\n';

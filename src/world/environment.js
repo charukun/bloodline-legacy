@@ -91,8 +91,8 @@ class VillageArt extends ArtDirector{
    });
    this.lantern(side*2.04,2.04,1.48);
   });
-  // Reading stand hugs the outer facade; its feet stay inside the old hull.
-  const reading={x:x+side*1.65,y:1.15,z:z+1.4};
+  // The shared reading station sits in the courtyard, clear of the facade.
+  const reading={...facilityStation({id:'sword',x,z:z+2}),y:1.15};
   this.with(rModel(reading.x,0,reading.z),()=>{
    this.B(0,.29,-.12,.73,.20,.42,dark);this.B(0,.69,-.12,.15,.84,.15,wood);
    this.B(0,1.08,-.03,.91,.10,.55,wood,0,0,.25);
@@ -109,6 +109,9 @@ class VillageArt extends ArtDirector{
   const r=this.r,rng=random(map.seed+775);r.terrainData=makeTerrainMap(map);r.terrainDirty=true;this.target=r.static;this.root=rModel();
   this.p('slice-terrain',0,.10,0,1,1,1,'#a4ab76',0,0,0,12);
   for(const s of map.schools){
+   const station=facilityStation(s);
+   if(s.id==='hunter')for(let j=0;j<4;j++)for(const side of [-1,1])this.S(station.x+side*.13+(j%2)*.24,.135,station.z-j*.28,.07,.015,.14,'#6d664c',side*.18,0,0,9);
+   if(s.id==='dance'){this.p('torus',station.x,.17,station.z,.42,.42,.09,'#b7975a',0,0,Math.PI/2,8);this.S(station.x+.55,.27,station.z,.18,.18,.18,'#9e7852',0,0,0,8);}
    // Ground-level history: worn paths, stacks of split firewood, tiny flower beds.
    this.r.blob(s.x,s.z-1,4.2,3.2,.5,this.r.groundFX);
    if(s.id==='forge'){this.sources.push({x:s.x+2.9,y:.8,z:s.z+.7,kind:'fire'});for(let j=0;j<9;j++)this.C(s.x-3.4+(j%3)*.25,.18+Math.floor(j/3)*.19,s.z+1.7,.105,.9,.105,'#987144',0,0,Math.PI/2);}
@@ -116,7 +119,7 @@ class VillageArt extends ArtDirector{
   }
   for(let j=0;j<650;j++){const x=(rng()-.5)*70,z=(rng()-.5)*65-7;if(terrainFootprint(map,x,z,.6)||Math.abs(x)<2.8||Math.abs(z-7)<1.6||Math.abs(z+19)<1.6||map.schools.some(s=>Math.hypot(x-s.x,z-s.z)<5)||map.houses.some(h=>Math.hypot(x-h.x,z-h.z)<3))continue;this.tuft(x,.11,z,.65+rng()*.65,j%3?'#7c8b51':'#9a9d63');}
   // Distant wooded banks hide the geometrical horizon without screen blur.
-  for(let j=0;j<32;j++){const a=j/32*TAU;this.tree(Math.sin(a)*43,Math.cos(a)*43-7,.9+rng()*.4,'#697e59',j+99);}
+  for(let j=0;j<32;j++){const a=j/32*TAU;if(map.ship&&Math.cos(a)*43-7>25&&Math.abs(Math.sin(a)*43)<11)continue;this.tree(Math.sin(a)*43,Math.cos(a)*43-7,.9+rng()*.4,'#697e59',j+99);}
  }
  // Override the old role-to-art dispatch without touching map schools or core rules.
 }

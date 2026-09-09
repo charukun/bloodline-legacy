@@ -10,7 +10,7 @@ function setup(){
  const ctx={currentTime:0,state:'running',createGain:()=>({gain:param(),connect(){},disconnect(){}}),createMediaElementSource:()=>({connect(){},disconnect(){}})};
  const owner={ctx,musicBus:{},requested:true,background:false};
  const makeAudio=()=>{const a={currentTime:0,duration:NaN,paused:true,ended:false,plays:0,
-  load(){},removeAttribute(){},play(){this.paused=false;this.plays++;return Promise.resolve();},pause(){this.paused=true;}};made.push(a);return a;};
+  load(){},dispose(){this.pause();},pump(){return Promise.resolve();},play(){this.paused=false;this.plays++;return Promise.resolve();},pause(){this.paused=true;}};made.push(a);return a;};
  const gestures=new Set(),document={addEventListener:(type,fn)=>gestures.add(fn),removeEventListener:(type,fn)=>gestures.delete(fn)};
  const C=vm.runInNewContext(source+';CelticMusic',{WorldAudio:class{},document});
  const score=new C(owner,catalog,Object.fromEntries(catalog.tracks.map(t=>[t.id,'test'])),makeAudio);
@@ -21,13 +21,24 @@ const flush=()=>new Promise(resolve=>setImmediate(resolve));
 test('four original long-form recordings have distinct, verified embedded assets',async()=>{
  assert.equal(catalog.tracks.length,4);const hashes=new Set();
  const built=await fs.readFile(new URL('../dist/index.html',import.meta.url),'utf8');
+ const embedded=JSON.parse(built.match(/const MUSIC_ASSETS=(.+);\n/)[1]);
  for(const track of catalog.tracks){
   const file=await fs.readFile(new URL('../public/assets/music/'+track.file,import.meta.url));
   assert.ok(track.duration>=60&&track.duration<=110);assert.equal(track.sections.length,7);
   assert.equal(file.length,track.bytes);assert.equal(createHash('sha256').update(file).digest('hex'),track.sha256);
-  hashes.add(track.sha256);assert.ok(built.includes(file.toString('base64')));
+  hashes.add(track.sha256);assert.ok(!built.includes(file.toString('base64')),'full MP3 must not be embedded a second time');
  }
  assert.equal(hashes.size,4);assert.ok(built.includes('AudioEngine=CelticScoreAudio'));
+ const index=JSON.parse(await fs.readFile(new URL('../public/assets/music/game-music.json',import.meta.url)));
+ const pack=await fs.readFile(new URL('../public/assets/music/game-music.bin',import.meta.url));
+ assert.equal(pack.length,index.bytes);assert.equal(createHash('sha256').update(pack).digest('hex'),index.sha256);
+ let end=0;for(const track of catalog.tracks){let time=0;for(const [i,chunk] of index.tracks[track.id].entries()){
+  assert.equal(chunk.offset,end);assert.ok(Math.abs(chunk.start-time)<1e-8);assert.ok(chunk.duration>0&&chunk.duration<=6);
+  const bytes=pack.subarray(chunk.offset,chunk.offset+chunk.bytes);assert.equal(createHash('sha256').update(bytes).digest('hex'),chunk.sha256);assert.equal(embedded[track.id][i],bytes.toString('base64'));
+  time+=chunk.duration;end+=chunk.bytes;
+ }assert.ok(Math.abs(time-track.duration)<.03);}assert.equal(end,pack.length);
+ assert.doesNotMatch(source,/new Audio\(|createMediaElementSource/);
+
 });
 
 test('crossfades reuse exactly two decks and retire the old decoder',async()=>{

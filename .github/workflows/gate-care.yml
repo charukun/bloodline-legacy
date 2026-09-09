@@ -1,0 +1,39 @@
+name: Gate care verification
+on:
+  push:
+    branches: ['work/gate-care-*']
+  pull_request:
+    branches: [develop]
+    paths: ['tests/gate-care*', 'tests/stamina-warning*', '.github/workflows/gate-care.yml']
+permissions:
+  contents: read
+concurrency:
+  group: gate-care-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+jobs:
+  care:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run build
+      - run: node --test tests/gate-care.test.mjs tests/stamina-warning.test.mjs tests/life-state.test.mjs tests/combat-awareness.test.mjs
+      - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
+      - run: sudo apt-get install -y --no-install-recommends fonts-noto-cjk
+      # The hosted runner already supplies Chromium's system libraries. Avoid
+      # refreshing unrelated third-party apt repositories while installing it.
+      - run: deploy/node_modules/.bin/playwright install chromium
+      - run: node tests/gate-care-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gate-care-${{ github.run_id }}
+          path: verification/current/gate-care/
+          if-no-files-found: error
+          retention-days: 30

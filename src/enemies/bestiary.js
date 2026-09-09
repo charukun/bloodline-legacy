@@ -41,6 +41,8 @@ const EnemyCreatures=(()=>{
   stag:{scale:[1,1.05,1],skin:'#a3ad8a',cloth:'#77875c',stride:1.85},
   mushroom:{scale:[1,1,1],skin:'#e0d3ac',cloth:'#ae816b',stride:1.1}
  };
+ const authors=new Map();
+ function register(id,config,author){if(profiles[id]||authors.has(id))throw Error("Duplicate enemy form: "+id);profiles[id]=Object.freeze(config);authors.set(id,author);}
  const eligible=p=>!!profiles[EnemyLooks.id(p)],profile=p=>profiles[EnemyLooks.id(p)];
  const smooth=x=>{x=clamp(x,0,1);return x*x*(3-2*x);};
  function motion(p,t,rec={}){
@@ -77,13 +79,14 @@ const EnemyCreatures=(()=>{
   for(const[id,rec]of records)if(r.frame-rec.frame>2)records.delete(id);
   let rec=records.get(p.id);if(!rec){rec={};records.set(p.id,rec);}
   const c=profile(p),m=motion(p,t,rec),react=damagePose(r,p,t),ail=ailmentPose(p,t),id=EnemyLooks.id(p);
-  const weakness=EnemyWeakness.sample(p,t,m.phase),weakRoot=EnemyWeakness.root(weakness,c.scale[1]);m.weakness=weakness;
+  const weakness=EnemyWeakness.sample(p,t,m.phase),weakRoot=EnemyWeakness.root(weakness,c.scale[1]);m.weakness=weakness;if(weakness.crawl&&c.crawlPose){weakRoot.pitch=c.crawlPose.pitch;weakRoot.y=-c.crawlPose.drop*c.scale[1];}
   const sideFall=['maw','stag','crawler'].includes(p.kind);
   const root=rModel(p.x+react.x,(p.baseY??(.20+(p.supportHeight||0)))+(p.verticalOffset||0)+ail.y-react.drop+weakRoot.y+(p.kind==='wraith'?.18+m.breathe:0)+m.fall*.48*c.scale[1],p.z+react.z,...c.scale,p.dir||0,react.roll+ail.roll+weakRoot.roll+m.fall*(sideFall?1.48:.14),react.pitch+ail.pitch+weakRoot.pitch+m.fall*(sideFall?.08:1.42));
   const oldRoot=art.root,oldTarget=art.target;art.root=root;art.target=r.dynamic;rec.sockets={};rec.damageAnchors={};rec.breaks=[];rec.frame=r.frame;rec.root=root;rec.motion=m;rec.config=c;
   const ctx={p,c,m,id,rec,root,react};
   try{
-   if(p.kind==='goblin'||p.kind==='boss')humanoid(art,ctx);
+   if(authors.has(id))authors.get(id)(art,ctx);
+   else if(p.kind==='goblin'||p.kind==='boss')humanoid(art,ctx);
    else if(p.kind==='crawler')crawler(art,ctx);
    else if(p.kind==='maw'||p.kind==='stag')beast(art,ctx);
    else if(id==='dusk-bat'||id==='rift-jelly')floater(art,ctx);
@@ -287,7 +290,7 @@ const EnemyCreatures=(()=>{
   });eyes(a,.115,.79,.32,.048);
   for(const s of [-1,1]){const part=s===1?'rightLeg':'leftLeg';if(missing(p,part))EnemyDamage.broken(a,rec,part,[s*.22,.29,.10],.13);else{a.p('bead',s*.22,.19,.10,.18,.19,.23,c.skin,0,0,m.run?Math.sin(m.phase)*s*.4:0);socket(a,rec,part,[s*.22,.21,.22],[0,0,1],.10,[s*.22,.20,.329]);}}
  }
- return {eligible,profile,motion,draw,install,point};
+ return {eligible,profile,motion,draw,install,point,socket,register};
 })();
 const BESTIARY_PREVIOUS_MONSTER=VillageArt.prototype.monster;
 VillageArt.prototype.monster=function(p,t){if(EnemyCreatures.eligible(p))return EnemyCreatures.draw(this,p,t);return BESTIARY_PREVIOUS_MONSTER.call(this,p,t);};

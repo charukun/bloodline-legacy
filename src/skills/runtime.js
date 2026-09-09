@@ -72,6 +72,7 @@ const SkillSystem = (() => {
   if(e.type==='wound'&&e.severity!=='fatal')event={kind:'setback',context:'combat:wound',tags:['combat','tension','defeat'],text:'傷を負い、攻め終わりの隙を思い知った'};
   if(e.type==='clash')event={kind:'clash',context:'combat:clash',tags:['combat','weight','tension'],text:'敵とぶつかり、踏みとどまる重みを知った'};
   if(e.type==='kill')event={kind:'victory',context:'combat:win',tags:['combat','precision'],text:'敵を倒し、最後の間合いを覚えた'};
+  if(e.type==='landed'&&e.profile===1)event={kind:'traversal',context:'traversal:'+e.room+':'+(e.obstacle||'ledge'),tags:['light','precision'],text:e.kind==='vault'?'低い障害物を飛び越え、着地の拍子を覚えた':'縁に手をかけてよじ登り、体を支える足運びを覚えた'};
   if(e.type==='returned')event={kind:'return',context:'journey:return',tags:['explore','rest','tension'],text:'最前線から帰り、村の静けさを知った'};
   if(event)record(sim,p,withMemento(p,event));
  }

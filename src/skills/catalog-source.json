@@ -960,6 +960,57 @@
             "cost": 0.78,
             "recovery": 0.8
           }
+        },
+        {
+          "id": 60073,
+          "key": "storm_swallow",
+          "phase": 2,
+          "ja": "雷渡り",
+          "en": "Storm Swallow",
+          "desc": "稲妻を引いて飛び込み、着地の一打から身を引く。踏切と着地に隙がある。",
+          "descEn": "Leap behind branching lightning, strike on landing, then draw back. Takeoff and landing remain exposed.",
+          "entry": [
+            "offbalance"
+          ],
+          "exit": [
+            "rhythm"
+          ],
+          "requiresExperience": [
+            [
+              "feather"
+            ],
+            [
+              "explore",
+              "combat"
+            ]
+          ],
+          "action": {
+            "unarmed": true,
+            "anim": "leap",
+            "cost": 22,
+            "fatigue": 2.0,
+            "charge": 0.28,
+            "swing": 0.6,
+            "recovery": 0.76,
+            "reach": 2.3,
+            "arc": 1.5,
+            "power": 0.86,
+            "approach": {
+              "distance": 1.85,
+              "angle": 0,
+              "turn": 0
+            },
+            "finishStep": {
+              "distance": 0.9,
+              "angle": 3.141592653589793
+            },
+            "motionPath": "fall",
+            "presentation": "stormleap"
+          },
+          "connection": {
+            "tracking": 0.35,
+            "recovery": 0.82
+          }
         }
       ]
     },
@@ -1192,6 +1243,57 @@
           "connection": {
             "cost": 0.78,
             "recovery": 0.8
+          }
+        },
+        {
+          "id": 60093,
+          "key": "cinderbrand",
+          "phase": 1,
+          "ja": "煤火の剣",
+          "en": "Cinderbrand",
+          "desc": "刃に火の筋を纏わせ、踏み込んで薙ぐ。払い終わりに間合いを開く。",
+          "descEn": "A blade draws a wake of fire, then opens distance after the cut.",
+          "entry": [
+            "rhythm"
+          ],
+          "exit": [
+            "offbalance"
+          ],
+          "requiresExperience": [
+            [
+              "charcoal"
+            ],
+            [
+              "craft",
+              "combat"
+            ]
+          ],
+          "action": {
+            "weapon": 0,
+            "anim": "slash",
+            "cost": 17,
+            "fatigue": 1.6,
+            "charge": 0.24,
+            "swing": 0.48,
+            "recovery": 0.62,
+            "reach": 2.65,
+            "arc": 2.3,
+            "power": 0.72,
+            "approach": {
+              "distance": 0.95,
+              "angle": 0,
+              "turn": 0
+            },
+            "finishStep": {
+              "distance": 0.65,
+              "angle": 3.141592653589793
+            },
+            "motionPath": "sweep",
+            "presentation": "cinderblade"
+          },
+          "connection": {
+            "charge": 0.82,
+            "recovery": 0.85
           }
         }
       ]
@@ -1735,6 +1837,41 @@
         "school": "church"
       },
       "color": "#dec78e",
+      "inheritance": {
+        "bias": 0.16,
+        "copy": false
+      }
+    },
+    {
+      "id": 60905,
+      "key": "nimble_vault",
+      "ja": "身軽な乗り越え",
+      "en": "Nimble Vault",
+      "desc": "探索とよじ登りで身につけた身軽さ。低い柵や石垣を素早く飛び越える。高台は手を使って登る。",
+      "descEn": "Agility learned by exploring and climbing. Vault low fences and walls quickly; climb raised ledges with your hands.",
+      "tags": [
+        "explore",
+        "light"
+      ],
+      "requiresExperience": [
+        [
+          "explore"
+        ],
+        [
+          "light"
+        ]
+      ],
+      "effect": "vault",
+      "value": 1,
+      "action": {
+        "requires": [
+          "leftArm",
+          "rightArm",
+          "leftLeg",
+          "rightLeg"
+        ]
+      },
+      "color": "#b9cda5",
       "inheritance": {
         "bias": 0.16,
         "copy": false

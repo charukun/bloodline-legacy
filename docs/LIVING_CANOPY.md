@@ -1,5 +1,7 @@
 # Living canopy and planted edges
 
+> **REFERENCE — この領域の技術・実装資料。** ゲームの確定仕様の正本を置き換える文書ではありません。本文の旧ポリシー、WORK固有の指示、PR依存・SHA・検証結果はhistoricalな来歴で、現在の共通運用やGitHub状態には適用しません。[現行の文書案内](README.md)。
+
 Source at implementation start: develop `573f48a36da38bf0c976f89e6ff30c14f0abc4b8`,
 then the explicitly approved, then-open PR #22 (`9f6de49ccd184d0ef30c05c2d921695cfde73d51`).
 The combined baseline is `a374fbf40ca6158d56d96715db34a981bdb53c82`.

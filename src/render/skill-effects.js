@@ -54,12 +54,20 @@ const SkillEffects = (() => {
   60040:['blade','pierce','single','cleave','vanish'],60041:['blade','sweep','double','ripple','recoil'],60042:['blade','fall','single','cleave','vanish'],
   60060:['bell','pierce','single','ripple','vanish'],60061:['bell','orbit','double','ripple','recoil'],60062:['bell','fall','single','pinch','drift'],
   60080:['stone','pierce','single','fracture','vanish'],60081:['stone','orbit','double','cleave','recoil'],60082:['stone','fall','single','fracture','drift'],
+  60093:['blade','sweep','single','cleave','drift'],60073:['fulgur','fall','single','fracture','vanish'],
   60090:['ember','sweep','single','cleave','vanish'],60091:['ember','orbit','double','fracture','recoil'],60092:['ember','fall','single','fracture','drift'],
   60110:['shadow','pierce','single','pinch','vanish'],60111:['shadow','sweep','double','ripple','recoil'],60112:['shadow','orbit','single','cleave','drift']
  };
  Object.assign(bindings,{4320:['pillar','fall','single','ripple','drift'],4311:['vortex','orbit','double','pinch','recoil'],4310:['nova','pierce','single','fracture','vanish'],4303:['lotus','sweep','single','ripple','drift'],4312:['gate','pierce','double','cleave','recoil'],4030:['comet','fall','single','cleave','drift'],4304:['cage','orbit','triplet','pinch','recoil'],4031:['tide','sweep','single','ripple','drift'],4302:['thorn','fall','triplet','fracture','vanish'],4330:['eclipse','orbit','single','pinch','recoil'],4301:['wings','sweep','double','cleave','drift'],4313:['fulgur','pierce','triplet','fracture','vanish']});
  for(const id of Object.keys(bindings))if(!Object.hasOwn(options.family,bindings[id][0]))delete bindings[id];
+ Object.assign(bindings,{
+  4001:['blade','sweep','single','cleave','vanish'],4002:['blade','sweep','single','cleave','recoil'],
+  4003:['blade','fall','single','fracture','drift'],4004:['thread','pierce','single','pinch','vanish'],
+  4005:['stone','fall','single','fracture','drift'],4006:['bell','sweep','single','ripple','recoil'],
+  4016:['blade','orbit','single','ripple','recoil'],4017:['stone','fall','single','cleave','drift'],4019:['blade','sweep','single','pinch','vanish']
+ });
  const bySkill=new Map(Object.entries(bindings).map(([id,v])=>[Number(id),resolve({family:v[0],path:v[1],rhythm:v[2],impact:v[3],release:v[4],seed:Number(id),variation:.65,...signature(v[0])})]));
+ if(bySkill.has(60093))bySkill.set(60093,resolve({...bySkill.get(60093),palette:'amber',thickness:3,afterglow:1.15}));
  const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)),mix=(a,b,t)=>a+(b-a)*t;
  const hash=(seed,i)=>{let x=(seed^Math.imul(i+1,0x9e3779b1))>>>0;x=Math.imul(x^(x>>>16),0x85ebca6b);return ((x^(x>>>13))>>>0)/4294967296;};
  // A cast owns one cosmetic sample. Same input token replays exactly; the
@@ -216,5 +224,6 @@ const SkillEffects = (() => {
   let remaining=voices.length;
   for(const [start,end,type,length] of voices){const o=ctx.createOscillator(),g=ctx.createGain();o.type=type;o.frequency.setValueAtTime(start,when);o.frequency.exponentialRampToValueAtTime(end,when+length);g.gain.setValueAtTime(.001,when);g.gain.linearRampToValueAtTime(.3/voices.length,when+.006);g.gain.exponentialRampToValueAtTime(.001,when+length);o.connect(g);g.connect(gain);o.start(when);o.stop(when+length+.01);o.onended=()=>{o.disconnect();g.disconnect();if(--remaining===0)gain.disconnect();};}
  }
- return Object.freeze({VERSION,LIMIT,colorways,colorAt,decorate,forCast,options,presets,resolve,forSkill:id=>bySkill.get(id)||null,stroke,impact,frame,beats,duration,life,transform,sound});
+ function forSkill(id){if(bySkill.has(id))return bySkill.get(id);const fx=typeof skillById==='function'?skillById(id)?.fx:null;if(!fx)return null;const value=resolve(fx);bySkill.set(id,value);return value;}
+ return Object.freeze({VERSION,LIMIT,colorways,colorAt,decorate,forCast,options,presets,resolve,forSkill,stroke,impact,frame,beats,duration,life,transform,sound});
 })();

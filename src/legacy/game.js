@@ -27,7 +27,7 @@ class Game{
   this.playerId=[...this.sim.players.values()].find(p=>p.owner===this.profile.owner&&(p.alive||p.legacyChoice?.state==='pending'))?.id||[...this.sim.players.values()].filter(p=>p.owner===this.profile.owner).at(-1)?.id||null;
   this.seq=this.sim.seq;if(this.playerId)this.snapshot=this.decorate(this.sim.snapshot(this.playerId,this.seq));
  }
- decorate(s){if(!s)return s;const revision=s.room.terrainRevision??(this.online?0:1),key=s.room.seed+':'+revision;if(!this.mapCache.has(key))this.mapCache.set(key,makeVillage(s.room.seed,revision));s.map=this.mapCache.get(key);return s;}
+ decorate(s){if(!s)return s;const revision=s.room.terrainRevision??(this.online?0:1),shipRevision=s.room.shipRevision??(this.online?0:1),key=s.room.seed+':'+revision+':'+shipRevision;if(!this.mapCache.has(key))this.mapCache.set(key,makeVillage(s.room.seed,revision,shipRevision));s.map=this.mapCache.get(key);return s;}
  makeClanPreview(){const previewSim=new Simulation({seed:7349,mode:'normal'}),p=previewSim.addPlayer('preview',{race:this.profile.race,owner:'preview',name:'エリン'});Object.assign(p,{kind:'portrait',race:this.profile.race,age:24,appearanceSeed:16,hair:1,gender:0,weapon:-1,armor:0,shield:false,prologue:false,introUntil:-100,x:0,z:0,dir:.05,baseY:.13,action:'idle',alive:true});this.previewCharacter=p;this.clanScene=this.decorate(previewSim.snapshot(p.id));}
  saveWorld(){
   if(!this.sim||this.online||this.blockSave)return false;
@@ -47,7 +47,7 @@ class Game{
  command(cmd){if(this.screen!=='game'||!this.snapshot?.player||(!this.snapshot.player.alive&&cmd.type!=='choose-legacy'))return false;if(this.online){if(!this.live?.ready)return false;if(cmd.type==='move'){this.pendingMove=cmd;return true;}if(cmd.type==='weights'){const i=this.commandBuffer.findIndex(c=>c.type==='weights'&&c.phase===cmd.phase);if(i>=0)this.commandBuffer[i]=cmd;else this.commandBuffer.push(cmd);}else if(this.commandBuffer.length<20){if(cmd.type==='dash'){this.pendingMove=null;this.commandBuffer=this.commandBuffer.filter(c=>c.type!=='dash');}this.commandBuffer.push(cmd);};return true;}const ok=this.sim.command(this.playerId,cmd);this.snapshot=this.decorate(this.sim.snapshot(this.playerId,this.seq));if(cmd.type==='choose-legacy'&&ok)this.saveWorld();return ok;}
  sendNetwork(){return this.live?.send();}
  toClan(){this.stopInput();this.saveWorld();this.live?.disconnect();this.screen='clan';this.makeClanPreview();this.renderer.effects=[];this.renderer.staticShadowDirty=true;this.ui.showClan();}
- nearRack(){const p=this.snapshot?.player,r=this.snapshot?.room;if(!p||r.kind!=='village')return false;const rack=this.snapshot.map.schools.find(s=>s.id==='armory');if(!rack)return false;return Math.hypot(p.x-rack.x,p.z-rack.z-3)<=5.4;}
+ nearRack(){const p=this.snapshot?.player,r=this.snapshot?.room;if(!p||r.kind!=='village')return false;const rack=this.snapshot.map.schools.find(s=>s.id==='armory');if(!rack)return false;return atFacilityStation(p,rack);}
  resetPointer(){if(this.pointer){clearTimeout(this.pointer.timer);const id=this.pointer.id;this.pointer=null;try{if(this.renderer.canvas.hasPointerCapture(id))this.renderer.canvas.releasePointerCapture(id);}catch{}}this.input={x:0,z:0};document.getElementById('joystick').classList.add('hidden');}
  stopInput(){this.keys.clear();this.walkTarget=null;this.resetPointer();if(this.screen==='game')this.command({type:'move',x:0,z:0});}
  installInput(){
@@ -76,7 +76,7 @@ class Game{
    this.resetPointer();
    if(e.type!=='pointerup'){this.command({type:'move',x:0,z:0});return;}
    // One recognizer for mouse, pen and touch. Dash persists on the server until a new intent.
-   if(!this.snapshot?.player.prologue&&!q.held&&d>=32&&elapsed<320&&d/Math.max(1,elapsed)>.18){
+   if(!q.held&&d>=32&&elapsed<320&&d/Math.max(1,elapsed)>.18){
     const w=this.renderer.screenToWorld(dx,dy),n=Math.hypot(w.x,w.z)||1;this.command({type:'dash',x:w.x/n,z:w.z/n});return;
    }
    if(q.moved){this.command({type:'move',x:0,z:0});return;}

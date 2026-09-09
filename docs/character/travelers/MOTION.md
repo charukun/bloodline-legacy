@@ -1,5 +1,7 @@
 # Traveler sword motion: connect #35 and #42
 
+> **REFERENCE — この領域の技術・実装資料。** ゲームの確定仕様の正本を置き換える文書ではありません。本文の旧ポリシー、WORK固有の指示、PR依存・SHA・検証結果はhistoricalな来歴で、現在の共通運用やGitHub状態には適用しません。[現行の文書案内](../../README.md)。
+
 #35's clips originally lived only in `CM01.Character`. #42 replaces that character
 with `Travelers.Character` for four approved young-adult samples, so merging both
 PRs did not make those clips play on the new models. This change connects the

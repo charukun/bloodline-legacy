@@ -37,6 +37,7 @@ class UILineage {
    saveMotion:enabled=>{this.g.profile.lineageMotion=enabled;this.g.saveProfile();},
    resetState:()=>this.resetState(),clear:()=>this.clear(),
    recordDetails:r=>this.recordDetails(r),
+   buildTitle:typeof BUILD_INFO==='undefined'?'local / unbuilt':BUILD_INFO.environment+' · '+BUILD_INFO.commit,
    buildLabel:typeof BUILD_INFO==='undefined'?'BLOODLINE LEGACY':BUILD_INFO.displayVersion,
    start:payload=>this.start(payload,inGame),
    settings:()=>{this.focusBeforeSettings=view.scope.querySelector('#settings');this.ui.settings();},
@@ -50,7 +51,7 @@ class UILineage {
   this.ui.clan.classList.add('lineage-home');
   if(!this.home){this.home=this.mount(this.ui.clan,false);this.homeKey=key;}
   else this.home.refresh();
-  this.home.setVisible(this.g.screen==='clan'&&!this.ui.modal);
+  this.home.setVisible(this.g.screen==='clan'&&!this.ui.modal);this.g.live?.renderNotice?.();
  }
  refreshClan(){
   this.renderClan();
@@ -60,7 +61,7 @@ class UILineage {
   if(this.g.screen==='clan'){this.ui.closeModal();this.refreshClan();this.home.focus();return;}
   this.ui.open('lineage','血脈の系譜','');
   this.ui.mountDock(false);
-  this.modalView=this.mount(this.ui.root.querySelector('.panel-content'),true);
+  this.modalView=this.mount(this.ui.root.querySelector('.panel-content'),true);this.g.live?.renderNotice?.();
   this.signature=this.liveSignature();
   queueMicrotask(()=>this.modalView?.focus());
  }

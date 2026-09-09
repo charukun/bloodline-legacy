@@ -137,6 +137,30 @@ const SkillMotion=(()=>{
   rightLeg:0,leftLeg:0,rightKnee:0,leftKnee:0,weightX:0,weightZ:0,
   footSpread:.24,footLead:.13,footTurn:0,grip:0};
  const keys=Object.keys(guard);
+ function ready(p,t){
+  return p.alive!==false&&!p.prologue&&!incapacitated(p)&&!p.traversal&&!p.rescueTarget&&!p.seated&&!p.activity&&!(p.standUpUntil>t)&&!['carry','wave','sleep','sit','interact','land'].includes(p.action)&&!['sleep','stun'].some(k=>hasStatus(p,k,t))&&!!(p.autoFight||p.guard||p.guardUntil>t||p.combo||p.focusTarget&&p.focusUntil>t);
+ }
+ // The pose breathes around planted soles. Its clock/envelope belong to the
+ // renderer, so stance animation cannot move a collider or consume simulation RNG.
+ function readyPose(p,t,state,engaged){
+  const dt=state&&!(p.hitstopUntil>t)?clamp(t-(state.readyAt??t),0,.1):0;
+  let weight=engaged?1:0,clock=t;
+  if(state){
+   state.readyAt=t;state.readyWeight=(state.readyWeight||0)+(weight-(state.readyWeight||0))*(1-Math.exp(-dt*12));
+   if(!engaged&&state.readyWeight<.002)state.readyWeight=0;
+   state.readyClock??=t;if(!(p.hitstopUntil>t))state.readyClock+=dt;
+   weight=state.readyWeight;clock=state.readyClock;
+  }
+  if(!weight)return {pose:{},weight:0};
+  const heavy=[2,4].includes(p.weapon),quiet=heavy?.58:1,phase=clock*(heavy?1.9:2.6)+(String(p.id||'').charCodeAt(0)||0)*.13;
+  const sway=(Math.sin(phase)+Math.sin(phase*.61+1.3)*.25)*quiet,breath=Math.sin(clock*1.9+.7),still=['idle','recover','guard'].includes(p.action)?1:0;
+  const pose={...guard,y:-.075+breath*.009*still,pitch:.035,torso:.025+breath*.014*still,torsoYaw:sway*.045*still,head:-.025-breath*.012*still,headYaw:-sway*.025*still,
+   weightX:sway*.042*still,weightZ:Math.sin(phase+.7)*.018*still,
+   rightArm:guard.rightArm+breath*.035*still,leftArm:guard.leftArm+Math.sin(phase+.45)*.045*quiet*still,
+   rightElbow:guard.rightElbow+breath*.035*still,leftElbow:guard.leftElbow-breath*.025*still,grip:twoHanded(p)?.85:0};
+  for(const key of keys)pose[key]*=weight;
+  return {pose,weight};
+ }
  // Family accents: forge weight, careful precision, play, tracking, study,
  // patience, bell, feather, stone, charcoal, sparring, woodland, knotwork.
  const accents=[ [.05,.08,.05],[0,-.08,-.03],[-.02,-.06,.08],
@@ -187,14 +211,45 @@ const SkillMotion=(()=>{
  }
  function clock(p,t,sk=skillById(p.pendingSkill?.id??p.attackSkill??p.currentSkill)){
   if(!sk||p.alive===false)return null;
+  // Consume the cast that Simulation actually accepted, including connection
+  // bonuses. Never infer a successful link from catalog tags or combo position.
+  if(p.skillCast?.id===sk.id)sk={...sk,...p.skillCast};
   if(p.pendingSkill){const q=p.pendingSkill;return {sk,shape:shape(sk),stage:'charge',u:clamp((t-q.started)/Math.max(.001,q.at-q.started),0,1),beat:0,index:0,hits:sk.hits||1};}
-  if(p.action!=='attack'||t>p.actionUntil)return null;
+  if(p.action!=='attack'||(t>p.actionUntil&&!(p.combo?.awaitUntil>=t)))return null;
   const hits=sk.hits||1,duration=Math.max(.001,p.actionUntil-p.actionStarted),u=clamp((t-p.actionStarted)/duration,0,1);
-  const index=Math.min(hits-1,Math.floor(u*hits));return {sk,shape:shape(sk),stage:'attack',u,beat:Math.min(1,u*hits-index),index,hits,duration:duration/hits};
+  const b=skillBeat(sk,u);return {sk,shape:shape(sk),stage:'attack',u,beat:b.beat,index:b.index,hits,duration:duration*(b.end-b.start)};
  }
  // Every beat has a wind-up, contact, overshoot and return. The end of an
  // internal beat IS the next wind-up; there is no modulo snap at a hit boundary.
  function family(a){return ['double','cross'].includes(a)?'slash':a==='eclipse'?'spin':['dash','zigzag','slide'].includes(a)?'thrust':['leap','judgement'].includes(a)?'slam':a==='roar'?'cast':a;}
+ // Presentation spacing inside the unchanged Simulation beat. Short actions
+ // spend fewer seconds cutting; heavy actions retain a longer follow-through.
+ // The contact key remains .43, independent of frame rate and world speed.
+ function phrasing(p,c){
+  const sk=c.sk,base=family(c.shape),duration=c.duration||actionTiming(sk).swing/(sk.hits||1);
+  const value=(key,fallback)=>Number.isFinite(sk[key])?Math.max(0,sk[key]):fallback;
+  const swing=value('swing',.3),recovery=value('recovery',.6),weight=clamp(value('power',.5)*.16,0,.5);
+  const heavy=base==='slam',linked=p.skillCast?.id===sk.id&&p.skillCast.linked===true;
+  const strike=(base==='thrust'?.10:heavy?.15:.12)+swing*.06+weight*.035;
+  const tail=(heavy?.19:.15)+swing*.055+weight*.025;
+  const start=.43-clamp(strike/duration,.14,.34),follow=.43+clamp(tail/duration,.12,.28);
+  const original=skillById(sk.id),chargeRatio=linked&&original?.charge>0?clamp(value('charge',0)/original.charge,.25,1):1;
+  return {start,follow,settleAt:Math.min(.96,follow+.22+clamp(recovery,0,1.5)*.08),
+   settle:p.combo?clamp(.38+recovery*.24,.4,.70):.82,
+   linked,chargeEnd:linked?.62+.24*chargeRatio:.86,
+   entryEnd:linked?.78:.48};
+ }
+ // Carry the displayed skeleton, not a procedural approximation of a baked
+ // clip. This also covers consecutive casts which reuse the very same clip.
+ function chargeTransition(st,p,c){
+  if(c?.stage!=='charge'){st.chargeKey=null;st.chargeFrom=null;return null;}
+  const key=c.sk.id+':'+(p.combo?.total||0);
+  if(st.chargeKey!==key||c.u<(st.chargeU??0)-1e-5){
+   st.chargeKey=key;st.chargeFrom=st.lastQ&&st.lastRootQ?{q:st.lastQ,offset:st.lastOffset,rootQ:st.lastRootQ,rootOffset:st.lastRootOffset}:null;
+  }
+  st.chargeU=c.u;
+  return {from:st.chargeFrom,amount:ease(c.u/phrasing(p,c).entryEnd)};
+ }
  function keypose(c,kind,index){
   const a=c.shape,base=family(a);
   const pose={...guard,...(profiles[base]||profiles.slash)[kind]};
@@ -209,6 +264,7 @@ const SkillMotion=(()=>{
    if(a!=='zigzag')pose.rightArmZ=-pose.rightArmZ;
   }
   if(a==='slide'){pose.y-=.17;pose.torso+=.13;pose.rightArm+=.18;}
+  if(a==='kick'&&c.sk.motionPath==='orbit'){pose.y-=.13;pose.yaw+=(kind===0?-.35:kind===1?.6:1);pose.torsoYaw-=.2;}
   if(a==='leap'&&kind===0)pose.y=-.12;
   if(a==='spin'||a==='eclipse'){
    pose.yaw=(index+(kind===0?0:kind===1?.43:.62))*TAU;
@@ -223,53 +279,58 @@ const SkillMotion=(()=>{
  // Monotone Hermite slopes carry momentum THROUGH contact. A smoothstep for
  // each interval would stop the weapon at the hit key, before its follow-through.
  function tangent(a,b,c,ab,bc){const x=(b-a)/ab,y=(c-b)/bc;return x*y<=0?0:2*x*y/(x+y);}
- function curve(a,b,c,d,v,start,follow){
-  const times=[start,.43,follow,1],values=[a,b,c,d];
+ function curve(a,b,c,d,v,start,follow,end=1){
+  const times=[start,.43,follow,end],values=[a,b,c,d];
   if(v<=start)return a;
+  if(v>=end)return d;
   const i=v<.43?0:v<follow?1:2,h=times[i+1]-times[i],u=clamp((v-times[i])/h,0,1),u2=u*u,u3=u2*u;
-  const slopes=[0,tangent(a,b,c,.43-start,follow-.43),tangent(b,c,d,follow-.43,1-follow),0];
+  const slopes=[0,tangent(a,b,c,.43-start,follow-.43),tangent(b,c,d,follow-.43,end-follow),0];
   return (2*u3-3*u2+1)*values[i]+(u3-2*u2+u)*h*slopes[i]+(-2*u3+3*u2)*values[i+1]+(u3-u2)*h*slopes[i+1];
  }
  function sample(p,t,out,state){
-  const c=clock(p,t);let settled=p.autoFight||p.guard||p.guardUntil>t;
+  const c=clock(p,t),settled=ready(p,t),idle=readyPose(p,t,state,settled);
   if(!c){
    if(p.action==='recover'&&p.actionUntil>t){
     if(state&&!state.recover){state.recover=state.lastPose?{...state.lastPose}:{...guard};state.recover.yaw=Math.atan2(Math.sin(state.recover.yaw),Math.cos(state.recover.yaw));}
-    blend(out,state?.recover||guard,settled?guard:{},ease((t-p.actionStarted)/Math.max(.001,p.actionUntil-p.actionStarted)));out.active=true;out.skillMotion=true;
+    blend(out,state?.recover||guard,idle.pose,ease((t-p.actionStarted)/Math.max(.001,p.actionUntil-p.actionStarted)));out.active=true;out.skillMotion=true;
    }
-   else if(settled){Object.assign(out,guard);out.active=true;}
+   else if(idle.weight>0){Object.assign(out,idle.pose);out.active=true;out.combatIdle=!['run','guardWalk','dash'].includes(p.action);}
    if(state){if(p.action!=='recover'){state.carry=null;state.recover=null;}state.lastPose={...out};state.stage=p.action;}
    return out;
   }
   out.active=true;out.skillMotion=true;out.motionClock=c;
-  const load=keypose(c,0,c.index);
+  const load=keypose(c,0,c.index),phrase=phrasing(p,c);
   if(c.stage==='charge'){
    if(state&&state.stage!=='charge'){
     state.carry=state.lastPose?{...state.lastPose}:null;
     if(state.carry)state.carry.yaw=Math.atan2(Math.sin(state.carry.yaw),Math.cos(state.carry.yaw));
    }
-   blend(out,state?.carry||(p.autoFight||p.combo?.total>1?guard:{}),load,ease(c.u));
+   blend(out,state?.carry||(p.autoFight||p.combo?.total>1?guard:{}),load,ease(c.u/phrase.chargeEnd));
   }
   else{
    const v=c.beat,hit=keypose(c,1,c.index),follow=keypose(c,2,c.index);
    // Leave an economical ready position in the direction of the last cut.
    // The renderer carries this into the next charge or the real recovery state.
-   const next=c.index+1<c.hits?keypose(c,0,c.index+1):blend({},follow,guard,p.combo?.55:.78);
+   const next=c.index+1<c.hits?keypose(c,0,c.index+1):blend({},follow,guard,phrase.settle);
    if(['spin','eclipse'].includes(c.shape)&&c.index+1===c.hits)next.yaw=c.hits*TAU;
-   const base=family(c.shape),heavy=base==='slam',spin=base==='spin',phase=skillPhase(c.sk);
-   const start=c.index>0?0:heavy?.17+phase*.015:base==='thrust'?.055:base==='cast'?.12:.09;
-   const end=heavy?.73:base==='thrust'?.57:.65;
+   const spin=family(c.shape)==='spin';
+   const start=c.index>0?0:phrase.start,end=phrase.follow;
    for(const k of keys){
     // Pelvis initiates, chest follows, the hand arrives last at the fixed hit.
     const lead=['yaw','weightX','weightZ'].includes(k)?.07:k==='torsoYaw'?.035:0;
-    out[k]=curve(load[k],hit[k],follow[k],next[k],v,Math.max(0,start-lead),end);
+    out[k]=curve(load[k],hit[k],follow[k],next[k],v,Math.max(0,start-lead),end,c.index+1<c.hits?1:phrase.settleAt);
    }
-   if(spin){out.yaw=(c.index+ease(v))*TAU;out.footTurn=out.yaw;}
-   if(c.shape==='leap'){
+   if(spin){out.yaw=(c.index+curve(0,.43,.62,1,v,start,end))*TAU;out.footTurn=out.yaw;}
+   if(c.shape==='leap'&&c.sk.presentation!=='stormleap'){
     // Jump and landing fit BEFORE contact, followed by grounded compression.
     const jump=v<.12?0:v<.43?Math.sin(Math.PI*(v-.12)/.31):0;
     out.y+=Math.max(0,jump)*.40;out.air=jump>.05;
    }
+  }
+  if(c.sk.presentation==='stormleap'){
+   // Lift during the actual approach; settle before the fixed contact beat.
+   const u=c.stage==='charge'?clamp((c.u-.15)/.85,0,1)*.58:.58+clamp(c.beat/.43,0,1)*.42;
+   const lift=Math.sin(Math.PI*u)*.58;out.y+=lift;out.air=lift>.045;
   }
   out.head=-out.torso*.35;
   const aim=state?.aim??0;out.headYaw=-.65*Math.sin(out.yaw+out.torsoYaw-aim);
@@ -291,7 +352,8 @@ const SkillMotion=(()=>{
   }
   return s;
  }
- function twoHanded(p){return [2,3,4].includes(p.weapon)&&!p.shield&&p.wounds?.rightArm?.severity!=='lost'&&p.wounds?.leftArm?.severity!=='lost';}
+ function unarmed(p){return !!(p.pendingSkill||['charge','attack','recover'].includes(p.action))&&!!skillById(p.pendingSkill?.id??p.attackSkill??p.currentSkill)?.unarmed;}
+ function twoHanded(p){return !unarmed(p)&&[2,3,4].includes(p.weapon)&&!p.shield&&p.wounds?.rightArm?.severity!=='lost'&&p.wounds?.leftArm?.severity!=='lost';}
  // Analytic two-arm grip. Both rigs pass their actual joint matrices, so the
  // solve respects their limb lengths instead of stretching to an adult target.
  function grip(p,pose,right,left,equipmentY=-.035){
@@ -389,7 +451,7 @@ const SkillMotion=(()=>{
    if(edge<.50)y=Math.max(y,m[13]+Math.abs(m[5])*.5-.014*(1-ease((.50-edge)/.09)));
   }return Math.max(y,supportHeight(r.traversalMap,x,z));
  }
- return {sample,clock,shape,foot,groundAt,stateFor,twoHanded,grip};
+ return {sample,clock,shape,phrasing,curve,chargeTransition,foot,groundAt,stateFor,ready,unarmed,twoHanded,grip};
 })();
 
 // Collision stays with the rescuer; the body lies across the supporting arms.
@@ -398,7 +460,15 @@ function carriedVisualPose(p){if(p.lifeState!=='carried')return p;const d=p.dir|
 function artPose(p,t,state){
  const o={active:false,y:0,x:0,z:0,yaw:0,pitch:0,roll:0,torso:0,head:0,rightArm:0,leftArm:0,rightArmZ:0,leftArmZ:0,rightLeg:0,leftLeg:0,rightKnee:0,leftKnee:0};
  if(p.alive===false)return o;
- if(p.traversal){const u=p.traversal.progress||0,lift=Math.sin(Math.PI*u);return {...o,active:true,pitch:.30*lift,rightArm:-1.35*lift,leftArm:-.9*lift,rightLeg:-1.25*lift,leftLeg:-.72*lift,rightKnee:1.9*lift,leftKnee:1.5*lift,head:-.08};}
+ if(p.traversal){
+  const a=p.traversal,u=clamp(a.progress||0,0,1),ease=x=>{x=clamp(x,0,1);return x*x*(3-2*x);};
+  if(a.kind==='vault'||a.profile!==1){const lift=Math.sin(Math.PI*u);return {...o,active:true,pitch:.30*lift,roll:.13*lift,rightArm:-1.35*lift,leftArm:-.9*lift,rightLeg:-1.25*lift,leftLeg:-.72*lift,rightKnee:1.9*lift,leftKnee:1.5*lift,head:-.08*lift};}
+  const reach=ease(u/.13)*(1-ease((u-(a.obstacle?.62:.42))/.20)),pull=ease((u-.13)/.18)*(1-ease((u-.55)/.19)),over=ease((u-.17)/.17)*(1-ease((u-.76)/.24)),trail=ease((u-.24)/.17)*(1-ease((u-.81)/.19));
+  return {...o,active:true,y:a.obstacle?0:-.18*reach,pitch:(a.obstacle?.80:.64)*reach+.10*over,torso:.10*pull,head:-.10*reach,
+   rightArm:-1.5*reach,leftArm:-1.5*reach,rightElbow:-.72*pull,leftElbow:-.72*pull,rightWrist:.28*reach,leftWrist:.28*reach,
+   rightArmZ:-.08*reach,leftArmZ:.08*reach,rightLeg:-1.95*over,leftLeg:-1.8*trail,rightKnee:2.25*over,leftKnee:2.15*trail,
+   traversalGrip:reach};
+ }
  if(p.action==='land'&&p.actionUntil>t){const u=clamp((t-p.actionStarted)/.16,0,1),bend=Math.sin(Math.PI*u);return {...o,active:true,y:-.1*bend,rightLeg:-.25*bend,leftLeg:-.25*bend,rightKnee:.5*bend,leftKnee:.5*bend};}
  if(incapacitated(p)){
   const u=clamp((t-(p.downedAt??t))/.7,0,1),settle=u*u*(3-2*u),carried=p.lifeState==='carried';

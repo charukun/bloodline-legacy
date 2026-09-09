@@ -6,7 +6,7 @@ import {compileCatalog} from '../tools/skill-catalog.mjs';
 const ctx=vm.createContext({console,performance,requestAnimationFrame(){}});
 ctx.BL_SKILL_DEFINITIONS=compileCatalog(JSON.parse(fs.readFileSync(new URL('../src/skills/catalog-source.json',import.meta.url),'utf8')));
 for(const file of ['legacy/dialogue.js','legacy/core.js','skills/engine.js','skills/runtime.js','render/motion-interpolation.js','legacy/game.js'])vm.runInContext(fs.readFileSync(new URL('../src/'+file,import.meta.url),'utf8'),ctx);
-const {Simulation,Game}=vm.runInContext('({Simulation,Game})',ctx);
+const {Simulation,Game,facilityStation}=vm.runInContext('({Simulation,Game,facilityStation})',ctx);
 const plain=x=>JSON.parse(JSON.stringify(x)),STEP=1/30;
 function fixture(){
  const sim=new Simulation({seed:7349,mode:'normal'}),p=sim.addPlayer('test',{owner:'test'}),steps=[];
@@ -60,7 +60,7 @@ test('skill experience, discovery opportunities and learned techniques match at 
  for(const speed of [.5,1,2]){
   const f=fixture(),{g,p,sim}=f,room=sim.getRoom(p),discoveries=[];
   Object.assign(p,{prologue:false,age:18,ageFraction:0,introUntil:-100,releaseAt:-100,farewellStage:3});room.actors=[];room.waveAt=Infinity;
-  const work=id=>{const school=room.map.schools.find(s=>s.id===({observe:'forge',study:'sword',pray:'church'})[id]);Object.assign(p,{x:school.x,z:school.z,autoFight:null,input:{x:0,z:0}});assert.ok(sim.command(p.id,{type:'activity',activity:id}));};
+  const work=id=>{const school=room.map.schools.find(s=>s.id===({observe:'forge',study:'sword',pray:'church'})[id]);const a=facilityStation(school);Object.assign(p,{x:a.x,z:a.z+1,autoFight:null,input:{x:0,z:0}});assert.ok(sim.command(p.id,{type:'activity',activity:id}));};
   const emit=sim.emit.bind(sim);sim.emit=(type,data)=>{emit(type,data);if(['insight','passive'].includes(type))discoveries.push({type,id:data.id,t:sim.time,wall:(g.lastFrame-1000)/1000});};
   const tick=sim.tick.bind(sim);sim.tick=dt=>{if(f.steps.length===4800)work('study');if(f.steps.length===9600)work('pray');tick(dt);};
   work('observe');g.setWorldSpeed(speed);g.lastFrame=1000;frames(g,860/speed,30);

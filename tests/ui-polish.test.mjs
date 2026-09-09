@@ -11,7 +11,7 @@ test('all seven facility actions emit authored phrases that rise and fade withou
  const {p,g,sim,ui,d,sync}=fixture(t);sim.getRoom(p).actors=[];
  const activities={sword:'study',magic:'read',church:'pray',forge:'observe',dance:'play',hunter:'track',armory:'care'};
  for(const [id,activity] of Object.entries(activities)){
-  const school=g.snapshot.map.schools.find(a=>a.id===id);p.x=school.x;p.z=school.z+1;p.activity=null;
+  const school=g.snapshot.map.schools.find(a=>a.id===id);Object.assign(p,g.station(school));p.activity=null;
   const seq=sim.seq;assert.equal(g.command({type:'activity',activity}),true);
   for(let i=0;i<28;i++)sim.tick(1/30);
   const event=sim.snapshot(p.id,seq).events.find(e=>e.type==='progress');assert.ok(event,id+' emits a real phrase');
@@ -73,7 +73,7 @@ test('skill adoption and passive state use leaf seals while retaining names, all
 });
 
 test('equipment and lineage choices use symbols while retaining the actual selection commands',t=>{
- const {p,g,sim,ui,d,sync}=fixture(t),school=g.snapshot.map.schools.find(s=>s.id==='armory');p.x=school.x;p.z=school.z+3;sync();ui.rack();
+ const {p,g,sim,ui,d,sync}=fixture(t),school=g.snapshot.map.schools.find(s=>s.id==='armory');Object.assign(p,g.station(school));sync();ui.rack();
  d.querySelector('[data-slot="weapon"][data-value="0"]').click();assert.equal(p.weapon,0);assert.doesNotMatch(d.getElementById('game-panel').textContent,/装備中|選択中/);assert.ok(d.querySelector('[data-slot="weapon"][data-value="0"] .selection-seal.lit'));
  ui.closeModal();sim.removePlayer(p.id);g.playerId=null;g.snapshot=null;g.screen='clan';g.profile.race=0;ui.showClan();
  let root=ui.lineageView.home.scope;root.querySelector('[data-origin-race="2"]').click();assert.equal(g.profile.race,2);assert.equal(root.querySelector('[data-origin-race="2"]').getAttribute('aria-pressed'),'true');

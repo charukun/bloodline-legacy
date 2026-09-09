@@ -1,0 +1,26 @@
+{
+  "hearth": {
+    "samples": 3203596,
+    "chunks": 13,
+    "snrDb": 33.209275462911556,
+    "rmsChangeDb": 0.000665418583358484
+  },
+  "road": {
+    "samples": 3633840,
+    "chunks": 14,
+    "snrDb": 33.04678914103978,
+    "rmsChangeDb": 0.0014331725763228117
+  },
+  "legacy": {
+    "samples": 4339440,
+    "chunks": 17,
+    "snrDb": 36.820037236695896,
+    "rmsChangeDb": 0.00024293645855580858
+  },
+  "battle": {
+    "samples": 2697840,
+    "chunks": 11,
+    "snrDb": 33.10087585632721,
+    "rmsChangeDb": 0.0011488527673577734
+  }
+}

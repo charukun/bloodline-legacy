@@ -1,5 +1,7 @@
 # Enemy damage presentation — vitality correction, 2026-09-09
 
+> **REFERENCE — この領域の技術・実装資料。** ゲームの確定仕様の正本を置き換える文書ではありません。本文の旧ポリシー、WORK固有の指示、PR依存・SHA・検証結果はhistoricalな来歴で、現在の共通運用やGitHub状態には適用しません。[現行の文書案内](../README.md)。
+
 The subsequent user-approved [weakness-motion revision](WEAKNESS_MOTION.md)
 adds posture/gait and enemy speed/recovery changes. This document describes
 the earlier damage-layer scope; the motion document governs the current delta.
