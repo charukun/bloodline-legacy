@@ -330,14 +330,14 @@ class UI {
   if(!p.prologue&&canAct(p)&&!p.rescueTarget){
    if(this.g.nearRack())options.push({id:'rack',name:'武具棚',glyph:'sword',facility:'armory'});
    if(school&&p.age>=4){const a=ACTIVITY_DEFS[school.id];if(a)options.push({id:'activity',value:a.id,name:p.activity===a.id?'やめる':a.label,glyph:p.activity===a.id?'close':a.id==='pray'?'sun':a.id==='observe'?'eye':a.id==='play'?'leaf':'book',facility:school.id});}
-   if(dummy&&!p.activity)options.push({id:'practice',value:dummy.id,name:p.autoFight===dummy.id?'稽古をやめる':'人形と稽古',glyph:'sword',anchor:{id:'practice:'+dummy.id,kind:'actor',target:dummy.id,height:2.95}});
+   if(dummy&&!p.activity){const practicing=p.autoFight===dummy.id;options.push({id:'practice',value:dummy.id,name:practicing?'稽古をやめる':'人形と稽古',glyph:practicing?'close':'sword',anchor:practicing?{id:'feet',kind:'feet'}:{id:'practice:'+dummy.id,kind:'actor',target:dummy.id,height:2.95}});}
    const casualty=s.players.find(q=>q.id!==p.id&&q.alive&&q.lifeState==='downed'&&!q.carrierId&&Math.hypot(q.x-p.x,q.z-p.z)<=LIFE_RULES.rescueRange);
    if(casualty)options.push({id:'rescue',value:casualty.id,name:casualty.name+'を救助',glyph:'hand',anchor:{id:'rescue:'+casualty.id,kind:'player',target:casualty.id,height:1.15}});
    if(s.room.kind==='front')options.push({id:'return',name:'帰り舟を呼ぶ',glyph:'boat'});
   }
   this.updatePickup(item&&!p.prologue&&canAct(p)&&!p.rescueTarget?item:null,p);
-  // Facility use belongs to the player's feet; interactions with a particular
-  // actor belong to that actor. Boarding is walking across the gangway.
+  // Facility use and stopping practice belong to the player's feet, leaving
+  // headroom for skill names. Starting stays at its target; boarding uses the gangway.
   for(const o of options)if(o.facility)o.anchor={id:'feet',kind:'feet'};
   const signature=JSON.stringify(options);if(signature!==this.lastContext){this.lastContext=signature;const node=document.getElementById('context');node.innerHTML=options.filter(o=>!o.anchor).slice(0,3).map(o=>this.contextButton(o)).join('');this.bindContextButtons(node);this.syncFacilityActions(options.filter(o=>o.anchor));}
   this.positionFacilityActions(s);this.updateRescueActions(s);
