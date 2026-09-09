@@ -12,7 +12,7 @@
 <main class="game" id="app">
  <header class="top">
   <div class="brand"><svg class="icon" aria-hidden="true"><use href="#leaf"/></svg><h1>血脈の系譜<small id="lineage-build">BLOODLINE LEGACY</small></h1></div>
-  <div class="top-tools"><button class="tool" id="return-game" aria-label="ゲームへ戻る" hidden>←</button><button id="open-index" class="index-shortcut" aria-label="すべての人生と技を探す"><span id="header-count"></span><span>人生の記憶</span><svg class="icon" aria-hidden="true"><use href="#book"/></svg></button><button class="tool" id="motion-toggle" aria-label="背景動画を停止" aria-pressed="true">Ⅱ</button><button class="tool" id="help" aria-label="系譜の手引き">?</button><button class="tool" id="settings" aria-label="設定"><svg class="icon" aria-hidden="true"><use href="#menu"/></svg></button></div>
+  <div class="top-tools"><button class="tool" id="return-game" aria-label="ゲームへ戻る" hidden>←</button><button id="open-index" class="index-shortcut">歴代の記録</button><button class="tool" id="help" aria-label="系譜の手引き">?</button><button class="tool" id="settings" aria-label="一族のオプション"><svg class="icon" aria-hidden="true"><use href="#menu"/></svg></button></div>
  </header>
  <section class="stage" id="scene" aria-label="人生に刻まれた記憶">
   <video id="memory-film" class="stage-film" muted loop playsinline preload="auto" disablepictureinpicture aria-hidden="true" tabindex="-1"></video><div class="film-veil" aria-hidden="true"></div>
@@ -20,34 +20,39 @@
   <div class="stage-number" id="large-generation" aria-hidden="true"></div>
   <svg class="botanical branch-back" viewBox="0 0 400 700" aria-hidden="true"><use href="#branch"/></svg>
   <svg class="botanical branch-front" viewBox="0 0 400 700" aria-hidden="true"><use href="#branch"/></svg>
-  <div class="stage-topline"><section class="blood" id="blood" aria-label="次の人生への準備"></section><span class="folio" id="stage-position"></span></div>
+  <div class="stage-topline"><p class="blood" id="blood"></p><button id="exit-history" hidden>戻る</button></div>
   <div class="person-heading"><p id="generation" class="generation"></p><h2 id="person-name"></h2><p id="life-meta" class="life-meta"></p></div>
   <div class="person-illustration" id="person-art"></div>
   <div class="memory">
-   <p class="eyebrow" id="skill-eyebrow"></p><h3 id="skill-name"></h3><p class="skill-note" id="skill-note"></p>
+   <p class="eyebrow" id="skill-eyebrow"></p><h3 id="skill-name"></h3><p class="skill-note" id="skill-note"></p><p id="inherit-effect" hidden></p>
    <button id="life-details" class="memory-link">生涯と技の記録 <span>↗</span></button>
    <button id="inherit-action" hidden><span></span></button>
    <p id="meaning" class="sr-only"></p><span id="skill-mark" class="sr-only"></span><span id="record-number" class="sr-only"></span>
   </div>
-  <div class="stage-bottomline"><span class="stage-motto">生きた証を、<br><b>次の命へ。</b></span><nav class="life-arrows" aria-label="表示する人生を変える"><button id="previous-life" aria-label="ひとつ新しい人生">←</button><button id="next-life" aria-label="ひとつ古い人生">→</button></nav></div>
-  <div class="selected-stamp" id="selected-stamp" hidden><svg class="icon" aria-hidden="true"><use href="#leaf"/></svg>この経験を選択中</div>
+  <p id="art-caption" class="art-caption"></p>
+  <div class="selected-stamp" id="selected-stamp" hidden><svg class="icon" aria-hidden="true"><use href="#leaf"/></svg>継承に選んだ経験</div>
  </section>
  <section id="prologue-controls" class="prologue-controls" aria-label="最初の命の支度" hidden>
   <div class="origin-caption"><span>01 <b>生まれる血筋</b></span><small id="origin-race-description"></small></div>
   <div id="origin-races" class="origin-races"></div>
   <label class="origin-name" for="origin-name"><span>02 <b>最初の命の名前</b></span><input id="origin-name" type="text" maxlength="12" placeholder="空欄なら、風が名付ける" autocomplete="off"><small>名前は空欄でも始められます</small></label>
  </section>
+ <section id="memory-controls" class="memory-controls" aria-label="継承する技を選ぶ" hidden>
+  <div class="memory-toolbar"><span>受け継ぐ技の経験 <small id="memory-count"></small></span><button id="find-memory">技を探す</button></div>
+  <div id="memory-choices" class="memory-choices"></div>
+  <nav id="memory-pages" class="memory-pages" aria-label="継承候補の頁" hidden><button id="memory-prev" aria-label="前の技">‹</button><span id="memory-page"></span><button id="memory-next" aria-label="次の技">›</button></nav>
+ </section>
  <section id="history-controls" class="archive" aria-label="時代を巡る">
   <div class="archive-toolbar"><span>時代を巡る <small id="archive-count"></small></span><button class="library-open" id="library-open">人生・技から探す ↗</button></div>
   <div class="chronology"><span id="timeline-first">初代</span><input type="range" id="time-dial" min="0" max="0" value="0" step="1" aria-label="表示する世代を選ぶ"><span id="timeline-last"></span></div>
-  <div class="archive-track"><button id="newer" class="rail-arrow" aria-label="新しい記録の頁">‹</button><ol class="archive-list" id="archive"></ol><button id="older" class="rail-arrow" aria-label="古い記録の頁">›</button></div>
+  <div class="archive-track"><button id="newer" class="rail-arrow" aria-label="古い世代へ">‹</button><ol class="archive-list" id="archive"></ol><button id="older" class="rail-arrow" aria-label="新しい世代へ">›</button></div>
   <nav id="rail-controls" class="sr-only" aria-label="歴代の記録の頁"><span id="rail-position"></span></nav>
  </section>
  <footer class="commands">
-  <div class="command-copy"><span class="command-eyebrow" id="command-eyebrow">次の命へ、ひとつの記憶</span><strong id="command-name"></strong><span id="command-detail" class="sr-only"></span></div>
+  <div class="command-copy"><span class="command-eyebrow" id="command-eyebrow">次の命へ、ひとつの記憶</span><strong id="command-name"></strong><span id="command-detail"></span></div>
   <button class="begin" id="begin-life">この記憶を継ぐ</button><button class="skip-inherit" id="skip-inherit">継承せず進む</button>
  </footer>
- <aside id="heir" hidden><button id="selected-memory"><span id="wax"></span><strong id="inherit-name"></strong><span id="inherit-from"></span></button><span id="next-race"></span><button id="edit-name"><span id="next-name"></span></button></aside>
+
 </main>
 <dialog id="dialog" aria-labelledby="dialog-title"><header class="dialog-heading"><div><span class="dialog-kicker" id="dialog-kicker">BLOODLINE / MEMORIES</span><h2 id="dialog-title"></h2></div><button id="close-dialog" aria-label="閉じる">×</button></header><div id="dialog-content"></div></dialog>
 <p id="toast" class="toast" role="status" hidden></p>
