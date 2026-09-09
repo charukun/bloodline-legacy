@@ -14,16 +14,22 @@ export async function verifySkillSlice(page,evidence,viewport) {
  report.discovery=await page.evaluate(()=>{const q=window.AERIN_QA,p=q.player(),before=p.skillLife.discovered.length;for(let i=0;i<9000&&p.skillLife.discovered.length===before;i++)q.sim().tick(1/30);return p.skillLife.discovered.at(-1);});
  assert.ok(report.discovery?.id&&report.discovery.reasons.some(r=>r.includes('鍛冶')),'A real activity must create an explained discovery');
  // Software WebGL screenshots may take longer than the nonmodal reveal.
- // Freeze the existing RAF only after its real UI has revealed the name;
+ // Freeze the existing RAF only after its real UI has shown the compact notice;
  // keep the actual handlers and storage path, then reload into normal RAF.
- await page.waitForFunction(()=>{const a=window.AERIN_QA.app,el=document.getElementById('skill-revelation');if(el?.classList.contains('visible')&&el.classList.contains('named')){a.closed=true;return true;}return false;});
+ await page.waitForFunction(()=>{const a=window.AERIN_QA.app,el=document.getElementById('skill-revelation');if(el?.classList.contains('visible')&&el.closest('[data-menu="skills"]')){a.closed=true;return true;}return false;});
  await page.screenshot({path:prefix+'-discovery.png'});
- await page.locator('.reveal-open').click();
+ const notice=page.locator('#skill-revelation'),bounds=await notice.boundingBox();
+ assert.ok(bounds&&bounds.width<=40&&bounds.height<=20,'Discovery stays a small menu badge');
+ assert.equal(await page.locator('.reveal-open').count(),0);
+ await page.locator('[data-menu="skills"]').click();
  const id=report.discovery.id,active=await page.evaluate(id=>window.AERIN_QA.player().skills.includes(id),id);
- if(active) {
-  const tile=page.locator(`[data-skill="${id}"]`);await tile.click();assert.equal(await tile.getAttribute('aria-pressed'),'true');
-  await page.locator(`[data-detail="${id}"]`).click();
- } else await page.locator(`[data-passive="${id}"]`).click();
+ let found=false;
+ for(const phase of active?[0,1,2]:[3]){
+  await page.locator(`[data-phase="${phase}"]`).click();
+  const tile=page.locator(`[${active?'data-skill':'data-passive'}="${id}"]`);
+  if(await tile.count()){await tile.click();assert.equal(await tile.getAttribute('aria-pressed'),'true');found=true;break;}
+ }
+ assert.ok(found,'The learned technique is reachable through the existing consciousness button');
  assert.ok((await page.locator('#skill-detail').innerText()).includes('鍛冶'),'Discovery cause remains available in details');
  await page.screenshot({path:prefix+'-loadout.png'});
  report.saved=await page.evaluate(()=>{const a=window.AERIN_QA.app;a.saveWorld();return {skills:a.snapshot.player.skills,weights:a.snapshot.player.phaseWeights,memories:a.snapshot.player.skillLife.memories,discovered:a.snapshot.player.skillLife.discovered};});
