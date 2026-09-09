@@ -1,0 +1,37 @@
+{
+  "status": "VALIDATION_PENDING",
+  "baseDevelop": "e3502f519dbaea1d399d3a69b274f72f57494059",
+  "dependencyPR": 42,
+  "dependencyHead": "662dcb006475a73f4ca6ff0761589d8b8c112308",
+  "comparisonBase": "c82ef19c8cdde1f77c0a7b849f1a632f16760d94",
+  "build": "PASS",
+  "fullTests": {
+    "passed": 367,
+    "failed": 0
+  },
+  "focusedTravelerTests": {
+    "passed": 3,
+    "failed": 0,
+    "actualDollDispatch": true,
+    "actualWeaponTip": true,
+    "races": 4,
+    "sampleHz": 120,
+    "blockedAttackSteps": true,
+    "minimumTorsoProxyClearance": 1.4312291286720014,
+    "maxFootTargetError": 1.0835726263703704e-08,
+    "maxPlantedFootSlip": 6.242437677883572e-10
+  },
+  "reviewControls": "JSDOM controls, four-race selector and before/after runtime dispatch PASS; not WebGL rendering",
+  "dataSha256": "c9e383705e46b1254e8a929cadbcfdc8539ad7d39b83d61cea58df0db9a23e06",
+  "deterministicRegeneration": true,
+  "offlineVideo": {
+    "renderer": "EGL / actual runtime palettes and meshes / simplified lighting",
+    "framesPerSecond": 60,
+    "durationSeconds": 17.05,
+    "effects": false
+  },
+  "browser": "UNVERIFIED: net::ERR_BLOCKED_BY_CLIENT at local game URL",
+  "pixelFold": "UNVERIFIED",
+  "commercialReferenceParity": "NOT CERTIFIED",
+  "cpuEvidence": "cpu.json"
+}

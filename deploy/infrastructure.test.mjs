@@ -17,16 +17,18 @@ test('only mapped push events can deploy, never feature/PR/manual into productio
     for(const event of ['pull_request','pull_request_target','workflow_dispatch','workflow_run']) assert.throws(()=>assertDeployment(environment,branch,event));
   }
 });
-test('worker configurations use separate origins and no storage bindings',async()=>{
+test('worker configurations use separate origins and isolated world bindings',async()=>{
   const names=new Set();
   for(const [environment,{worker:name}] of Object.entries(environments)) {
     const config=JSON.parse(await fs.readFile(new URL(`./wrangler.${environment}.json`,import.meta.url)));
     assert.equal(config.name,name); names.add(name);
+    assert.deepEqual(config.durable_objects,{bindings:[{name:'WORLDS',class_name:'GameWorld'}]});
+    assert.deepEqual(config.migrations,[{tag:'game-world-v1',new_sqlite_classes:['GameWorld']}]);
     assert.equal(config.vars.APP_ENV,environment);
     assert.equal(config.assets.directory,`./out/${environment}`);
     assert.equal(config.assets.not_found_handling,'none');
-    assert.deepEqual(config.assets.run_worker_first,['/api/*']);
-    for(const key of ['routes','d1_databases','kv_namespaces','r2_buckets','services','durable_objects']) assert.equal(config[key],undefined);
+    assert.deepEqual(config.assets.run_worker_first,['/api/*','/','/index.html']);
+    for(const key of ['routes','d1_databases','kv_namespaces','r2_buckets','services']) assert.equal(config[key],undefined);
   }
   assert.equal(names.size,3);
 });

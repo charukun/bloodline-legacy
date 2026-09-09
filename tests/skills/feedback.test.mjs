@@ -76,7 +76,7 @@ test('death recap shows actual use, successful pairs and escaped provenance; arc
  assert.deepEqual(Array.from(history.signature),[60000,60001,60002]);
  const restored=sim.constructor.restore(sim.exportState());assert.deepEqual(plain(restored.legacy(p.owner).records.at(-1).skillHistory),plain(history));
  g.snapshot=g.decorate(sim.snapshot(p.id,sim.seq));const old=w.setTimeout;w.setTimeout=fn=>{fn();return 0;};try{ui.death(p);}finally{w.setTimeout=old;}
- assert.equal(ui.modal,'death');assert.ok(d.querySelector('.skill-life-recap'));assert.match(d.querySelector('.skill-life-recap').textContent,/炉打ち → 鉄返し/);assert.equal(d.querySelectorAll('.skill-life-recap img').length,0);
+ d.getElementById('death-continue').click();assert.equal(ui.modal,'death');assert.ok(d.querySelector('.skill-life-recap'));assert.match(d.querySelector('.skill-life-recap').textContent,/炉打ち → 鉄返し/);assert.equal(d.querySelectorAll('.skill-life-recap img').length,0);
  assert.ok(d.querySelector('#next-life'));assert.ok(d.querySelector('#view-lineage'));
  const child=sim.addPlayer('child',{owner:p.owner,inherit:[60000]});assert.ok(!child.skills.includes(60000));assert.equal(child.skillLife.connections['60000:60001'],undefined);
 });

@@ -10,7 +10,7 @@
 
 `deploy/build.mjs` が既存CIの対象環境と `GITHUB_SHA` を受け取り、`deploy/build-info.mjs` で生成する。root buildへ渡した同じ情報をHTML内の `BUILD_INFO` と生成物 `version.json` に保存する。全文SHAはmetadataと表示のtitle属性、先頭7桁は一族画面・設定画面の既存Version欄に表示する。
 
-表示はそのHTMLに埋め込まれた情報を使用する。別途version.jsonをfetchしないため、開いたままの旧版が新しいcommitを名乗ることはない。新しいdeploy後はページ再読み込みで更新される。HTML/manifestの既存no-cache方針を維持する。7桁表示は省略表記であり、厳密な識別は全文SHAで行う。
+表示はそのHTMLに埋め込まれた情報を使用する。Live Updateはversion.jsonを低頻度で確認するが、表示中のVersionを上書きしない。開いたままの旧版が新しいcommitを名乗ることはない。新しい版への移動は、更新通知から安全な区切りで保存した後に行う。詳細は [Live Update](live-update/README.md) を参照。HTML/manifestの既存no-cache方針を維持する。7桁表示は省略表記であり、厳密な識別は全文SHAで行う。
 
 既存ActionsはBuild/Test済みartifactをそのままdeployし、公開HTMLのhashとmanifestを確認する。追加したSmoke assertionで一族画面・設定画面の表示とmanifestの一致も確認する。PR検証のSHAはGitHubのPR merge refの場合があるが、PRからはdeployしない。Integration WORKがdevelopへmergeした後のpushでは、そのdevelop commitを新しくBuildしてDEVへdeployする。STAGING/PRODUCTIONも同じ流れ。
 

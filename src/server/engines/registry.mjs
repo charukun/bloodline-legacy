@@ -1,0 +1,7 @@
+import {Simulation as S0} from './20e7857cd8dd96a1a7d09d61e7d00fa2007dd2b0269a76d6e200cfbdeba6cdf9.mjs';
+import {Simulation as S1} from './ead936cf3d8ce6e5bb700c50fe2c8a5dd259540854e018b02f246b4223585f10.mjs';
+import {Simulation as S2} from './4670d55f9406a8ba34884be5ce8578fdea9fe958ca9ab41919e9d4872fbf04cd.mjs';
+import {Simulation as S3} from './681ae6568e9c4adc8f963a98f7e525cc9d8332257af2a538607fa8d86bff1e93.mjs';
+import {Simulation as S4} from './a4c9594c2b0442c57e043e7e98dae460a20d345ee973a2da9c174ee93f80c8d1.mjs';
+export const engines={"20e7857cd8dd96a1a7d09d61e7d00fa2007dd2b0269a76d6e200cfbdeba6cdf9":S0,"ead936cf3d8ce6e5bb700c50fe2c8a5dd259540854e018b02f246b4223585f10":S1,"4670d55f9406a8ba34884be5ce8578fdea9fe958ca9ab41919e9d4872fbf04cd":S2,"681ae6568e9c4adc8f963a98f7e525cc9d8332257af2a538607fa8d86bff1e93":S3,"a4c9594c2b0442c57e043e7e98dae460a20d345ee973a2da9c174ee93f80c8d1":S4};
+export const currentRules="a4c9594c2b0442c57e043e7e98dae460a20d345ee973a2da9c174ee93f80c8d1";

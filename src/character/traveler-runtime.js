@@ -73,7 +73,7 @@ const Travelers = (()=>{
    if(point)hulls[bone].push(point);
   }
   const damageProfile={vertical:body[1]*.70,torso:clamp(body[2]/body[1],.85,1.1),lateral:clamp(body[0]/body[1],.85,1.15),head:.78};
-  const asset={id,race,bind,ibm,lods,hulls,parents:parents.slice(0,bind.length),names:names.slice(0,bind.length),scale,body,damageProfile};
+  const asset={id,race,bind,ibm,lods,hulls,parents:parents.slice(0,bind.length),names:names.slice(0,bind.length),scale,body,damageProfile,clips:typeof TravelerClips==='undefined'?null:TravelerClips.prepare(race,bind.length)};
   if(modelCache.size>=2)modelCache.delete(modelCache.keys().next().value);modelCache.set(race,asset);return asset;
  }
  class Character {
@@ -97,10 +97,11 @@ const Travelers = (()=>{
    const reaction=damagePose(r,p,t,st.feet,asset.damageProfile),pose=damageArtPose(r,p,t,artPose(p,t,SkillMotion.stateFor(r,p,t))),ail=ailmentPose(p,t),guard=p.guard||p.guardUntil>t||p.autoFight;
    const fall=!p.alive?(p.wasDownedOnDeath?1:smooth((t-(p.deathAt??t))/1.12)):0;
    const sampledGround=p.traversal?Math.max(.10,p.supportHeight||0):this.groundAt(p.x,p.z);if(!Number.isFinite(st.ground))st.ground=sampledGround;st.ground+=(sampledGround-st.ground)*(1-Math.exp(-dt*14));
-   const rootQ=Q.euler(pose.pitch+reaction.pitch+ail.pitch+fall*1.48,(p.dir||0)+pose.yaw,pose.roll+reaction.roll+ail.roll);
-   const rootM=matrix([p.x+reaction.x+Math.cos(p.dir||0)*(pose.weightX||0)+Math.sin(p.dir||0)*(pose.weightZ||0),(p.baseY??st.ground)+(p.verticalOffset||0)+pose.y+ail.y-reaction.drop,p.z+reaction.z-Math.sin(p.dir||0)*(pose.weightX||0)+Math.cos(p.dir||0)*(pose.weightZ||0)],rootQ);
-   const q=asset.bind.map(()=>Q.identity()),qi=(i,x=0,y=0,z=0)=>q[i]=Q.euler(x,y,z),wave=Math.cos(phase);
-   qi(1,pose.torso+reaction.torso+(run?.035:0)*gaitWeight,(pose.torsoYaw||0)+reaction.yaw,reaction.torsoRoll);
+   const authored=asset.clips?CM01.selectClip(p,t,st,phase,moving||['run','guardWalk','dash'].includes(p.action),run,reaction,asset.clips):null;
+   const rootQ=Q.euler((authored?0:pose.pitch)+reaction.pitch+ail.pitch+fall*1.48,(p.dir||0)+(authored?0:pose.yaw),(authored?0:pose.roll)+reaction.roll+ail.roll);
+   const rootM=matrix([p.x+reaction.x+Math.cos(p.dir||0)*(authored?0:pose.weightX||0)+Math.sin(p.dir||0)*(authored?0:pose.weightZ||0),(p.baseY??st.ground)+(p.verticalOffset||0)+(authored?0:pose.y)+ail.y-reaction.drop,p.z+reaction.z-Math.sin(p.dir||0)*(authored?0:pose.weightX||0)+Math.cos(p.dir||0)*(authored?0:pose.weightZ||0)],rootQ);
+   const q=asset.bind.map(()=>Q.identity()),offset=asset.bind.map(()=>[0,0,0]),qi=(i,x=0,y=0,z=0)=>q[i]=Q.euler(x,y,z),wave=Math.cos(phase);
+   qi(1,(authored?0:pose.torso)+reaction.torso+(run?.035:0)*gaitWeight,(authored?0:pose.torsoYaw||0)+reaction.yaw,reaction.torsoRoll);
    qi(2,pose.head+reaction.head+ail.head,pose.headYaw||0,reaction.headRoll);
    for(const [side,a]of [[1,3],[-1,6]]){
     const key=side===1?'right':'left';let x=wave*side*(run?.31:.22)*gaitWeight,z=side*.025;
@@ -111,10 +112,19 @@ const Travelers = (()=>{
     qi(a+1,(pose[key+'Elbow']??0)-(protecting?reaction.amount*(reaction.part===key+'Arm'?.65:.38):0));qi(a+2,pose[key+'Wrist']??0);
    }
    qi(15,Math.sin(phase-.5)*.025*gaitWeight);if(q[16])qi(16,0,Math.sin(phase*.5)*.065*gaitWeight);
-   const blend=pose.active||reaction.amount>.1||fall>0?1:1-Math.exp(-dt*18);if(st.lastQ)for(let i=1;i<q.length;i++)q[i]=Q.slerp(st.lastQ[i],q[i],blend);st.lastQ=q;
+   if(authored){
+    if(st.clipName!==authored.name){st.clipFrom=st.lastQ;st.clipFromOffset=st.lastOffset;st.clipChanged=motionT;st.clipName=authored.name;}
+    TravelerClips.sample(authored.clip,authored.u,q,offset,Q);
+    const entry=authored.stage==='charge'?authored.entry:authored.stage==='ready'?smooth((motionT-st.clipChanged)/.14):1;
+    if(st.clipFrom&&entry<1)for(let i=0;i<q.length;i++){q[i]=Q.slerp(st.clipFrom[i],q[i],entry);if(st.clipFromOffset)offset[i]=V.lerp(st.clipFromOffset[i],offset[i],entry);}
+    this.clipDebug={name:authored.name,stage:authored.stage,u:authored.u,contact:authored.clip.contact};
+   }else{st.clipName=null;this.clipDebug=null;for(const foot of st.feet)if(foot)foot.clipStep=null;}
+   const blend=authored||(pose.active&&!moving)||reaction.amount>.1||fall>0?1:1-Math.exp(-dt*18);
+   if(st.lastQ)for(let i=0;i<q.length;i++){q[i]=Q.slerp(st.lastQ[i],q[i],blend);if(st.lastOffset)offset[i]=V.lerp(st.lastOffset[i],offset[i],blend);}
+   st.lastQ=q;st.lastOffset=offset;
    const localM=[],globalM=[];
-   for(let i=0;i<q.length;i++){const par=asset.parents[i];localM[i]=matrix(V.sub(asset.bind[i],par>=0?asset.bind[par]:[0,0,0]),q[i]);globalM[i]=par>=0?rMultiply(globalM[par],localM[i]):localM[i];}
-   const gripping=SkillMotion.grip(p,pose,{arm:globalM[3],elbow:globalM[4],hand:globalM[5]},{arm:globalM[6],elbow:globalM[7],hand:globalM[8]},-.035);
+   for(let i=0;i<q.length;i++){const par=asset.parents[i];localM[i]=matrix(V.add(V.sub(asset.bind[i],par>=0?asset.bind[par]:[0,0,0]),offset[i]),q[i]);globalM[i]=par>=0?rMultiply(globalM[par],localM[i]):localM[i];}
+   const gripping=authored?null:SkillMotion.grip(p,pose,{arm:globalM[3],elbow:globalM[4],hand:globalM[5]},{arm:globalM[6],elbow:globalM[7],hand:globalM[8]},-.035);
    this.skillGripDebug=gripping;if(gripping)for(const [i,c]of [[3,gripping.right],[6,gripping.left]]){globalM[i]=c.arm;globalM[i+1]=c.elbow;globalM[i+2]=c.hand;}
    const useGroundIK=!incapacitated(p)&&!p.traversal&&!p.seated&&!p.activity&&fall===0&&!pose.air&&Math.abs(pose.pitch+reaction.pitch)<.8;
    if(pose.skillMotion&&!st.skillFeet)st.skillFeet=st.feet.map(f=>f?{anchor:[...f.anchor],yaw:f.yaw,t,motionT,rootX:p.x,rootZ:p.z,lift:0}:null);if(!pose.skillMotion)st.skillFeet=null;
@@ -124,7 +134,15 @@ const Travelers = (()=>{
     const desired=toWorld(side*width,.015+(guard?side*.045:0));
     let foot=st.feet[si];if(!foot)foot=st.feet[si]={anchor:[...desired],target:[...desired],start:[...desired],swing:false,lift:0,yaw:facing,startPhase:0};
     const normalized=((st.phase+(si?.5:0))%1+1)%1,isSwing=normalized>duty&&gaitWeight>.12;
-    if(pose.skillMotion){foot.damageAnchor=null;foot.damageKey=null;}
+    if(authored){
+     const baked=point(rootM,[globalM[fi][12],globalM[fi][13],globalM[fi][14]]),lift=Math.max(0,baked[1]-(p.baseY??st.ground)-(asset.bind[fi][1]-.027*asset.body[1]));
+     const airborne=lift>.025,reach=Math.hypot(foot.anchor[0]-baked[0],foot.anchor[1]-baked[2]);
+     if(!foot.clipStep&&!foot.swing&&(airborne||reach>.16*asset.body[1]))foot.clipStep={from:[...foot.anchor],started:motionT,lift:foot.lift};
+     if(foot.clipStep&&p.hitstopUntil>t)foot.clipStep.started+=dt;
+     if(foot.clipStep){const step=foot.clipStep,u=clamp((motionT-step.started)/.12,0,1);foot.anchor=V.lerp(step.from,[baked[0],baked[2]],smooth(u));foot.lift=Math.max(lift,step.lift*(1-u)+Math.sin(Math.PI*u)*.075);foot.swing=true;if(u===1){foot.clipStep=null;foot.swing=airborne;if(!airborne)foot.lift=0;}}
+     else if(foot.swing){foot.anchor=[baked[0],baked[2]];foot.lift=airborne?lift:0;foot.swing=airborne;}else foot.lift=0;
+     const worldFoot=rMultiply(rootM,globalM[fi]);foot.yaw=Math.atan2(worldFoot[8],worldFoot[10]);foot.settle=null;foot.damageAnchor=null;foot.damageKey=null;
+    }else if(pose.skillMotion){foot.damageAnchor=null;foot.damageKey=null;}
     else if(useGroundIK&&!moving&&reaction.amount>0)damageFoot(p,reaction,side,foot,.72*asset.body[1]);
     else if(!moving){
      foot.damageAnchor=null;foot.damageKey=null;const turn=Math.atan2(Math.sin(facing-foot.yaw),Math.cos(facing-foot.yaw)),needsStep=Math.hypot(...V.sub(foot.anchor,desired))>(foot.damageSettled?.23:.035)||Math.abs(turn)>.22;
@@ -137,23 +155,30 @@ const Travelers = (()=>{
      const predicted=toWorld(side*width,.015+stride*(1-normalized+duty*.5));foot.target=V.lerp(foot.target,predicted,1-Math.exp(-dt*22));
      const u=clamp((normalized-foot.startPhase)/Math.max(.001,1-foot.startPhase),0,1);foot.anchor=V.lerp(foot.start,foot.target,smooth(u));foot.lift=Math.sin(Math.PI*u)*(run?.16:.11)*gaitWeight;foot.yaw=facing;
     }else{foot.damageAnchor=null;foot.damageKey=null;if(foot.swing){foot.anchor=[...foot.target];foot.swing=false;}foot.lift=0;}
-    const maxReach=.34*asset.body[1],reach=Math.hypot(...V.sub(foot.anchor,desired));if(moving&&reach>maxReach){foot.swing=true;foot.lift=Math.max(foot.lift,.055);foot.anchor=desired.map((v,i)=>v+(foot.anchor[i]-v)*maxReach/reach);}
-    if(pose.skillMotion){const planted=SkillMotion.foot(p,pose,motionT,side,st.skillFeet,.70*asset.body[1]);Object.assign(foot,planted,{target:[...planted.anchor],settle:null});}
+    const maxReach=.34*asset.body[1],reach=Math.hypot(...V.sub(foot.anchor,desired));if(!authored&&moving&&reach>maxReach){foot.swing=true;foot.lift=Math.max(foot.lift,.055);foot.anchor=desired.map((v,i)=>v+(foot.anchor[i]-v)*maxReach/reach);}
+    if(!authored&&pose.skillMotion){const planted=SkillMotion.foot(p,pose,motionT,side,st.skillFeet,.70*asset.body[1]);Object.assign(foot,planted,{target:[...planted.anchor],settle:null});}
+    // A lifted foot may shorten its travel when collision/torso rotation makes
+    // the old target unreachable. A planted foot must keep its world anchor.
+    if(authored&&foot.swing){
+     const hipWorld=point(rootM,Array.from(globalM[ti].slice(12,15))),limit=(Math.hypot(...V.sub(asset.bind[ki],asset.bind[ti]))+Math.hypot(...V.sub(asset.bind[fi],asset.bind[ki])))*.85;
+     const dx=foot.anchor[0]-hipWorld[0],dz=foot.anchor[1]-hipWorld[2],reach=Math.hypot(dx,dz);
+     if(reach>limit)foot.anchor=[hipWorld[0]+dx*limit/reach,hipWorld[2]+dz*limit/reach];
+    }
     const floor=Math.max(this.groundAt(...foot.anchor),this.groundAt(foot.anchor[0]+Math.sin(foot.yaw)*.13,foot.anchor[1]+Math.cos(foot.yaw)*.13));
     const soleOffset=asset.bind[fi][1]-.018*asset.body[1]*asset.scale,worldAnkle=[foot.anchor[0],floor+soleOffset+foot.lift,foot.anchor[1]];
-    targets.push({side,si,ti,ki,fi,foot,floor,soleOffset,worldAnkle,lost:p.wounds?.[side===1?'rightLeg':'leftLeg']?.severity==='lost'});
+    targets.push({side,si,ti,ki,fi,foot,floor,soleOffset,worldAnkle,hip:Array.from(globalM[ti].slice(12,15)),knee:Array.from(globalM[ki].slice(12,15)),lost:p.wounds?.[side===1?'rightLeg':'leftLeg']?.severity==='lost'});
    }
    let requiredDrop=0;
    if(useGroundIK){
-    for(const {ti,ki,fi,worldAnkle,lost}of targets){if(lost)continue;const target=Q.rotate(Q.inv(rootQ),V.sub(worldAnkle,[rootM[12],rootM[13],rootM[14]])),H=asset.bind[ti],L=V.sub(asset.bind[ki],H),S=V.sub(asset.bind[fi],asset.bind[ki]),reach=Math.hypot(...L)+Math.hypot(...S)-.003,xz=Math.hypot(target[0]-H[0],target[2]-H[2]);requiredDrop=Math.max(requiredDrop,H[1]-target[1]-Math.sqrt(Math.max(.005,reach*reach-xz*xz)));}
+    for(const {ti,ki,fi,worldAnkle,lost,hip}of targets){if(lost)continue;const target=Q.rotate(Q.inv(rootQ),V.sub(worldAnkle,[rootM[12],rootM[13],rootM[14]])),H=hip,L=V.sub(asset.bind[ki],asset.bind[ti]),S=V.sub(asset.bind[fi],asset.bind[ki]),reach=Math.hypot(...L)+Math.hypot(...S)-.003,xz=Math.hypot(target[0]-H[0],target[2]-H[2]);requiredDrop=Math.max(requiredDrop,H[1]-target[1]-Math.sqrt(Math.max(.005,reach*reach-xz*xz)));}
     st.pelvisDrop=Math.max(requiredDrop,(st.pelvisDrop||0)*Math.exp(-dt*14));
     for(let i=0;i<globalM.length;i++)globalM[i][13]-=st.pelvisDrop;
    }else st.pelvisDrop=0;
-   for(const {side,si,ti,ki,fi,foot,floor,soleOffset,worldAnkle,lost}of targets){
+   for(const {side,si,ti,ki,fi,foot,floor,soleOffset,worldAnkle,lost,hip,knee}of targets){
     const upper=V.sub(asset.bind[ki],asset.bind[ti]),lower=V.sub(asset.bind[fi],asset.bind[ki]);
     if(useGroundIK&&!lost){
-     const target=Q.rotate(Q.inv(rootQ),V.sub(worldAnkle,[rootM[12],rootM[13],rootM[14]])),H=[asset.bind[ti][0],asset.bind[ti][1]-st.pelvisDrop,asset.bind[ti][2]],L1=Math.hypot(...upper),L2=Math.hypot(...lower),diff=V.sub(target,H),len=Math.hypot(...diff),dist=clamp(len,Math.abs(L1-L2)+.001,L1+L2-.001),D=V.norm(diff),a=(L1*L1-L2*L2+dist*dist)/(2*dist),h=Math.sqrt(Math.max(0,L1*L1-a*a));
-     const pole=V.norm(V.sub([0,0,1],V.mul(D,V.dot([0,0,1],D)))),K=V.add(H,V.add(V.mul(D,a),V.mul(pole,h))),F=V.add(H,V.mul(D,dist));
+     const target=Q.rotate(Q.inv(rootQ),V.sub(worldAnkle,[rootM[12],rootM[13],rootM[14]])),H=[hip[0],hip[1]-st.pelvisDrop,hip[2]],L1=Math.hypot(...upper),L2=Math.hypot(...lower),diff=V.sub(target,H),len=Math.hypot(...diff),dist=clamp(len,Math.abs(L1-L2)+.001,L1+L2-.001),D=V.norm(diff),a=(L1*L1-L2*L2+dist*dist)/(2*dist),h=Math.sqrt(Math.max(0,L1*L1-a*a));
+     const bend=authored?V.sub([knee[0],knee[1]-st.pelvisDrop,knee[2]],H):[0,0,1],pole=V.norm(V.sub(bend,V.mul(D,V.dot(bend,D)))),K=V.add(H,V.add(V.mul(D,a),V.mul(pole,h))),F=V.add(H,V.mul(D,dist));
      globalM[ti]=matrix(H,Q.fromTo(upper,V.sub(K,H)));globalM[ki]=matrix(K,Q.fromTo(lower,V.sub(F,K)));globalM[fi]=matrix(F,Q.mul(Q.inv(rootQ),Q.euler(0,foot.yaw,0)));
      const actual=point(rootM,F);this.footDebug.push({side,swing:foot.swing,floor,soleY:actual[1]-soleOffset,target:worldAnkle,actual,error:Math.hypot(...V.sub(actual,worldAnkle))});
     }else{

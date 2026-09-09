@@ -14,7 +14,7 @@ const MotionReview=(()=>{
  }
  function sample(base,key,time,age=24){
   const seq=sequence(key,age),cycle=Math.floor(time/seq.duration),t=time-cycle*seq.duration;
-  const p={...base,id:'motion-review-'+cycle,age,gender:0,race:0,prologue:false,introUntil:-100,x:0,z:0,dir:0,weapon:weapons[key]??0,armor:0,shield:false,autoFight:'review-target',action:'idle',actionStarted:0,actionUntil:0,pendingSkill:null,combo:null,attackStep:null,hitReactUntil:0,hitstopUntil:0,wounds:{},statuses:{},input:{x:0,z:0},alive:true};
+  const p={...base,id:'motion-review-'+cycle,age,gender:base.gender??0,race:base.race??0,prologue:false,introUntil:-100,x:0,z:0,dir:0,weapon:weapons[key]??0,armor:0,shield:false,autoFight:'review-target',action:'idle',actionStarted:0,actionUntil:0,pendingSkill:null,combo:null,attackStep:null,hitReactUntil:0,hitstopUntil:0,wounds:{},statuses:{},input:{x:0,z:0},alive:true};
   const s=seq.segments.find(s=>t>=s.start&&t<s.end);let label='構え',beat=0,index=-1;
   if(key==='golden'&&t<.7){p.action='run';p.z=-2.24+3.2*t;label='接近';}
   if(s){
@@ -33,22 +33,22 @@ const MotionReview=(()=>{
    r.art.B(0,.05,0,9,.10,9,'#aaa58d');r.art.B(0,.102,1.8,1.4,.012,.025,'#d9c49c');
    r.art.statuses=()=>{};r.art.parentScene=()=>{};r.art.sources=[];
    const sim=new Simulation({seed:7349}),base=sim.addPlayer('review',{owner:'review'}),snapshot=sim.snapshot(base.id);
-   let config={clip:'golden',age:24,speed:1,paused:false,fx:false,view:'close',angle:.9},time=0,last=0,request=0,disposed=false,lastReport=0,lastContact='',previousCycle=0;
+   let config={clip:'golden',age:24,race:0,speed:1,paused:false,fx:false,view:'close',angle:.9},time=0,last=0,request=0,disposed=false,lastReport=0,lastContact='',previousCycle=0;
    const post=data=>parent.postMessage({type:'motion-review',session,...data},'*');
    const clearFX=()=>{r.effects.length=0;for(const id of r.combatPresentation.trails.keys())r.combatPresentation.forget(id);lastContact='';};
    const reset=()=>{r.skillMotionStates?.clear();r.art.skillFeet?.clear();r.damageMotion?.actors.clear();clearFX();if(r.characterMaster)r.characterMaster.state=null;for(const rec of r.rigs.records.values()){rec.parts=null;rec.from=null;rec.state=null;}};
    // Reconstruct renderer history on a seek/A-B switch. Sampling just the final
    // frame would omit the previous cut, foot plants and transition into charge.
    const prime=()=>{
-    reset();const q=sample(base,config.clip,time,config.age),start=time-q.t;
-    for(let t=start;t<time;t+=1/60){const f=sample(base,config.clip,t,config.age);r.frame++;r.currentTime=f.t;r.currentSnapshot={...snapshot,t:f.t,player:f.p,actors:[],players:[f.p]};r.rigs.active.length=0;r.dynamic.clear();r.fxBatches.clear();r.art.doll(f.p,f.t,true);}
+    reset();const q=sample({...base,race:config.race,gender:[0,1,0,1][config.race]},config.clip,time,config.age),start=time-q.t;
+    for(let t=start;t<time;t+=1/60){const f=sample({...base,race:config.race,gender:[0,1,0,1][config.race]},config.clip,t,config.age);r.frame++;r.currentTime=f.t;r.currentSnapshot={...snapshot,t:f.t,player:f.p,actors:[],players:[f.p]};r.rigs.active.length=0;r.dynamic.clear();r.fxBatches.clear();r.art.doll(f.p,f.t,true);}
     previousCycle=q.cycle;
    };
    const combatFX=r.combatFX.bind(r);r.combatFX=(s,t)=>{if(config.fx)combatFX(s,t);};
    addEventListener('message',e=>{
     if(e.source!==parent||e.data?.type!=='motion-control')return;const d=e.data;
     if(d.dispose){disposed=true;cancelAnimationFrame(request);r.gl.getExtension('WEBGL_lose_context')?.loseContext();return;}
-    if(d.config){const old=config;config={...config,...d.config};if(config.clip!==old.clip||config.age!==old.age){time=0;previousCycle=0;reset();}if(config.fx!==old.fx)clearFX();}
+    if(d.config){const old=config;config={...config,...d.config};if(config.clip!==old.clip||config.age!==old.age||config.race!==old.race){time=0;previousCycle=0;reset();}if(config.fx!==old.fx)clearFX();}
     if(Number.isFinite(d.seek)){time=clamp(d.seek,0,.999999)*sequence(config.clip,config.age).duration;prime();}
     last=0;
    });
@@ -56,7 +56,7 @@ const MotionReview=(()=>{
    function frame(now){
     if(disposed)return;request=requestAnimationFrame(frame);if(document.hidden){last=0;return;}
     const dt=last?Math.min(.05,(now-last)/1000):0;last=now;if(!config.paused)time+=dt*config.speed;
-    const q=sample(base,config.clip,time,config.age),s={...snapshot,t:q.t,player:q.p,players:[q.p],actors:[],events:[]};
+    const q=sample({...base,race:config.race,gender:[0,1,0,1][config.race]},config.clip,time,config.age),s={...snapshot,t:q.t,player:q.p,players:[q.p],actors:[],events:[]};
     if(q.cycle!==previousCycle){reset();previousCycle=q.cycle;}
     Object.assign(r.camera,{x:0,z:q.p.z+.2,y:1.10,zoom:config.view==='game'?13.5:4.9,yaw:Number(config.angle),pitch:config.view==='game'?.68:.38});
     if(config.fx&&q.p.action==='attack'&&q.beat>=.43){const contact=q.cycle+':'+q.index+':'+Math.floor((q.t-q.p.actionStarted)/(q.p.actionUntil-q.p.actionStarted)*(skillById(q.p.attackSkill).hits||1));if(contact!==lastContact){lastContact=contact;r.effect({type:'hit',source:q.p.id,target:'review-target',x:0,z:q.p.z+1.45,seq:Math.floor(time*1000)},q.t);}}
