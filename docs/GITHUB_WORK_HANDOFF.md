@@ -1,3 +1,5 @@
+> 通常運用は [共通ポリシーv6](COMMON_DEVELOPMENT_POLICY.txt) と [CI検証責任](CI_VALIDATION.md) を優先する。以下の初回搬入・移行手順や過去実績を、毎回の作業として再実行しない。
+
 # GitHub反映WORKへの追加指示
 
 対象: `charukun/bloodline-legacy` / Bloodline Legacy（血脈の系譜）。

@@ -1,3 +1,5 @@
+> 通常運用は [共通ポリシーv6](COMMON_DEVELOPMENT_POLICY.txt) と [CI検証責任](CI_VALIDATION.md) を優先する。以下の初回搬入・移行手順や過去実績を、毎回の作業として再実行しない。
+
 # GITHUB_CICD_INSTRUCTIONS — GitHub反映WORKの初回CI/CD作業
 
 対象: `charukun/bloodline-legacy`（Private）。設計・コードは同梱済み。Cloudflare Desktop App/Pluginは不要。
