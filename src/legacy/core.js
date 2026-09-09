@@ -63,6 +63,7 @@ const BODY_PARTS = ['head','torso','rightArm','leftArm','rightLeg','leftLeg'];
 const BODY_NAMES = {head:'頭部',torso:'胴体',rightArm:'右腕',leftArm:'左腕',rightLeg:'右脚',leftLeg:'左脚'};
 const WOUND_NAMES = {light:'軽傷',heavy:'重傷',lost:'欠損'};
 const STAMINA = Object.freeze({max:100,minCap:22,regen:19,capRegen:1.1,delay:.38,capDelay:3.2});
+const REST_HEALING = Object.freeze({quiet:12,healthRegen:3.6,woundRate:4});
 const PASSIVES = [
  {id:3072,name:'炉辺の呼吸',school:'village',deed:'村で落ち着いて過ごす',need:35,effect:'regen',value:3,desc:'スタミナの自然回復を小さく高める。'},
  {id:3073,name:'剣士の手ほどき',school:'sword',deed:'剣術学校で訓練する',need:10,effect:'attackCost',value:.2,desc:'通常攻撃のスタミナ消費を小さく軽減する。'},
@@ -985,10 +986,18 @@ inflictWound(p,part,severity,source=null,strength=null){
   this.reactToHit(p,source,part,severity,strength);this.impact(source,p,part,severity!=='light');p.attackStep=null;p.retreatUntil=0;p.hitUntil=this.time+.48;p.stun=this.time+(severity==='lost'?1.35:severity==='heavy'?.85:.50);p.action=severity==='lost'?'break':'hit';p.actionStarted=this.time;p.actionUntil=p.stun;p.pendingSkill=null;p.combo=null;p.comboQueued=false;p.cooldown=Math.max(p.cooldown,p.stun+.35);p.guard=false;p.guardPending=false;
   report(severity);return true;
  }
+ tickRestHealing(p,dt){
+  if(!p.seated||!canAct(p)||p.prologue||p.rescueTarget||p.traversal||this.time-(p.sitSince||0)<=.35||p.stun>this.time||hasStatus(p,'sleep',this.time)||this.time-(p.lastHurtAt??-100)<=REST_HEALING.quiet)return;
+  p.health=Math.min(100,(p.health??100)+dt*REST_HEALING.healthRegen);
+  // Advance only the existing injury deadline; age, lifespan and lost limbs are unchanged.
+  const bonus=dt/this.yearSeconds*(REST_HEALING.woundRate-1);
+  for(const w of Object.values(p.wounds))if((w.severity==='light'||w.severity==='heavy')&&Number.isFinite(w.healsAt))w.healsAt-=bonus;
+ }
  tickRecovery(p,dt){
   const mods=injuryModifiers(p),max=Math.max(STAMINA.minCap,staminaMaximum(p)-(100-mods.cap)-(p.permanentFatigue||0));p.staminaMax=staminaMaximum(p);
   if(p.seated&&this.time-(p.sitSince||0)>.35&&p.stun<=this.time&&!hasStatus(p,'sleep',this.time)){p.staminaCap=Math.min(max,p.staminaCap+dt*17);p.stamina=Math.min(p.staminaCap,p.stamina+dt*32);}
   if(!p.autoFight&&!p.seated&&this.time-(p.lastHurtAt??-100)>12&&this.getRoom(p)?.kind==='village'&&p.z>-27)p.health=Math.min(100,(p.health??100)+dt*1.8);
+  this.tickRestHealing(p,dt);
   if(!p.dash&&this.time-p.lastExertion>STAMINA.delay&&!p.pendingSkill&&p.stun<=this.time)p.stamina=Math.min(p.staminaCap,p.stamina+dt*(STAMINA.regen+effectsOf(p,'regen'))*(p.guard?.28:p.combo?.45:1));
   if(this.time-p.lastSkillAt>STAMINA.capDelay&&!p.pendingSkill&&this.time-p.lastExertion>1.4)p.staminaCap=Math.min(max,p.staminaCap+dt*(STAMINA.capRegen+effectsOf(p,'capRegen'))*(p.guard?.35:1));
   p.staminaCap=Math.min(p.staminaCap,max);p.stamina=clamp(p.stamina,0,p.staminaCap);

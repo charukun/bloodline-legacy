@@ -48,13 +48,13 @@ test('consciousness keeps all learned choices visible and opens a slot only afte
  assert.equal(active(p.phaseWeights[0]).length,5);assert.equal(p.phaseWeights[0][ids[0]],0);assert.ok(p.phaseWeights[0][ids[5]]>0);
 });
 
-test('wardrobe inspects five physical slots, discards the selected item and restores navigation focus',async t=>{
+test('wardrobe inspects five physical slots, discards the selected item and retains selection without a remote rack',async t=>{
  const {p,ui,d,sync}=fixture(t);p.inventory=['stone','bell'];sync();ui.body();await flush();
  assert.equal(d.querySelectorAll('[data-body-slot]').length,5);assert.equal(d.querySelector('.game-panel').classList.contains('parchment'),false);assert.equal(d.querySelector('.equipped-list'),null);
  d.querySelector('[data-body-slot="item1"]').click();assert.match(d.getElementById('wardrobe-detail').textContent,/鈴/);assert.equal(d.querySelector('[data-discard="0"]'),null);
  d.querySelector('[data-discard="1"]').click();await flush();assert.deepEqual(Array.from(p.inventory),['stone']);assert.equal(d.activeElement.dataset.bodySlot,'item1');assert.equal(d.querySelector('[data-discard]'),null);
- d.querySelector('[data-body-slot="armor"]').click();d.getElementById('open-rack').focus();d.getElementById('open-rack').click();await flush();assert.equal(ui.modal,'rack');
- d.querySelector('.panel-back').click();await flush();assert.equal(ui.modal,'body');assert.equal(d.activeElement.id,'open-rack');assert.equal(d.querySelector('[data-body-slot="armor"]').getAttribute('aria-pressed'),'true');
+ d.querySelector('[data-body-slot="armor"]').click();assert.equal(d.getElementById('open-rack'),null);assert.equal(d.activeElement.dataset.bodySlot,'armor');
+ ui.closeModal();ui.body();await flush();assert.equal(ui.modal,'body');assert.equal(d.querySelector('[data-body-slot="armor"]').getAttribute('aria-pressed'),'true');
 });
 
 test('wardrobe frames the character on both orientations and releases framing and input on close',async t=>{
