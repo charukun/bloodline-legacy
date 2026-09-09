@@ -53,7 +53,9 @@ async function fixture(page,{close=false}={}){
   // Drain the old, now-closed frame callback before starting a new live loop.
   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
 }
-async function shot(name){await page.screenshot({path:path.join(out,name+'.png')});report.lastScreenshot=name;flush();}
+// Motion batches queue full-quality frames on CI's software GPU; allow readback to drain them.
+// This is an evidence-capture budget, separate from the performance measurements below.
+async function shot(name){await page.screenshot({path:path.join(out,name+'.png'),...(mode==='motion'?{timeout:300000}:{})});report.lastScreenshot=name;flush();}
 try{
   browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
   for(const version of mode==='motion'?['after']:['before','after']){
