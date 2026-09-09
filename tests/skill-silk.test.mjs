@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
-const c=vm.createContext({});vm.runInContext(read('src/render/skill-silk.js')+'\n'+read('src/render/skill-effects.js')+'\n'+read('src/render/combat-presentation.js'),c);
+const c=vm.createContext({});vm.runInContext(read('src/render/skill-silk.js')+'\n'+read('src/render/skill-arcane.js')+'\n'+read('src/render/skill-effects.js')+'\n'+read('src/render/combat-presentation.js'),c);
 const {Silk,FX,Presentation}=vm.runInContext('({Silk:SkillSilk,FX:SkillEffects,Presentation:CombatPresentation})',c);
 test('ribbon geometry has shared edges, UV bounds, bounded tessellation and tapered tips',()=>{
  for(const path of Object.keys(FX.options.path))for(const quality of ['low','high'])for(const u of [.2,.5,.8,.96]){
@@ -73,7 +73,7 @@ test('thickness widens the wake without moving the cutting edge or increasing th
 });
 test('actual renderer freezes blade noise and trail ageing when the attack clock pauses',()=>{
  const ctx=vm.createContext({});vm.runInContext(`const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));const skillById=id=>({id});const RG_CACHE=new Map();const SkillMotion={clock:(a,t)=>({duration:1,beat:t-a.actionStarted,index:0,shape:'slash'})};`,ctx);
- vm.runInContext(read('src/render/skill-silk.js')+'\n'+read('src/render/skill-effects.js')+'\n'+read('src/render/combat-presentation.js'),ctx);
+ vm.runInContext(read('src/render/skill-silk.js')+'\n'+read('src/render/skill-arcane.js')+'\n'+read('src/render/skill-effects.js')+'\n'+read('src/render/combat-presentation.js'),ctx);
  const P=vm.runInContext('CombatPresentation',ctx),actor={id:'a',alive:true,x:0,z:0,action:'attack',attackSkill:60041,actionStarted:1,actionUntil:2};
  const r={camera:{x:0,z:0},eye:[0,6,8],quality:'high',effects:[],weatherState:{rain:0},art:{sources:[]},weaponTips:new Map([['a',[0,1,1]]])},p=new P(r),draws=[];
  p.composition=primitives=>draws.push(JSON.stringify(primitives));

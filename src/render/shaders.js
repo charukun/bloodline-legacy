@@ -7,7 +7,7 @@ layout(location=0) in vec3 pos;layout(location=1) in vec3 nor;
 layout(location=2) in mat4 model;layout(location=6) in vec4 ink;layout(location=7) in float surface;
 uniform mat4 vp;uniform mat4 lightVP;uniform float time;uniform float wind;
 out vec3 vWorld;out vec3 vNormal;out vec4 vInk;out float vSurface;out vec4 vShadow;out vec3 vLocal;
-void main(){vec4 w=model*vec4(pos,1.);if(surface>12.5&&surface<13.5){float bend=max(0.,pos.y+.35);w.x+=sin(time*1.8+w.z*.72+model[3].x)*.042*bend*wind;w.z+=cos(time*1.1+w.x*.43)*.028*bend*wind;}vWorld=w.xyz;vNormal=normalize(mat3(model)*(nor/max(vec3(.00001),vec3(dot(model[0].xyz,model[0].xyz),dot(model[1].xyz,model[1].xyz),dot(model[2].xyz,model[2].xyz)))));vInk=ink;vSurface=surface;vShadow=lightVP*w;vLocal=pos;if(surface>23.5&&surface<24.5){vLocal=nor;vNormal=vec3(0.,1.,0.);}gl_Position=vp*w;}`;
+void main(){vec4 w=model*vec4(pos,1.);if(surface>12.5&&surface<13.5){float bend=max(0.,pos.y+.35);w.x+=sin(time*1.8+w.z*.72+model[3].x)*.042*bend*wind;w.z+=cos(time*1.1+w.x*.43)*.028*bend*wind;}vWorld=w.xyz;vNormal=normalize(mat3(model)*(nor/max(vec3(.00001),vec3(dot(model[0].xyz,model[0].xyz),dot(model[1].xyz,model[1].xyz),dot(model[2].xyz,model[2].xyz)))));vInk=ink;vSurface=surface;vShadow=lightVP*w;vLocal=pos;if(surface>23.5&&surface<25.5){vLocal=nor;vNormal=vec3(0.,1.,0.);}gl_Position=vp*w;}`;
 const RFRAG=`#version 300 es
 precision highp float;
 in vec3 vWorld;in vec3 vNormal;in vec4 vInk;in float vSurface;in vec4 vShadow;in vec3 vLocal;
@@ -25,6 +25,18 @@ vec3 lin(vec3 c){return pow(max(c,vec3(0.)),vec3(2.2));}
 float silkLattice(vec2 p,float seed){float h=mod(p.x*37.+p.y*71.+seed*13.,251.);return mod((h*34.+1.)*h,251.)/125.5-1.;}
 float silkNoise(vec2 p,float seed){vec2 i=floor(p),f=fract(p),s=f*f*f*(f*(f*6.-15.)+10.);return mix(mix(silkLattice(i,seed),silkLattice(i+vec2(1.,0.),seed),s.x),mix(silkLattice(i+vec2(0.,1.),seed),silkLattice(i+vec2(1.,1.),seed),s.x),s.y);}
 float silkFlow(float u,float clock,float seed){return .72*silkNoise(vec2(u*4.7,clock*2.2),seed)+.28*silkNoise(vec2(u*10.8,clock*4.8),seed+41.);}
+// Layered spell material; same analytic masks as SkillArcane.mask.
+float arcaneMask(float mode,float u,float v,float age,float clock,float flutter){
+ float edge=smoothstep(0.,.035,v)*(1.-smoothstep(.94,1.,v)),ends=smoothstep(0.,.03,u)*(1.-smoothstep(.97,1.,u));
+ float drift=flutter*silkNoise(vec2(u*6.,clock*2.1),19.)*.12;
+ if(mode<.5){float lanes=pow(.5+.5*sin((u+clock*.14+drift)*PI*18.),9.);return clamp(edge*(.13+lanes*.85)*pow(1.-v,1.35)*smoothstep(0.,.05,v),0.,1.);}
+ if(mode<1.5)return clamp(edge*ends*(exp(-pow((v-.42-drift)*4.,2.))*.72+.2*pow(.5+.5*sin(u*37.-clock*12.+v*9.),5.)),0.,1.);
+ if(mode<2.5){float lines=exp(-pow((v-.12)*42.,2.))+exp(-pow((v-.9)*48.,2.)),x=fract(u*12.)-.5;float rune=exp(-pow((abs(x)-abs(v-.5)*.58)*42.,2.))*smoothstep(.22,.32,v)*(1.-smoothstep(.70,.8,v));return clamp(edge*(lines+rune*.85),0.,1.);}
+ if(mode<3.5)return clamp(edge*ends*(.24+exp(-pow((v-.5-drift)*3.4,2.))*.76)*(.78+.22*sin(u*18.-clock*9.)),0.,1.);
+ if(mode<4.5){float x=u*2.-1.,y=v*2.-1.,r=x*x+y*y;return clamp((exp(-r*10.)+exp(-abs(x)*50.-abs(y)*4.)*.45+exp(-abs(y)*50.-abs(x)*4.)*.45)*(1.-smoothstep(.65,1.,sqrt(r)))*age,0.,1.);}
+ if(mode<5.5)return 1.-smoothstep(.80,1.,v);
+ return clamp(edge*ends*(exp(-pow((v-.5)*6.,2.))+.2)*(.72+.28*sin(clock*35.+u*12.)),0.,1.);
+}
 float shadowValue(sampler2D map,vec3 p,float bias){vec2 t=1./vec2(textureSize(map,0));float s=0.;for(int i=0;i<4;i++){vec2 o=vec2((i&1)==0?-.9:.9,(i&2)==0?-.9:.9);s+=step(texture(map,p.xy+o*t*1.35).r,p.z-bias);}return s*.25;}
 vec3 brdf(vec3 base,vec3 N,vec3 V,vec3 L,float rough,float metal,vec3 radiance){vec3 H=normalize(V+L);float nl=max(dot(N,L),0.),nv=max(dot(N,V),.08),nh=max(dot(N,H),0.),vh=max(dot(V,H),0.);float a=rough*rough,a2=a*a;float d=a2/(PI*pow(nh*nh*(a2-1.)+1.,2.)+.0001);float k=pow(rough+1.,2.)*.125;float g=(nv/(nv*(1.-k)+k))*(nl/(nl*(1.-k)+k));vec3 f0=mix(vec3(.035),base,metal);vec3 F=f0+(1.-f0)*pow(1.-vh,5.);return ((1.-F)*(1.-metal)*base/PI+d*g*F/max(.1,4.*nv*max(nl,.01)))*radiance*nl;}
 vec3 localLight(vec3 p,vec3 intensity,vec3 base,vec3 N,vec3 V,float rough,float metal){if(!any(greaterThan(intensity,vec3(0.))))return vec3(0.);vec3 delta=p-vWorld;float d=length(delta);if(d>=7.5)return vec3(0.);float atten=pow(max(0.,1.-d/7.5),2.)/(1.+d*d*.12);return brdf(base,N,V,delta/max(.01,d),rough,metal,intensity*atten);}
@@ -45,6 +57,13 @@ void main(){vec3 N=normalize(vNormal),L=normalize(vec3(-.48,.85,.42)),V=normaliz
   if(alpha<.004)discard;
   vec3 light=lin(vec3(1.,240./255.,212./255.))*(1.4+core*1.6);
   outColor=vec4(light/(1.+light),alpha);outNormal=vec4(.5,1.,.5,0.);return;
+ }
+ // Dedicated additive spell batch keeps depth testing but never writes depth.
+ if(authored>24.5&&authored<25.5){
+  float mode=vInk.r;alpha*=arcaneMask(mode,vLocal.x,vLocal.y,vLocal.z,vInk.g,vInk.b);
+  if(alpha<.003)discard;
+  vec3 light=mode>4.5&&mode<5.5?vec3(.008,.014,.023):lin(vec3(.68,.88,1.))*2.3;
+  outColor=vec4(light/(1.+light),alpha);outNormal=vec4(0.);return;
  }
  if(surf>1.5&&surf<2.5){float d=length(vLocal.xz);alpha*=pow(max(0.,1.-d),2.);if(alpha<.005)discard;outColor=vec4(lin(pigment),alpha);outNormal=vec4(.5,1.,.5,0.);return;}
  float slot=0.,tile=1.7,rough=.86,metal=0.,ao=1.;bool foliage=surf>12.5&&surf<13.5;bool skin=surf>13.5&&surf<14.5;bool water=surf>.5&&surf<1.5;

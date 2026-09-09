@@ -7,13 +7,16 @@ import numpy as np
 from PIL import Image
 
 root = Path(__file__).resolve().parents[1]
-out = root / 'dist/silk-review'
+import os
+out = root / os.environ.get('FX_REVIEW_DIR', 'dist/silk-review')
 d = json.loads((out / 'egl-input.json').read_text())
 def glsl(s):
     return re.sub(r'precision\s+(?:highp|mediump|lowp)\s+\w+\s*;', '', s.replace('#version 300 es', '#version 330 core'))
 ctx = moderngl.create_standalone_context(backend='egl')
 program = ctx.program(vertex_shader=glsl(d['vertex']), fragment_shader=glsl(d['fragment']))
 skin = ctx.program(vertex_shader=glsl(d['skin']), fragment_shader=glsl(d['fragment']))
+if 'lab' in d:
+    lab = ctx.program(vertex_shader=glsl(d['lab']['vertex']), fragment_shader=glsl(d['lab']['fragment']))
 size = (720, 500)
 color, normal = ctx.texture(size,4), ctx.texture(size,4)
 target = ctx.framebuffer([color,normal], ctx.depth_renderbuffer(size))
@@ -27,10 +30,11 @@ ctx.blend_func = moderngl.SRC_ALPHA, moderngl.ONE_MINUS_SRC_ALPHA
 measurements = []
 for frame in d['frames']:
     target.clear(.009,.012,.014,1)
-    for g in frame['geometry']:
+    for g in sorted(frame['geometry'],key=lambda g:g.get('additive',False)):
+        ctx.blend_func = (moderngl.SRC_ALPHA, moderngl.ONE) if g.get('additive') else (moderngl.SRC_ALPHA, moderngl.ONE_MINUS_SRC_ALPHA)
         vertices=np.column_stack((np.array(g['positions']).reshape(-1,3),np.array(g['normals']).reshape(-1,3))).astype('f4')
         model=np.eye(4,dtype='f4').flatten();model[12:15]=g['center']
-        row=np.concatenate([model,[*g['ink'],g['alpha'],24.]]).astype('f4')
+        row=np.concatenate([model,[*g['ink'],g['alpha'],25. if 'additive' in g else 24.]]).astype('f4')
         vbo,instance=ctx.buffer(vertices.tobytes()),ctx.buffer(row.tobytes())
         vao=ctx.vertex_array(program,[(vbo,'3f 3f','pos','nor'),(instance,'16f 4f 1f /i','model','ink','surface')])
         vao.render(moderngl.TRIANGLES)

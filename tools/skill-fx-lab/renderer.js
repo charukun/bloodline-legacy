@@ -3,7 +3,8 @@
 const SkillFxStage=(()=>{
  const mix=(a,b,t)=>a+(b-a)*t;
  function draw(ctx,width,height,recipe,time,{mono=false,quality='high',label='',still=false,legacyBlade=false,close=false}={}){
-  const scale=Math.min(width/5.6,height/3.8),project=v=>[width*.40+(v[0]*.76+v[2]*.74)*scale,height*.69+(v[2]*.23-v[0]*.20-v[1]*.82)*scale];
+  const arcane=typeof SkillArcane!=='undefined'&&SkillArcane.has(recipe.family);
+  const scale=Math.min(width/5.6,height/(arcane?4.2:3.8)),project=v=>[width*(arcane?.30:.40)+(v[0]*.76+v[2]*.74)*scale,height*.69+(v[2]*.23-v[0]*.20-v[1]*.82)*scale];
   ctx.save();ctx.fillStyle='#111b20';ctx.fillRect(0,0,width,height);
   const wash=ctx.createRadialGradient(width*.52,height*.58,0,width*.52,height*.58,width*.68);wash.addColorStop(0,'#263436');wash.addColorStop(1,'#11191f');ctx.fillStyle=wash;ctx.fillRect(0,0,width,height);
   const line=(a,b,color,w=1)=>{const A=project(a),B=project(b);ctx.strokeStyle=color;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(...A);ctx.lineTo(...B);ctx.stroke();};
@@ -23,10 +24,33 @@ const SkillFxStage=(()=>{
   pose(0,false);pose(1.85,true);
   const primitives=SkillEffects.frame(recipe,time,quality,legacyBlade);
   const gray=color=>{const c=color.slice(1).match(/../g).map(v=>parseInt(v,16)),v=Math.round(c[0]*.2126+c[1]*.7152+c[2]*.0722);return `rgb(${v},${v},${v})`;};
+  const fields=primitives.filter(p=>p.kind==='field'||p.kind==='motes');
+  let gpu=false;
+  if(typeof SkillFxGPU!=='undefined'){
+   const dark=SkillFxGPU.draw(fields.filter(p=>p.mode===5),width,height,project,mono);if(dark){ctx.drawImage(dark,0,0,width,height);gpu=true;}
+   const light=SkillFxGPU.draw(fields.filter(p=>p.mode!==5),width,height,project,mono);if(light){ctx.save();ctx.globalCompositeOperation='lighter';ctx.drawImage(light,0,0,width,height);ctx.restore();gpu=true;}
+  }
   // Each line tapers to points; darkness remains visible (no all-additive blend).
-  for(const p of primitives){
+  for(const p of [...primitives.filter(p=>p.mode===5),...primitives.filter(p=>p.mode!==5)]){
+   if(gpu&&(p.kind==='field'||p.kind==='motes'))continue;
    ctx.globalAlpha=p.alpha;ctx.fillStyle=mono?gray(p.color):p.color;
-   if(p.kind==='ribbon'){
+   if(p.kind==='field'){
+    ctx.save();ctx.globalCompositeOperation=p.mode===5?'source-over':'lighter';
+    for(const strip of p.strips){
+     const q=strip.map(s=>({a:project(s.a),b:project(s.b)}));
+     for(let j=0;j<q.length-1;j++){
+      const a=q[j],b=q[j+1],g=ctx.createLinearGradient((a.a[0]+b.a[0])/2,(a.a[1]+b.a[1])/2,(a.b[0]+b.b[0])/2,(a.b[1]+b.b[1])/2);
+      for(let k=0;k<=16;k++){const alpha=SkillArcane.mask(p.mode,(j+.5)/(q.length-1),k/16,p.age,p.clock,p.flutter),rgb=p.mode===5?'8,14,22':mono?'235,235,235':'151,207,246';g.addColorStop(k/16,`rgba(${rgb},${alpha})`);}
+      ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(...a.a);ctx.lineTo(...a.b);ctx.lineTo(...b.b);ctx.lineTo(...b.a);ctx.closePath();ctx.fill();
+     }
+    }ctx.restore();
+   }else if(p.kind==='motes'){
+    ctx.save();ctx.globalCompositeOperation='lighter';
+    for(const q of p.points){const a=project(q.p),r=q.size*scale;ctx.globalAlpha=p.alpha*q.alpha;
+     const g=ctx.createRadialGradient(...a,0,...a,r);g.addColorStop(0,'#ffffff');g.addColorStop(.18,mono?'#e8e8e8':'#a5ddff');g.addColorStop(1,'#9ad6ff00');ctx.fillStyle=g;ctx.fillRect(a[0]-r,a[1]-r,r*2,r*2);
+     if(q.size>.08){ctx.strokeStyle=mono?'#ffffffaa':'#cbeaffaa';ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(a[0]-r*.8,a[1]);ctx.lineTo(a[0]+r*.8,a[1]);ctx.moveTo(a[0],a[1]-r*.8);ctx.lineTo(a[0],a[1]+r*.8);ctx.stroke();}
+    }ctx.restore();
+   }else if(p.kind==='ribbon'){
     // Continuous translucent bands: the same UV mask as the game shader,
     // approximated with gradients for an offline Canvas inspection surface.
     const bands=quality==='low'?18:32,sections=p.sections.map(s=>({a:project(s.a),b:project(s.b)}));

@@ -2,24 +2,27 @@
  'use strict';
  const $=id=>document.getElementById(id),canvas=$('stage'),ctx=canvas.getContext('2d'),reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
  const icons=['<path d="M4 25Q13 0 36 5Q18 8 4 25ZM10 26L32 9"/>','<ellipse cx="12" cy="16" rx="5" ry="10"/><ellipse cx="22" cy="16" rx="5" ry="8"/><ellipse cx="31" cy="16" rx="4" ry="5"/>','<path d="M6 21L9 10L18 16L13 24ZM22 22L18 10L29 4L35 16ZM15 28L22 24L28 28"/>','<path d="M4 3L34 26L8 24L33 4L20 28L4 3ZM3 16L37 16"/>','<path d="M10 27Q0 15 14 10Q9 20 18 20Q27 17 23 2Q40 19 29 27M19 28Q11 23 20 17"/>','<path d="M5 5L18 12L13 16L31 26L21 15L26 11L5 5ZM5 25L13 19M29 9L35 3"/>'];
- let recipe=SkillEffects.presets[0].recipe,presetIndex=0,pinned=null,compare=false,time=0,playing=!reduced,last=null,audio=null,cssW=700,cssH=430;
+ for(const d of SkillArcane.definitions)icons.push(({pillar:'<path d="M9 26V7M31 26V7M15 23V3M25 23V3"/><ellipse cx="20" cy="26" rx="16" ry="4"/>',vortex:'<path d="M5 27Q40 24 12 19Q1 15 29 11Q37 5 17 2"/>',nova:'<path d="M20 0L22 12L38 3L27 15L40 18L26 21L31 32L20 24L8 32L13 21L0 16L14 13L8 1Z"/>'}[d.id])||`<path d="M4 25Q8 3 20 5Q32 3 36 25M8 26L20 13L32 26M20 5V30"/><text x="20" y="24" text-anchor="middle" font-size="12" stroke="none" fill="currentColor">${d.name[0]}</text>`);
+ let recipe=(SkillEffects.presets[6]||SkillEffects.presets[0]).recipe,presetIndex=6,pinned=null,compare=false,time=0,playing=!reduced,last=null,audio=null,cssW=700,cssH=430;
  const controls=Object.keys(SkillEffects.options),storageKey='bloodline-skill-fx-lab-v1';
  try{const saved=localStorage.getItem(storageKey);if(saved)recipe=SkillEffects.resolve(JSON.parse(saved));}catch{/* Offline storage is optional. Never read/write the game's save. */}
  for(const key of controls){for(const [value,label] of Object.entries(SkillEffects.options[key])){const option=document.createElement('option');option.value=value;option.textContent=label;$(key).append(option);}}
- SkillEffects.presets.forEach((p,i)=>{const b=document.createElement('button');b.className='preset';b.innerHTML=`<svg viewBox="0 0 40 32" aria-hidden="true">${icons[i]}</svg><span>${p.name}</span>`;b.title=p.description;b.addEventListener('click',()=>{presetIndex=i;setRecipe(p.recipe);});$('presets').append(b);});
+ const presetOrder=[...SkillEffects.presets.map((p,i)=>({p,i})).slice(6),...SkillEffects.presets.map((p,i)=>({p,i})).slice(0,6)];
+ presetOrder.forEach(({p,i})=>{const b=document.createElement('button');b.className='preset';b.dataset.index=String(i);b.innerHTML=`<svg viewBox="0 0 40 32" aria-hidden="true">${icons[i]}</svg><span>${p.name}</span>`;b.title=p.description;b.addEventListener('click',()=>{presetIndex=i;setRecipe(p.recipe);});$('presets').append(b);});
  function announce(s){$('notice').textContent=s;}
  function update(){
   for(const key of controls)$(key).value=recipe[key];
   for(const key of ['flutter','thickness'])$(key).value=recipe[key];
   $('flutter-value').textContent=Math.round(recipe.flutter*100)+'%';$('thickness-value').textContent=recipe.thickness.toFixed(1)+'×';
-  $('silk-controls').disabled=recipe.family!=='blade';$('baseline').disabled=recipe.family!=='blade';
+  const layered=SkillArcane.has(recipe.family);$('silk-controls').disabled=recipe.family!=='blade'&&!layered;$('baseline').disabled=recipe.family!=='blade';
+  $('layer-controls').disabled=!layered;for(const k of ['sigil','body','motes'])$('layer-'+k).checked=recipe.layers[k];
   const exact=SkillEffects.presets.findIndex(p=>controls.every(k=>p.recipe[k]===recipe[k]));
   if(exact>=0)presetIndex=exact;
   const p=SkillEffects.presets[presetIndex];
   $('effect-name').textContent=exact>=0?p.name:'組み替えた一手';
   $('family-label').textContent=SkillEffects.options.family[recipe.family];
   $('description').textContent=exact>=0?p.description:SkillEffects.presets.find(p=>p.recipe.family===recipe.family).description;
-  [...$('presets').children].forEach((b,i)=>b.setAttribute('aria-pressed',String(i===exact)));
+  [...$('presets').children].forEach((b,i)=>b.setAttribute('aria-pressed',String(Number(b.dataset.index)===exact)));
   $('recipe-text').textContent=controls.map(k=>SkillEffects.options[k][recipe[k]]).join(' / ');
   $('beat-marks').replaceChildren();for(const at of SkillEffects.beats(recipe)){const m=document.createElement('i');m.style.left=at/SkillEffects.duration*100+'%';$('beat-marks').append(m);}
   $('play').textContent=playing?'Ⅱ':'▶';$('play').setAttribute('aria-label',playing?'一時停止':'再生');
@@ -44,10 +47,11 @@
   }
   else SkillFxStage.draw(ctx,cssW,cssH,recipe,time,opts);
   $('timeline').value=String(Math.round(time*1000));
-  const beats=SkillEffects.beats(recipe),lastBeat=beats.at(-1);let phase=time<beats[0]-.18?'構え':time>lastBeat+.5?'余韻の終わり':'技の軌道';
+  const beats=SkillEffects.beats(recipe),lastBeat=beats.at(-1);let phase=time<beats[0]-.18?'構え':time>lastBeat+SkillEffects.life(recipe)?'余韻の終わり':'技の軌道';
   if(beats.some(t=>Math.abs(time-t)<.08))phase='命中';else if(time>lastBeat+.08)phase='消え際';
   $('phase').textContent=phase;
  }
+ for(const key of ['sigil','body','motes'])$('layer-'+key).addEventListener('change',()=>{recipe=SkillEffects.resolve({...recipe,layers:{...recipe.layers,[key]:$('layer-'+key).checked}});update();draw();});
  for(const key of controls)$(key).addEventListener('change',()=>setRecipe({...recipe,[key]:$(key).value}));
  // Keep the current frame while tuning: paused inspection must not jump away.
  for(const key of ['flutter','thickness'])$(key).addEventListener('input',()=>{recipe=SkillEffects.resolve({...recipe,[key]:Number($(key).value)});update();draw();});

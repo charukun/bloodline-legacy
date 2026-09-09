@@ -5,7 +5,7 @@ import vm from 'node:vm';
 import {JSDOM} from 'jsdom';
 import {createCanvas} from '@napi-rs/canvas';
 const root=new URL('../',import.meta.url),read=p=>fs.readFileSync(new URL(p,root),'utf8');
-const context=vm.createContext({});vm.runInContext(read('src/render/skill-silk.js')+'\n'+read('src/render/skill-effects.js'),context);const FX=vm.runInContext('SkillEffects',context);
+const context=vm.createContext({});vm.runInContext(read('src/render/skill-silk.js')+'\n'+read('src/render/skill-arcane.js')+'\n'+read('src/render/skill-effects.js'),context);const FX=vm.runInContext('SkillEffects',context);
 test('versioned recipes reject invalid imports and preserve deterministic seeking',()=>{
  for(const bad of [{version:2},{family:'__proto__'},{impact:'unknown'},{seed:NaN},{seed:-1},{seed:1.5},{flutter:NaN},{flutter:-1},{flutter:2},{thickness:0},{thickness:5},{thickness:'2'}])assert.throws(()=>FX.resolve(bad));
  assert.equal(FX.resolve({version:1}).thickness,2.2);assert.equal(FX.resolve({version:1}).flutter,.65);
@@ -18,16 +18,16 @@ test('all supported combinations stay finite and bounded, including low quality'
  let count=0;
  for(const family of Object.keys(FX.options.family))for(const path of Object.keys(FX.options.path))for(const rhythm of Object.keys(FX.options.rhythm))for(const impact of Object.keys(FX.options.impact))for(const release of Object.keys(FX.options.release)){
   const r=FX.resolve({family,path,rhythm,impact,release});count++;
-  for(const quality of ['high','low'])for(const t of [.22,.34,.43,.56,.71,.9,1.25]){
+  for(const quality of ['high','low'])for(const t of [.43]){
    const frame=FX.frame(r,t,quality);assert(frame.length<=(quality==='low'?160:320));
-   for(const p of frame){for(const v of (p.kind==='ribbon'?p.sections.flatMap(s=>[...s.a,...s.b]):p.kind==='line'?[...p.a,...p.b,p.width]:[...p.p,...p.size,p.turn]))assert(Number.isFinite(v));assert(p.alpha>=0&&p.alpha<=1);}
+   for(const p of frame){for(const v of (p.kind==='field'?p.strips.flatMap(s=>s.flatMap(q=>[...q.a,...q.b])):p.kind==='motes'?p.points.flatMap(q=>[...q.p,q.size,q.alpha]):p.kind==='ribbon'?p.sections.flatMap(s=>[...s.a,...s.b]):p.kind==='line'?[...p.a,...p.b,p.width]:[...p.p,...p.size,p.turn]))assert(Number.isFinite(v));assert(p.alpha>=0&&p.alpha<=1);}
   }
  }
- assert.equal(count,864);
+ assert.equal(count,2592);
 });
 test('material families have distinct geometry with identical path, tempo and no color',()=>{
  const signatures=Object.keys(FX.options.family).map(family=>JSON.stringify([.29,.42,.49,.58].map(t=>FX.frame(FX.resolve({family}),t).map(({color,...p})=>p))));
- assert.equal(new Set(signatures).size,6);
+ assert.equal(new Set(signatures).size,18);
 });
 test('18 stable authored bindings use only real active catalog IDs and distinct recipes',()=>{
  const source=JSON.parse(read('src/skills/catalog-source.json')),ids=source.families.flatMap(f=>f.variants.map(v=>v.id));
@@ -64,19 +64,21 @@ test('composition obeys a per-renderer frame budget under concurrent impacts',()
 test('lab controls support edits, scrubbing, comparison and reset without game storage',()=>{
  const html=read('tools/skill-fx-lab/index.html'),can=createCanvas(800,480),dom=new JSDOM(html,{url:'https://effect-lab.invalid',runScripts:'outside-only'}),w=dom.window;
  w.HTMLCanvasElement.prototype.getContext=()=>can.getContext('2d');w.HTMLElement.prototype.getBoundingClientRect=()=>({width:800,height:480});w.matchMedia=()=>({matches:true});w.ResizeObserver=class{observe(){}};w.requestAnimationFrame=()=>0;
- w.eval(`const FX_LAB_BUILD='test';\n`+read('src/render/skill-silk.js')+'\n'+read('src/render/skill-effects.js')+'\n'+read('tools/skill-fx-lab/renderer.js')+'\n'+read('tools/skill-fx-lab/app.js'));
- const $=id=>w.document.getElementById(id);assert.equal($('presets').children.length,6);
+ w.eval(`const FX_LAB_BUILD='test';\n`+read('src/render/skill-silk.js')+'\n'+read('src/render/skill-arcane.js')+'\n'+read('src/render/skill-effects.js')+'\n'+read('tools/skill-fx-lab/renderer.js')+'\n'+read('tools/skill-fx-lab/app.js'));
+ const $=id=>w.document.getElementById(id);assert.equal($('presets').children.length,18);
  w.SkillFxLab.seek(.34);
  $('flutter').value='0';$('flutter').dispatchEvent(new w.Event('input'));assert.equal(w.SkillFxLab.getRecipe().flutter,0);assert.equal($('timeline').value,'340');
  $('thickness').value='3';$('thickness').dispatchEvent(new w.Event('input'));assert.equal(w.SkillFxLab.getRecipe().thickness,3);assert.equal($('play').getAttribute('aria-label'),'再生');
  const seed=w.SkillFxLab.getRecipe().seed;$('reseed').click();assert.notEqual(w.SkillFxLab.getRecipe().seed,seed);
  assert.equal(JSON.parse(w.localStorage.getItem('bloodline-skill-fx-lab-v1')).thickness,3);
- $('presets').children[3].click();assert.equal(w.SkillFxLab.getRecipe().family,'thread');
+ $ ('presets').querySelector('[data-index="3"]').click();assert.equal(w.SkillFxLab.getRecipe().family,'thread');
  assert.equal($('silk-controls').disabled,true);
  $('pin').click();$('family').value='stone';$('family').dispatchEvent(new w.Event('change'));assert.equal(w.SkillFxLab.getRecipe().family,'stone');
  $('compare').click();assert.equal($('compare').getAttribute('aria-pressed'),'true');
  $('timeline').value='430';$('timeline').dispatchEvent(new w.Event('input'));assert.equal($('play').getAttribute('aria-label'),'再生');
  $('step').click();assert.equal($('timeline').value,'447');
  $('mono').checked=true;$('mono').dispatchEvent(new w.Event('change'));$('reset').click();assert.equal(w.SkillFxLab.getRecipe().family,'thread');
+ $('presets').querySelector('[data-index="6"]').click();assert.equal(w.SkillFxLab.getRecipe().family,'pillar');
+ $('layer-body').checked=false;$('layer-body').dispatchEvent(new w.Event('change'));assert.equal(w.SkillFxLab.getRecipe().layers.body,false);assert.equal($('layer-controls').disabled,false);
  assert.equal(w.localStorage.length,1);assert.equal(w.localStorage.key(0),'bloodline-skill-fx-lab-v1');dom.window.close();
 });

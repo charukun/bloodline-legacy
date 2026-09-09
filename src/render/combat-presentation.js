@@ -78,6 +78,15 @@ class CombatPresentation{
  composition(primitives,point){
   for(const p of primitives){
    if(this.compositionBudget<=0)break;
+   if(p.kind==='field'||p.kind==='motes'){
+    const cost=SkillArcane.cost(p),limit=this.r.quality==='low'?8:16;
+    if(cost>this.compositionBudget||this.silkSlot>=limit)continue;
+    const g=SkillArcane.geometry(p,point,this.r.eye);if(!g)continue;
+    this.compositionBudget-=cost;
+    const key='skillfx:arcane:'+this.silkSlot++;this.silkKeys.add(key);RG_CACHE.set(key,g);
+    const target=p.mode===5?this.r.fxBatches:(this.r.arcaneFX??=new Map());
+    this.r.add(key,...g.center,1,1,1,SkillArcane.ink(p),0,0,0,SkillArcane.surface,p.alpha,target);continue;
+   }
    if(p.kind==='ribbon'){
     const cost=p.sections.length-1,limit=this.r.quality==='low'?8:16;
     if(cost>this.compositionBudget||this.silkSlot>=limit)continue;
@@ -149,7 +158,7 @@ class CombatPresentation{
   for(const id of this.trails.keys())if(!visible.has(id))this.forget(id);
   r.effects=r.effects.filter(e=>{
    const composed=e.type==='hit'&&typeof SkillEffects!=='undefined'&&SkillEffects.forSkill(e.skill);
-   return t-e.born<(composed ? .55 : (COMBAT_FX[e.type]?.life??e.life));
+   return t-e.born<(composed ? SkillEffects.life(composed) : (COMBAT_FX[e.type]?.life??e.life));
   });
   for(const e of r.effects){
    const profile=COMBAT_FX[e.type];if(!profile||typeof profile!=='object')continue;
@@ -168,7 +177,8 @@ class CombatPresentation{
    if(recipe){
     // A confirmed contact owns its effect; a miss never invents an impact.
     const origin=e.skillContact??=this.contact(e,target,x,z,dir);
-    this.composition(SkillEffects.impact(recipe,age,r.quality),v=>[origin[0]+Math.cos(dir)*v[0]+Math.sin(dir)*v[2],origin[1]+v[1],origin[2]-Math.sin(dir)*v[0]+Math.cos(dir)*v[2]]);
+    const ground=typeof SkillArcane!=='undefined'&&SkillArcane.has(recipe.family)?SkillMotion.groundAt(r,x,z)-origin[1]+.035:undefined;
+    this.composition(SkillEffects.impact(recipe,age,r.quality,ground),v=>[origin[0]+Math.cos(dir)*v[0]+Math.sin(dir)*v[2],origin[1]+v[1],origin[2]-Math.sin(dir)*v[0]+Math.cos(dir)*v[2]]);
     continue;
    }
    for(let j=0;j<count;j++){

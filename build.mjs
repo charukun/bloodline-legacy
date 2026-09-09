@@ -16,7 +16,7 @@ const order=['legacy/dialogue.js','legacy/core.js','skills/engine.js','skills/ru
 const skillDefinitions=compileCatalog(JSON.parse(await fs.readFile(path.join(root,'src/skills/catalog-source.json'),'utf8')));
 const lineage=await buildLineage(root);
 let code=`const LINEAGE_VIEW=${JSON.stringify(lineage.data)};\nconst BUILD_INFO=Object.freeze(${JSON.stringify(info)});\nconst BL_SKILL_DEFINITIONS=${JSON.stringify(skillDefinitions)};\nconst VISUAL_ASSETS=${JSON.stringify(assets)};\n`;
-order.splice(order.indexOf('render/combat-presentation.js'),0,'render/skill-silk.js','render/skill-effects.js');
+order.splice(order.indexOf('render/combat-presentation.js'),0,'render/skill-silk.js','render/skill-arcane.js','render/skill-effects.js');
 for(const file of order)code+=`\n// SOURCE MODULE: ${file}\n`+await fs.readFile(path.join(root,'src',file),'utf8')+'\n';
 let style=(await fs.readFile(path.join(root,'src/ui/base.css'),'utf8'))+'\n'+await fs.readFile(path.join(root,'src/ui/world-skin.css'),'utf8');
 style+='\n'+await fs.readFile(path.join(root,'src/skills/skills.css'),'utf8');

@@ -3,8 +3,9 @@
  * No simulation writes, random stream consumption or per-frame catalog scan. */
 const SkillEffects = (() => {
  const VERSION=1, LIMIT=160;
+ const arcane=typeof SkillArcane==='undefined'?null:SkillArcane;
  const options=Object.freeze({
-  family:{blade:'斬面',bell:'残響',stone:'砕石',thread:'張糸',ember:'熾火',shadow:'裂影'},
+  family:{blade:'斬面',bell:'残響',stone:'砕石',thread:'張糸',ember:'熾火',shadow:'裂影',...Object.fromEntries((arcane?.definitions||[]).map(d=>[d.id,d.name]))},
   path:{sweep:'横薙ぎ',pierce:'貫く',fall:'振り下ろす',orbit:'巻き込む'},
   rhythm:{single:'一閃',double:'二拍・返し',triplet:'三拍・畳みかけ'},
   impact:{cleave:'切り開く',fracture:'砕く',pinch:'締める',ripple:'波紋を送る'},
@@ -34,8 +35,11 @@ const SkillEffects = (() => {
    if(!Number.isFinite(v)||v<min||v>max)throw Error(key+'は'+min+'〜'+max+'の数値にしてください');
    out[key]=v;
   }
+  const layers=value.layers??{};if(typeof layers!=='object'||Array.isArray(layers))throw Error('layersはレイヤー設定です');
+  out.layers=Object.freeze(Object.fromEntries(['sigil','body','motes'].map(k=>{if(layers[k]!==undefined&&typeof layers[k]!=='boolean')throw Error('レイヤーはON/OFFで指定してください');return [k,layers[k]??true];})));
   return Object.freeze(out);
  }
+ for(const d of arcane?.definitions||[])presetData.push([d.name,d.id,d.path,d.rhythm,d.impact,d.release,d.description]);
  const presets=Object.freeze(presetData.map(([name,family,path,rhythm,impact,release,description],i)=>Object.freeze({name,description,recipe:resolve({family,path,rhythm,impact,release,seed:73+i*97})})));
  // Authored bindings: separate IDs retain their own spatial/timing signature.
  // All other skills continue to use the established renderer.
@@ -47,6 +51,8 @@ const SkillEffects = (() => {
   60090:['ember','sweep','single','cleave','vanish'],60091:['ember','orbit','double','fracture','recoil'],60092:['ember','fall','single','fracture','drift'],
   60110:['shadow','pierce','single','pinch','vanish'],60111:['shadow','sweep','double','ripple','recoil'],60112:['shadow','orbit','single','cleave','drift']
  };
+ Object.assign(bindings,{4320:['pillar','fall','single','ripple','drift'],4311:['vortex','orbit','double','pinch','recoil'],4310:['nova','pierce','single','fracture','vanish'],4303:['lotus','sweep','single','ripple','drift'],4312:['gate','pierce','double','cleave','recoil'],4030:['comet','fall','single','cleave','drift'],4304:['cage','orbit','triplet','pinch','recoil'],4031:['tide','sweep','single','ripple','drift'],4302:['thorn','fall','triplet','fracture','vanish'],4330:['eclipse','orbit','single','pinch','recoil'],4301:['wings','sweep','double','cleave','drift'],4313:['fulgur','pierce','triplet','fracture','vanish']});
+ for(const id of Object.keys(bindings))if(!Object.hasOwn(options.family,bindings[id][0]))delete bindings[id];
  const bySkill=new Map(Object.entries(bindings).map(([id,v])=>[Number(id),resolve({family:v[0],path:v[1],rhythm:v[2],impact:v[3],release:v[4],seed:Number(id)})]));
  const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)),mix=(a,b,t)=>a+(b-a)*t;
  const hash=(seed,i)=>{let x=(seed^Math.imul(i+1,0x9e3779b1))>>>0;x=Math.imul(x^(x>>>16),0x85ebca6b);return ((x^(x>>>13))>>>0)/4294967296;};
@@ -70,6 +76,7 @@ const SkillEffects = (() => {
  }
  function stroke(recipe,u,quality='high',legacyBlade=false){
   if(!Number.isFinite(u)||u<0||u>1)return [];
+  if(arcane?.has(recipe.family))return arcane.stroke(recipe,u,quality);
   if(recipe.family==='blade'&&!legacyBlade&&typeof SkillSilk!=='undefined')return SkillSilk.stroke(recipe,u,quality);
   const w=writer(recipe,quality),n=quality==='low'?9:16,head=pathPoint(recipe.path,u),fade=Math.sin(Math.PI*clamp(u/.94)),rnd=i=>hash(recipe.seed,i);
   if(recipe.family==='blade'){
@@ -113,7 +120,9 @@ const SkillEffects = (() => {
   }
   return w.list;
  }
- function impact(recipe,age,quality='high'){
+ const life=recipe=>arcane?.has(recipe.family)?arcane.life(recipe):.55;
+ function impact(recipe,age,quality='high',ground=-1.065){
+  if(arcane?.has(recipe.family))return arcane.impact(recipe,age,quality,ground);
   if(!Number.isFinite(age)||age<0||age>.55)return [];
   const duration=recipe.release==='vanish'?.24:recipe.release==='recoil'?.36:.50;
   if(age>=duration)return [];
@@ -172,15 +181,17 @@ const SkillEffects = (() => {
   return list.slice(0,quality==='low'?160:320);
  }
  function transform(p,point){
+  if(p.kind==='field')return {...p,strips:p.strips.map(s=>s.map(q=>({a:point(q.a),b:point(q.b)})))};
+  if(p.kind==='motes')return {...p,points:p.points.map(q=>({...q,p:point(q.p)}))};
   if(p.kind==='ribbon')return {...p,sections:p.sections.map(s=>({a:point(s.a),b:point(s.b)}))};
   return p.kind==='line'?{...p,a:point(p.a),b:point(p.b)}:{...p,p:point(p.p)};
  }
  // User-gesture-only audio. All sources have a fixed stop time; no timers or loops.
  function sound(ctx,recipe,when=ctx.currentTime,volume=.12){
   const gain=ctx.createGain();gain.gain.value=clamp(volume,0,.25);gain.connect(ctx.destination);
-  const voices={blade:[[1200,180,'sawtooth',.065]],bell:[[880,880,'sine',.23],[1320,1320,'sine',.19]],stone:[[96,38,'triangle',.12],[420,70,'square',.055]],thread:[[1650,310,'triangle',.085],[980,400,'sine',.1]],ember:[[150,520,'sawtooth',.12],[1800,190,'triangle',.075]],shadow:[[240,48,'sine',.19],[410,60,'triangle',.13]]}[recipe.family];
+  const voices={blade:[[1200,180,'sawtooth',.065]],bell:[[880,880,'sine',.23],[1320,1320,'sine',.19]],stone:[[96,38,'triangle',.12],[420,70,'square',.055]],thread:[[1650,310,'triangle',.085],[980,400,'sine',.1]],ember:[[150,520,'sawtooth',.12],[1800,190,'triangle',.075]],shadow:[[240,48,'sine',.19],[410,60,'triangle',.13]]}[recipe.family]||({pillar:[[330,660,'sine',.23]],vortex:[[130,480,'triangle',.22]],nova:[[1200,70,'sawtooth',.14]],lotus:[[660,990,'sine',.22]],gate:[[740,370,'sine',.18]],comet:[[1600,160,'triangle',.17]],cage:[[490,190,'triangle',.2]],tide:[[95,240,'sawtooth',.22]],thorn:[[190,60,'triangle',.16]],eclipse:[[320,40,'sine',.24]],wings:[[440,1320,'sine',.2]],fulgur:[[1900,90,'square',.075]]}[recipe.family]);
   let remaining=voices.length;
   for(const [start,end,type,length] of voices){const o=ctx.createOscillator(),g=ctx.createGain();o.type=type;o.frequency.setValueAtTime(start,when);o.frequency.exponentialRampToValueAtTime(end,when+length);g.gain.setValueAtTime(.001,when);g.gain.linearRampToValueAtTime(.3/voices.length,when+.006);g.gain.exponentialRampToValueAtTime(.001,when+length);o.connect(g);g.connect(gain);o.start(when);o.stop(when+length+.01);o.onended=()=>{o.disconnect();g.disconnect();if(--remaining===0)gain.disconnect();};}
  }
- return Object.freeze({VERSION,LIMIT,options,presets,resolve,forSkill:id=>bySkill.get(id)||null,stroke,impact,frame,beats,duration,transform,sound});
+ return Object.freeze({VERSION,LIMIT,options,presets,resolve,forSkill:id=>bySkill.get(id)||null,stroke,impact,frame,beats,duration,life,transform,sound});
 })();
