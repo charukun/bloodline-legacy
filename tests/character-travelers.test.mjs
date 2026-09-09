@@ -64,7 +64,7 @@ test('all four new models follow an actual climb, landing and descent without gr
   for(let i=0;i<600;i++){
    sim.command(p.id,{type:'move',x:0,z:direction});sim.tick(1/60);const snapshot=freeze(JSON.parse(JSON.stringify(p))),saved=JSON.stringify(p);r.frame++;c.update(snapshot,sim.time);
    assert(c.palette.every(Number.isFinite));assert.equal(JSON.stringify(p),saved);
-   if(p.traversal){air++;assert.equal(c.footDebug.length,0);assert(Math.abs(c.transforms[0][13]-(Math.max(.1,p.supportHeight)+(p.verticalOffset||0)))<1e-5);}
+   if(p.traversal){air++;assert.equal(c.footDebug.length,0);assert(Math.abs(c.transforms[0][13]-(Math.max(.1,p.supportHeight)+(p.verticalOffset||0)+vm.runInContext('artPose',ctx)(p,sim.time).y))<1e-5);}
    else {for(const f of c.footDebug)assert(f.soleY>=f.floor-.035);if(p.action==='land')landed++;}
    if(!p.traversal&&p.supportHeight===1.2){climbed=true;direction=-1;}
    if(climbed&&!p.traversal&&p.supportHeight===0&&p.z<-18.55)break;
@@ -109,5 +109,20 @@ test('cradle, lowering and existing release transition keep simulation and GPU a
   }
   const a=Age.sample({...player(race),age:3,prologue:true,born:0,releaseAt:30},29.99999),b=Age.sample({...player(race),age:4},30);
   assert(Math.abs(a.visual-b.visual)<1e-6);
+ }
+});
+
+test('new traveler clambers plant separate hands with race/age limb lengths; vaults keep hands free',()=>{
+ const Simulation=vm.runInContext('Simulation',ctx);
+ for(let race=0;race<4;race++)for(const age of [4,24,80])for(const vault of [false,true]){
+  const sim=new Simulation({seed:13}),p=sim.addPlayer('grip',{owner:'grip',race}),room=sim.getRoom(p);room.actors=[];room.waveAt=1e9;
+  Object.assign(p,{...player(race),id:'grip',age,room:room.id,x:12,z:-27.2,stun:0,cooldown:0,introUntil:-100,releaseAt:-100,farewellStage:3});
+  if(vault)sim.learn(p,60905);assert(sim.tryTraversal(p,room,0,-1));const r=renderer(),c=new T.Character(r,race);r.traversalMap=room.map;let contacts=0;
+  for(let i=0;i<90&&p.traversal;i++){
+   sim.tick(1/60);r.frame++;const snapshot=freeze(JSON.parse(JSON.stringify(p))),before=JSON.stringify(snapshot);c.update(snapshot,sim.time);assert.equal(JSON.stringify(snapshot),before);assert(c.palette.every(Number.isFinite));
+   if(vault)assert.equal(c.traversalHandDebug.length,0);
+   else if(c.traversalHandDebug.length){const [a,b]=c.traversalHandDebug;assert(Math.abs(a.target[0]-b.target[0])>.2);for(const hand of [a,b])if(hand.amount>.9999){contacts++;assert(Math.hypot(...hand.actual.map((v,k)=>v-hand.target[k]))<.035,JSON.stringify({race,age,hand}));}}
+  }
+  if(!vault&&age===24)assert(contacts>0,'adult hand contacts, race '+race);
  }
 });

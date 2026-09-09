@@ -22,7 +22,7 @@ export function validateCatalog(defs){
   for(const key of ['stagger','knockback','tracking'])if(d.action?.[key]!==undefined&&(!Number.isFinite(d.action[key])||d.action[key]<0||d.action[key]>1.5))throw Error('Invalid motion effect '+d.key);
   if(!d.passive){for(const k of ['cost','charge','swing','recovery','reach','arc','power'])if(!Number.isFinite(d.action[k])||d.action[k]<0)throw Error('Invalid '+k+' '+d.key);
    if(!motions.has(d.action.anim)||!Number.isInteger(d.action.hits)||d.action.hits<1||!Number.isFinite(d.action.fatigue)||d.action.fatigue<0||(d.action.breakPower!==undefined&&!Number.isFinite(d.action.breakPower))||d.action.breakPower<0||d.action.cost<3||d.action.hits>4||d.action.reach>4||d.action.power>2.5||d.action.breakPower>3.2)throw Error('Action outside reviewed envelope '+d.key);
-  }else if(!['regen','capRegen','clash','heavyCost','faith'].includes(d.effect)||!Number.isFinite(d.value)||d.value<0||d.value>({regen:1,capRegen:.25,clash:.15,heavyCost:.2,faith:2}[d.effect]??0))throw Error('Unknown passive operator');
+  }else if(!['regen','capRegen','clash','heavyCost','faith','vault'].includes(d.effect)||!Number.isFinite(d.value)||d.value<0||d.value>({regen:1,capRegen:.25,clash:.15,heavyCost:.2,faith:2,vault:1}[d.effect]??0))throw Error('Unknown passive operator');
  }
  return true;
 }

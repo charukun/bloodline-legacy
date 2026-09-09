@@ -398,7 +398,15 @@ function carriedVisualPose(p){if(p.lifeState!=='carried')return p;const d=p.dir|
 function artPose(p,t,state){
  const o={active:false,y:0,x:0,z:0,yaw:0,pitch:0,roll:0,torso:0,head:0,rightArm:0,leftArm:0,rightArmZ:0,leftArmZ:0,rightLeg:0,leftLeg:0,rightKnee:0,leftKnee:0};
  if(p.alive===false)return o;
- if(p.traversal){const u=p.traversal.progress||0,lift=Math.sin(Math.PI*u);return {...o,active:true,pitch:.30*lift,rightArm:-1.35*lift,leftArm:-.9*lift,rightLeg:-1.25*lift,leftLeg:-.72*lift,rightKnee:1.9*lift,leftKnee:1.5*lift,head:-.08};}
+ if(p.traversal){
+  const a=p.traversal,u=clamp(a.progress||0,0,1),ease=x=>{x=clamp(x,0,1);return x*x*(3-2*x);};
+  if(a.kind==='vault'||a.profile!==1){const lift=Math.sin(Math.PI*u);return {...o,active:true,pitch:.30*lift,roll:.13*lift,rightArm:-1.35*lift,leftArm:-.9*lift,rightLeg:-1.25*lift,leftLeg:-.72*lift,rightKnee:1.9*lift,leftKnee:1.5*lift,head:-.08*lift};}
+  const reach=ease(u/.13)*(1-ease((u-(a.obstacle?.62:.42))/.20)),pull=ease((u-.13)/.18)*(1-ease((u-.55)/.19)),over=ease((u-.17)/.17)*(1-ease((u-.76)/.24)),trail=ease((u-.24)/.17)*(1-ease((u-.81)/.19));
+  return {...o,active:true,y:a.obstacle?0:-.18*reach,pitch:(a.obstacle?.80:.64)*reach+.10*over,torso:.10*pull,head:-.10*reach,
+   rightArm:-1.5*reach,leftArm:-1.5*reach,rightElbow:-.72*pull,leftElbow:-.72*pull,rightWrist:.28*reach,leftWrist:.28*reach,
+   rightArmZ:-.08*reach,leftArmZ:.08*reach,rightLeg:-1.95*over,leftLeg:-1.8*trail,rightKnee:2.25*over,leftKnee:2.15*trail,
+   traversalGrip:reach};
+ }
  if(p.action==='land'&&p.actionUntil>t){const u=clamp((t-p.actionStarted)/.16,0,1),bend=Math.sin(Math.PI*u);return {...o,active:true,y:-.1*bend,rightLeg:-.25*bend,leftLeg:-.25*bend,rightKnee:.5*bend,leftKnee:.5*bend};}
  if(incapacitated(p)){
   const u=clamp((t-(p.downedAt??t))/.7,0,1),settle=u*u*(3-2*u),carried=p.lifeState==='carried';

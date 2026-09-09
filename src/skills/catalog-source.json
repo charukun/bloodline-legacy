@@ -1739,6 +1739,41 @@
         "bias": 0.16,
         "copy": false
       }
+    },
+    {
+      "id": 60905,
+      "key": "nimble_vault",
+      "ja": "身軽な乗り越え",
+      "en": "Nimble Vault",
+      "desc": "探索とよじ登りで身につけた身軽さ。低い柵や石垣を素早く飛び越える。高台は手を使って登る。",
+      "descEn": "Agility learned by exploring and climbing. Vault low fences and walls quickly; climb raised ledges with your hands.",
+      "tags": [
+        "explore",
+        "light"
+      ],
+      "requiresExperience": [
+        [
+          "explore"
+        ],
+        [
+          "light"
+        ]
+      ],
+      "effect": "vault",
+      "value": 1,
+      "action": {
+        "requires": [
+          "leftArm",
+          "rightArm",
+          "leftLeg",
+          "rightLeg"
+        ]
+      },
+      "color": "#b9cda5",
+      "inheritance": {
+        "bias": 0.16,
+        "copy": false
+      }
     }
   ]
 }
