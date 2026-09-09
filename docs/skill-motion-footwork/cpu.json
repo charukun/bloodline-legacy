@@ -1,21 +1,19 @@
 {
   "kind": "Node VM CPU poses and collision queries; GL stubbed, not device FPS",
-  "baseline": "d43626e2cac13e8748471b6e0d1c7c7cadd1472a",
+  "baseline": "10fb501e635f953c529dfbfc6898d8c0fd21e66c",
   "node": "v24.19.0",
   "results": [
     {
       "label": "before",
       "samples": 1200,
-      "medianMs": 0.2893570000001091,
-      "p95Ms": 0.7800899999997455
+      "medianMs": 0.4227920000002996,
+      "p95Ms": 1.5379589999997734
     },
     {
       "label": "after",
       "samples": 1200,
-      "medianMs": 0.47675100000014936,
-      "p95Ms": 1.658571999999367
+      "medianMs": 0.8926609999998618,
+      "p95Ms": 4.04960600000004
     }
-  ],
-  "baselineDescription": "Local merge of develop 6cdbacdb627bd10bccf9fb4a06f771881cc5dd3a and previous PR62 head 35d7ef9b5797c641b5b9dd467e64a1ed5907180f; motion/runtime files identical to PR62 head.",
-  "runtimeEquivalentTo": "35d7ef9b5797c641b5b9dd467e64a1ed5907180f"
+  ]
 }

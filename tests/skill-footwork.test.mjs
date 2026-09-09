@@ -32,6 +32,18 @@ test('same sword clip chains alternate the leading foot without resetting plante
  assert.deepEqual(leads,[1,-1,1]);assert(maxSlip<.003);
 });
 
+test('child and elderly traveler proportions keep their supporting foot through a full sword chain',t=>{
+ for(let race=0;race<4;race++)for(const age of [4,10,80]){
+  const r=api.renderer(),c=new api.Travelers.Character(r,race);let old=null,maxError=0,maxSlip=0;
+  for(let i=0;i<api.review.sequence('golden',age).duration*60;i++){
+   const sample=api.review.sample({...api.player(),race,gender:[0,1,0,1][race]},'golden',i/60,age);r.frame++;c.update(sample.p,sample.t);
+   assert.equal(c.ageProfile.age,age);assert(c.palette.every(Number.isFinite));
+   for(const f of c.footDebug){maxError=Math.max(maxError,f.error);const previous=old?.find(g=>g.side===f.side);if(!f.swing&&previous&&!previous.swing)maxSlip=Math.max(maxSlip,delta(f.actual,previous.actual));}old=structuredClone(c.footDebug);
+  }
+  assert(maxError<.025,`${race}/${age}: leg cannot reach its target`);assert(maxSlip<.006,`${race}/${age}: planted sole slides`);t.diagnostic(JSON.stringify({race,age,maxError,maxSlip}));
+ }
+});
+
 test('the displayed pelvis respects existing body spacing and scenery bounds',()=>{
  for(const wall of [false,true]){
   const r=api.renderer(),c=new api.Travelers.Character(r,0),p={...api.player(),x:wall?12.99:0,z:-38,room:'front',action:'charge',combo:{total:1},attackSkill:4001,pendingSkill:{id:4001,started:0,at:.5}};
