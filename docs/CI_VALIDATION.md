@@ -1,6 +1,6 @@
-# CI validation ownership — policy v6
+# CI validation ownership — reference
 
-The common policy is [COMMON_DEVELOPMENT_POLICY.txt](COMMON_DEVELOPMENT_POLICY.txt). Game specifications remain in Project Sources.
+The common policy is [v7](COMMON_DEVELOPMENT_POLICY.md). This document describes the validation selector and workflows in this tree; current run results and branch protection must be checked on GitHub. Game specifications remain in Project Sources.
 
 ## Automatic validation
 
@@ -27,7 +27,7 @@ npm run build
 node --test tests/<relevant-test>.test.mjs
 ```
 
-Replace the example with real existing test files. Keep fixtures, built assets, jsdom/native EGL and other prerequisites. UI/animation changes also need target-screen, normal-input and motion verification. Performance changes need target-scenario measurements. Unit tests do not prove browser visuals or device performance.
+Replace the example with relevant existing tests when local verification is needed under v7. Keep fixtures, built assets, jsdom/native EGL and other prerequisites. Select screen, input, motion and performance verification according to change risk, and reuse equivalent current-SHA CI evidence. Unit tests do not prove browser visuals or device performance.
 
 `npm test` remains full Build + regression. CI uses `tools/ci/validation-plan.mjs` and `tools/ci/run-validation.mjs` after Build, avoiding another implicit Build. Lifetime simulation and Workers durability remain additional gates where selected. A manual workflow run requests full verification and never deploys.
 
@@ -45,7 +45,7 @@ Workflow event counts are not guaranteed to be one per integration batch. The ea
 
 ## Gates retained
 
-- Required job names `Build and verify` and `Character build, input and visual evidence` remain. Branch protection is unchanged.
+- Job names `Build and verify` and `Character build, input and visual evidence` remain. Their required status depends on current GitHub protection settings; this document does not establish or waive those settings.
 - Unknown/shared/high-risk changes fall back to full regression. Semantic review can require additional intermediate validation.
 - Full regression on final develop, lifetime simulation, Workers durability, environment/SHA/artifact checks and rollout protection remain.
 - DEV deploys the tested artifact and uses HTTP/manifest/HTML-hash verification. STAGING/PRODUCTION retain browser smoke. HTTP does not verify WebGL/input.
