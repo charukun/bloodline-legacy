@@ -35,7 +35,7 @@ const SkillFxStage=(()=>{
     for(let band=0;band<bands;band++){
      const v0=band/bands,v1=(band+1)/bands,v=(v0+v1)*.5,g=ctx.createLinearGradient(...start,...end);
      for(let j=0;j<=24;j++){
-      const u=j/24,m=SkillSilk.mask(u,v,p.age),c=mono?[245,245,245]:[255,240,212];
+      const u=j/24,m=SkillSilk.mask(u,v,p.age,p.material),c=mono?[245,245,245]:[255,240,212];
       g.addColorStop(u,`rgba(${c.join(',')},${m.alpha})`);
      }
      ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(...at(sections[0],v0));
@@ -45,9 +45,9 @@ const SkillFxStage=(()=>{
     }
     // Preserve subpixel leading-edge coverage as the WebGL fwidth path does.
     const edge=ctx.createLinearGradient(...start,...end);
-    for(let j=0;j<=32;j++){const u=j/32,alpha=SkillSilk.mask(u,.12,p.age).alpha;edge.addColorStop(u,`rgba(${mono?'250,250,250':'255,244,224'},${alpha*.85})`);}
-    ctx.strokeStyle=edge;ctx.lineWidth=quality==='low'?.85:1.15;ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(...at(sections[0],.12));
-    for(let j=1;j<sections.length;j++)ctx.lineTo(...at(sections[j],.12));ctx.stroke();
+    for(let j=0;j<=32;j++){const u=j/32,alpha=SkillSilk.mask(u,.16,p.age,p.material).alpha;edge.addColorStop(u,`rgba(${mono?'250,250,250':'255,244,224'},${alpha*.85})`);}
+    ctx.strokeStyle=edge;ctx.lineWidth=quality==='low'?.85:1.15;ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(...at(sections[0],.16));
+    for(let j=1;j<sections.length;j++)ctx.lineTo(...at(sections[j],.16));ctx.stroke();
    }else if(p.kind==='line'){
     const a=project(p.a),b=project(p.b),dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy)||1,w=Math.max(.55,p.width*scale),nx=-dy/len*w,ny=dx/len*w;
     ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(mix(a[0],b[0],.35)+nx,mix(a[1],b[1],.35)+ny);ctx.lineTo(...b);ctx.lineTo(mix(a[0],b[0],.65)-nx,mix(a[1],b[1],.65)-ny);ctx.closePath();ctx.fill();

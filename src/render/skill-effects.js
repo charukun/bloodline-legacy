@@ -28,7 +28,13 @@ const SkillEffects = (() => {
    out[key]=id;
   }
   if(value.seed!==undefined&&(!Number.isInteger(value.seed)||value.seed<0||value.seed>4294967295))throw Error('seedは0〜4294967295の整数にしてください');
-  out.seed=value.seed??73;return Object.freeze(out);
+  out.seed=value.seed??73;
+  for(const [key,min,max,fallback] of [['flutter',0,1,.65],['thickness',.5,3,2.2]]){
+   const v=value[key]??fallback;
+   if(!Number.isFinite(v)||v<min||v>max)throw Error(key+'は'+min+'〜'+max+'の数値にしてください');
+   out[key]=v;
+  }
+  return Object.freeze(out);
  }
  const presets=Object.freeze(presetData.map(([name,family,path,rhythm,impact,release,description],i)=>Object.freeze({name,description,recipe:resolve({family,path,rhythm,impact,release,seed:73+i*97})})));
  // Authored bindings: separate IDs retain their own spatial/timing signature.

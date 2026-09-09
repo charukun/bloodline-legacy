@@ -7,7 +7,8 @@ import {createCanvas} from '@napi-rs/canvas';
 const root=new URL('../',import.meta.url),read=p=>fs.readFileSync(new URL(p,root),'utf8');
 const context=vm.createContext({});vm.runInContext(read('src/render/skill-silk.js')+'\n'+read('src/render/skill-effects.js'),context);const FX=vm.runInContext('SkillEffects',context);
 test('versioned recipes reject invalid imports and preserve deterministic seeking',()=>{
- for(const bad of [{version:2},{family:'__proto__'},{impact:'unknown'},{seed:NaN},{seed:-1},{seed:1.5}])assert.throws(()=>FX.resolve(bad));
+ for(const bad of [{version:2},{family:'__proto__'},{impact:'unknown'},{seed:NaN},{seed:-1},{seed:1.5},{flutter:NaN},{flutter:-1},{flutter:2},{thickness:0},{thickness:5},{thickness:'2'}])assert.throws(()=>FX.resolve(bad));
+ assert.equal(FX.resolve({version:1}).thickness,2.2);assert.equal(FX.resolve({version:1}).flutter,.65);
  const r=FX.resolve({family:'thread',path:'orbit',rhythm:'triplet',impact:'pinch',release:'recoil',seed:981});
  const a=JSON.stringify(FX.frame(r,.51));FX.frame(r,1.1);FX.frame(FX.presets[4].recipe,.51);
  assert.equal(JSON.stringify(FX.frame(FX.resolve(JSON.parse(JSON.stringify(r))),.51)),a);
@@ -65,7 +66,13 @@ test('lab controls support edits, scrubbing, comparison and reset without game s
  w.HTMLCanvasElement.prototype.getContext=()=>can.getContext('2d');w.HTMLElement.prototype.getBoundingClientRect=()=>({width:800,height:480});w.matchMedia=()=>({matches:true});w.ResizeObserver=class{observe(){}};w.requestAnimationFrame=()=>0;
  w.eval(`const FX_LAB_BUILD='test';\n`+read('src/render/skill-silk.js')+'\n'+read('src/render/skill-effects.js')+'\n'+read('tools/skill-fx-lab/renderer.js')+'\n'+read('tools/skill-fx-lab/app.js'));
  const $=id=>w.document.getElementById(id);assert.equal($('presets').children.length,6);
+ w.SkillFxLab.seek(.34);
+ $('flutter').value='0';$('flutter').dispatchEvent(new w.Event('input'));assert.equal(w.SkillFxLab.getRecipe().flutter,0);assert.equal($('timeline').value,'340');
+ $('thickness').value='3';$('thickness').dispatchEvent(new w.Event('input'));assert.equal(w.SkillFxLab.getRecipe().thickness,3);assert.equal($('play').getAttribute('aria-label'),'再生');
+ const seed=w.SkillFxLab.getRecipe().seed;$('reseed').click();assert.notEqual(w.SkillFxLab.getRecipe().seed,seed);
+ assert.equal(JSON.parse(w.localStorage.getItem('bloodline-skill-fx-lab-v1')).thickness,3);
  $('presets').children[3].click();assert.equal(w.SkillFxLab.getRecipe().family,'thread');
+ assert.equal($('silk-controls').disabled,true);
  $('pin').click();$('family').value='stone';$('family').dispatchEvent(new w.Event('change'));assert.equal(w.SkillFxLab.getRecipe().family,'stone');
  $('compare').click();assert.equal($('compare').getAttribute('aria-pressed'),'true');
  $('timeline').value='430';$('timeline').dispatchEvent(new w.Event('input'));assert.equal($('play').getAttribute('aria-label'),'再生');

@@ -83,7 +83,7 @@ class CombatPresentation{
     if(cost>this.compositionBudget||this.silkSlot>=limit)continue;
     this.compositionBudget-=cost;
     const key='skillfx:silk:'+this.silkSlot++,g=SkillSilk.geometry(p,point);this.silkKeys.add(key);
-    RG_CACHE.set(key,g);this.r.add(key,...g.center,1,1,1,p.color,0,0,0,SkillSilk.surface,p.alpha,this.r.fxBatches);continue;
+    RG_CACHE.set(key,g);this.r.add(key,...g.center,1,1,1,SkillSilk.ink(p),0,0,0,SkillSilk.surface,p.alpha,this.r.fxBatches);continue;
    }
    this.compositionBudget--;
    if(p.kind==='line')this.needle(point(p.a),point(p.b),p.width,p.color,p.alpha);
@@ -107,6 +107,11 @@ class CombatPresentation{
    const skill=skillById(a.pendingSkill?.id??a.attackSkill);
    if(a.telegraph){const q=a.telegraph,u=clamp((t-q.started)/Math.max(.01,q.at-q.started),0,1);for(let j=0;j<3;j++)r.add('gltf:spark-streak',a.x+Math.sin(q.dir??a.dir)*(.8+j*.22),.28,a.z+Math.cos(q.dir??a.dir)*(.8+j*.22),.45,.24,.2,'#db9c63',-(q.dir??a.dir),0,Math.PI/2,4,.2+u*.42,r.fxBatches);}
    let trail=this.trails.get(a.id);const attacking=a.action==='attack'&&a.actionUntil>t&&skill;
+   const silkRecipe=typeof SkillEffects!=='undefined'?SkillEffects.forSkill(skill?.id):null;
+   // Simulation shifts actionStarted during hitstop. This clock freezes both
+   // the sampled blade wake and its noise, and resets cleanly on a new action.
+   const trailTime=silkRecipe?.family==='blade'?t-(a.actionStarted??0):t;
+   if(trail?.length&&trail[0].t>trailTime+1e-6){this.forget(a.id);trail=null;}
    if(attacking){
     const clock=SkillMotion.clock(a,t,skill);
     const duration=clock.duration,beat=clock.beat,full=clock.index+beat;
@@ -117,15 +122,15 @@ class CombatPresentation{
     if(tip&&beat>=.18&&beat<=.57){
      if(!trail){trail=[];this.trails.set(a.id,trail);}
      // Sample genuine weapon motion only; a hitstop cannot add more geometry.
-     if(!trail.length||Math.hypot(...tip.map((v,i)=>v-trail[0].p[i]))>.04)trail.unshift({p:[...tip],t});
+     if(!trail.length||Math.hypot(...tip.map((v,i)=>v-trail[0].p[i]))>.04)trail.unshift({p:[...tip],t:trailTime});
     }
    }
    if(!trail)continue;
-   while(trail.length&&(t-trail.at(-1).t>COMBAT_FX.trailLife||trail.length>COMBAT_FX.trailPoints))trail.pop();
+   while(trail.length&&(trailTime-trail.at(-1).t>COMBAT_FX.trailLife||trail.length>COMBAT_FX.trailPoints))trail.pop();
    if(!trail.length){this.forget(a.id);continue;}
    if(trail.length>=2){
-    if(typeof SkillSilk!=='undefined'&&SkillEffects.forSkill(skill?.id)?.family==='blade'){
-     const ribbon=SkillSilk.trail(trail,r.eye,t,r.quality);if(ribbon)this.composition([ribbon],v=>v);continue;
+    if(typeof SkillSilk!=='undefined'&&silkRecipe?.family==='blade'){
+     const ribbon=SkillSilk.trail(trail,r.eye,trailTime,r.quality,silkRecipe);if(ribbon)this.composition([ribbon],v=>v);continue;
     }
     const center=trail[0].p,P=[],N=[];
     for(let j=0;j<trail.length-1;j++){

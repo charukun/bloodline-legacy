@@ -87,3 +87,43 @@ uses the real game GLSL with only the ES-to-desktop header adaptation. Neither
 is browser/device QA. Pixel Fold playback/FPS and listening remain unverified.
 The generated art direction is richer than the current runtime material; it
 remains the target for subsequent material polish, not a claimed exact match.
+
+## Flutter and body follow-up (2026-09-09)
+
+User feedback: animate irregular flutter and make the slash visibly thicker.
+The blade recipe now accepts `flutter` (0–1, default 0.65) and `thickness`
+(0.5–3, default 2.2). These are presentation controls, not damage/reach modifiers.
+Old version-1 recipes supply the new defaults; invalid values are rejected.
+
+Two scales of seeded quintic value noise displace the wake and its internal
+strands continuously. No per-frame random calls, texture allocations, new
+particles, or extra mesh segments. The cutting edge stays anchored. The broader
+luminous core and denser translucent wake give the surface body without changing
+color or slowing attack timing. The shape seed is saved with the lab recipe.
+
+Material 24 keeps UV/erosion in the existing normal attribute and uses its
+instance RGB slots for flutter amount, reduced noise seed and motion clock. Its
+ivory pigment is authored in the shader. The other materials still interpret RGB
+as color; vertex layouts and character shader interfaces are unchanged. The
+Canvas adapter consumes the same noise/mask settings. The EGL check passes these
+actual instance values too.
+
+Real blade trails use the simulation-adjusted attack elapsed time. Their samples,
+noise and expiry freeze during hitstop, resume afterward, and clear when a new
+action resets the clock. The fallback slash already follows `SkillMotion.clock`.
+Simulation, save and input code are untouched.
+
+The HTML provides thickness/strength sliders, a saved-seed variation button,
+paused-frame editing, and a synchronized comparison against thickness 1 / zero
+flutter. The original faceted baseline and arbitrary pinned A/B comparison are
+still selectable. These new controls apply to the blade family only.
+
+Focused validation: 16 tests pass, including continuous noise before erosion,
+seed/replay determinism, zero-flutter behavior, thicker geometry with the same
+cutting edge and segment budget, and a runtime hitstop/resume/new-action test.
+Native EGL renders all four paths at three phases and links the shared character
+shader. Browser/device rendering and FPS remain unverified.
+
+Final follow-up validation: 273 repository tests pass; DEV build and deployment
+integrity pass. The supplied comparison animation runs at half speed to make
+flutter easier to inspect; the HTML retains selectable playback speed.

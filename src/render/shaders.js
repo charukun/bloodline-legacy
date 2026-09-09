@@ -22,6 +22,9 @@ layout(location=0) out vec4 outColor;layout(location=1) out vec4 outNormal;
 const float PI=3.14159265;
 float hash(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,53.7)))*43758.5453);}
 vec3 lin(vec3 c){return pow(max(c,vec3(0.)),vec3(2.2));}
+float silkLattice(vec2 p,float seed){float h=mod(p.x*37.+p.y*71.+seed*13.,251.);return mod((h*34.+1.)*h,251.)/125.5-1.;}
+float silkNoise(vec2 p,float seed){vec2 i=floor(p),f=fract(p),s=f*f*f*(f*(f*6.-15.)+10.);return mix(mix(silkLattice(i,seed),silkLattice(i+vec2(1.,0.),seed),s.x),mix(silkLattice(i+vec2(0.,1.),seed),silkLattice(i+vec2(1.,1.),seed),s.x),s.y);}
+float silkFlow(float u,float clock,float seed){return .72*silkNoise(vec2(u*4.7,clock*2.2),seed)+.28*silkNoise(vec2(u*10.8,clock*4.8),seed+41.);}
 float shadowValue(sampler2D map,vec3 p,float bias){vec2 t=1./vec2(textureSize(map,0));float s=0.;for(int i=0;i<4;i++){vec2 o=vec2((i&1)==0?-.9:.9,(i&2)==0?-.9:.9);s+=step(texture(map,p.xy+o*t*1.35).r,p.z-bias);}return s*.25;}
 vec3 brdf(vec3 base,vec3 N,vec3 V,vec3 L,float rough,float metal,vec3 radiance){vec3 H=normalize(V+L);float nl=max(dot(N,L),0.),nv=max(dot(N,V),.08),nh=max(dot(N,H),0.),vh=max(dot(V,H),0.);float a=rough*rough,a2=a*a;float d=a2/(PI*pow(nh*nh*(a2-1.)+1.,2.)+.0001);float k=pow(rough+1.,2.)*.125;float g=(nv/(nv*(1.-k)+k))*(nl/(nl*(1.-k)+k));vec3 f0=mix(vec3(.035),base,metal);vec3 F=f0+(1.-f0)*pow(1.-vh,5.);return ((1.-F)*(1.-metal)*base/PI+d*g*F/max(.1,4.*nv*max(nl,.01)))*radiance*nl;}
 vec3 localLight(vec3 p,vec3 intensity,vec3 base,vec3 N,vec3 V,float rough,float metal){if(!any(greaterThan(intensity,vec3(0.))))return vec3(0.);vec3 delta=p-vWorld;float d=length(delta);if(d>=7.5)return vec3(0.);float atten=pow(max(0.,1.-d/7.5),2.)/(1.+d*d*.12);return brdf(base,N,V,delta/max(.01,d),rough,metal,intensity*atten);}
@@ -29,18 +32,18 @@ void main(){vec3 N=normalize(vNormal),L=normalize(vec3(-.48,.85,.42)),V=normaliz
  // Continuous silk surface. UV/erosion travel with the strike, so hitstop also
  // freezes the material. Only material 24 uses this path; no world texture lookup.
  if(authored>23.5&&authored<24.5){
-  float u=vLocal.x,v=vLocal.y,age=vLocal.z;
-  float warp=sin(u*19.+age*.9)*.055+sin(u*43.-age)*.012;
+  float u=vLocal.x,v=vLocal.y,age=vLocal.z,flutter=vInk.r,seed=vInk.g,clock=vInk.b;
+  float warp=sin(u*19.+age*.9)*.055+sin(u*43.-age)*.012+flutter*silkFlow(u,clock,seed)*.16*smoothstep(.05,.65,v);
   float fiber=pow(.5+.5*sin((v+warp)*82.+sin(u*23.)*2.2),7.);
-  float core=exp(-pow((v-.12)/max(.065,fwidth(v)*.75),2.));
-  float wake=exp(-v*3.8)*(.14+.64*fiber);
-  float grain=.5+.5*sin(u*39.+v*16.+sin(u*17.-v*6.)*1.7);
+  float core=exp(-pow((v-.16)/max(.115,fwidth(v)*.75),2.));
+  float wake=exp(-v*2.9)*(.28+.64*fiber);
+  float grain=mix(.5+.5*sin(u*39.+v*16.+sin(u*17.-v*6.)*1.7),.5+.5*silkNoise(vec2(u*13.+clock*.6,v*5.-clock*.7),seed+89),flutter*.65);
   float erosion=smoothstep(age*.95-.22,age*.95+.06,grain+.18*(1.-v));
   float edge=smoothstep(0.,max(.025,fwidth(v)),v)*(1.-smoothstep(.86,1.,v));
   float ends=smoothstep(0.,.045,u)*(1.-smoothstep(.93,1.,u));
   alpha*=clamp((core*.9+wake)*erosion*edge*ends,0.,1.);
   if(alpha<.004)discard;
-  vec3 light=lin(pigment)*(1.4+core*1.6);
+  vec3 light=lin(vec3(1.,240./255.,212./255.))*(1.4+core*1.6);
   outColor=vec4(light/(1.+light),alpha);outNormal=vec4(.5,1.,.5,0.);return;
  }
  if(surf>1.5&&surf<2.5){float d=length(vLocal.xz);alpha*=pow(max(0.,1.-d),2.);if(alpha<.005)discard;outColor=vec4(lin(pigment),alpha);outNormal=vec4(.5,1.,.5,0.);return;}

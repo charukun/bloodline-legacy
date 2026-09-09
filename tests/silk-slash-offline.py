@@ -30,7 +30,7 @@ for frame in d['frames']:
     for g in frame['geometry']:
         vertices=np.column_stack((np.array(g['positions']).reshape(-1,3),np.array(g['normals']).reshape(-1,3))).astype('f4')
         model=np.eye(4,dtype='f4').flatten();model[12:15]=g['center']
-        row=np.concatenate([model,[1.,240/255,212/255,g['alpha'],24.]]).astype('f4')
+        row=np.concatenate([model,[*g['ink'],g['alpha'],24.]]).astype('f4')
         vbo,instance=ctx.buffer(vertices.tobytes()),ctx.buffer(row.tobytes())
         vao=ctx.vertex_array(program,[(vbo,'3f 3f','pos','nor'),(instance,'16f 4f 1f /i','model','ink','surface')])
         vao.render(moderngl.TRIANGLES)

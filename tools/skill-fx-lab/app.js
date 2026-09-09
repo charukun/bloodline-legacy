@@ -10,6 +10,9 @@
  function announce(s){$('notice').textContent=s;}
  function update(){
   for(const key of controls)$(key).value=recipe[key];
+  for(const key of ['flutter','thickness'])$(key).value=recipe[key];
+  $('flutter-value').textContent=Math.round(recipe.flutter*100)+'%';$('thickness-value').textContent=recipe.thickness.toFixed(1)+'×';
+  $('silk-controls').disabled=recipe.family!=='blade';$('baseline').disabled=recipe.family!=='blade';
   const exact=SkillEffects.presets.findIndex(p=>controls.every(k=>p.recipe[k]===recipe[k]));
   if(exact>=0)presetIndex=exact;
   const p=SkillEffects.presets[presetIndex];
@@ -23,7 +26,7 @@
   $('compare').disabled=!pinned;$('compare').setAttribute('aria-pressed',String(compare));
   $('surface-compare').disabled=recipe.family!=='blade';if(recipe.family!=='blade')$('surface-compare').checked=false;
   canvas.parentElement.classList.toggle('comparing',compare||$('surface-compare').checked);
-  $('mode-label').textContent=$('surface-compare').checked?'旧版 / 滑らかな斬面':compare?'A 記録した構成 / B いまの構成':'演出見本';
+  $('mode-label').textContent=$('surface-compare').checked?'基準 / いまの厚み・揺らめき':compare?'A 記録した構成 / B いまの構成':'演出見本';
   try{localStorage.setItem(storageKey,JSON.stringify(recipe));}catch{}
  }
  function setRecipe(next){recipe=SkillEffects.resolve(next);announce('');replay();}
@@ -32,10 +35,11 @@
  function draw(){
   const opts={mono:$('mono').checked,quality:cssW<500?'low':'high'};
   const surfaceCompare=$('surface-compare').checked;
+  const legacy=surfaceCompare&&$('baseline').value==='legacy',baseline=legacy?recipe:SkillEffects.resolve({...recipe,flutter:0,thickness:1});
   if(surfaceCompare||compare&&pinned){
    const stacked=cssW<520,w=stacked?cssW:cssW/2,h=stacked?cssH/2:cssH;
-   ctx.save();ctx.beginPath();ctx.rect(0,0,w,h);ctx.clip();SkillFxStage.draw(ctx,w,h,surfaceCompare?recipe:pinned,time,{...opts,legacyBlade:surfaceCompare,label:surfaceCompare?'BEFORE / 旧版':'A / 記録した構成'});ctx.restore();
-   ctx.save();ctx.translate(stacked?0:w,stacked?h:0);SkillFxStage.draw(ctx,w,h,recipe,time,{...opts,label:surfaceCompare?'AFTER / 滑らかな斬面':'B / いまの構成'});ctx.restore();
+   ctx.save();ctx.beginPath();ctx.rect(0,0,w,h);ctx.clip();SkillFxStage.draw(ctx,w,h,surfaceCompare?baseline:pinned,time,{...opts,legacyBlade:legacy,label:surfaceCompare?(legacy?'A / 初期の斬面':'A / 揺れなし・厚み 1.0×'):'A / 記録した構成'});ctx.restore();
+   ctx.save();ctx.translate(stacked?0:w,stacked?h:0);SkillFxStage.draw(ctx,w,h,recipe,time,{...opts,label:surfaceCompare?'B / 厚み '+recipe.thickness.toFixed(1)+'×・揺れ '+Math.round(recipe.flutter*100)+'%':'B / いまの構成'});ctx.restore();
    ctx.fillStyle='#5b6664';if(stacked)ctx.fillRect(0,h,w,1);else ctx.fillRect(w,0,1,h);
   }
   else SkillFxStage.draw(ctx,cssW,cssH,recipe,time,opts);
@@ -45,8 +49,12 @@
   $('phase').textContent=phase;
  }
  for(const key of controls)$(key).addEventListener('change',()=>setRecipe({...recipe,[key]:$(key).value}));
+ // Keep the current frame while tuning: paused inspection must not jump away.
+ for(const key of ['flutter','thickness'])$(key).addEventListener('input',()=>{recipe=SkillEffects.resolve({...recipe,[key]:Number($(key).value)});update();draw();});
+ $('reseed').addEventListener('click',()=>{recipe=SkillEffects.resolve({...recipe,seed:(recipe.seed+97)>>>0});update();draw();});
+ $('baseline').addEventListener('change',()=>{update();draw();});
  $('reset').addEventListener('click',()=>setRecipe(SkillEffects.presets[presetIndex].recipe));
- $('shuffle').addEventListener('click',()=>{const next={version:1,seed:recipe.seed};for(const key of controls){const values=Object.keys(SkillEffects.options[key]);next[key]=values[Math.floor(Math.random()*values.length)];}setRecipe(next);});
+ $('shuffle').addEventListener('click',()=>{const next={...recipe};for(const key of controls){const values=Object.keys(SkillEffects.options[key]);next[key]=values[Math.floor(Math.random()*values.length)];}setRecipe(next);});
  $('play').addEventListener('click',()=>{playing=!playing;if(playing&&time>=SkillEffects.duration)time=0;last=null;update();});
  $('replay').addEventListener('click',replay);
  $('step').addEventListener('click',()=>{playing=false;time=Math.min(SkillEffects.duration,time+1/60);update();draw();});

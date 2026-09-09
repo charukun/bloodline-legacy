@@ -47,3 +47,40 @@ test('upgraded material only applies to blade, with legacy comparison retained',
  assert(!FX.stroke(FX.presets[0].recipe,.6,'high',true).some(p=>p.kind==='ribbon'));
  for(const preset of FX.presets.slice(1))assert.equal(JSON.stringify(FX.stroke(preset.recipe,.6)),JSON.stringify(FX.stroke(preset.recipe,.6,'high',true)));
 });
+test('flutter changes continuously before erosion, supports zero and deterministic seeds',()=>{
+ const sample=(seed,clock,flutter=1)=>Silk.mask(.43,.42,0,{seed,clock,flutter}).alpha;
+ assert.notEqual(sample(73,.1),sample(73,.3));assert.notEqual(sample(73,.3),sample(170,.3));
+ assert.equal(sample(73,.1,0),sample(170,.3,0));
+ let delta=0;
+ for(let u=0;u<=1;u+=.025)for(let clock=0;clock<1;clock+=.013){
+  const a=Silk.mask(u,.42,.1,{seed:73,clock,flutter:1}),b=Silk.mask(u,.42,.1,{seed:73,clock:clock+.0001,flutter:1});
+  delta=Math.max(delta,Math.abs(a.alpha-b.alpha));
+ }
+ assert(delta<.004,'no temporal jumps at noise lattice boundaries');
+ const recipe=FX.resolve({flutter:.9,thickness:3,seed:170}),frame=JSON.stringify(Silk.stroke(recipe,.63));
+ Silk.stroke(recipe,.9);assert.equal(JSON.stringify(Silk.stroke(FX.resolve(JSON.parse(JSON.stringify(recipe))),.63)),frame);
+});
+test('thickness widens the wake without moving the cutting edge or increasing the mesh budget',()=>{
+ const width=s=>Math.hypot(...s.a.map((v,i)=>v-s.b[i]));
+ for(const path of Object.keys(FX.options.path))for(const quality of ['low','high']){
+  const thin=Silk.stroke(FX.resolve({path,thickness:1,flutter:0}),.6,quality)[0];
+  const thick=Silk.stroke(FX.resolve({path,thickness:3,flutter:0}),.6,quality)[0];
+  const flutter=Silk.stroke(FX.resolve({path,thickness:3,flutter:1}),.6,quality)[0];
+  assert.equal(thin.sections.length,thick.sections.length);
+  thin.sections.forEach((s,i)=>{assert.deepEqual(s.a,thick.sections[i].a);assert.deepEqual(s.a,flutter.sections[i].a);assert(Math.abs(width(thick.sections[i])-width(s)*3)<1e-9);});
+  assert.notEqual(JSON.stringify(thick.sections),JSON.stringify(flutter.sections));
+ }
+});
+test('actual renderer freezes blade noise and trail ageing when the attack clock pauses',()=>{
+ const ctx=vm.createContext({});vm.runInContext(`const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));const skillById=id=>({id});const RG_CACHE=new Map();const SkillMotion={clock:(a,t)=>({duration:1,beat:t-a.actionStarted,index:0,shape:'slash'})};`,ctx);
+ vm.runInContext(read('src/render/skill-silk.js')+'\n'+read('src/render/skill-effects.js')+'\n'+read('src/render/combat-presentation.js'),ctx);
+ const P=vm.runInContext('CombatPresentation',ctx),actor={id:'a',alive:true,x:0,z:0,action:'attack',attackSkill:60041,actionStarted:1,actionUntil:2};
+ const r={camera:{x:0,z:0},eye:[0,6,8],quality:'high',effects:[],weatherState:{rain:0},art:{sources:[]},weaponTips:new Map([['a',[0,1,1]]])},p=new P(r),draws=[];
+ p.composition=primitives=>draws.push(JSON.stringify(primitives));
+ const s={t:1.3,actors:[actor],room:{id:'test'}};p.update(s);
+ r.weaponTips.set('a',[.2,1,1.2]);s.t=1.32;p.update(s);const before=draws.at(-1);
+ actor.actionStarted+=.08;actor.actionUntil+=.08;s.t+=.08;p.update(s);
+ assert.equal(draws.at(-1),before);assert.equal(p.trails.get('a').length,2);
+ s.t+=.03;p.update(s);assert.notEqual(draws.at(-1),before);
+ actor.actionStarted=s.t;actor.actionUntil=s.t+1;p.update(s);assert.equal(p.trails.has('a'),false);
+});

@@ -2,10 +2,22 @@
  * Design: tension -> advancing edge -> open crescent -> contact -> erosion.
  * No simulation state, global time, textures or per-frame random sampling.
  * Surface 24 reuses the normal attribute for (longitudinal UV, transverse UV,
- * erosion phase). Other material/character attribute contracts are unchanged. */
+ * erosion phase); its instance RGB carries (flutter, noise seed, motion clock).
+ * Other material/character attribute contracts are unchanged. */
 const SkillSilk=(()=>{
  const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x)),lerp=(a,b,t)=>a+(b-a)*t;
  const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a));return t*t*(3-2*t);};
+ // Quintic value noise: continuous velocity at cell boundaries, deterministic
+ // under replay/seek. Integer arithmetic stays exact in highp GLSL floats too.
+ const mod=(x,m)=>x-Math.floor(x/m)*m;
+ const lattice=(x,y,seed)=>{const h=mod(x*37+y*71+seed*13,251);return mod((h*34+1)*h,251)/125.5-1;};
+ function noise(x,y,seed){
+  const i=Math.floor(x),j=Math.floor(y),ease=t=>t*t*t*(t*(t*6-15)+10),a=ease(x-i),b=ease(y-j);
+  return lerp(lerp(lattice(i,j,seed),lattice(i+1,j,seed),a),lerp(lattice(i,j+1,seed),lattice(i+1,j+1,seed),a),b);
+ }
+ const flow=(u,clock,seed)=>.72*noise(u*4.7,clock*2.2,seed)+.28*noise(u*10.8,clock*4.8,seed+41);
+ const appearance=(recipe,clock)=>({flutter:recipe.flutter??.65,seed:((recipe.seed??73)^((recipe.seed??73)>>>16))>>>0,clock});
+ const ink=p=>[p.material?.flutter??0,(p.material?.seed??73)%251,p.material?.clock??0];
  const point=(path,u)=>{
   if(path==='pierce')return [.06*Math.sin(u*Math.PI),1.12,.2+u*2.1];
   if(path==='fall')return [.04*Math.sin(u*4),2.6-u*1.9,.35+u*1.92];
@@ -15,40 +27,44 @@ const SkillSilk=(()=>{
  const difference=(a,b)=>a.map((v,i)=>v-b[i]);
  const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
  const normal=v=>{const n=Math.hypot(...v)||1;return v.map(x=>x/n);};
- function surface(path,start,end,width,age,alpha,segments,offset=0){
+ function surface(path,start,end,width,age,alpha,segments,offset,material){
   const sections=[];
   for(let j=0;j<=segments;j++){
    const u=j/segments,t=lerp(start,end,u),p=point(path,t),axis=path==='fall'?[1,0,0]:[0,.72,.69];
    const tangent=difference(point(path,t+.002),point(path,t-.002)),side=normal(cross(tangent,axis));
    // Zero-width endpoints, long fine tail and fullness just behind the tip.
-   const envelope=Math.pow(Math.sin(Math.PI*u),.75)*(.32+.68*u),w=width*envelope;
+   const envelope=Math.pow(Math.sin(Math.PI*u),.75)*(.32+.68*u);
+   const wobble=material.flutter*flow(u,material.clock,material.seed%251),w=width*envelope*(1+wobble*.36);
    const center=p.map((x,i)=>x+side[i]*offset);
-   sections.push({a:center,b:center.map((x,i)=>x+side[i]*w)});
+   // Anchor the cutting edge; let only the translucent wake billow.
+   sections.push({a:center,b:center.map((x,i)=>x+side[i]*w+axis[i]*width*envelope*wobble*.12)});
   }
-  return {kind:'ribbon',sections,age,alpha,color:'#fff0d4'};
+  return {kind:'ribbon',sections,age,alpha,color:'#fff0d4',material};
  }
  function stroke(recipe,u,quality='high'){
   if(!Number.isFinite(u)||u<0||u>1)return [];
   const n=quality==='low'?24:48,grow=smooth(0,.42,u),fade=1-smooth(.76,1,u);
   if(grow*fade<.002)return [];
   const head=clamp(u),start=Math.max(0,head-(recipe.path==='orbit'?.48:.63)*grow);
-  const age=smooth(.48,1,u),width=(recipe.path==='pierce'?.23:.58)*grow;
-  const out=[surface(recipe.path,start,head,width,age,.95*fade,n)];
+  const material=appearance(recipe,u),thickness=recipe.thickness??2.2;
+  const age=smooth(.48,1,u),width=(recipe.path==='pierce'?.23:.58)*grow*thickness;
+  const out=[surface(recipe.path,start,head,width,age,.95*fade,n,0,material)];
   // Two fine inner filaments separate from the broad translucent wake.
   for(let j=0;j<(quality==='low'?1:2);j++){
    const lag=.035+j*.045;
-   out.push(surface(recipe.path,Math.max(0,start-lag),Math.max(0,head-lag),.055-j*.018,age,.32*fade,n/2,.12+j*.12));
+   out.push(surface(recipe.path,Math.max(0,start-lag),Math.max(0,head-lag),(.055-j*.018)*thickness,age,.42*fade,n/2,(.12+j*.12)*thickness,material));
   }
   return out;
  }
  // Same analytic mask as surface 24 in shaders.js. Values are smooth in time;
  // the inspection adapter samples this function without texture frame stepping.
- function mask(u,v,age){
-  const warp=Math.sin(u*19+age*.9)*.055+Math.sin(u*43-age)*.012;
+ function mask(u,v,age,material={}){
+  const flutter=material.flutter??0,clock=material.clock??0,seed=(material.seed??73)%251;
+  const warp=Math.sin(u*19+age*.9)*.055+Math.sin(u*43-age)*.012+flutter*flow(u,clock,seed)*.16*smooth(.05,.65,v);
   const fiber=Math.pow(.5+.5*Math.sin((v+warp)*82+Math.sin(u*23)*2.2),7);
-  const core=Math.exp(-Math.pow((v-.12)/.065,2));
-  const wake=Math.exp(-v*3.8)*(.14+.64*fiber);
-  const grain=.5+.5*Math.sin(u*39+v*16+Math.sin(u*17-v*6)*1.7);
+  const core=Math.exp(-Math.pow((v-.16)/.115,2));
+  const wake=Math.exp(-v*2.9)*(.28+.64*fiber);
+  const grain=lerp(.5+.5*Math.sin(u*39+v*16+Math.sin(u*17-v*6)*1.7),.5+.5*noise(u*13+clock*.6,v*5-clock*.7,seed+89),flutter*.65);
   const erosion=smooth(age*.95-.22,age*.95+.06,grain+.18*(1-v));
   const edge=smooth(0,.025,v)*(1-smooth(.86,1,v));
   const ends=smooth(0,.045,u)*(1-smooth(.93,1,u));
@@ -67,7 +83,7 @@ const SkillSilk=(()=>{
   }
   return {positions:new Float32Array(P),normals:new Float32Array(N),count:P.length/3,radius,center,dirty:true};
  }
- function trail(samples,eye,time,quality='high'){
+ function trail(samples,eye,time,quality='high',recipe={}){
   if(samples.length<2)return null;
   const pts=[...samples].reverse().map(s=>s.p),n=quality==='low'?20:36,sections=[];
   const curve=u=>{
@@ -76,14 +92,14 @@ const SkillSilk=(()=>{
    const a=pts[Math.max(0,j-1)],b=pts[j],c=pts[j+1],d=pts[Math.min(pts.length-1,j+2)];
    return b.map((v,i)=>.5*((2*v)+(-a[i]+c[i])*t+(2*a[i]-5*v+4*c[i]-d[i])*t*t+(-a[i]+3*v-3*c[i]+d[i])*t*t*t));
   };
-  const fade=clamp(1-(time-samples[0].t)/.105);
+  const fade=clamp(1-(time-samples[0].t)/.105),material=appearance(recipe,time),thickness=recipe.thickness??2.2;
   for(let j=0;j<=n;j++){
    const u=j/n,p=curve(u),tangent=difference(curve(clamp(u+.002)),curve(clamp(u-.002)));
    const view=eye?difference(eye,p):[0,10,10],side=normal(cross(tangent,view));
-   const width=.26*Math.pow(Math.sin(Math.PI*u),.8)*fade;
+   const width=.26*Math.pow(Math.sin(Math.PI*u),.8)*fade*thickness*(1+material.flutter*.36*flow(u,material.clock,material.seed%251));
    sections.push({a:p,b:p.map((v,i)=>v+side[i]*width)});
   }
-  return {kind:'ribbon',sections,age:1-fade,alpha:fade*.88,color:'#fff0d4'};
+  return {kind:'ribbon',sections,age:1-fade,alpha:fade*.88,color:'#fff0d4',material};
  }
- return Object.freeze({stroke,mask,geometry,trail,surface:24});
+ return Object.freeze({stroke,mask,geometry,trail,noise,ink,surface:24});
 })();
