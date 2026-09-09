@@ -14,6 +14,7 @@ test('trial controls compose real skills, execute single/combo combat and round-
   d.getElementById('combo').click();const {sim,p}=lab.getTrial();for(let i=0;i<900;i++)lab.step(1/120);const used=sim.events.filter(e=>e.type==='skill'&&e.player===p.id).map(e=>e.id);assert.ok(new Set(used).size>=3,JSON.stringify(used));
   const draws=new Set();for(let i=0;i<12;i++){d.getElementById('random').click();draws.add(JSON.stringify(lab.getRecipe()));assert.ok(lab.getTrial().p.pendingSkill);}
   assert.ok(draws.size>=10);const prior=JSON.stringify(lab.getRecipe());d.getElementById('random').click();d.getElementById('previous').click();assert.equal(JSON.stringify(lab.getRecipe()),prior);
+  d.getElementById('ready').click();const waiting=lab.getTrial();for(let i=0;i<120;i++)lab.step(1/60);assert.ok(waiting.p.focusTarget);assert.equal(waiting.p.pendingSkill,null);assert.equal(waiting.p.action,'idle');assert.equal(waiting.sim.events.filter(e=>e.type==='skill').length,0,'stance preview does not issue an attack');
   for(let weapon=0;weapon<6;weapon++){
    d.getElementById('weapon').value=weapon;d.getElementById('weapon').dispatchEvent(new w.Event('change'));
    const select=d.getElementById('weapon-skill');assert.ok(select.options.length>1);select.value=select.options[1].value;select.dispatchEvent(new w.Event('change'));

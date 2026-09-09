@@ -172,10 +172,10 @@ const Travelers = (()=>{
    const run=!!p.dash||st.speed>3.1,gaitWeight=clamp(st.speed/.6,0,1),stride=(run?(p.dash?1.70:1.38):1.04)*asset.body[1],duty=run?.46:.60;
    if(moving&&!st.moving){st.phase=duty*.5+distance/stride;for(const f of st.feet)if(f)f.settle=null;}else if(moving)st.phase+=distance/stride;
    st.moving=moving;st.gaitMode=run?'run':'walk';const phase=st.phase*TAU;
-   const reaction=damagePose(r,p,t,st.feet,asset.damageProfile),pose=damageArtPose(r,p,t,artPose(p,t,SkillMotion.stateFor(r,p,t))),ail=ailmentPose(p,t),guard=p.guard||p.guardUntil>t||p.autoFight;
+   const reaction=damagePose(r,p,t,st.feet,asset.damageProfile),pose=damageArtPose(r,p,t,artPose(p,t,SkillMotion.stateFor(r,p,t))),ail=ailmentPose(p,t),guard=SkillMotion.ready(p,t);
    const fall=!p.alive?(p.wasDownedOnDeath?1:smooth((t-(p.deathAt??t))/1.12)):0;
    const sampledGround=p.traversal?Math.max(.10,p.supportHeight||0):this.groundAt(p.x,p.z);if(p.traversal||!Number.isFinite(st.ground))st.ground=sampledGround;st.ground+=(sampledGround-st.ground)*(1-Math.exp(-dt*14));
-   const authored=asset.clips?CM01.selectClip(p,t,st,phase,moving||['run','guardWalk','dash'].includes(p.action),run,reaction,asset.clips):null;
+   const authored=asset.clips&&!pose.combatIdle?CM01.selectClip(p,t,st,phase,moving||['run','guardWalk','dash'].includes(p.action),run,reaction,asset.clips):null;
    const transition=SkillMotion.chargeTransition(st,p,reaction.amount>.02?null:pose.motionClock),drive=bodyDrive(p,r,pose,st,asset,t);
    let rootQ=Q.euler((authored?0:pose.pitch)+reaction.pitch+ail.pitch+fall*1.48,(p.dir||0)+(authored?0:pose.yaw),(authored?0:pose.roll)+reaction.roll+ail.roll);
    let rootOffset=[reaction.x+Math.cos(p.dir||0)*(authored?0:pose.weightX||0)+Math.sin(p.dir||0)*(authored?0:pose.weightZ||0),(authored?0:pose.y)+ail.y-reaction.drop,reaction.z-Math.sin(p.dir||0)*(authored?0:pose.weightX||0)+Math.cos(p.dir||0)*(authored?0:pose.weightZ||0)];
@@ -210,7 +210,7 @@ const Travelers = (()=>{
     this.clipDebug={name:authored.name,stage:authored.stage,u:authored.u,contact:authored.clip.contact};
    }else{st.clipName=null;this.clipDebug=null;for(const foot of st.feet)if(foot)foot.clipStep=null;}
    if(transition?.from&&transition.amount<1)for(let i=0;i<q.length;i++){q[i]=Q.slerp(transition.from.q[i],q[i],transition.amount);offset[i]=V.lerp(transition.from.offset[i],offset[i],transition.amount);}
-   const blend=authored||(pose.active&&!moving)||reaction.amount>.1||fall>0?1:1-Math.exp(-dt*18);
+   const blend=pose.combatIdle&&reaction.amount<=.1?1-Math.exp(-dt*18):authored||(pose.active&&!moving)||reaction.amount>.1||fall>0?1:1-Math.exp(-dt*18);
    if(st.lastQ)for(let i=0;i<q.length;i++){q[i]=Q.slerp(st.lastQ[i],q[i],blend);if(st.lastOffset)offset[i]=V.lerp(st.lastOffset[i],offset[i],blend);}
    st.lastQ=q;st.lastOffset=offset;
    const localM=[],globalM=[];
