@@ -27,6 +27,36 @@ function uiActiveStatuses(p, t) {
  return Object.entries(p.statuses || {}).filter(([id, s]) => STATUS_DEFS[id] && s.until > t)
   .map(([id]) => STATUS_DEFS[id].name).join('・');
 }
+/* Six bounded part pulses and one pain callout; never modifies player speech,
+ * chat cooldown, wounds or saves. The confirmed wound event owns all timing. */
+class UIDamageFeedback {
+ constructor(){this.reset();}
+ reset(){this.parts=new Map();this.bark=null;this.nextBark=-Infinity;this.seq=-1;this.variant=0;}
+ hit(e,t){
+  if(e.type!=='wound'||!BODY_PARTS.includes(e.part)||e.seq!=null&&e.seq<=this.seq)return;
+  if(e.seq!=null)this.seq=e.seq;
+  const level=({light:1,heavy:2,lost:3,fatal:4})[e.severity];if(!level)return;
+  const old=this.parts.get(e.part),life=level>1?.95:.62;
+  // A contact cluster holds a single peak, avoiding strobing on rapid repeats.
+  const born=old&&t-old.born<.22?old.born:t;
+  this.parts.set(e.part,{born,until:t+life,life,level:Math.max(level,old&&t<old.until?old.level:0),upgraded:!!e.upgraded});
+  const louder=level>(this.bark?.level||0);
+  if(t>=this.nextBark||louder){
+   const lines=level===1?['っ！','くっ…！']:level===2?['ぐっ…！','うっ…！']:['ぐあっ！','ああっ！'];
+   this.bark={text:lines[this.variant++%lines.length],until:t+(level>1?.95:.65),level};this.nextBark=t+1.15;
+  }
+ }
+ paint(root,t){
+  if(!root)return;
+  for(const node of root.querySelectorAll('[data-part]')){
+   const v=this.parts.get(node.dataset.part);
+   if(!v||t>=v.until||t<v.born){if(v)this.parts.delete(node.dataset.part);node.removeAttribute('data-impact');node.style.removeProperty('--hit-pulse');continue;}
+   const fade=clamp((v.until-t)/v.life,0,1),pulse=(fade*fade).toFixed(2);
+   UIValue.attr(node,'data-impact',v.level>1&&v.upgraded?'injury':'hit');
+   if(node.style.getPropertyValue('--hit-pulse')!==pulse)node.style.setProperty('--hit-pulse',pulse);
+  }
+ }
+}
 /* One visible notice, bounded pending queue. Life events preempt small discoveries. */
 class UINoticeQueue {
  constructor() { this.active = null; this.pending = []; }

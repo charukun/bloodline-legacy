@@ -4,6 +4,9 @@ const VERSION = '0.6.0';
 const GAME_TITLE='血脈の系譜';
 const EQUIP_AGE=7;
 const MAX_ITEMS=2;
+// Approved damage-feedback follow-up: 3–4 clean ordinary hits are dangerous.
+// Armor, resistance, wound escalation and the existing death rules still apply.
+const PLAYER_WOUND_DAMAGE=Object.freeze({light:30,heavy:46,lost:56});
 const DASH={speed:1.72,cost:9,start:3};
 const TAU = Math.PI * 2;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -751,28 +754,31 @@ class Simulation {
     const weights=p.phaseWeights[p.combo?.band??0],sum=Object.values(weights).reduce((a,b)=>a+b,0)||1,focus=(weights[4013]||0)/sum;
     const chance=p.counterUntil>this.time?clamp(.18+focus*.16+(p.skills.includes(4011)?.05:0),0,.40):.12;
     if(!tg.unblockable&&this.rng()<chance){e.stun=this.time+1.8;e.exposedUntil=this.time+2.5;e.telegraph=null;p.parries++;p.counterUntil=0;this.emit('parry',{player:p.id,room:p.room,x:e.x,z:e.z});return;}
-    if(!tg.unblockable){this.reactToHit(p,e,'leftArm','light',.32,true);this.emit('guarded',{player:p.id,room:p.room,x:p.x,z:p.z});return;}
+    if(!tg.unblockable){this.reactToHit(p,e,'leftArm','light',.32,true);this.emit('guarded',{player:p.id,target:p.id,source:e.id,part:'leftArm',room:p.room,x:p.x,z:p.z});return;}
    }
    p.guard=false;p.guardPending=false;
   }
   if(p.wardUntil>this.time&&p.wardCharges>0){p.wardCharges--;this.emit('guarded',{player:p.id,room:p.room,x:p.x,z:p.z});return;}
   if(hasStatus(e,'blind',this.time)&&this.rng()<.35)return;
-  if(p.shield&&facing&&p.stamina>=5&&this.rng()<.38){this.spend(p,5,.08);p.guardUntil=this.time+.55;this.reactToHit(p,e,'leftArm','light',.32,true);this.emit('guarded',{player:p.id,room:p.room,x:p.x,z:p.z});return;}
+  if(p.shield&&facing&&p.stamina>=5&&this.rng()<.38){this.spend(p,5,.08);p.guardUntil=this.time+.55;this.reactToHit(p,e,'leftArm','light',.32,true);this.emit('guarded',{player:p.id,target:p.id,source:e.id,part:'leftArm',room:p.room,x:p.x,z:p.z});return;}
   const part=tg.part||BODY_PARTS[Math.floor(this.rng()*BODY_PARTS.length)],old=p.wounds[part]?.severity;
   let severity=e.elite||e.kind==='boss'||tg.unblockable?'heavy':'light';
   if(old==='light')severity='heavy';if(old==='heavy')severity=['head','torso'].includes(part)?'fatal':e.elite||e.kind==='boss'?'lost':'heavy';
-  if(old==='lost'){this.inflictWound(p,'torso',p.wounds.torso?.severity==='heavy'?'fatal':'heavy',e);return;}
-  const before=p.health;this.inflictWound(p,part,severity,e);if(p.alive&&p.health<before&&e.attackCount%3===0){const status={crawler:'poison',wraith:'slow',maw:'root',goblin:'blind',mage:'burn',soldier:'bleed',elite:'weak'}[e.kind];if(status)this.applyStatus(p,status,4.5,e,this.getRoom(p));}
+  const strength=e.elite||e.kind==='boss'||tg.unblockable?1:.60;
+  if(old==='lost'){this.inflictWound(p,'torso',p.wounds.torso?.severity==='heavy'?'fatal':'heavy',e,strength);return;}
+  const before=p.health;this.inflictWound(p,part,severity,e,strength);if(p.alive&&p.health<before&&e.attackCount%3===0){const status={crawler:'poison',wraith:'slow',maw:'root',goblin:'blind',mage:'burn',soldier:'bleed',elite:'weak'}[e.kind];if(status)this.applyStatus(p,status,4.5,e,this.getRoom(p));}
  }
- inflictWound(p,part,severity,source=null){
+ inflictWound(p,part,severity,source=null,strength=null){
   if(!BODY_PARTS.includes(part)||!['light','heavy','lost','fatal'].includes(severity))return false;
-  if(severity==='fatal'||severity==='lost'&&['head','torso'].includes(part)){this.emit('wound',{player:p.id,room:p.room,part,severity:'fatal',x:p.x,z:p.z});this.die(p,BODY_NAMES[part]+'への致命傷');return true;}
+  const previousSeverity=p.wounds[part]?.severity;
+  const report=level=>this.emit('wound',{player:p.id,target:p.id,source:source?.id,room:p.room,part,severity:level,strength:strength??(level==='light'?.60:1),dir:source?Math.atan2(p.x-source.x,p.z-source.z):(p.dir||0)+Math.PI,upgraded:previousSeverity!==level,x:p.x,z:p.z});
+  if(severity==='fatal'||severity==='lost'&&['head','torso'].includes(part)){report('fatal');this.die(p,BODY_NAMES[part]+'への致命傷');return true;}
   if(p.wounds[part]?.severity==='lost')return false;
   if(p.wounds[part]?.severity==='heavy'&&severity==='light')severity='heavy';
-  this.stopDash(p);this.stopActivity(p);p.seated=false;p.chain=null;p.sleepUntil=0;if(p.statuses)delete p.statuses.sleep;p.lastHurtAt=this.time;p.health=Math.max(0,(p.health??100)-({light:19,heavy:30,lost:40}[severity]||19)*(p.armor===2?.70:p.armor===1?.85:1)*(1-effectsOf(p,'fallResist'))-(part==='head'?7:part==='torso'?3:0));if(p.health<=0){this.die(p,'深手');return true;}
+  this.stopDash(p);this.stopActivity(p);p.seated=false;p.chain=null;p.sleepUntil=0;if(p.statuses)delete p.statuses.sleep;p.lastHurtAt=this.time;p.health=Math.max(0,(p.health??100)-PLAYER_WOUND_DAMAGE[severity]*(p.armor===2?.70:p.armor===1?.85:1)*(1-effectsOf(p,'fallResist'))-(part==='head'?7:part==='torso'?3:0));if(p.health<=0){report('fatal');this.die(p,'深手');return true;}
   p.wounds[part]={severity,since:p.age+p.ageFraction,healsAt:severity==='lost'?null:p.age+p.ageFraction+(severity==='heavy'?5:1)};
-  this.reactToHit(p,source,part,severity);this.impact(source,p,part,severity!=='light');p.attackStep=null;p.retreatUntil=0;p.hitUntil=this.time+.48;p.stun=this.time+(severity==='lost'?1.35:severity==='heavy'?.85:.50);p.action=severity==='lost'?'break':'hit';p.actionStarted=this.time;p.actionUntil=p.stun;p.pendingSkill=null;p.combo=null;p.comboQueued=false;p.cooldown=Math.max(p.cooldown,p.stun+.35);p.guard=false;p.guardPending=false;
-  this.emit('wound',{player:p.id,room:p.room,part,severity,x:p.x,z:p.z});return true;
+  this.reactToHit(p,source,part,severity,strength);this.impact(source,p,part,severity!=='light');p.attackStep=null;p.retreatUntil=0;p.hitUntil=this.time+.48;p.stun=this.time+(severity==='lost'?1.35:severity==='heavy'?.85:.50);p.action=severity==='lost'?'break':'hit';p.actionStarted=this.time;p.actionUntil=p.stun;p.pendingSkill=null;p.combo=null;p.comboQueued=false;p.cooldown=Math.max(p.cooldown,p.stun+.35);p.guard=false;p.guardPending=false;
+  report(severity);return true;
  }
  tickRecovery(p,dt){
   const mods=injuryModifiers(p),max=Math.max(STAMINA.minCap,staminaMaximum(p)-(100-mods.cap)-(p.permanentFatigue||0));p.staminaMax=staminaMaximum(p);
@@ -936,5 +942,4 @@ class Simulation {
  exportState(){const data={schema:3,version:VERSION,seed:this.seed,rngState:this.rng.getState(),mode:this.mode,time:this.time,seq:this.seq,eid:this.eid,roomSeq:this.roomSeq,rooms:[...this.rooms],players:[...this.players].map(([id,p])=>[id,{...p,speech:'',speechUntil:0}]),legacies:this.legacies,abandoned:this.abandoned};return JSON.parse(JSON.stringify(data));}
  static restore(data){if(data?.schema!==3||!Array.isArray(data.players)||!Array.isArray(data.rooms)||data.players.length>200)throw Error('この改修より前の進行中データは別保管されています。');const s=new Simulation({seed:data.seed,mode:data.mode});s.time=+data.time||0;s.seq=+data.seq||0;s.eid=+data.eid||0;s.roomSeq=+data.roomSeq||1;s.rooms=new Map(data.rooms);s.players=new Map(data.players);s.legacies=data.legacies||{};s.abandoned=data.abandoned||[];if(Number.isInteger(data.rngState))s.rng.setState(data.rngState);for(const p of s.players.values()){if(!s.rooms.has(p.room))throw Error('村の記録がありません。');p.attackBufferedUntil=0;p.attackStep??=null;p.hitReactAt??=0;p.hitReactUntil??=0;p.hitDir??=0;p.hitSeverity??=null;p.input={x:0,z:0};p.guard=false;p.guardPending=false;p.speech='';p.speechUntil=0;s.preparePlayer(p);p.dash=null;p.autoFight=null;p.chain=null;p.pendingSkill=null;p.combo=null;p.attackStep=null;p.action=p.seated?'sit':'idle';SkillSystem.restore(s,p);}for(const r of s.rooms.values()){if(r.kind==='village'){r.map=makeVillage(r.seed);const spot=villagePracticePosition(r.map);for(const a of r.actors)if(a.kind==='dummy'){a.x=a.homeX=spot.x;a.z=a.homeZ=spot.z;}}r.actors=r.actors.filter(a=>a.kind!=='villager');for(const a of r.actors){if(a.kind==='archer')a.kind='soldier';if(a.kind==='mage')a.kind='goblin';a.statuses??={};a.hp??=a.kind==='guard'?130:a.elite?120:70;a.hpMax??=a.hp;a.npcResolveMax??=a.kind==='guard'?18:14;if(data.version!==VERSION)a.npcResolve=a.npcResolveMax;}}for(const l of Object.values(s.legacies))l.archive=l.archive.filter(id=>skillById(id));return s;}
 }
-
 

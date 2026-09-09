@@ -173,7 +173,7 @@ class ArtDirector{
   const race=(p.race||0)%4,stage=appearanceStage(p),seed=p.appearanceSeed||4,age=p.age??25,child=age<10;
   let scale=p.scaleOverride??(age<4?.46:age<10?.64+(age-4)*.022:age<18?.78+(age-10)*.027:age>72?.96:1);
   const width=race===2?1.23:race===1?.88:1;scale*=race===2?.86:race===1?1.07:race===3?.95:1;
-  const run=p.action==='run'||p.action==='guardWalk'||(p.action==='carry'&&p.carryWalking),walk=this.gait?this.gait(p,t):Math.sin(t*8.2),reaction=damagePose(r,p,t),pose=damageArtPose(r,p,t,artPose(p,t)),ail=ailmentPose(p,t),fall=!p.alive?clamp((t-(p.deathAt??t))/1.12,0,1):0;
+  const run=p.action==='run'||p.action==='guardWalk'||(p.action==='carry'&&p.carryWalking),walk=this.gait?this.gait(p,t):Math.sin(t*8.2),reaction=damagePose(r,p,t,this.skillFeet?.get(p.id)?.feet),pose=damageArtPose(r,p,t,artPose(p,t)),ail=ailmentPose(p,t),fall=!p.alive?clamp((t-(p.deathAt??t))/1.12,0,1):0;
   // Keep the established floor anchors through recovery/idle. Returning to the
   // old short-leg rest matrices here would pop both soles above the ground.
   const groundedMotion=p.alive!==false&&!run&&!p.seated&&!p.activity&&(pose.skillMotion||reaction.amount>0||this.skillFeet?.has(p.id));

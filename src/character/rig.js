@@ -41,14 +41,11 @@ VillageArt.prototype.skillGround=function(p,pose,t,scale,reaction={amount:0}){
  if(this.skillFeet.size>48)for(const [id,value]of this.skillFeet)if(motionT-value.t>2)this.skillFeet.delete(id);
  let drop=0;rec.targets=[];
  for(const side of [1,-1]){
-  let foot=SkillMotion.foot(p,pose,motionT,side,rec.feet,scale);
-  const footKey=side===1?'rightFoot':'leftFoot';
-  if(!pose.skillMotion&&reaction.amount>0){
-   const existing=rec.feet[side===1?0:1],damageKey=p.hitMotionId??p.lastImpactAt??p.hitReactAt;
-   if(existing.damageKey!==damageKey){existing.damageKey=damageKey;existing.damageAnchor=[...existing.anchor];}
-   const facing=p.dir||0,cs=Math.cos(facing),sn=Math.sin(facing),sx=reaction[footKey+'X']||0,sz=reaction[footKey+'Z']||0;
-   existing.anchor=[existing.damageAnchor[0]+cs*sx+sn*sz,existing.damageAnchor[1]-sn*sx+cs*sz];existing.lift=reaction[footKey+'Lift']||0;existing.swing=existing.lift>1e-6;existing.yaw=facing;existing.settle=null;foot=existing;
-  }else if(!pose.skillMotion){foot.damageKey=null;foot.damageAnchor=null;}
+  const index=side===1?0:1;
+  // Advance authored support only when damage does not own the planted anchor.
+  let foot=rec.feet[index];
+  if(!foot||pose.skillMotion||reaction.amount<=0)foot=SkillMotion.foot(p,pose,motionT,side,rec.feet,scale);
+  if(!pose.skillMotion){damageFoot(p,reaction,side,foot,scale);foot.t=motionT;foot.rootX=p.x;foot.rootZ=p.z;}
   const ground=Math.max(SkillMotion.groundAt(r,...foot.anchor),SkillMotion.groundAt(r,foot.anchor[0]+Math.sin(foot.yaw)*.15*scale,foot.anchor[1]+Math.cos(foot.yaw)*.15*scale));
   const H=[0,1,2].map(i=>root[12+i]+root[i]*side*.21+root[4+i]*1.08),F=[foot.anchor[0],ground+.125*scale+foot.lift,foot.anchor[1]];
   const horizontal=Math.hypot(H[0]-F[0],H[2]-F[2]);
