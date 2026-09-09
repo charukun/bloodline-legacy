@@ -15,15 +15,16 @@ try{
  browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
  for(const viewport of [{width:1280,height:800},{width:393,height:851}]){
   const context=await browser.newContext({viewport});await context.addInitScript(()=>{localStorage.setItem('bloodline-review-save-sentinel','unchanged');});
-  const page=await context.newPage(),errors=[],network=[];activePage=page;page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>network.push(r.url()));
+  const page=await context.newPage(),errors=[],network=[];activePage=page;page.setDefaultTimeout(20000);page.setDefaultNavigationTimeout(60000);page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>network.push(r.url()));
   for(const mode of ['skills','enemies','combat']){
+   console.log(`Review browser: ${mode} at ${viewport.width}px`);
    await page.goto(base+`/review/${mode}?skill=4001&enemy=rime-guard&sha=${info.commit}`);await page.locator('#loading').waitFor({state:'hidden',timeout:90000});
-   await page.waitForFunction(()=>document.getElementById('stats').textContent.includes('calls'));
+   await page.waitForFunction(()=>document.getElementById('stats').textContent.includes('calls')||document.getElementById('error').textContent,null,{timeout:60000});
    assert.equal(await page.locator('#error').textContent(),'');assert.equal(await page.locator('#sha').textContent(),info.commit);
    assert.equal(await page.locator('#enemy').inputValue(),'rime-guard');
    if(mode==='enemies'){
     for(const pose of ['run','windup','strike','guard','hit','death']){await page.locator('#pose').selectOption(pose);await page.waitForTimeout(150);}
-    await page.locator('#broken').selectOption('bothLegs');await page.locator('#vitality').fill('25');await page.locator('#pose').selectOption('run');
+    await page.locator('#broken').selectOption('bothLegs');await page.locator('#vitality').press('Home');for(let i=0;i<25;i++)await page.locator('#vitality').press('ArrowRight');await page.locator('#pose').selectOption('run');
    }else{
     assert.equal(await page.locator('#skill').inputValue(),'4001');await page.locator('#single').click();await page.waitForTimeout(500);await page.locator('#combo').click();await page.waitForTimeout(1200);
     await page.locator('#speed').selectOption('.25');await page.locator('#view').selectOption('1.57');await page.locator('#effects').uncheck();await page.locator('#effects').check();
@@ -33,7 +34,7 @@ try{
    assert.equal(state.save,'unchanged');assert.deepEqual(state.keys,['bloodline-review-save-sentinel']);assert.ok(state.width<=state.view,'no horizontal overflow');assert.doesNotMatch(state.readout,/NaN|undefined/);
    const unexpected=network.filter(url=>/^https?:/.test(url)&&(new URL(url).pathname.startsWith('/api/')||new URL(url).origin!==base));
    assert.deepEqual(unexpected,[],'no game API or external HTTP requests; local blob/data decodes are allowed');
-   await page.screenshot({path:path.join(evidence,`${mode}-${viewport.width}.png`),fullPage:true});results.push({mode,viewport,...state});
+   await page.screenshot({path:path.join(evidence,`${mode}-${viewport.width}.png`),fullPage:true,timeout:15000});console.log(`Review browser passed: ${mode} at ${viewport.width}px`);results.push({mode,viewport,...state});
   }
   if(viewport.width===1280){
    await page.getByText('負荷計測',{exact:true}).click();
@@ -46,4 +47,4 @@ try{
  }
  await fs.writeFile(path.join(evidence,'result.json'),JSON.stringify({commit:info.commit,passed:true,results,note:'Software WebGL; target-device FPS not evaluated'},null,2));
  console.log('Review browser acceptance passed: desktop/mobile routes, real WebGL, controls, deep links, isolation and measurement');
-}catch(error){if(activePage&&!activePage.isClosed()){await activePage.screenshot({path:path.join(evidence,'failure.png'),fullPage:true}).catch(()=>{});await fs.writeFile(path.join(evidence,'failure.txt'),error.stack||String(error));}throw error;}finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}
+}catch(error){if(activePage&&!activePage.isClosed()){await activePage.screenshot({path:path.join(evidence,'failure.png'),fullPage:true,timeout:15000}).catch(()=>{});await fs.writeFile(path.join(evidence,'failure.txt'),(error.stack||String(error))+'\n'+await activePage.locator('body').innerText().catch(()=>''));}throw error;}finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}
