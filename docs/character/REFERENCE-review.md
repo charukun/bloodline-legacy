@@ -90,3 +90,12 @@ The waist, trousers and boots now have the broader reference silhouette. Eye hei
 Foot support is widened to match the new soles. Idle and movement use the same 0.28 half span; the current shared SkillMotion sampler receives a copied, laterally offset presentation root. Two lateral floor samples cover the wider sole edges. No player property, movement speed, collider, attack timing or shared Skill/Damage Motion implementation changes. A numerical test skins the actual sole vertices and checks separation and floor contact.
 
 Current resources: 13,493 vertices / 23,622 triangles at LOD0, 6,182 / 10,208 at LOD1, 31 bones, one material and one draw per pass; 2,275,944-byte GLB. Source regeneration is byte-identical. Browser motion, contact and paired performance review for this correction are pending.
+
+
+## Crown and cloak correction (pending CI)
+
+Run 34294259623 on d8a824fd2432b29d98708fb125636792e0595dde passed 172 unit/regression tests, 27 asset checks and 13 browser checks. The paired median was 13.2 -> 12.2 ms, p95 23.6 -> 21.6 ms; host timings are variable and only within-run comparisons are meaningful. Captures revealed a crown opening and cloak intersections, so that visual pass was rejected.
+
+The interior hair mass now has a closed cap and the crown locks converge over it. Both LODs have an overhead skin-exposure ray check, with a 1e-7 barycentric boundary tolerance to avoid rejecting shared triangle edges. The cloak wraps from the neck over the shoulders. Its lining uses the same tessellation and an inward radial offset with reversed winding, removing crossing surfaces. Current resource usage remains below original CM01 budgets: 13,524 / 23,706 at LOD0; 6,190 / 10,233 at LOD1; 2,279,720 bytes. Asset validation: 29/29 PASS, regeneration byte-identical.
+
+`node tools/build_character_playtest.mjs <verified-commit> <absolute-output.html>` packages the separate age-24 download fixture. The next CI also opens this exact HTML with a fresh browser storage context and drives live keyboard movement. This does not certify native file-origin behavior or Pixel Fold performance.

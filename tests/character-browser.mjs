@@ -15,6 +15,7 @@ assert(['all','functional','performance','motion','reference','polish'].includes
 const out=path.join(root,'verification/current',mode);
 await fs.mkdir(out,{recursive:true});
 const files={before:await fs.readFile(process.env.CHARACTER_BASELINE),after:await fs.readFile(path.join(root,'dist/index.html'))};
+if(mode==='polish')files.playtest=await fs.readFile(path.join(root,'verification/current/Bloodline_Legacy_Reference_Character_Playtest.html'));
 const server=http.createServer((req,res)=>{
   const pathname=new URL(req.url,'http://localhost').pathname;
   if(pathname==='/api/health'){res.writeHead(200,{'Content-Type':'application/json'});return res.end('{"online":false}');}
@@ -294,6 +295,17 @@ try{
     const before=report.versions.before.performance,after=report.versions.after.performance;
     report.performanceComparison={method:'Alternating AB/BA; 6 warmup + 24 synchronized whole frames per version; no video recording',medianChangeMs:after.medianMs-before.medianMs,medianRatio:after.medianMs/before.medianMs,p95Ratio:after.p95Ms/before.p95Ms};flush();
     check('bounded paired median has no material regression',after.medianMs<=Math.max(before.medianMs*1.05,before.medianMs+.5),report.performanceComparison);
+    // Exercise the exact downloadable HTML, including its adult startup, in a
+    // fresh native storage context. The input and live frame loop are unmodified.
+    const context=await browser.newContext({viewport:{width:393,height:852},deviceScaleFactor:1});page=await context.newPage();
+    const errors=[];page.on('pageerror',e=>errors.push(e.message));
+    await page.goto(origin+'/playtest/?qa',{waitUntil:'load'});
+    await page.waitForFunction('window.AERIN_QA&&AERIN_QA.app.screen==="game"&&AERIN_QA.stats().characterMaster',{timeout:120000});
+    const start=await page.evaluate(()=>AERIN_QA.player().x);await page.keyboard.down('d');
+    await page.waitForFunction(x=>AERIN_QA.player().x>x+.15,start,{timeout:30000});await page.keyboard.up('d');
+    report.downloadable=await page.evaluate(()=>({age:AERIN_QA.player().age,gender:AERIN_QA.player().gender,race:AERIN_QA.player().race,prologue:AERIN_QA.player().prologue,frameError:!!AERIN_QA.app.frameError,identity:document.querySelector('meta[name="character-review"]').content}));
+    check('downloadable HTML starts the adult and accepts live movement',!errors.length&&!report.downloadable.frameError&&report.downloadable.age>=24&&report.downloadable.age<25&&report.downloadable.gender===0&&report.downloadable.race===0&&!report.downloadable.prologue&&report.downloadable.identity.startsWith(report.head||''));
+    await shot('downloadable-mobile');await context.close();
   }
   report.passed=true;
 }catch(e){report.failure=e.stack;console.error(e);if(page)await shot('failure').catch(()=>{});process.exitCode=1;}

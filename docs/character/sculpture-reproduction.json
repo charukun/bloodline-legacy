@@ -1,7 +1,6 @@
 {
-  "glbSha256": "866055cbec392734477a585bf3b5aaba7e61139a627739d4365661ff961bdbb5",
-  "byteIdenticalRegeneration": true,
   "base": "010f2d9615ac0492d3a118f7057a313667455df1",
+  "glbSha256": "a98fb45c7d206a627fe87dca445acc4bd5fcf87dac66809d486bfb9f58e1c4dd",
   "manifest": {
     "generator": "generate_character.py",
     "bones": 31,
@@ -11,21 +10,21 @@
     "lods": [
       {
         "lod": 0,
-        "vertices": 13493,
-        "triangles": 23622,
+        "vertices": 13524,
+        "triangles": 23706,
         "parts": 143
       },
       {
         "lod": 1,
-        "vertices": 6182,
-        "triangles": 10208,
+        "vertices": 6190,
+        "triangles": 10233,
         "parts": 130
       }
     ],
-    "bytes": 2275944,
-    "sha256": "866055cbec392734477a585bf3b5aaba7e61139a627739d4365661ff961bdbb5"
+    "bytes": 2279720,
+    "sha256": "a98fb45c7d206a627fe87dca445acc4bd5fcf87dac66809d486bfb9f58e1c4dd"
   },
-  "goldenMasterAccepted": false,
-  "unitChecks": 172,
-  "assetChecks": 27
+  "byteIdenticalRegeneration": true,
+  "assetChecks": 29,
+  "goldenMasterAccepted": false
 }

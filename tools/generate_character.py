@@ -161,12 +161,16 @@ class Mesh:
    k=len(verts);verts.append(curve[j]);uv.append((.5,j/(len(curve)-1)))
    for i in range(sides):a=j*(sides+1)+i;faces.append([k,a+1,a] if flip else [k,a,a+1])
   self.add(verts,faces,uv,tile,weight,region,color,name)
- def patch(self,fun,tile,weight,region=0,nu=18,nv=10,color=None,name=''):
+ def patch(self,fun,tile,weight,region=0,nu=18,nv=10,color=None,name='',cap_end=False,inward=False):
   nu=self.steps(nu,4);nv=self.steps(nv,3);verts=[];uv=[];faces=[]
   for j in range(nv+1):
    for i in range(nu+1):verts.append(fun(i/nu,j/nv));uv.append((i/nu,j/nv))
   for j in range(nv):
    for i in range(nu):a=j*(nu+1)+i;b=a+nu+1;faces.extend([[a,b,a+1],[a+1,b,b+1]])
+  if cap_end:
+   top=nv*(nu+1);idx=len(verts);verts.append(np.asarray(verts[top:top+nu]).mean(axis=0));uv.append((.5,1.))
+   for i in range(nu):faces.append([idx,top+i,top+i+1])
+  if inward:faces=[list(reversed(f)) for f in faces]
   self.add(verts,faces,uv,tile,weight,region,color,name)
  def oval(self,c,rx,ry,depth,tile,weight,region=0,tilt=0,name='',color=None):
   # Convex almond/oval surface, not a protruding sphere; UV disk samples the eye atlas.
@@ -280,9 +284,9 @@ def build(lod=0):
  # Organic hair under-mass with an irregular hairline (always beneath separate designed locks).
  def scalp(u,v):
   a=u*TAU;front=max(0,math.cos(a));bottom=2.24+.285*front+.035*math.sin(a*5)
-  y=bottom+(2.793-bottom)*v;cy=2.414;rad=math.sqrt(max(.003,1-((y-cy)/.397)**2));x=.368*rad*math.sin(a);z=-.054+.331*rad*math.cos(a)
+  y=bottom+(2.805-bottom)*v;cy=2.414;rad=math.sqrt(max(.003,1-((y-cy)/.397)**2));x=.368*rad*math.sin(a);z=-.054+.331*rad*math.cos(a)
   return (x,y,z)
- m.patch(scalp,1,'head',1,nu=44,nv=16,color=lambda p:[.92,.92,.92],name='hair interior mass')
+ m.patch(scalp,1,'head',1,nu=44,nv=16,color=lambda p:[.92,.92,.92],name='hair interior mass',cap_end=True)
  sculpture_hair(m)
  # Optional existing armor: visible only when the unchanged equipment state requests it.
  def plate(u,v):
@@ -314,7 +318,7 @@ def finalize(m):
  for part in m.parts:
   fs=f[cursor:cursor+part['triangles']];ids=np.unique(fs);center=v[ids].mean(axis=0);orientation=np.sum(np.einsum('ij,ij->i',n[ids],v[ids]-center))
   # Open patches and facial decals intentionally face +Z or -Z; loft/sweep surfaces use outward normals.
-  if orientation<0 and not any(k in part['name'] for k in ['mantle lining']):n[ids]*=-1;hints[ids]*=-1;f[cursor:cursor+part['triangles']]=fs[:,[0,2,1]]
+  if orientation<0 and not any(k in part['name'] for k in ['mantle lining','cloak lining']):n[ids]*=-1;hints[ids]*=-1;f[cursor:cursor+part['triangles']]=fs[:,[0,2,1]]
   cursor+=part['triangles']
  has=np.linalg.norm(hints,axis=1)>.5;n[has]=hints[has]
  return {'POSITION':v,'NORMAL':n.astype(np.float32),'TEXCOORD_0':np.array(m.uv,np.float32),'COLOR_0':np.array(m.color,np.float32),'JOINTS_0':np.array(m.joints,np.uint16),'WEIGHTS_0':np.array(m.weights,np.float32),'_REGION':np.array(m.region,np.float32),'_SURFACE':np.array(m.surf,np.float32)},f.flatten()

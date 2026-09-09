@@ -65,8 +65,8 @@ def hair(m):
  # Short lower tier and crown tier overlap, with visible irregular nape tips.
  for i in range(11):
   a=.95+i*(math.tau-1.90)/10;n=np.array([math.sin(a),.12,math.cos(a)])
-  root=[.16*math.sin(a-.20),2.75,-.04+.14*math.cos(a-.20)]
-  mid=[.35*math.sin(a-.10),2.75,-.05+.32*math.cos(a-.10)]
+  root=[.045*math.sin(a-.20),2.83,-.04+.040*math.cos(a-.20)]
+  mid=[.33*math.sin(a-.10),2.82,-.05+.30*math.cos(a-.10)]
   lower=[.42*math.sin(a),2.40,-.05+.34*math.cos(a)]
   tip=[.48*math.sin(a+.10),2.43+.035*math.sin(i*2),-.06+.38*math.cos(a+.10)]
   hair_lock(m,[root,mid,lower,tip],[.018,.080,.072,.001],'sculpture crown '+str(i),n,tone=.91+(i%3)*.025,depth=.026)
@@ -93,14 +93,17 @@ def garments(m,body_w,blend_y):
   m.sweep(points,[.043,.044,.041,.031],[.008]*4,4,body_w,rings=17,sides=6,name='broad leather shoulder strap')
  # Cloak wraps around the shoulders, then opens beside the left leg.
  def cape(u,v):
-  angle=.96+u*(math.tau-1.92);width=.29+.26*math.sin(v*math.pi*.8)+.10*v
-  x=math.sin(angle)*width-.17*v*v;y=1.94-v*(1.03-.28*math.sin(angle))
-  z=-.015+math.cos(angle)*(.19+.18*math.sin(v*math.pi*.72))
+  angle=.96+u*(math.tau-1.92);width=.17+.49*(1-math.exp(-v*9))-.08*v
+  x=math.sin(angle)*width-.17*v*v;y=2.015-v*(1.10-.28*math.sin(angle))
+  z=-.015+math.cos(angle)*(.155+.20*(1-math.exp(-v*8))+.045*math.sin(v*math.pi))
   fold=.023*math.sin(angle*5+v*.8)*math.sin(v*math.pi*.8)
   return np.array([x+fold*math.sin(angle),y,z+fold*math.cos(angle)])
  cw=lambda p:blend_y(p[1],[(1.22,'mantle.tip'),(1.70,'mantle'),(1.94,'chest')])
- m.patch(cape,3,cw,nu=28,nv=18,name='wrapped travelling cloak')
- m.patch(lambda u,v:cape(1-u,v)+[0,0,.007],3,cw,nu=22,nv=14,name='cloak lining',color=[.83]*3)
+ m.patch(cape,3,cw,nu=26,nv=17,name='wrapped travelling cloak')
+ def lining(u,v):
+  angle=.96+u*(math.tau-1.92)
+  return cape(u,v)-.012*np.array([math.sin(angle),0,math.cos(angle)])
+ m.patch(lining,3,cw,nu=26,nv=17,name='cloak lining',color=[.83]*3,inward=True)
  for side in [0,1]:
   points=[cape(side,i/16) for i in range(17)];m.sweep(points,[.008]*17,[.006]*17,12,cw,rings=19,sides=6,name='cloak opening welt')
  points=[cape(i/24,1) for i in range(25)];m.sweep(points,[.009]*25,[.006]*25,12,cw,rings=28,sides=6,name='cloak hem welt')

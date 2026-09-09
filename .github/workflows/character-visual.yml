@@ -59,6 +59,8 @@ jobs:
         run: |
           git worktree add --detach /tmp/character-baseline 010f2d9615ac0492d3a118f7057a313667455df1
           node /tmp/character-baseline/build.mjs
+      - name: Package the downloadable character fixture
+        run: node tools/build_character_playtest.mjs "$GITHUB_SHA" "$GITHUB_WORKSPACE/verification/current/Bloodline_Legacy_Reference_Character_Playtest.html"
       - name: Verify the changed movement poses
         timeout-minutes: 20
         env:

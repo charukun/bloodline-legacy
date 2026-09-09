@@ -36,6 +36,19 @@ for lod,m in enumerate(g['meshes']):
   if part['name'] in ['upper eyelid','eyebrow','mouth expression','lower lip']:
    stroke_areas.extend(np.linalg.norm(np.cross(v[f[:,1]]-v[f[:,0]],v[f[:,2]]-v[f[:,0]]),axis=1))
  check(f'LOD{lod} facial stroke triangles are nondegenerate',len(stroke_areas)>0 and min(stroke_areas)>1e-11)
+ # A top-down gameplay view exposed the skin through the open crown. Cast
+ # vertical rays into the actual triangles, independent of authoring labels.
+ head=faces[a['_REGION'][faces[:,0],0]==1];tri=v[head];uv=tri[:,:,[0,2]]
+ e1=uv[:,1]-uv[:,0];e2=uv[:,2]-uv[:,0];det=e1[:,0]*e2[:,1]-e1[:,1]*e2[:,0]
+ crown=[]
+ for x in [-.07,0,.07]:
+  for z in [-.12,-.06,0]:
+   d=np.array([x,z])-uv[:,0];safe=np.where(abs(det)>1e-10,det,1)
+   b1=(d[:,0]*e2[:,1]-d[:,1]*e2[:,0])/safe;b2=(e1[:,0]*d[:,1]-e1[:,1]*d[:,0])/safe
+   hit=(abs(det)>1e-10)&(b1>=-1e-7)&(b2>=-1e-7)&(b1+b2<=1+1e-7)
+   height=tri[:,0,1]+b1*(tri[:,1,1]-tri[:,0,1])+b2*(tri[:,2,1]-tri[:,0,1]);height[~hit]=-np.inf
+   top=int(np.argmax(height));crown.append(bool(hit.any() and a['_SURFACE'][head[top,0],0]==1))
+ check(f'LOD{lod} crown covers skin from overhead',all(crown))
 check('LOD geometry reduction',len(acc(g['meshes'][1]['primitives'][0]['indices']))<len(acc(g['meshes'][0]['primitives'][0]['indices']))*.55)
 check('asset hash matches manifest',hashlib.sha256(b).hexdigest()==json.loads((root/'public/assets/character/cm01-manifest.json').read_text())['sha256'])
 check('reference revision stays inside reviewed CM01 geometry budget',all(len(acc(m['primitives'][0]['attributes']['POSITION']))<=nv and len(acc(m['primitives'][0]['indices']))<=nt*3 for m,(nv,nt) in zip(g['meshes'],[(13534,24431),(6568,11230)])))
