@@ -10,7 +10,7 @@
     "build": "node build.mjs",
     "build:skill-fx-lab": "node tools/build-skill-fx-lab.mjs",
     "dev": "vite",
-    "test": "npm run build && node --test tests/skills-preview.test.cjs tests/skills/*.test.mjs tests/*.test.mjs deploy/infrastructure.test.mjs tests/ui.test.cjs",
+    "test": "npm run build && node --test tests/*.test.cjs tests/skills/*.test.mjs tests/*.test.mjs deploy/infrastructure.test.mjs",
     "test:skills:lives": "node tests/skills/lives.mjs",
     "test:skills:performance": "node tests/skills/performance.mjs"
   },

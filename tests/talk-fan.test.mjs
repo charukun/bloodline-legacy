@@ -100,7 +100,7 @@ test('speech retains server cooldown, text sanitation and online command transpo
  const {g,ui,d,p,sim,button,w}=setup(t);button.click();d.querySelector('[data-talk="1"]').click();assert.equal(p.speech,'よろしく');
  button.click();d.querySelector('[data-talk="0"]').click();assert.equal(p.speech,'よろしく');
  sim.time+=3;g.snapshot=g.decorate(sim.snapshot(p.id,sim.seq));const instances=microphone(w);button.click();d.querySelector('[data-talk="3"]').click();instances[0].onresult(finalResult('あ'.repeat(80)));assert.equal(p.speech.length,60);
- g.online=true;g.commandBuffer=[];button.click();d.querySelector('[data-talk="2"]').click();
+ g.online=true;g.live={ready:true};g.commandBuffer=[];button.click();d.querySelector('[data-talk="2"]').click();
  assert.equal(g.commandBuffer.filter(c=>c.type==='chat').length,1);assert.equal(g.commandBuffer.find(c=>c.type==='chat').text,'ありがとう');assert.equal(p.speech,'あ'.repeat(60));
 });
 

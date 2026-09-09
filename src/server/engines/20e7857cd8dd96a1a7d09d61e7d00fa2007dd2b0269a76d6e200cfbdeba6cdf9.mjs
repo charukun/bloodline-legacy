@@ -1,13 +1,71 @@
+// Generated immutable rules runtime. Regenerate with node tools/archive-simulation.mjs
+const BL_SKILL_DEFINITIONS=[{"key":"bl.skill.hammer.opening","tags":["weight","rhythm","craft"],"requiresExperience":[["craft","weight"]],"color":"#dcab72","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":9,"fatigue":0.7,"charge":0.24,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.38,"hits":1,"anim":"slam","school":"life","requires":["rightArm"],"weapon":-1,"breakPower":1.3,"stagger":1.35},"id":60000,"phase":0,"ja":"炉打ち","en":"Hearth Knock","desc":"短く叩いて重心を崩す。威力は控えめ。","descEn":"A short blow upsets balance without much damage.","entry":[],"exit":["offbalance"],"family":"hammer","names":{"ja":"炉打ち","en":"Hearth Knock"},"descriptions":{"ja":"短く叩いて重心を崩す。威力は控えめ。","en":"A short blow upsets balance without much damage."}},{"key":"bl.skill.hammer.turn","tags":["weight","rhythm","craft"],"requiresExperience":[["craft","weight"]],"color":"#dcab72","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":14,"fatigue":0.7,"charge":0.22,"swing":0.57,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.48,"hits":2,"anim":"double","school":"life","requires":["rightArm"],"weapon":-1},"id":60001,"phase":1,"ja":"鉄返し","en":"Iron Rebound","desc":"反動を返して二度打つ。崩れた相手を拾いやすい。","descEn":"Return the recoil in two blows; catches an unbalanced foe.","entry":["offbalance"],"exit":["rhythm"],"connection":{"charge":0.68,"tracking":0.42},"family":"hammer","names":{"ja":"鉄返し","en":"Iron Rebound"},"descriptions":{"ja":"反動を返して二度打つ。崩れた相手を拾いやすい。","en":"Return the recoil in two blows; catches an unbalanced foe."}},{"key":"bl.skill.hammer.close","tags":["weight","rhythm","craft"],"requiresExperience":[["craft","weight"]],"color":"#dcab72","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":23,"fatigue":0.7,"charge":0.55,"swing":0.4,"recovery":1.15,"reach":2.15,"arc":1.6,"power":1.55,"hits":1,"anim":"slam","school":"life","requires":["rightArm"],"weapon":-1,"breakPower":3},"id":60002,"phase":2,"ja":"炉底割り","en":"Hearthbreaker","desc":"深く振り下ろして構えを砕く。外すと隙が大きい。","descEn":"A committed downward strike breaks guards; a miss leaves you open.","entry":["rhythm"],"exit":["offbalance"],"connection":{"recovery":0.68,"knockback":0.35},"family":"hammer","names":{"ja":"炉底割り","en":"Hearthbreaker"},"descriptions":{"ja":"深く振り下ろして構えを砕く。外すと隙が大きい。","en":"A committed downward strike breaks guards; a miss leaves you open."}},{"key":"bl.skill.thread.opening","tags":["patience","precision","craft"],"requiresExperience":[["care","patience","craft"]],"color":"#bcb7d0","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":9,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.7,"arc":0.6,"power":0.62,"hits":1,"anim":"thrust","school":"life","requires":["rightArm"],"weapon":-1,"step":0.25},"id":60010,"phase":0,"ja":"糸通し","en":"Thread the Needle","desc":"細く踏み込む一撃。正面以外には届きにくい。","descEn":"A precise forward strike with a narrow line of contact.","entry":[],"exit":["close"],"affinities":["net","care"],"family":"thread","names":{"ja":"糸通し","en":"Thread the Needle"},"descriptions":{"ja":"細く踏み込む一撃。正面以外には届きにくい。","en":"A precise forward strike with a narrow line of contact."}},{"key":"bl.skill.thread.turn","tags":["patience","precision","craft"],"requiresExperience":[["care","patience","craft"]],"color":"#bcb7d0","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":12,"fatigue":0.7,"charge":0.22,"swing":0.5,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.44,"hits":2,"anim":"cross","school":"life","requires":["rightArm"],"weapon":-1},"id":60011,"phase":1,"ja":"綾返し","en":"Woven Return","desc":"二つの拍子で打ち返す。近くの相手と繋がる。","descEn":"Two alternating beats weave into a nearby foe.","entry":["close"],"exit":["rhythm"],"connection":{"reach":0.3,"tracking":0.6},"affinities":["net","care"],"family":"thread","names":{"ja":"綾返し","en":"Woven Return"},"descriptions":{"ja":"二つの拍子で打ち返す。近くの相手と繋がる。","en":"Two alternating beats weave into a nearby foe."}},{"key":"bl.skill.thread.close","tags":["patience","precision","craft"],"requiresExperience":[["care","patience","craft"]],"color":"#bcb7d0","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":12,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.42,"reach":2.15,"arc":1.1,"power":0.64,"hits":1,"anim":"slide","school":"life","requires":["rightArm"],"weapon":-1,"status":"slow","duration":1.7},"id":60012,"phase":2,"ja":"結び止め","en":"Last Knot","desc":"低く払って足を鈍らせる。広くは届かない。","descEn":"A low sweep briefly slows the target in front.","entry":["rhythm"],"exit":["close"],"connection":{"cost":0.78,"recovery":0.8},"affinities":["net","care"],"family":"thread","names":{"ja":"結び止め","en":"Last Knot"},"descriptions":{"ja":"低く払って足を鈍らせる。広くは届かない。","en":"A low sweep briefly slows the target in front."}},{"key":"bl.skill.footwork.opening","tags":["play","light","rhythm"],"requiresExperience":[["play","light","rhythm"]],"color":"#bdd09c","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":7,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.48,"hits":1,"anim":"kick","school":"life","requires":["rightLeg"],"weapon":-1,"step":0.45},"id":60020,"phase":0,"ja":"毬拍子","en":"Skipping Beat","desc":"弾むように近づき、小さく打つ。","descEn":"A bouncing step carries a light strike forward.","entry":[],"exit":["rhythm"],"family":"footwork","names":{"ja":"毬拍子","en":"Skipping Beat"},"descriptions":{"ja":"弾むように近づき、小さく打つ。","en":"A bouncing step carries a light strike forward."}},{"key":"bl.skill.footwork.turn","tags":["play","light","rhythm"],"requiresExperience":[["play","light","rhythm"]],"color":"#bdd09c","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":14,"fatigue":0.7,"charge":0.22,"swing":0.6,"recovery":0.56,"reach":2.15,"arc":3.6,"power":0.37,"hits":2,"anim":"spin","school":"life","requires":["rightArm"],"weapon":-1,"maxTargets":2},"id":60021,"phase":1,"ja":"くるり舞","en":"Turning Dance","desc":"回りながら二度払う。周囲の相手も巻き込む。","descEn":"Two circular blows can catch nearby enemies.","entry":["rhythm"],"exit":["close"],"connection":{"reach":0.3,"tracking":0.6},"family":"footwork","names":{"ja":"くるり舞","en":"Turning Dance"},"descriptions":{"ja":"回りながら二度払う。周囲の相手も巻き込む。","en":"Two circular blows can catch nearby enemies."}},{"key":"bl.skill.footwork.close","tags":["play","light","rhythm"],"requiresExperience":[["play","light","rhythm"]],"color":"#bdd09c","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":6,"fatigue":0.7,"charge":0.12,"swing":0.4,"recovery":0.22,"reach":2.15,"arc":1.6,"power":0.68,"hits":1,"anim":"kick","school":"life","requires":["rightLeg"],"weapon":-1},"id":60022,"phase":2,"ja":"遊び終い","en":"Playful Farewell","desc":"素早く蹴って構え直す。消耗は小さい。","descEn":"A quick finishing kick returns to a ready stance.","entry":["close"],"exit":["rhythm"],"connection":{"cost":0.78,"recovery":0.8},"family":"footwork","names":{"ja":"遊び終い","en":"Playful Farewell"},"descriptions":{"ja":"素早く蹴って構え直す。消耗は小さい。","en":"A quick finishing kick returns to a ready stance."}},{"key":"bl.skill.trail.opening","tags":["explore","track","precision"],"requiresExperience":[["explore","track"]],"color":"#a4c5ad","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":9,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.9,"arc":0.7,"power":0.72,"hits":1,"anim":"thrust","school":"life","requires":["rightArm"],"weapon":-1,"step":0.4},"id":60030,"phase":0,"ja":"足跡突き","en":"Trail Point","desc":"一歩先へ届く突き。狭い間合いを縫う。","descEn":"A long narrow thrust reaches one step farther.","entry":[],"exit":["close"],"affinities":["weapon","precision"],"family":"trail","names":{"ja":"足跡突き","en":"Trail Point"},"descriptions":{"ja":"一歩先へ届く突き。狭い間合いを縫う。","en":"A long narrow thrust reaches one step farther."}},{"key":"bl.skill.trail.turn","tags":["explore","track","precision"],"requiresExperience":[["explore","track"]],"color":"#a4c5ad","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":13,"fatigue":0.7,"charge":0.22,"swing":0.55,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.42,"hits":2,"anim":"zigzag","school":"life","requires":["rightArm"],"weapon":-1,"step":0.35},"id":60031,"phase":1,"ja":"追い枝","en":"Following Bough","desc":"角度を変えて追い打つ。近い相手を逃しにくい。","descEn":"Turn into a follow-up against a nearby target.","entry":["close"],"exit":["offbalance"],"connection":{"reach":0.3,"tracking":0.6},"affinities":["weapon","precision"],"family":"trail","names":{"ja":"追い枝","en":"Following Bough"},"descriptions":{"ja":"角度を変えて追い打つ。近い相手を逃しにくい。","en":"Turn into a follow-up against a nearby target."}},{"key":"bl.skill.trail.close","tags":["explore","track","precision"],"requiresExperience":[["explore","track"]],"color":"#a4c5ad","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":17,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.86,"reach":3.1,"arc":1,"power":1.26,"hits":1,"anim":"slash","school":"life","requires":["rightArm"],"weapon":-1},"id":60032,"phase":2,"ja":"獣道断ち","en":"Trail Sever","desc":"長く届く一撃で締める。空振り後の戻りは遅い。","descEn":"A long finishing cut takes time to recover after a miss.","entry":["offbalance"],"exit":["close"],"connection":{"cost":0.78,"recovery":0.8},"affinities":["weapon","precision"],"family":"trail","names":{"ja":"獣道断ち","en":"Trail Sever"},"descriptions":{"ja":"長く届く一撃で締める。空振り後の戻りは遅い。","en":"A long finishing cut takes time to recover after a miss."}},{"key":"bl.skill.contest.opening","tags":["combat","weight","tension"],"requiresExperience":[["combat"]],"color":"#cf9b87","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":9,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.44,"hits":1,"anim":"thrust","school":"life","requires":["rightArm"],"weapon":-1,"breakPower":1.5,"stagger":1.35},"id":60040,"phase":0,"ja":"間割り","en":"Opening Wedge","desc":"低く打ち込み、押し合いの隙を作る。","descEn":"Drive a low blow into the opening of an exchange.","entry":[],"exit":["offbalance"],"family":"contest","names":{"ja":"間割り","en":"Opening Wedge"},"descriptions":{"ja":"低く打ち込み、押し合いの隙を作る。","en":"Drive a low blow into the opening of an exchange."}},{"key":"bl.skill.contest.turn","tags":["combat","weight","tension"],"requiresExperience":[["combat"]],"color":"#cf9b87","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":15,"fatigue":0.7,"charge":0.22,"swing":0.55,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.55,"hits":2,"anim":"cross","school":"life","requires":["rightArm"],"weapon":-1},"id":60041,"phase":1,"ja":"せめぎ返し","en":"Contested Return","desc":"崩れた構えへ重ねて打ち込む。","descEn":"A forceful return presses an unbalanced guard.","entry":["offbalance"],"exit":["rhythm"],"connection":{"reach":0.3,"tracking":0.6},"family":"contest","names":{"ja":"せめぎ返し","en":"Contested Return"},"descriptions":{"ja":"崩れた構えへ重ねて打ち込む。","en":"A forceful return presses an unbalanced guard."}},{"key":"bl.skill.contest.close","tags":["combat","weight","tension"],"requiresExperience":[["combat"]],"color":"#cf9b87","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":22,"fatigue":0.7,"charge":0.45,"swing":0.4,"recovery":0.9,"reach":2.15,"arc":1.6,"power":1.2,"hits":1,"anim":"slam","school":"life","requires":["rightArm"],"weapon":-1,"breakPower":3},"id":60042,"phase":2,"ja":"断ち拍子","en":"Decisive Beat","desc":"溜めて叩き、強固な構えも崩す。消耗は大きい。","descEn":"A committed heavy blow can break a formidable guard.","entry":["rhythm"],"exit":["offbalance"],"connection":{"cost":0.78,"recovery":0.8},"family":"contest","names":{"ja":"断ち拍子","en":"Decisive Beat"},"descriptions":{"ja":"溜めて叩き、強固な構えも崩す。消耗は大きい。","en":"A committed heavy blow can break a formidable guard."}},{"key":"bl.skill.patient.opening","tags":["patience","observe","rest"],"requiresExperience":[["patience","rest","study","tension"]],"color":"#9eafb0","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":5,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.35,"reach":2.15,"arc":0.8,"power":0.35,"hits":1,"anim":"thrust","school":"life","requires":["rightArm"],"weapon":-1},"id":60050,"phase":0,"ja":"待ち針","en":"Patient Needle","desc":"小さく刺して次の拍子へ備える。","descEn":"A small precise strike prepares the next beat.","entry":[],"exit":["rhythm"],"affinities":["defeat","rest"],"family":"patient","names":{"ja":"待ち針","en":"Patient Needle"},"descriptions":{"ja":"小さく刺して次の拍子へ備える。","en":"A small precise strike prepares the next beat."}},{"key":"bl.skill.patient.turn","tags":["patience","observe","rest"],"requiresExperience":[["patience","rest","study","tension"]],"color":"#9eafb0","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":5,"fatigue":0.7,"charge":0.13,"swing":0.38,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.52,"hits":1,"anim":"slash","school":"life","requires":["rightArm"],"weapon":-1},"id":60051,"phase":1,"ja":"息継ぎ打ち","en":"Breath Between","desc":"大振りせずに繋ぐ。長い連携でも息を残しやすい。","descEn":"An economical linking blow leaves breath for later.","entry":["rhythm"],"exit":["close"],"connection":{"reach":0.3,"tracking":0.6},"affinities":["defeat","rest"],"family":"patient","names":{"ja":"息継ぎ打ち","en":"Breath Between"},"descriptions":{"ja":"大振りせずに繋ぐ。長い連携でも息を残しやすい。","en":"An economical linking blow leaves breath for later."}},{"key":"bl.skill.patient.close","tags":["patience","observe","rest"],"requiresExperience":[["patience","rest","study","tension"]],"color":"#9eafb0","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":7,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.24,"reach":2.15,"arc":1.6,"power":0.45,"hits":1,"anim":"counter","school":"life","requires":["leftArm"],"weapon":-1,"breakPower":1.7},"id":60052,"phase":2,"ja":"静の掌","en":"Quiet Palm","desc":"近い相手を押し崩し、短く終える。","descEn":"A close palm blow breaks balance and settles quickly.","entry":["close"],"exit":["offbalance"],"connection":{"cost":0.78,"recovery":0.8},"affinities":["defeat","rest"],"family":"patient","names":{"ja":"静の掌","en":"Quiet Palm"},"descriptions":{"ja":"近い相手を押し崩し、短く終える。","en":"A close palm blow breaks balance and settles quickly."}},{"key":"bl.skill.bell.opening","tags":["memory","rhythm","bell"],"requiresExperience":[["bell"],["rhythm","combat","craft","play"]],"color":"#ceb778","rarity":0.7,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":6,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.38,"hits":1,"anim":"thrust","school":"life","requires":["rightArm"],"weapon":-1},"id":60060,"phase":0,"ja":"鈴触れ","en":"Bell Touch","desc":"軽い一撃が、遅い次の響きを誘う。","descEn":"A light touch sets the rhythm for a later resonance.","entry":[],"exit":["ringing"],"affinities":["family"],"family":"bell","names":{"ja":"鈴触れ","en":"Bell Touch"},"descriptions":{"ja":"軽い一撃が、遅い次の響きを誘う。","en":"A light touch sets the rhythm for a later resonance."}},{"key":"bl.skill.bell.turn","tags":["memory","rhythm","bell"],"requiresExperience":[["bell"],["rhythm","combat","craft","play"]],"color":"#ceb778","rarity":0.7,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":14,"fatigue":0.7,"charge":0.22,"swing":0.85,"recovery":0.56,"reach":2.05,"arc":1.6,"power":0.58,"hits":2,"anim":"double","school":"life","requires":["rightArm"],"weapon":-1},"id":60061,"phase":1,"ja":"残響打ち","en":"Echoing Blow","desc":"間をおいて二度響く。相手が離れると二打目を外す。","descEn":"Two separated blows; the second can miss a departing foe.","entry":["ringing"],"exit":["rhythm"],"connection":{"reach":0.3,"tracking":0.6},"affinities":["family"],"family":"bell","names":{"ja":"残響打ち","en":"Echoing Blow"},"descriptions":{"ja":"間をおいて二度響く。相手が離れると二打目を外す。","en":"Two separated blows; the second can miss a departing foe."}},{"key":"bl.skill.bell.close","tags":["memory","rhythm","bell"],"requiresExperience":[["bell"],["rhythm","combat","craft","play"]],"color":"#ceb778","rarity":0.7,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":19,"fatigue":0.7,"charge":0.42,"swing":0.4,"recovery":0.95,"reach":2.15,"arc":1.6,"power":1.4,"hits":1,"anim":"slam","school":"life","requires":["rightArm"],"weapon":-1,"breakPower":2},"id":60062,"phase":2,"ja":"鳴り納め","en":"Closing Chime","desc":"響きを重ねて振り切る。大きな隙が残る。","descEn":"Finish the resonance with a committed, slow-recovering sweep.","entry":["rhythm"],"exit":["ringing"],"connection":{"cost":0.78,"recovery":0.8},"affinities":["family"],"family":"bell","names":{"ja":"鳴り納め","en":"Closing Chime"},"descriptions":{"ja":"響きを重ねて振り切る。大きな隙が残る。","en":"Finish the resonance with a committed, slow-recovering sweep."}},{"key":"bl.skill.feather.opening","tags":["feather","light","explore"],"requiresExperience":[["feather"],["light","explore","track","play"]],"color":"#b7cfce","rarity":0.7,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":5,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":2.4,"power":0.4,"hits":1,"anim":"slash","school":"life","requires":["rightArm"],"weapon":-1},"id":60070,"phase":0,"ja":"羽先払い","en":"Feathertip","desc":"浅く払って、近い間合いを保つ。","descEn":"A shallow sweep keeps the exchange close.","entry":[],"exit":["close"],"family":"feather","names":{"ja":"羽先払い","en":"Feathertip"},"descriptions":{"ja":"浅く払って、近い間合いを保つ。","en":"A shallow sweep keeps the exchange close."}},{"key":"bl.skill.feather.turn","tags":["feather","light","explore"],"requiresExperience":[["feather"],["light","explore","track","play"]],"color":"#b7cfce","rarity":0.7,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":10,"fatigue":0.7,"charge":0.12,"swing":0.45,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.36,"hits":2,"anim":"double","school":"life","requires":["rightArm"],"weapon":-1},"id":60071,"phase":1,"ja":"風羽返し","en":"Turning Feather","desc":"軽く二度返す。接近した相手へ向く。","descEn":"Two light reversals work best at close range.","entry":["close"],"exit":["rhythm"],"connection":{"reach":0.3,"tracking":0.6},"family":"feather","names":{"ja":"風羽返し","en":"Turning Feather"},"descriptions":{"ja":"軽く二度返す。接近した相手へ向く。","en":"Two light reversals work best at close range."}},{"key":"bl.skill.feather.close","tags":["feather","light","explore"],"requiresExperience":[["feather"],["light","explore","track","play"]],"color":"#b7cfce","rarity":0.7,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":15,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.68,"reach":2.15,"arc":1.6,"power":1.1,"hits":1,"anim":"leap","school":"life","requires":["rightArm"],"weapon":-1,"step":0.45},"id":60072,"phase":2,"ja":"落羽","en":"Falling Feather","desc":"跳ねて打ち下ろす。着地には小さな隙がある。","descEn":"A rising motion ends in a downward strike and exposed landing.","entry":["rhythm"],"exit":["offbalance"],"connection":{"cost":0.78,"recovery":0.8},"family":"feather","names":{"ja":"落羽","en":"Falling Feather"},"descriptions":{"ja":"跳ねて打ち下ろす。着地には小さな隙がある。","en":"A rising motion ends in a downward strike and exposed landing."}},{"key":"bl.skill.stone.opening","tags":["stone","weight","memory"],"requiresExperience":[["stone"],["weight","combat","explore","study"]],"color":"#c0b2a0","rarity":0.7,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":8,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.3,"hits":1,"anim":"slam","school":"life","requires":["rightArm"],"weapon":-1,"breakPower":1.6,"stagger":1.35},"id":60080,"phase":0,"ja":"石据え","en":"Set the Stone","desc":"重心を落として打つ。軽い構えを崩す。","descEn":"A grounded blow breaks a light stance.","entry":[],"exit":["offbalance"],"family":"stone","names":{"ja":"石据え","en":"Set the Stone"},"descriptions":{"ja":"重心を落として打つ。軽い構えを崩す。","en":"A grounded blow breaks a light stance."}},{"key":"bl.skill.stone.turn","tags":["stone","weight","memory"],"requiresExperience":[["stone"],["weight","combat","explore","study"]],"color":"#c0b2a0","rarity":0.7,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":15,"fatigue":0.7,"charge":0.22,"swing":0.62,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.5,"hits":2,"anim":"cross","school":"life","requires":["rightArm"],"weapon":-1},"id":60081,"phase":1,"ja":"転がし返し","en":"Rolling Return","desc":"崩れた相手へ連続して重さを乗せる。","descEn":"Roll two weighty blows into an unbalanced enemy.","entry":["offbalance"],"exit":["rhythm"],"connection":{"charge":0.68,"tracking":0.42},"family":"stone","names":{"ja":"転がし返し","en":"Rolling Return"},"descriptions":{"ja":"崩れた相手へ連続して重さを乗せる。","en":"Roll two weighty blows into an unbalanced enemy."}},{"key":"bl.skill.stone.close","tags":["stone","weight","memory"],"requiresExperience":[["stone"],["weight","combat","explore","study"]],"color":"#c0b2a0","rarity":0.7,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":21,"fatigue":0.7,"charge":0.55,"swing":0.4,"recovery":1,"reach":2.15,"arc":1.6,"power":1.25,"hits":1,"anim":"slam","school":"life","requires":["rightArm"],"weapon":-1,"breakPower":3},"id":60082,"phase":2,"ja":"礎落とし","en":"Foundation Drop","desc":"重さを一点へ落とす。硬い構えにも通じる。","descEn":"Drop weight into one point to break a strong guard.","entry":["rhythm"],"exit":["offbalance"],"connection":{"recovery":0.68,"knockback":0.35},"family":"stone","names":{"ja":"礎落とし","en":"Foundation Drop"},"descriptions":{"ja":"重さを一点へ落とす。硬い構えにも通じる。","en":"Drop weight into one point to break a strong guard."}},{"key":"bl.skill.ember.opening","tags":["charcoal","craft","memory"],"requiresExperience":[["charcoal"],["craft","weight","study"]],"color":"#de996d","rarity":0.55,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":8,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":2.6,"power":0.4,"hits":1,"anim":"slide","school":"life","requires":["rightArm"],"weapon":-1},"id":60090,"phase":0,"ja":"炭掻き","en":"Ember Rake","desc":"低く広く払って、次の火種を残す。","descEn":"A broad low sweep prepares the next ember.","entry":[],"exit":["ember"],"family":"ember","names":{"ja":"炭掻き","en":"Ember Rake"},"descriptions":{"ja":"低く広く払って、次の火種を残す。","en":"A broad low sweep prepares the next ember."}},{"key":"bl.skill.ember.turn","tags":["charcoal","craft","memory"],"requiresExperience":[["charcoal"],["craft","weight","study"]],"color":"#de996d","rarity":0.55,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":15,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.35,"hits":2,"anim":"double","school":"life","requires":["rightArm"],"weapon":-1,"status":"burn","duration":1.2},"id":60091,"phase":1,"ja":"熾し返し","en":"Rekindling","desc":"細かな二打で火種を拾う。触れた相手に熱を残す。","descEn":"Two small blows kindle a brief burn on contact.","entry":["ember"],"exit":["rhythm"],"connection":{"reach":0.3,"tracking":0.6},"family":"ember","names":{"ja":"熾し返し","en":"Rekindling"},"descriptions":{"ja":"細かな二打で火種を拾う。触れた相手に熱を残す。","en":"Two small blows kindle a brief burn on contact."}},{"key":"bl.skill.ember.close","tags":["charcoal","craft","memory"],"requiresExperience":[["charcoal"],["craft","weight","study"]],"color":"#de996d","rarity":0.55,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":16,"fatigue":0.7,"charge":0.4,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.9,"hits":1,"anim":"slam","school":"life","requires":["rightArm"],"weapon":-1,"status":"weak","duration":1.5},"id":60092,"phase":2,"ja":"灰かぶり","en":"Ashfall","desc":"灰を落とすように叩く。短く相手の力を削ぐ。","descEn":"A downward strike briefly weakens the target.","entry":["rhythm"],"exit":["offbalance"],"connection":{"cost":0.78,"recovery":0.8},"family":"ember","names":{"ja":"灰かぶり","en":"Ashfall"},"descriptions":{"ja":"灰を落とすように叩く。短く相手の力を削ぐ。","en":"A downward strike briefly weakens the target."}},{"key":"bl.skill.weave.opening","tags":["craft","combat","cross"],"requiresExperience":[["craft","care"],["combat","study"]],"color":"#c6b18c","rarity":0.65,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":7,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.45,"hits":1,"anim":"counter","school":"life","requires":["rightArm"],"weapon":-1,"breakPower":1.3},"id":60100,"phase":0,"ja":"打ち合わせ","en":"Meeting Blows","desc":"仕事で覚えた拍子を、敵の構えへ合わせる。","descEn":"Bring a practiced working rhythm into an enemy guard.","entry":[],"exit":["rhythm"],"family":"weave","names":{"ja":"打ち合わせ","en":"Meeting Blows"},"descriptions":{"ja":"仕事で覚えた拍子を、敵の構えへ合わせる。","en":"Bring a practiced working rhythm into an enemy guard."}},{"key":"bl.skill.weave.turn","tags":["craft","combat","cross"],"requiresExperience":[["craft","care"],["combat","study"]],"color":"#c6b18c","rarity":0.65,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":12,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":0.7,"power":0.7,"hits":1,"anim":"thrust","school":"life","requires":["rightArm"],"weapon":-1,"breakPower":2.2},"id":60101,"phase":1,"ja":"縫い崩し","en":"Seam Break","desc":"拍子を拾い、狭い一点を崩す。","descEn":"Follow a rhythm into a narrow break in the stance.","entry":["rhythm"],"exit":["offbalance"],"connection":{"reach":0.3,"tracking":0.6},"family":"weave","names":{"ja":"縫い崩し","en":"Seam Break"},"descriptions":{"ja":"拍子を拾い、狭い一点を崩す。","en":"Follow a rhythm into a narrow break in the stance."}},{"key":"bl.skill.weave.close","tags":["craft","combat","cross"],"requiresExperience":[["craft","care"],["combat","study"]],"color":"#c6b18c","rarity":0.65,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":21,"fatigue":0.7,"charge":0.22,"swing":0.85,"recovery":0.7,"reach":2.15,"arc":1.6,"power":0.48,"hits":3,"anim":"cross","school":"life","requires":["rightArm"],"weapon":-1},"id":60102,"phase":2,"ja":"折り返し三打","en":"Threefold Return","desc":"崩れを三つの打撃へ変える。長くその場へ留まる。","descEn":"Three blows exploit lost balance but commit you to the exchange.","entry":["offbalance"],"exit":["rhythm"],"connection":{"cost":0.78,"recovery":0.8},"family":"weave","names":{"ja":"折り返し三打","en":"Threefold Return"},"descriptions":{"ja":"崩れを三つの打撃へ変える。長くその場へ留まる。","en":"Three blows exploit lost balance but commit you to the exchange."}},{"key":"bl.skill.unexpected.opening","tags":["explore","rest","cross"],"requiresExperience":[["explore","track"],["rest","patience","pray"]],"color":"#9eb4a8","rarity":0.5,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":6,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.4,"hits":1,"anim":"thrust","school":"life","requires":["rightArm"],"weapon":-1,"step":0.28},"id":60110,"phase":0,"ja":"木陰の間","en":"Underleaf Pause","desc":"慌てず小さく踏み込む。近さを次へ残す。","descEn":"An unhurried small step leaves the next exchange close.","entry":[],"exit":["close"],"family":"unexpected","names":{"ja":"木陰の間","en":"Underleaf Pause"},"descriptions":{"ja":"慌てず小さく踏み込む。近さを次へ残す。","en":"An unhurried small step leaves the next exchange close."}},{"key":"bl.skill.unexpected.turn","tags":["explore","rest","cross"],"requiresExperience":[["explore","track"],["rest","patience","pray"]],"color":"#9eb4a8","rarity":0.5,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":11,"fatigue":0.7,"charge":0.22,"swing":0.52,"recovery":0.56,"reach":2.15,"arc":3.5,"power":0.66,"hits":1,"anim":"spin","school":"life","requires":["rightArm"],"weapon":-1,"maxTargets":2},"id":60111,"phase":1,"ja":"流れ枝","en":"Drifting Bough","desc":"大きく弧を描き、二人までを巻き込む。","descEn":"A flowing arc can catch two nearby targets.","entry":["close"],"exit":["rhythm"],"connection":{"reach":0.3,"tracking":0.6},"family":"unexpected","names":{"ja":"流れ枝","en":"Drifting Bough"},"descriptions":{"ja":"大きく弧を描き、二人までを巻き込む。","en":"A flowing arc can catch two nearby targets."}},{"key":"bl.skill.unexpected.close","tags":["explore","rest","cross"],"requiresExperience":[["explore","track"],["rest","patience","pray"]],"color":"#9eb4a8","rarity":0.5,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":20,"fatigue":0.7,"charge":0.52,"swing":0.4,"recovery":1.1,"reach":2.15,"arc":1.6,"power":1.55,"hits":1,"anim":"slam","school":"life","requires":["rightArm"],"weapon":-1,"breakPower":2.8},"id":60112,"phase":2,"ja":"夕凪返し","en":"Evening Stillness","desc":"静かに強く打ち下ろす。外すと戻りが遅い。","descEn":"A calm heavy fall lands hard but recovers slowly after a miss.","entry":["rhythm"],"exit":["offbalance"],"connection":{"cost":0.78,"recovery":0.8},"family":"unexpected","names":{"ja":"夕凪返し","en":"Evening Stillness"},"descriptions":{"ja":"静かに強く打ち下ろす。外すと戻りが遅い。","en":"A calm heavy fall lands hard but recovers slowly after a miss."}},{"key":"bl.skill.knot.opening","tags":["net","care","precision"],"requiresExperience":[["net"],["care","track","combat"]],"color":"#a5c9bb","rarity":0.65,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":9,"fatigue":0.6,"charge":0.27,"swing":0.4,"recovery":0.55,"reach":1.85,"arc":1.4,"power":0.45,"hits":1,"anim":"thrust","school":"life","requires":["rightArm"],"weapon":-1,"status":"slow","duration":1.4},"id":60120,"phase":0,"ja":"糸口","en":"Loose End","desc":"短く差し込み、結び目のように相手の足を迷わせる。","descEn":"A short thrust tangles the opponent's footing.","entry":[],"exit":["close"],"family":"knot","names":{"ja":"糸口","en":"Loose End"},"descriptions":{"ja":"短く差し込み、結び目のように相手の足を迷わせる。","en":"A short thrust tangles the opponent's footing."}},{"key":"bl.skill.knot.turn","tags":["net","care","precision"],"requiresExperience":[["net"],["care","track","combat"]],"color":"#a5c9bb","rarity":0.65,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":12,"fatigue":0.6,"charge":0.27,"swing":0.4,"recovery":0.55,"reach":1.65,"arc":1.4,"power":0.3,"hits":1,"anim":"kick","school":"life","requires":["rightLeg"],"weapon":-1,"breakPower":1.4},"id":60121,"phase":1,"ja":"絡め返し","en":"Knot Turn","desc":"近づいた相手の足元を払う。遠い相手は拾えない。","descEn":"Sweep a nearby opponent's footing; cannot catch a distant target.","entry":["close"],"exit":["offbalance"],"connection":{"breakPower":0.35,"recovery":0.72},"family":"knot","names":{"ja":"絡め返し","en":"Knot Turn"},"descriptions":{"ja":"近づいた相手の足元を払う。遠い相手は拾えない。","en":"Sweep a nearby opponent's footing; cannot catch a distant target."}},{"key":"bl.skill.knot.close","tags":["net","care","precision"],"requiresExperience":[["net"],["care","track","combat"]],"color":"#a5c9bb","rarity":0.65,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":11,"fatigue":0.6,"charge":0.27,"swing":0.4,"recovery":0.65,"reach":1.85,"arc":1.4,"power":0.55,"hits":1,"anim":"slash","school":"life","requires":["rightArm"],"weapon":-1,"knockback":0.55},"id":60122,"phase":2,"ja":"結び解き","en":"Untying","desc":"崩れを拾って押し離す。結末を、次の間合いに変える。","descEn":"Catch an imbalance and push away, making space for the next exchange.","entry":["offbalance"],"exit":["rhythm"],"connection":{"knockback":0.4,"cost":0.82},"family":"knot","names":{"ja":"結び解き","en":"Untying"},"descriptions":{"ja":"崩れを拾って押し離す。結末を、次の間合いに変える。","en":"Catch an imbalance and push away, making space for the next exchange."}},{"id":60900,"key":"bl.skill.hearth_breath","ja":"炉辺の息","en":"Hearth Breath","desc":"仕事の合間に覚えた呼吸。自然に息が戻りやすい。","descEn":"A working rhythm helps breath return naturally.","tags":["craft","rest","patience"],"requiresExperience":[["craft"],["rest","patience"]],"effect":"regen","value":0.45,"action":{},"color":"#c7c09b","inheritance":{"bias":0.16,"copy":false},"family":"hearth_breath","phase":0,"passive":true,"entry":[],"exit":[],"names":{"ja":"炉辺の息","en":"Hearth Breath"},"descriptions":{"ja":"仕事の合間に覚えた呼吸。自然に息が戻りやすい。","en":"A working rhythm helps breath return naturally."},"rarity":0.8},{"id":60901,"key":"bl.skill.quiet_capacity","ja":"静穏の余白","en":"Quiet Reserve","desc":"落ち着いた暮らしが、疲れた息の上限を少し戻す。","descEn":"Quiet habits help recover a little exhausted stamina capacity.","tags":["pray","rest","patience"],"requiresExperience":[["pray","rest"],["patience"]],"effect":"capRegen","value":0.1,"action":{},"color":"#c7c09b","inheritance":{"bias":0.16,"copy":false},"family":"quiet_capacity","phase":0,"passive":true,"entry":[],"exit":[],"names":{"ja":"静穏の余白","en":"Quiet Reserve"},"descriptions":{"ja":"落ち着いた暮らしが、疲れた息の上限を少し戻す。","en":"Quiet habits help recover a little exhausted stamina capacity."},"rarity":0.8},{"id":60902,"key":"bl.skill.weight_memory","ja":"重みの記憶","en":"Remembered Weight","desc":"経験した押し合いに、少しだけ踏みとどまる。","descEn":"Remembered contests give a small advantage in a clash.","tags":["combat","weight"],"requiresExperience":[["combat"],["weight"]],"effect":"clash","value":0.06,"action":{},"color":"#c7c09b","inheritance":{"bias":0.16,"copy":false},"family":"weight_memory","phase":0,"passive":true,"entry":[],"exit":[],"names":{"ja":"重みの記憶","en":"Remembered Weight"},"descriptions":{"ja":"経験した押し合いに、少しだけ踏みとどまる。","en":"Remembered contests give a small advantage in a clash."},"rarity":0.8},{"id":60903,"key":"bl.skill.work_economy","ja":"手仕事の無駄なし","en":"Economy of Labor","desc":"重い技を扱うとき、少しだけ息を節約する。","descEn":"Spend slightly less breath on heavy techniques.","tags":["craft","care","weight"],"requiresExperience":[["craft"],["care","weight"]],"effect":"heavyCost","value":0.07,"action":{},"color":"#c7c09b","inheritance":{"bias":0.16,"copy":false},"family":"work_economy","phase":0,"passive":true,"entry":[],"exit":[],"names":{"ja":"手仕事の無駄なし","en":"Economy of Labor"},"descriptions":{"ja":"重い技を扱うとき、少しだけ息を節約する。","en":"Spend slightly less breath on heavy techniques."},"rarity":0.8}];
+/* Authored dialogue. Simulation consumes this data; it contains no DOM or timers. */
+const ACTIVITY_DEFS = Object.freeze({
+  sword:{id:'study',label:'指南書を読む',motion:'study',verb:'武術の稽古'},
+  magic:{id:'read',label:'魔術書を読む',motion:'read',verb:'書物をひらく'},
+  church:{id:'pray',label:'祈る',motion:'pray',verb:'静かな祈り'},
+  forge:{id:'observe',label:'仕事を見学する',motion:'observe',verb:'火と鉄を見つめる'},
+  dance:{id:'play',label:'遊ぶ',motion:'play',verb:'広場で遊ぶ'},
+  hunter:{id:'track',label:'足跡を学ぶ',motion:'track',verb:'野の知恵を学ぶ'},
+  armory:{id:'care',label:'手入れをする',motion:'care',verb:'身支度を整える'}
+});
+const ACTIVITY_LINES = {
+ study:['重心を、もう少し低く。','絵の足運びをなぞってみる。','踵を返すと、景色が回った。','力を抜いたほうが、速い。','相手の足を見る。','頁の端に、小さな書き込み。','倒れ方にも、作法がある。','踏み込む前に、息を吐く。','紙の上の達人を真似てみた。','一歩だけ、無駄が減った。','手ではなく、腰から動かす。','足を払う。その先を読む。','古い墨の匂いがした。','同じ構えを、もう一度。','受けた力を、横へ逃がす。','剣がなくても、身は守れる。'],
+ read:['栞の先に、知らない文字。','頁が、ひとりでにめくれた。','指先で、術式をなぞる。','小石の重みに、意味がある。','火は、どこへ帰るのだろう。','銀の鈴と、古い挿絵。','読めなかった一行が読めた。','余白に、風の結び方。','栞をひとつ、先へ送る。','窓の光が文字を照らす。','ふたつの品を、並べて考える。','羽根が、かすかに震えた。','頁の奥で、灯がまたたく。','閉じた本にも、声がある。','黒い背表紙が気にかかる。','今はまだ、続きを読まない。'],
+ pray:['鐘の余韻に、息を重ねる。','小さな願いを、胸に置く。','誰かの無事を祈った。','蝋燭の火が、ふっと揺れた。','答えはない。それでも祈る。','冷たい石に、膝をつく。','名前を呼ぶように、祈った。','風が聖堂を通り抜ける。','焦る心が、静まっていく。','今日の無事を、ありがとう。','届くかどうかは、神さま次第。','指の隙間に、光が落ちる。','小さな鈴が、ひとつ鳴った。','帰ってくる場所を思い出す。','言葉にならない願いもある。','胸の奥に、灯がともる。'],
+ observe:['槌の音に、耳を澄ます。','赤い鉄が、白く光った。','一打ごとに、形が変わる。','握り方を、そっと真似た。','打つ前の、静かな間。','火花が袖の前を飛んだ。','水桶から、湯気が立つ。','重さを、腕ではなく足で受ける。','刃の厚みを見比べる。','煤のついた図面を眺めた。','鉄が歌う音がする。','ひびの音は、少し高い。','待つことも、鍛冶のうち。','槌を振るう肩を覚えた。','布で刃を、ひと拭き。','炭の火が、静かに息をする。'],
+ play:['敷石の継ぎ目を、跳び越える。','小石が、ころころ転がった。','葉っぱの舟を浮かべた。','影を追いかけて、ひと回り。','風に向かって、腕をひらく。','靴先で、輪を描いた。','落ち葉を、空へ放った。','片足立ち。もう少し。','どこまで跳べるだろう。','くるりと回って、着地。','木陰の涼しさが心地よい。','花びらが、手のひらに乗った。','遊びの中で、足が覚える。','もう一度だけ、遠くへ。','噴水に、小さな虹。','息が弾んで、笑ってしまう。'],
+ track:['土に残った足跡をなぞる。','折れた枝は、まだ新しい。','草の倒れ方を見比べる。','音を立てず、一歩。','風下の匂いを覚える。','羽根の落ちた先を見る。','苔の湿りを、指で確かめる。','獣と人では、歩幅が違う。','遠くの物音に耳を向ける。','石を避けて、足を置く。','帰り道の目印を探す。','枝の影が、道を教える。','足元から、景色を読む。','焦らなければ、見えてくる。'],
+ care:['布のほつれを、結び直す。','小物をふたつ、並べてみる。','留め具を、ひとつ確かめる。','手に馴染む重さを探す。','盾の縁を指でなぞった。','鞘の埃を、払い落とす。','革紐を、きゅっと締める。','持ち替えると、構えも変わる。','刃には、薄く油をひく。','手の届く場所にしまった。','古い傷にも、持ち主の癖。','身軽さも、大切な備え。','次の旅へ、少しずつ。','布の襟を、整えた。']
+};
+const MOTHER_LINES = {
+ cradle:[
+  'ここが、あなたの帰る村。\nまずは私の腕の中から、見ておいで。',
+  '地面をそっと指せば、そこへ歩けるよ。\n指を滑らせれば、その向きへ。',
+  '遠くへ行く時は、指先をさっと払ってごらん。\nその方へ駆け続ける。息が切れる前に、ひと休み。',
+  '疲れたら、同じ場所に指を少し置いておいで。\n腰を下ろせば、浅くなった息も戻るから。',
+  '声をかける時は、顔を上げようね。\nお話しすれば、休む時間はおしまい。',
+  '怪我をした手足は、思うようには動かない。\n浅い傷なら、時がたてば癒えるよ。',
+  '七つになったら、武具棚を訪ねなさい。\n借りた道具が、あなたの得意を教えてくれる。',
+  '持っていける小物は、ふたつ。\n一緒に持つものを変えると、新しい気づきもある。'
+ ],
+ church:['鐘が聞こえるね。\nあそこでは、誰かを思って祈るんだよ。','奇跡は命じて起こすものじゃない。\n届くと信じて、願いを託すもの。'],
+ magic:['あの窓の向こうには、古い本がたくさん。\n小さな石にも、不思議が隠れているの。','書物で理を知り、小物を手にしてごらん。\nいつか、ふたつが結びつく日がくるよ。'],
+ sword:['道場には、倒れずに立つ知恵がある。\n武器がなくても、学べることは多いよ。'],
+ forge:['聞こえる？ 鉄を打つ音。\n見ているだけでも、身体が覚えることがある。'],
+ armory:['道具は棚から借りていいの。\n盾を持つ手、軽い足。どちらを選ぶかは、あなた次第。'],
+ dance:['広場なら、思い切り遊んでおいで。\n転んで覚える足運びもあるから。'],
+ hunter:['野原では、足元にも耳を澄まして。\n草も土も、通った誰かのことを覚えている。'],
+ outside:['柵の向こうでは、衛兵さんが村を守っている。\n近づきすぎないでね。','敵に触れるほど近づくと、身体は覚えた技で戦うよ。\n無理なら、相手から離れるほうへ。']
+};
+const GIFT_LINES = {
+ stone:'丸い石、見つけたね。\nほら、あなたの手に。ずっと握っていてもいいよ。',
+ bell:'小さな鈴。あなたにあげる。\n遠くへ行っても、この音を覚えていて。',
+ feather:'風が運んできた羽根だね。\n折れないように、そっとしまっておこう。',
+ charcoal:'手が少し黒くなるけれど、\nこの小さな炭にも、火の記憶があるの。',
+ net:'細い糸を結んだ網だよ。\nほどかず、大切に持っていてね。'
+};
+const FAREWELL_LINES=[
+ 'ほら。もう、ひとりで立てる。\n小さかった手が、こんなに強くなったね。',
+ '怖くなったら、帰っておいで。\nうまくできた日も、できなかった日も。',
+ 'あなたが帰る灯は、消さないから。\n行ってらっしゃい。大好きな、私の子。'
+];
+const GUARD_LINES = {
+ young:['そこから先は危ないぞ。私の後ろへ！','小さな足で、よく来たな。無理はするなよ。','まだ背負うには重い戦いだ。村へお帰り。','怪我はないか？ 下がって息を整えろ。'],
+ helper:['助太刀、感謝する！','その一打、見事だ。こちらは任せろ。','背中を預けるぞ。無理はせずにな。','いい間合いだ。息を切らすな！'],
+ veteran:['頼もしい顔が来たな！','この戦列は、お前と守ろう。','その技を、次の者にも残してやれ。','助かった。さすがの腕だ。'],
+ hurt:['深手だな。下がれ、私が受ける！','今は休め。戻る道は私が守る。','立てるか？ 無理をするな！']
+};
+
+
+
 
 /* Shared, renderer-independent simulation. All gameplay decisions stay here. */
 const VERSION = '0.6.0';
 const GAME_TITLE='血脈の系譜';
 const EQUIP_AGE=7;
 const MAX_ITEMS=2;
-// Approved damage-feedback follow-up: 3–4 clean ordinary hits are dangerous.
-// Armor, resistance, wound escalation and the existing death rules still apply.
-const PLAYER_WOUND_DAMAGE=Object.freeze({light:30,heavy:46,lost:56});
-const MAX_PHASE_SKILLS=5;
 const DASH={speed:1.72,cost:9,start:3};
 const TAU = Math.PI * 2;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -62,8 +120,7 @@ const EFFECT_NAMES = ['貫通','押し返し','早業','武装崩し','受け流
 const BODY_PARTS = ['head','torso','rightArm','leftArm','rightLeg','leftLeg'];
 const BODY_NAMES = {head:'頭部',torso:'胴体',rightArm:'右腕',leftArm:'左腕',rightLeg:'右脚',leftLeg:'左脚'};
 const WOUND_NAMES = {light:'軽傷',heavy:'重傷',lost:'欠損'};
-const STAMINA = Object.freeze({max:100,minCap:22,regen:14,capRegen:.2,delay:.55,capDelay:6,fatiguePerCost:.18,seatedRegen:32,seatedCapRegen:8});
-const REST_HEALING = Object.freeze({quiet:12,healthRegen:3.6,woundRate:4});
+const STAMINA = Object.freeze({max:100,minCap:22,regen:19,capRegen:1.1,delay:.38,capDelay:3.2});
 const PASSIVES = [
  {id:3072,name:'炉辺の呼吸',school:'village',deed:'村で落ち着いて過ごす',need:35,effect:'regen',value:3,desc:'スタミナの自然回復を小さく高める。'},
  {id:3073,name:'剣士の手ほどき',school:'sword',deed:'剣術学校で訓練する',need:10,effect:'attackCost',value:.2,desc:'通常攻撃のスタミナ消費を小さく軽減する。'},
@@ -91,7 +148,6 @@ function skillRestriction(p,sk){
  if(!sk||sk.passive)return '';
  const lost=part=>p.wounds?.[part]?.severity==='lost';
  if(p.statuses?.sleep?.until>(p.statusClock||0))return '眠り';
- if(sk.lure&&(p.lureReadyAt||0)>(p.statusClock||0))return '呼び声を整えている';
  if(sk.school==='shield'&&!p.shield)return '盾が必要';
  if(sk.weapon>=0&&sk.weapon!==p.weapon)return '異なる武器の技';
  for(const part of sk.requires||[]){if(lost(part))return BODY_NAMES[part]+'を失っているため使えない';}
@@ -99,7 +155,7 @@ function skillRestriction(p,sk){
  if(sk.resource&&((p.ammo||{})[sk.resource]||0)<(sk.amount||1))return '残数が足りない';
  if(sk.item&&!(p.inventory||[]).includes(sk.item))return '小物が必要';
  if(sk.items&&!sk.items.every(item=>(p.inventory||[]).includes(item)))return '小物の組み合わせが違う';
- if(sk.requiresPassive&&!p.passives?.includes(sk.requiresPassive)&&!(sk.requiresPassive===4061&&effectsOf(p,'faith')>0))return 'まだ理を知らない';
+ if(sk.requiresPassive&&!p.passives?.includes(sk.requiresPassive))return 'まだ理を知らない';
  if((p.skillReady?.[sk.id]||0)>(p.age+p.ageFraction))return '今は使えない';
  return '';
 }
@@ -126,17 +182,10 @@ function makeVillage(seed=1) {
   houses.push({id:houses.length,x:side*(18+row*6)+(rng()-.5)*.45,z:-22+col*6.5+(rng()-.5)*.4,rotation:side<0?Math.PI/2:-Math.PI/2,
    roof:Math.floor(rng()*4),scale:.86+rng()*.22});
  }
- const mirror=rng()<.5?-1:1;
- const traversables=[];for(let x=-32;x<32;x+=4)if(Math.abs(x)>=6)traversables.push({id:'fence:'+x,kind:'vault',x,z:-28,width:3.7,depth:.24,height:1.18});
- // A short stone terrace beside the central walk, with three supported landings.
- for(let i=0;i<3;i++)traversables.push({id:'terrace:'+i,kind:'step',x:-9*mirror,z:12.8-i*1.5,width:3.4,depth:1.5,height:.3*(i+1)});
- return {seed,houses,traversables,schools:SCHOOLS.map(x=>({...x,x:x.x*mirror,z:x.z+(x.id==='church'?0:(rng()-.5)*1.2)})),port:{x:0,z:28},gate:{x:0,z:-29}};
+ const mirror=rng()<.5?-1:1;return {seed,houses,schools:SCHOOLS.map(x=>({...x,x:x.x*mirror,z:x.z+(x.id==='church'?0:(rng()-.5)*1.2)})),port:{x:0,z:28},gate:{x:0,z:-29}};
 }
-function supportHeight(map,x,z){return (map?.traversables||[]).reduce((y,o)=>o.kind==='step'&&Math.abs(x-o.x)<=o.width/2&&Math.abs(z-o.z)<=o.depth/2?Math.max(y,o.height):y,0);}
-const TRAVERSAL_RULES=Object.freeze({maxVault:1.25,maxStep:.95,radius:.42,cooldown:.16});
-// Inner forecourt: clear of the reading stand and inside the existing
-// dojo activity area and village shore boundary in either mirrored layout.
-function villagePracticePosition(map){const dojo=map.schools.find(s=>s.id==='sword');return {x:dojo.x-(Math.sign(dojo.x)||1)*1.75,z:dojo.z+3};}
+// Open forecourt: inside the dojo activity area and the village shore boundary.
+function villagePracticePosition(map){const dojo=map.schools.find(s=>s.id==='sword');return {x:dojo.x,z:dojo.z+3};}
 const ZONES = [
  {name:'白樺の渡り',sub:'THE BIRCH MARCH',ground:'#6c8970',tree:'#75946e'},
  {name:'霧鳴りの峡谷',sub:'THE HOLLOW WIND',ground:'#657f7d',tree:'#799b98'},
@@ -306,15 +355,7 @@ function qualitative(n,small,large){return n<=small?'小':n>=large?'大':'中';}
 function ageName(p){return p.age<4?'腕の中':p.age<15?'幼年':p.age<35?'青年':p.age<60?'壮年':p.age<75?'熟年':'老境';}
 const basicId=w=>4001+clamp(w,0,6);
 const enemiesOnly=e=>!['guard','villager','dummy'].includes(e.kind);
-// Shared by combat, rescue and traversal. alive remains true until death is confirmed.
-const incapacitated=p=>!!p?.alive&&['downed','carried','recovering'].includes(p.lifeState);
-const canAct=p=>!!p?.alive&&!incapacitated(p);
-const LIFE_RULES=Object.freeze({rescueRange:2.2,safeRecovery:12,fieldRecovery:40,finishGrace:2.2,carrySpeed:.62});
-const COMBAT_AWARENESS=Object.freeze({engagedAvoid:.48,unawareFatal:.32,unawareHeavy:.55,lureRange:8,lureDuration:5,lureCooldown:12});
-function legacyCandidates(p){return [...new Set(p.skills||[])].filter(id=>{const s=skillById(id);return s&&!s.passive;});}
 const effectsOf=(p,effect)=>(p.passives||[]).reduce((n,id)=>n+(skillById(id)?.effect===effect?(skillById(id).value||0):0),0);
-const phaseSkillCount=weights=>Object.values(weights||{}).filter(n=>Number(n)>0).length;
-const miracleChance=(p,sk)=>clamp(sk.procChance+.06*Math.max(0,effectsOf(p,'faith')-1),0,.9);
 const v3Weights=(ids,raw)=>{const out={};for(const id of ids){const n=Number(raw?.[id]);out[id]=Number.isFinite(n)?clamp(n,0,100):0;}if(!Object.values(out).some(x=>x>0)&&!ids.some(id=>Object.hasOwn(raw||{},id)&&Number.isFinite(+raw[id]))){const fallback=ids.includes(4000)?4000:ids[0];if(fallback!==undefined)out[fallback]=1;}return out;};
 
 class Simulation {
@@ -324,165 +365,6 @@ class Simulation {
  }
  emit(type,data={}){const event={seq:++this.seq,t:this.time,type,...data};this.events.push(event);if(this.events.length>400)this.events.splice(0,100);SkillSystem.onEvent(this,event);}
  getRoom(p){return this.rooms.get(p.room);}
- entity(r,id){return this.players.get(id)?.room===r.id?this.players.get(id):r.actors.find(a=>a.id===id);}
- combatReady(a){return canAct(a)&&!a.prologue&&!a.seated&&!a.rescueTarget&&!a.traversal&&!(a.stun>this.time)&&!hasStatus(a,'sleep',this.time);}
- opponent(a){return a.telegraph?.target||a.pendingSkill?.target||a.chain?.target||(a.kind==='player'?a.autoFight||((a.focusUntil||0)>this.time?a.focusTarget:null):a.target);}
- mutualEngagement(a,b){
-  if(!this.combatReady(a)||!this.combatReady(b)||this.opponent(a)!==b.id||this.opponent(b)!==a.id||dist(a,b)>6)return false;
-  const dir=Math.atan2(b.x-a.x,b.z-a.z);return Math.abs(angleDiff(a.dir,dir))<1.6&&Math.abs(angleDiff(b.dir,dir+Math.PI))<1.6;
- }
- awareness(defender,attacker){
-  const engaged=this.mutualEngagement(defender,attacker),facing=Math.abs(angleDiff(defender.dir,Math.atan2(attacker.x-defender.x,attacker.z-defender.z)))<1.6;
-  return {engaged,unaware:!engaged&&(!facing||!!this.opponent(defender)&&this.opponent(defender)!==attacker.id||!this.combatReady(defender))};
- }
- freeAttacker(e,r){
-  if(!this.combatReady(e)||!enemiesOnly(e)||e.neutral&&!e.aggro)return false;
-  const opponent=this.entity(r,this.opponent(e));return !opponent||!this.mutualEngagement(e,opponent);
- }
- lureCandidates(p,r=this.getRoom(p)){
-  return r.actors.filter(e=>this.freeAttacker(e,r)&&!(e.luredUntil>this.time)&&dist(p,e)<=COMBAT_AWARENESS.lureRange&&this.clearPath(p,e,r)).sort((a,b)=>{
-   const ally=e=>this.entity(r,this.opponent(e)),help=e=>{const q=ally(e);return q&&q.id!==p.id&&(q.kind==='player'||q.kind==='guard')?0:1;};
-   return help(a)-help(b)||dist(a,p)-dist(b,p)||a.id.localeCompare(b.id);
-  });
- }
- performLure(p,r){
-  if(!this.combatReady(p)||p.lureReadyAt>this.time)return false;
-  const e=this.lureCandidates(p,r)[0];if(!e){this.notice(p,'引き受けられる相手がいない');return false;}
-  p.lureReadyAt=this.time+COMBAT_AWARENESS.lureCooldown;e.luredBy=p.id;e.luredUntil=this.time+COMBAT_AWARENESS.lureDuration;e.target=p.id;e.aggro=true;
-  // An already committed attack finishes along its original arc and target.
-  // The next approach/attack uses the lure; it never redirects a hit in flight.
-  this.emit('lured',{player:p.id,room:r.id,target:e.id,x:e.x,z:e.z,text:'こちらだ！'});return true;
- }
- recordDamage(e,part,power,contact=true){
-  e.damageMarks??={};const old=e.damageMarks[part]||{hits:0,depth:0};
-  e.damageMarks[part]={hits:Math.min(4,old.hits+(contact?1:power/2)),depth:Math.min(5,old.depth+Math.max(contact?.25:0,power))};
-  if(!e.wounds[part])e.wounds[part]={severity:power>=2?'heavy':'light'};
- }
- cancelAction(p){
-  this.stopTraversal(p);this.stopDash(p);this.stopActivity(p);p.input={x:0,z:0};p.autoFight=null;p.chain=null;p.combo=null;p.pendingSkill=null;p.attackStep=null;p.telegraph=null;p.guard=false;p.guardPending=false;p.seated=false;p.queued=false;p.retreatUntil=0;p.exitPending=0;p.attackBufferedUntil=0;p.engagement=null;SkillSystem.reset(p);
- }
- safeGround(p,r=this.getRoom(p)){
-  return r?.kind==='village'?p.z>=-25.5&&p.z<=22:r?.kind==='front'&&p.z>=2&&p.z<=8&&Math.abs(p.x)<=5;
- }
- releaseRescue(carrier){
-  if(!carrier?.rescueTarget)return false;
-  const target=this.players.get(carrier.rescueTarget);carrier.rescueTarget=null;carrier.rescueRoute=null;
-  if(target?.carrierId===carrier.id){target.carrierId=null;target.lifeState='downed';target.action='downed';delete target.baseY;target.input={x:0,z:0};target.rescueClaim=null;this.emit('rescueDrop',{room:target.room,player:target.id,x:target.x,z:target.z});}
-  return true;
- }
- downPlayer(p,cause,source=null,part='torso'){
-  if(!canAct(p))return false;
-  this.releaseRescue(p);this.cancelAction(p);
-  p.lifeState='downed';p.downedAt=this.time;p.downedCause=cause;p.recoveryProgress=0;p.health=0;p.action='downed';p.actionStarted=this.time;p.actionUntil=0;p.rescueAt=null;p.stun=0;p.hitstopUntil=0;p.hitReactUntil=0;
-  if(BODY_PARTS.includes(part)&&p.wounds[part]?.severity!=='lost')p.wounds[part]={severity:'heavy',since:p.age+p.ageFraction,healsAt:p.age+p.ageFraction+5};
-  // The strike that caused the fall cannot also finish it, including multi-hit chains.
-  this.emit('downed',{player:p.id,room:p.room,source:source?.id,cause,x:p.x,z:p.z});return true;
- }
- finishPlayer(p,source,tg){
-  if(!incapacitated(p)||!canAct(source)||this.time-p.downedAt<LIFE_RULES.finishGrace||!Number.isFinite(tg.started)||tg.started<=p.downedAt)return false;
-  const r=this.getRoom(p);if(this.entity(r,source.id)!==source||dist(p,source)>(tg.reach??2.3)+.35||!this.clearPath(source,p,r))return false;
-  this.die(p,'トドメを受けた');return true;
- }
- canRescue(carrier,target,r){
-  return canAct(carrier)&&!carrier.prologue&&(carrier.kind==='guard'||carrier.age>=4)&&!carrier.rescueTarget&&!carrier.traversal&&carrier.stun<=this.time&&!hasStatus(carrier,'sleep',this.time)&&!hasStatus(carrier,'root',this.time)&&!['leftArm','rightArm','leftLeg','rightLeg'].some(k=>carrier.wounds?.[k]?.severity==='lost')&&target!==carrier&&target?.room===r.id&&target.lifeState==='downed'&&target.alive&&!target.carrierId&&dist(carrier,target)<=LIFE_RULES.rescueRange&&this.clearPath(carrier,target,r);
- }
- startRescue(carrier,target){
-  const r=carrier.kind==='player'?this.getRoom(carrier):[...this.rooms.values()].find(r=>r.actors.includes(carrier));
-  if(!r||!this.canRescue(carrier,target,r))return false;
-  this.cancelAction(carrier);carrier.rescueTarget=target.id;carrier.lastInput=this.time;
-  target.carrierId=carrier.id;target.rescueClaim=null;target.lifeState='carried';target.action='carried';target.baseY=1.32;target.dir=carrier.dir;
-  this.emit('rescueLift',{player:target.id,room:r.id,source:carrier.id,x:target.x,z:target.z});return true;
- }
- syncRescue(carrier,r){
-  const target=this.players.get(carrier.rescueTarget);if(!target)return this.releaseRescue(carrier);
-  if(!canAct(carrier)||!target.alive||target.room!==r.id||target.carrierId!==carrier.id||carrier.kind==='player'&&this.time-carrier.lastInput>8){this.releaseRescue(carrier);return;}
-  target.x=carrier.x;target.z=carrier.z;target.dir=carrier.dir;target.supportHeight=carrier.supportHeight||0;target.baseY=1.32+target.supportHeight;target.action='carried';
-  if(this.safeGround(target,r)){this.releaseRescue(carrier);target.lifeState='recovering';target.action='recovering';this.emit('rescueSafe',{room:r.id,player:target.id,source:carrier.id,x:target.x,z:target.z});if(carrier.kind==='guard'){carrier.rescueReturn=true;this.rescueSay(carrier,r,'arrival');}}
- }
- tickLifeState(p,r,dt){
-  if(!incapacitated(p))return false;
-  p.input={x:0,z:0};p.queued=false;
-  if(p.lifeState==='carried'){
-   const carrier=this.entity(r,p.carrierId);if(!carrier||!canAct(carrier)||carrier.rescueTarget!==p.id){p.carrierId=null;p.lifeState='downed';delete p.baseY;}else{this.syncRescue(carrier,r);if(p.lifeState==='carried')return true;}
-  }
-  const safe=this.safeGround(p,r);p.lifeState=safe?'recovering':'downed';p.action=p.lifeState;delete p.baseY;
-  p.recoveryProgress=Math.min(1,(p.recoveryProgress||0)+dt/(safe?LIFE_RULES.safeRecovery:LIFE_RULES.fieldRecovery));
-  if(p.recoveryProgress>=1){p.lifeState='active';p.action='recover';p.actionStarted=this.time;p.actionUntil=this.time+.8;p.cooldown=this.time+.8;p.standUpAt=this.time;p.standUpUntil=this.time+.8;p.health=35;p.stamina=Math.min(p.staminaCap,30);p.stun=this.time+.8;p.sleepUntil=0;p.carrierId=null;p.rescueClaim=null;p.autoSuppressedUntil=this.time+2;this.emit('revived',{room:r.id,player:p.id,x:p.x,z:p.z});}
-  return true;
- }
- rescueSay(g,r,key){const text=RESCUE_LINES[key];g.speech=text;g.speechUntil=this.time+5;g.nextSpeechAt=this.time+8;this.emit('guardline',{room:r.id,target:g.id,text,x:g.x,z:g.z});}
- tickGuardRescue(g,r,ps,dt){
-  if(g.kind!=='guard'||r.kind!=='village')return false;
-  if(g.rescueReturn){const goal=g.z>-30?{x:0,z:-31.5}:{x:g.homeX,z:-32},d=dist(g,goal);if(d<.2){if(g.z<=-30&&Math.abs(g.x-g.homeX)<.2)g.rescueReturn=false;}else{g.dir=Math.atan2(goal.x-g.x,goal.z-g.z);this.moveWalk(g,r,Math.sin(g.dir)*Math.min(d,2.8*dt),Math.cos(g.dir)*Math.min(d,2.8*dt));g.action='run';}return true;}
-  if(g.rescueTarget){
-   const target=this.players.get(g.rescueTarget);if(!target?.alive||target.room!==r.id){this.releaseRescue(g);return true;}
-   const goal=Math.abs(g.x)>.7&&g.z<-29.5?{x:0,z:-31.5}:{x:0,z:-24};
-   const d=dist(g,goal);if(d>.1){g.dir=Math.atan2(goal.x-g.x,goal.z-g.z);this.moveWalk(g,r,Math.sin(g.dir)*2.8*LIFE_RULES.carrySpeed*dt,Math.cos(g.dir)*2.8*LIFE_RULES.carrySpeed*dt);g.action='run';}
-   this.syncRescue(g,r);return true;
-  }
-  // A guard already exchanging blows finishes that exchange before rescuing.
-  if(g.telegraph||g.action==='attack'&&g.actionUntil>this.time)return false;
-  const targets=ps.filter(p=>p.lifeState==='downed'&&!p.carrierId&&p.z<-25.5&&dist(g,p)<14&&(!p.rescueClaim||p.rescueClaim.until<=this.time||p.rescueClaim.id===g.id)).sort((a,b)=>a.downedAt-b.downedAt||dist(a,g)-dist(b,g));
-  const target=targets[0];if(!target){if(g.z>-29.6){g.rescueReturn=true;return true;}return false;}
-  if(!target.rescueClaim||target.rescueClaim.id!==g.id){target.rescueClaim={id:g.id,until:this.time+3};this.rescueSay(g,r,'approach');}
-  target.rescueClaim.until=this.time+3;g.target=null;
-  if(dist(g,target)<=LIFE_RULES.rescueRange&&this.startRescue(g,target)){this.rescueSay(g,r,'lift');return true;}
-  let goal=target;if((g.z+28)*(target.z+28)<0)goal=Math.abs(g.x)>.6?{x:0,z:g.z<-28?-31.5:-25.8}:{x:0,z:target.z<-28?-31.5:-25.8};
-  g.dir=Math.atan2(goal.x-g.x,goal.z-g.z);this.moveWalk(g,r,Math.sin(g.dir)*2.8*dt,Math.cos(g.dir)*2.8*dt);g.action='run';return true;
- }
- clearPath(a,b,r){
-  const n=Math.max(1,Math.ceil(dist(a,b)/.18));
-  for(let i=1;i<=n;i++){const q={x:a.x+(b.x-a.x)*i/n,z:a.z+(b.z-a.z)*i/n},old={...q};this.bound(q,r);if(dist(q,old)>.001)return false;}return true;
- }
- traversalEligible(p){return this.combatReady(p)&&p.kind==='player'&&p.age>=4&&!p.pendingSkill&&!p.combo&&!p.chain&&!p.traversal&&!(p.traversalReadyAt>this.time)&&!hasStatus(p,'root',this.time)&&!['leftLeg','rightLeg'].some(k=>['heavy','lost'].includes(p.wounds?.[k]?.severity));}
- canLand(p,q,r,ignored=null,landing=true){
-  const test={...q},before={...q};this.bound(test,r,this.collisionRadius(p),ignored);if(dist(test,before)>.001)return false;
-  const bodies=[...r.actors,...this.players.values()].filter(a=>a!==p&&a.alive&&!a.carrierId&&(a.kind!=='player'||a.room===r.id));
-  if(bodies.some(a=>dist(a,q)<this.collisionRadius(p)+this.collisionRadius(a)))return false;
-  if(landing&&(q.supportHeight||0)>0){for(const [x,z] of [[-.4,-.4],[-.4,.4],[.4,-.4],[.4,.4]])if(Math.abs(supportHeight(r.map,q.x+x,q.z+z)-(q.supportHeight||0))>.05)return false;}
-  return true;
- }
- tryTraversal(p,r,dx,dz){
-  if(r.kind!=='village'||!this.traversalEligible(p))return false;
-  const n=Math.hypot(dx,dz);if(n<.001)return false;dx/=n;dz/=n;
-  const from={x:p.x,z:p.z,supportHeight:p.supportHeight||0},probe={x:p.x+dx*.65,z:p.z+dz*.65};
-  let obstacle=(r.map.traversables||[]).find(o=>o.kind==='vault'&&Math.abs(probe.x-o.x)<o.width/2+.2&&Math.abs(probe.z-o.z)<o.depth/2+.5),to,kind;
-  if(obstacle){
-   if(obstacle.height>TRAVERSAL_RULES.maxVault||Math.abs(dz)<.6||Math.sign(dz)!==Math.sign(obstacle.z-p.z))return false;
-   const distance=(Math.abs(obstacle.z-p.z)+obstacle.depth/2+.72)/Math.abs(dz);to={x:p.x+dx*distance,z:p.z+dz*distance,supportHeight:0};kind='vault';
-   if(Math.abs(to.x-obstacle.x)>obstacle.width/2-.48)return false;
-  }else{
-   const ahead=supportHeight(r.map,probe.x,probe.z),rise=ahead-from.supportHeight;if(Math.abs(rise)<.18||Math.abs(rise)>TRAVERSAL_RULES.maxStep)return false;
-   to={x:p.x+dx*1.12,z:p.z+dz*1.12};to.supportHeight=supportHeight(r.map,to.x,to.z);kind='climb';
-   if(Math.abs(to.supportHeight-from.supportHeight)<.18||Math.abs(to.supportHeight-from.supportHeight)>TRAVERSAL_RULES.maxStep)return false;
-  }
-  if(!this.canLand(p,to,r)||!this.canLand(p,from,r))return false;
-  // Validate the full body corridor before committing. Only the chosen fence is ignored.
-  const samples=Math.max(2,Math.ceil(dist(from,to)/.15));for(let i=1;i<samples;i++){
-   const q={x:from.x+(to.x-from.x)*i/samples,z:from.z+(to.z-from.z)*i/samples,supportHeight:Math.max(from.supportHeight,to.supportHeight)};
-   if(!this.canLand(p,q,r,obstacle?.id||'steps',false))return false;
-  }
-  this.cancelAction(p);p.dir=Math.atan2(dx,dz);p.traversal={kind,obstacle:obstacle?.id||null,room:r.id,from,to,started:this.time,duration:kind==='vault'?.68:.55,progress:0};p.grounded=false;p.action=kind;p.actionStarted=this.time;p.actionUntil=this.time+p.traversal.duration;this.emit('traverse',{player:p.id,room:r.id,kind,x:p.x,z:p.z});return true;
- }
- stopTraversal(p){
-  const a=p.traversal;if(!a)return;
-  // Return to the last supported side; never leave a saved body inside scenery.
-  const q=a.progress>=.75&&this.canLand(p,a.to,this.getRoom(p))?a.to:a.from;
-  p.x=q.x;p.z=q.z;p.supportHeight=q.supportHeight;p.verticalOffset=0;p.grounded=true;p.traversal=null;p.traversalReadyAt=this.time+TRAVERSAL_RULES.cooldown;
- }
- tickTraversal(p,r){
-  const a=p.traversal;if(!a)return false;if(!canAct(p)||a.room!==r.id){this.stopTraversal(p);return false;}
-  const u=clamp((this.time-a.started)/a.duration,0,1);a.progress=u;
-  if(!this.canLand(p,a.to,r)){this.stopTraversal(p);return true;}
-  const ease=u*u*(3-2*u);p.x=a.from.x+(a.to.x-a.from.x)*ease;p.z=a.from.z+(a.to.z-a.from.z)*ease;
-  p.supportHeight=a.from.supportHeight+(a.to.supportHeight-a.from.supportHeight)*ease;p.verticalOffset=Math.sin(Math.PI*u)*(a.kind==='vault'?1.16:.26);p.action=a.kind;p.input={x:0,z:0};
-  if(u>=1){p.x=a.to.x;p.z=a.to.z;p.supportHeight=a.to.supportHeight;p.verticalOffset=0;p.grounded=true;p.traversal=null;p.traversalReadyAt=this.time+TRAVERSAL_RULES.cooldown;p.action='land';p.actionStarted=this.time;p.actionUntil=this.time+.16;this.emit('landed',{player:p.id,room:r.id,x:p.x,z:p.z});}
-  return true;
- }
- chooseLegacy(p,id){
-  if(p.alive||p.legacyChoice?.state!=='pending'||!Number.isInteger(id)||!p.legacyChoice.candidates.includes(id)||!legacyCandidates(p).includes(id))return false;
-  p.legacyChoice={...p.legacyChoice,state:'chosen',skill:id};this.bank(p);return true;
- }
  makeRoom(kind,id){
   const index=++this.roomSeq,seed=(this.seed+index*977)>>>0;
   const code=((Math.imul(seed,2654435761)>>>0).toString(36).toUpperCase().padStart(7,'0'))+'-'+index.toString(36).toUpperCase();
@@ -498,7 +380,6 @@ class Simulation {
  legacy(owner){return this.legacies[owner]||(this.legacies[owner]={archive:[],records:[],generation:1});}
  addPlayer(id,config={}){
   if(this.players.has(id))return this.players.get(id);
-  if([...this.players.values()].some(p=>p.owner===(config.owner||id)&&p.legacyChoice?.state==='pending'))throw Error('遺す技を選んでから、次の人生へ進もう');
   let r;
   if(config.villageCode){r=[...this.rooms.values()].find(r=>r.kind==='village'&&!r.abandoned&&r.code===cleanText(config.villageCode,24).toUpperCase());if(!r)throw Error('その座標の村は見つからないか、すでに廃村です。');if(Object.keys(r.clans).length>=30)throw Error('この村に空き家がありません。');}
   else r=[...this.rooms.values()].find(r=>r.kind==='village'&&!r.abandoned&&Object.keys(r.clans).length<30)||this.makeRoom('village');
@@ -507,7 +388,7 @@ class Simulation {
   const plot=r.map.houses[house];p.x=plot.x+(plot.x<0?2.8:-2.8);p.z=plot.z;p.introX=p.x;p.introZ=p.z;p.introHomeX=plot.x;p.introHomeZ=plot.z;p.introDir=plot.rotation;p.dir=p.introDir;
   this.preparePlayer(p);r.everOccupied=true;r.clans[id]=house;this.players.set(id,p);this.emit('birth',{player:id,room:r.id});return p;
  }
- removePlayer(id){const p=this.players.get(id);if(!p)return;this.releaseRescue(p);if(p.carrierId)this.releaseRescue(this.entity(this.getRoom(p),p.carrierId));const r=this.rooms.get(p.home);if(r){delete r.clans[id];this.checkAbandoned(r);}if(p.legacyChoice?.state!=='pending')this.players.delete(id);}
+ removePlayer(id){const p=this.players.get(id);if(!p)return;const r=this.rooms.get(p.home);if(r){delete r.clans[id];this.checkAbandoned(r);}this.players.delete(id);}
  checkAbandoned(r){if(r?.kind==='village'&&!r.abandoned&&Object.keys(r.clans).length===0&&r.everOccupied){r.abandoned=true;this.abandoned.push(r.code);this.emit('abandoned',{room:r.id,code:r.code});}}
  actor(kind,x,z,tier=0){
   if(kind==='archer')kind='soldier';if(kind==='mage')kind='wraith';
@@ -521,7 +402,7 @@ class Simulation {
   const spot=villagePracticePosition(r.map),dummy=this.actor('dummy',spot.x,spot.z);dummy.name='稽古人形';r.actors.push(dummy);
  }
  preparePlayer(p){
-  p.lifeState??=p.alive?'active':'dead';p.health??=100;p.statuses??={};p.statusClock=this.time;p.lastHurtAt??=-100;
+  p.health??=100;p.statuses??={};p.statusClock=this.time;p.lastHurtAt??=-100;
   p.skillUses??={};p.training??={};p.inventory??=[];p.enduranceXP??=0;p.shield??=false;p.appearanceSeed??=(p.house||0)*1389+(p.gen||1)*37;
   if(p.systemVersion!==6){
    p.inventory=(Array.isArray(p.inventory)?p.inventory:[]).filter(id=>ITEMS[id]).slice(-MAX_ITEMS);
@@ -538,14 +419,6 @@ class Simulation {
    if(!p.phaseWeights[0][4000]&&p.skills.length===1)p.phaseWeights[0][4000]=1;
    p.weights=p.phaseWeights[0];p.bindings=null;p.loadoutVersion=5;p.gestureKit=false;p.autoFight=null;p.chain=null;p.seated=false;
    p.race=(p.race||0)%4;if(p.weapon>=WEAPONS.length)p.weapon=-1;if(p.age<EQUIP_AGE){p.weapon=-1;p.armor=0;p.shield=false;}
-  }
-  if(p.phaseLimitVersion!==1){
-   // Keep every learned technique and the original allocation; only the active set is bounded.
-   for(const weights of p.phaseWeights){
-    const active=Object.keys(weights).filter(id=>weights[id]>0).sort((a,b)=>weights[b]-weights[a]||Number(a)-Number(b));
-    if(active.length>MAX_PHASE_SKILLS){p.phaseWeightsBeforeLimit??=p.phaseWeights.map(w=>({...w}));for(const id of active.slice(MAX_PHASE_SKILLS))weights[id]=0;}
-   }
-   p.weights=p.phaseWeights[0];p.phaseLimitVersion=1;
   }
   SkillSystem.prepare(this,p);
  }
@@ -588,9 +461,7 @@ class Simulation {
   if(p.autoFight||p.pendingSkill||p.stun>this.time||p.hitstopUntil>this.time)return false;
   const value=Number(cmd.value);
   if(cmd.slot==='weapon'&&Number.isInteger(value)&&value>=-1&&value<WEAPONS.length){
-   p.weapon=value;const id=value<0?4000:4001+value;this.learn(p,id);const weights=p.phaseWeights[skillPhase(skillById(id))];
-   if(weights[id]>0||phaseSkillCount(weights)<MAX_PHASE_SKILLS)weights[id]=weights[id]||1;
-   else this.notice(p,'新しい得物の技は、意識から入れ替えよう');
+   p.weapon=value;const id=value<0?4000:4001+value;this.learn(p,id);p.phaseWeights[skillPhase(skillById(id))][id]=1;
   }else if(cmd.slot==='armor'&&Number.isInteger(value)&&value>=0&&value<=2)p.armor=value;
   else if(cmd.slot==='shield'&&typeof cmd.value==='boolean')p.shield=cmd.value;
   else return false;
@@ -621,12 +492,12 @@ class Simulation {
  }
  interrupt(){return false;}
  detectContact(p,r){
-  if(!canAct(p)||p.rescueTarget||p.traversal||p.age<4||p.prologue||p.activity||p.autoFight||p.seated||p.guard||p.guardPending||(p.autoSuppressedUntil||0)>this.time)return;
+  if(!p.alive||p.age<4||p.prologue||p.activity||p.autoFight||p.seated||p.guard||p.guardPending||(p.autoSuppressedUntil||0)>this.time)return;
   const target=r.actors.filter(e=>e.alive&&(enemiesOnly(e)||e.kind==='dummy')&&(!e.neutral||e.aggro)&&dist(e,p)<=this.collisionRadius(p)+this.collisionRadius(e)+.55).sort((a,b)=>dist(a,p)-dist(b,p))[0];
   if(target){this.stopDash(p);p.autoFight=target.id;p.autoRestUntil=0;target.aggro=true;this.emit('engage',{player:p.id,room:r.id,target:target.id,x:p.x,z:p.z});}
  }
  tickAutoCombat(p,r,dt){
-  if(!canAct(p)||p.rescueTarget||p.traversal||!p.autoFight)return;
+  if(!p.autoFight)return;
   const target=r.actors.find(e=>e.id===p.autoFight),l=Math.hypot(p.input.x,p.input.z);
   const away=target?((p.x-target.x)*p.input.x+(p.z-target.z)*p.input.z)/Math.max(.001,dist(p,target)):0;
   if(!target?.alive||dist(p,target)>4.6||p.seated||away>.2&&l>.15){p.autoFight=null;p.autoSuppressedUntil=this.time+.8;return;}
@@ -657,7 +528,7 @@ class Simulation {
   }
  }
  applyStatus(target,id,duration,source,r){
-  if(!canAct(target)||!STATUS_DEFS[id]||!Number.isFinite(duration)||duration<=0)return false;
+  if(!target?.alive||!STATUS_DEFS[id]||!Number.isFinite(duration)||duration<=0)return false;
   target.statuses??={};const durationScale=target.kind==='boss'?.35:target.elite?.65:1;
   const until=this.time+clamp(duration*durationScale,.2,9),old=target.statuses[id];
   target.statuses[id]={until:Math.max(until,old?.until||0),nextTick:old?.nextTick??this.time+1,source:source?.id||null};
@@ -673,10 +544,10 @@ class Simulation {
   a.statuses??={};a.statusClock=this.time;
   for(const [id,status] of Object.entries(a.statuses)){
    if(!STATUS_DEFS[id]||status.until<=this.time){delete a.statuses[id];if(id==='sleep')a.sleepUntil=0;continue;}
-   if(!incapacitated(a)&&['poison','burn','bleed'].includes(id)&&status.nextTick<=this.time){
+   if(['poison','burn','bleed'].includes(id)&&status.nextTick<=this.time){
     status.nextTick=this.time+1;const damage=id==='burn'?5:id==='poison'?4:3;
-    if(a.kind==='player'){a.health=Math.max(0,(a.health??100)-damage);a.lastHurtAt=this.time;if(a.health===0){this.downPlayer(a,STATUS_DEFS[id].name);return;}}
-    else if(a.kind!=='dummy'){a.hp=(a.hp??70)-damage;this.recordDamage(a,'torso',damage/9,false);if(a.hp<=0){const owner=this.players.get(status.source)||r.actors.find(e=>e.id===status.source);this.killActor(a,owner,r);return;}}
+    if(a.kind==='player'){a.health=Math.max(0,(a.health??100)-damage);a.lastHurtAt=this.time;if(a.health===0){this.die(a,STATUS_DEFS[id].name);return;}}
+    else if(a.kind!=='dummy'){a.hp=(a.hp??70)-damage;if(a.hp<=0){const owner=this.players.get(status.source)||r.actors.find(e=>e.id===status.source);this.killActor(a,owner,r);return;}}
    }
   }
  }
@@ -693,19 +564,12 @@ class Simulation {
  tryInsight(p,trigger){if(p.age>=4)this.progressDeed(p,trigger,1);}
  spend(p,cost,fatigue=0){
   if(!Number.isFinite(cost)||cost<0||p.stamina+.0001<cost)return false;
-  // Tie fatigue to actual exertion, including per-frame running and cost discounts.
-  p.staminaCap=Math.max(STAMINA.minCap,p.staminaCap-Math.max(0,fatigue,cost*STAMINA.fatiguePerCost));p.stamina=Math.min(p.staminaCap,p.stamina-cost);p.lastExertion=this.time;
+  p.staminaCap=Math.max(STAMINA.minCap,p.staminaCap-Math.max(0,fatigue));p.stamina=Math.min(p.staminaCap,p.stamina-cost);p.lastExertion=this.time;
   if(p.age>=4&&(p.autoFight||this.getRoom(p)?.actors.some(e=>e.alive&&dist(e,p)<4&&e.kind==='dummy'))){p.enduranceXP=(p.enduranceXP||0)+cost*.32;}
   return true;
  }
  command(id,cmd){
-  const p=this.players.get(id);if(!p||!cmd||typeof cmd.type!=='string')return false;
-  if(cmd.type==='choose-legacy')return this.chooseLegacy(p,cmd.skill);
-  if(!canAct(p))return false;const r=this.getRoom(p);
-  if(p.traversal&&!['weights','skill-read','cancel-buffer'].includes(cmd.type))return false;
-  if(cmd.type==='rescue')return this.startRescue(p,this.players.get(cmd.target));
-  if(cmd.type==='rescue-drop')return this.releaseRescue(p);
-  if(p.rescueTarget&&!['move','chat','weights','skill-read','cancel-buffer'].includes(cmd.type))return false;
+  const p=this.players.get(id);if(!p?.alive||!cmd||typeof cmd.type!=='string')return false;const r=this.getRoom(p);
   this.preparePlayer(p);
   if(cmd.type==='bind'||cmd.type==='interrupt'||cmd.type==='guard')return false;
   if(cmd.type==='equip')return this.equip(p,cmd);
@@ -734,12 +598,7 @@ class Simulation {
   }
   if(cmd.type==='cancel-buffer'){p.attackBufferedUntil=0;return true;}
   if(cmd.type==='skill-read'){p.skillLife.unread=[];return true;}
-  if(cmd.type==='weights'){
-   const phase=clamp(Math.trunc(+cmd.phase||0),0,2),weights=v3Weights(p.skills,cmd.weights);
-   for(const key of Object.keys(weights))if(skillPhase(skillById(key))!==phase)weights[key]=0;
-   if(phaseSkillCount(weights)>MAX_PHASE_SKILLS){this.notice(p,'ひとつの段に込める技は、五つまで');return false;}
-   p.phaseWeights[phase]=weights;p.weights=p.phaseWeights[0];return true;
-  }
+  if(cmd.type==='weights'){const phase=clamp(Math.trunc(+cmd.phase||0),0,2);p.phaseWeights[phase]=v3Weights(p.skills,cmd.weights);for(const key of Object.keys(p.phaseWeights[phase]))if(skillPhase(skillById(key))!==phase)p.phaseWeights[phase][key]=0;p.weights=p.phaseWeights[0];return true;}
   if(cmd.type==='chat'){const text=cleanText(cmd.text,60);if(!text||this.time-p.lastChat<2.5)return false;this.wake(p);this.stopDash(p);p.input={x:0,z:0};p.speech=text;p.speechUntil=this.time+6;p.lastChat=this.time;this.emit('speech',{player:id,room:r.id,text,x:p.x,z:p.z});return true;}
   if(cmd.type==='board'){if(r.kind!=='village'||p.age<15||Math.hypot(p.x,p.z-28)>5)return false;p.queued=!p.queued;p.activity=null;this.emit('board',{player:id,room:r.id,queued:p.queued});return true;}
   if(cmd.type==='return'){if(r.kind!=='front'||p.rescueAt)return false;p.rescueAt=this.time+this.yearSeconds;this.emit('rescue',{player:id,room:r.id,x:p.x,z:p.z});return true;}
@@ -789,7 +648,7 @@ class Simulation {
  }
  // One paid strike owns one short step. Ranged/support/retreat arts keep their footing.
  attackStepDistance(p,sk){
-  if(hasStatus(p,'root',this.time)||sk.lure||sk.ranged||sk.magic||sk.retreat||sk.counter||sk.ward||sk.area||!sk.reach||sk.id===4021)return 0;
+  if(hasStatus(p,'root',this.time)||sk.ranged||sk.magic||sk.retreat||sk.counter||sk.ward||sk.area||!sk.reach||sk.id===4021)return 0;
   const base=sk.travel??(sk.id===4000?.36:.48);
   return base*injuryModifiers(p).move*(p.age<15?.8:1);
  }
@@ -797,24 +656,24 @@ class Simulation {
  moveAttackStep(p,r,dx,dz,slide=false){
   // Small swept substeps retain the existing scenery and body collision hulls.
   const steps=Math.max(1,Math.ceil(Math.hypot(dx,dz)/.045)),sx=dx/steps,sz=dz/steps;
-  const bodies=[...r.actors,...this.players.values()].filter(a=>a!==p&&a.alive&&!a.carrierId&&a.id!==p.rescueTarget&&(a.kind!=='player'||a.room===r.id));
+  const bodies=[...r.actors,...this.players.values()].filter(a=>a!==p&&a.alive&&(a.kind!=='player'||a.room===r.id));
   const sceneryBlocked=q=>{const bounded={...q};this.bound(bounded,r,this.collisionRadius(p));return Math.hypot(bounded.x-q.x,bounded.z-q.z)>1e-6;};
   const bodyBlocked=q=>bodies.some(a=>{const before=dist(a,p),after=dist(a,q),radius=this.collisionRadius(p)+this.collisionRadius(a);return after<radius&&after<before-.000001;});
   let travelled=0;
   for(let i=0;i<steps;i++){
-   let q={x:p.x+sx,z:p.z+sz,supportHeight:p.supportHeight||0};
+   let q={x:p.x+sx,z:p.z+sz};
    if(sceneryBlocked(q)){
     if(!slide)break;
     // Only locomotion slides; attack lunge and retreat keep their stop-on-contact behavior.
     const axes=Math.abs(sx)>Math.abs(sz)?[[sx,0],[0,sz]]:[[0,sz],[sx,0]];
-    q=axes.filter(([x,z])=>Math.hypot(x,z)>1e-8).map(([x,z])=>({x:p.x+x,z:p.z+z,supportHeight:p.supportHeight||0})).find(a=>!sceneryBlocked(a)&&!bodyBlocked(a));
+    q=axes.filter(([x,z])=>Math.hypot(x,z)>1e-8).map(([x,z])=>({x:p.x+x,z:p.z+z})).find(a=>!sceneryBlocked(a)&&!bodyBlocked(a));
     if(!q)break;
    }else if(bodyBlocked(q))break;
    travelled+=Math.hypot(q.x-p.x,q.z-p.z);p.x=q.x;p.z=q.z;
   }
   return travelled;
  }
- moveWalk(p,r,dx,dz){if(this.tryTraversal(p,r,dx,dz))return Math.hypot(dx,dz);const moved=this.moveAttackStep(p,r,dx,dz,true);if(p.kind==='player'&&!p.traversal){p.supportHeight=supportHeight(r.map,p.x,p.z);p.grounded=true;}return moved;}
+ moveWalk(p,r,dx,dz){return this.moveAttackStep(p,r,dx,dz,true);}
  tickCarriedMove(p,r,dt){
   if(this.time-p.lastInput>1.5)p.input={x:0,z:0};
   const l=Math.hypot(p.input.x,p.input.z),speed=3.8*ACTION_TUNING.move;
@@ -853,10 +712,10 @@ class Simulation {
   this.tryInsight(p,'attack');
   const r=this.getRoom(p),target=r.actors.filter(e=>e.alive&&enemiesOnly(e)&&(!e.neutral||e.aggro||dist(e,p)<sk.reach+.5)&&dist(e,p)<Math.max(5,sk.reach+1)).sort((a,b)=>dist(a,p)-dist(b,p))[0];
   const dummy=r.actors.find(e=>e.kind==='dummy'&&dist(e,p)<4);
-  const facing=target||dummy;if(facing){p.focusTarget=facing.id;p.focusUntil=this.time+4;}if(facing&&!p.flickAim)p.dir=Math.atan2(facing.x-p.x,facing.z-p.z);
+  const facing=target||dummy;if(facing&&!p.flickAim)p.dir=Math.atan2(facing.x-p.x,facing.z-p.z);
   p.flickAim=false;const stepDistance=this.attackStepDistance(p,sk)/Math.max(1,sk.hits||1),timing=actionTiming(sk);
   p.attackStep=stepDistance?{started:this.time+Math.max(0,timing.charge-.12),until:this.time+Math.max(.001,timing.charge),distance:stepDistance,progress:0,moved:0,dir:p.dir,blocked:false,sounded:false}:null;
-  p.pendingSkill={id:sk.id,target:facing?.id||null,started:this.time,at:this.time+timing.charge,dir:p.dir,stage:'charge'};p.action='charge';p.motion=sk.form;p.actionStarted=this.time;p.actionUntil=this.time+timing.charge;p.attackSkill=sk.id;p.attackReach=sk.reach;p.attackArc=sk.arc;
+  p.pendingSkill={id:sk.id,started:this.time,at:this.time+timing.charge,dir:p.dir,stage:'charge'};p.action='charge';p.motion=sk.form;p.actionStarted=this.time;p.actionUntil=this.time+timing.charge;p.attackSkill=sk.id;p.attackReach=sk.reach;p.attackArc=sk.arc;
   this.emit('charge',{player:p.id,room:p.room,id:sk.id,duration:timing.charge,x:p.x,z:p.z});
   if(timing.charge===0)this.releaseSkill(p);return true;
  }
@@ -870,7 +729,7 @@ class Simulation {
   this.emit('skill',{player:p.id,room:p.room,id:sk.id,x:p.x,z:p.z,dir:p.dir});
   const hits=sk.hits||1;
   // Contact occurs at the visible impact pose, never at the start of the swing.
-  p.chain={id:sk.id,target:p.focusTarget,start:this.time+timing.swing/hits*.43,interval:timing.swing/hits,next:0,count:hits};
+  p.chain={id:sk.id,start:this.time+timing.swing/hits*.43,interval:timing.swing/hits,next:0,count:hits};
   p.comboQueued=!!p.autoFight||p.comboQueued;if(sk.exit)p.exitPending=sk.exit;
  }
  finishCombo(p){
@@ -887,10 +746,8 @@ class Simulation {
   this.emit('clash',{room:r.id,player:a.kind==='player'?a.id:b.kind==='player'?b.id:undefined,x:(a.x+b.x)/2,z:(a.z+b.z)/2,winner:winner.id});
  }
  performStrike(p,r,sk){
-  if(!canAct(p)||p.rescueTarget||p.traversal)return;
-  if(sk.lure){this.performLure(p,r);return;}
   const retreat=sk.retreat;
-  if(sk.miracle&&this.rng()>=miracleChance(p,sk)){this.emit('miracleQuiet',{player:p.id,room:r.id,x:p.x,z:p.z,text:'祈りは、静かにほどけた。'});return;}
+  if(sk.miracle&&this.rng()>=sk.procChance){this.emit('miracleQuiet',{player:p.id,room:r.id,x:p.x,z:p.z,text:'祈りは、静かにほどけた。'});return;}
   if(sk.selfCost){p.health=Math.max(1,(p.health??100)-sk.selfCost);p.lastHurtAt=this.time;}
   if(retreat){const swing=actionTiming(sk).swing;p.retreatUntil=this.time+swing;p.retreatSpeed=retreat/swing;p.guard=sk.id===4011&&injuryModifiers(p).guard;return;}
   if(sk.counter){p.counterUntil=this.time+2.8;p.guard=injuryModifiers(p).guard;return;}
@@ -899,7 +756,7 @@ class Simulation {
   if(sk.area==='eclipse')this.emit('eclipse',{room:r.id,player:p.id,x:p.x,z:p.z});
   const potential=r.actors.filter(e=>e.alive&&(enemiesOnly(e)||e.kind==='dummy')&&dist(e,p)<sk.reach+.4).sort((a,b)=>dist(a,p)-dist(b,p));let count=0;
   for(const e of potential){
-   if(!this.clearPath(p,e,r)||Math.abs(angleDiff(Math.atan2(e.x-p.x,e.z-p.z),p.dir))>sk.arc/2&&!['sleep','eclipse','ring'].includes(sk.area))continue;
+   if(Math.abs(angleDiff(Math.atan2(e.x-p.x,e.z-p.z),p.dir))>sk.arc/2&&!['sleep','eclipse','ring'].includes(sk.area))continue;
    if(count++>=(sk.maxTargets||1))break;
    if(e.kind==='dummy'){e.action='hit';e.actionStarted=this.time;e.actionUntil=this.time+.5;this.reactToHit(e,p,sk.targets[0]);this.impact(p,e,sk.targets[0],sk.power>=2);this.emit('hit',{room:r.id,target:e.id,source:p.id,x:e.x,z:e.z,kind:'practice',part:sk.targets[0],weapon:p.weapon,skill:sk.id});SkillSystem.contact(this,p,e,sk);continue;}
    e.aggro=true;
@@ -921,11 +778,9 @@ class Simulation {
   this.emit('swing',{player:p.id,room:r.id,x:p.x,z:p.z,dir:p.dir,reach:sk.reach,arc:sk.arc,skill:sk.id,weapon:p.weapon});
  }
  damageActor(e,source,part,power,r){
-  if(!e.alive||power<=0)return;const awareness=source?this.awareness(e,source):{engaged:false,unaware:false};
-  if(awareness.engaged&&this.rng()<COMBAT_AWARENESS.engagedAvoid){this.emit('evaded',{room:r.id,target:e.id,x:e.x,z:e.z});return;}
-  power*=awareness.unaware?1.35:1;if(e.wounds[part]?.severity==='lost')part='torso';
-  const exposed=e.exposedUntil>this.time,committed=!!e.telegraph,prev=e.wounds[part]?.severity;
-  e.hp??=e.hpMax??70;e.hpMax??=e.hp;e.hp-=Math.max(3,power*9);this.recordDamage(e,part,power);
+  if(!e.alive||power<=0)return;if(e.wounds[part]?.severity==='lost')part='torso';
+  e.hp??=e.hpMax??70;e.hpMax??=e.hp; e.hp-=Math.max(3,power*9);
+  const exposed=e.exposedUntil>this.time,committed=!!e.telegraph,prev=e.wounds[part]?.severity,injured=Object.keys(e.wounds).length;
   e.aggro=true;e.sleepUntil=0;if(e.statuses)delete e.statuses.sleep;this.reactToHit(e,source,part,power>=2?'heavy':'light',clamp(.25+power*.30,.25,1.25));e.hitUntil=this.time+.1;
   this.impact(source,e,part,power>=2);this.emit('hit',{room:r.id,target:e.id,source:source?.id,x:e.x,z:e.z,part,weapon:source?.weapon,skill:source?.currentSkill});
   if(e.hp<=0&&e.kind!=='boss'){this.killActor(e,source,r);return;}
@@ -939,7 +794,7 @@ class Simulation {
   // repeatedly cancel a committed swing; otherwise pure button spam dominates.
   const severeBreak=source?.kind==='player'&&this.rng()<.68;
   const severity=limb&&(e.elite||e.kind==='boss')&&severeBreak?'lost':severeBreak||prev==='heavy'||power>=2?'heavy':'light';
-  e.wounds[part]={...e.wounds[part],severity};this.reactToHit(e,source,part,severity);if(exposed)e.exposedUntil=0;
+  e.wounds[part]={severity};this.reactToHit(e,source,part,severity);if(exposed)e.exposedUntil=0;
   const interrupts=severity!=='light'||!committed||exposed;
   if(interrupts){e.telegraph=null;e.actionStarted=this.time;e.stun=this.time+(severity==='lost'?1.25:part.endsWith('Leg')?.95:.65);e.actionUntil=e.stun;e.action=severity==='lost'?'break':'hit';}
   if(severeBreak||severity==='lost'){
@@ -948,9 +803,9 @@ class Simulation {
   }
   if(e.wounds.leftArm?.severity==='lost')e.guard=false;
  }
- killActor(e,source,r){if(!e.alive)return;this.releaseRescue(e);e.alive=false;e.statuses={};e.deathAt=this.time;e.action='fall';e.actionStarted=this.time;if(source?.kind==='player'){source.kills++;source.experience++;r.kills++;r.score++;}this.emit('kill',{room:r.id,player:source?.kind==='player'?source.id:undefined,target:e.id,x:e.x,z:e.z});}
+ killActor(e,source,r){if(!e.alive)return;e.alive=false;e.statuses={};e.deathAt=this.time;e.action='fall';e.actionStarted=this.time;if(source?.kind==='player'){source.kills++;source.experience++;r.kills++;r.score++;}this.emit('kill',{room:r.id,player:source?.kind==='player'?source.id:undefined,target:e.id,x:e.x,z:e.z});}
  hitPlayer(p,e,tg={}){
-  if(!p.alive)return;if(incapacitated(p)){this.finishPlayer(p,e,tg);return;}if(p.hitUntil>this.time)return;
+  if(!p.alive||p.hitUntil>this.time)return;
   if(p.pendingSkill&&p.pendingSkill.at-this.time<.4&&!skillById(p.pendingSkill.id)?.ranged&&!skillById(p.pendingSkill.id)?.magic&&!skillById(p.pendingSkill.id)?.breakPower&&!tg.ranged){this.resolveClash(p,e,this.getRoom(p));return;}
   const facing=Math.abs(angleDiff(p.dir,Math.atan2(e.x-p.x,e.z-p.z)))<1.5;
   if(p.guard&&facing&&p.stun<=this.time&&injuryModifiers(p).guard){
@@ -958,54 +813,35 @@ class Simulation {
     const weights=p.phaseWeights[p.combo?.band??0],sum=Object.values(weights).reduce((a,b)=>a+b,0)||1,focus=(weights[4013]||0)/sum;
     const chance=p.counterUntil>this.time?clamp(.18+focus*.16+(p.skills.includes(4011)?.05:0),0,.40):.12;
     if(!tg.unblockable&&this.rng()<chance){e.stun=this.time+1.8;e.exposedUntil=this.time+2.5;e.telegraph=null;p.parries++;p.counterUntil=0;this.emit('parry',{player:p.id,room:p.room,x:e.x,z:e.z});return;}
-    if(!tg.unblockable){this.reactToHit(p,e,'leftArm','light',.32,true);this.emit('guarded',{player:p.id,target:p.id,source:e.id,part:'leftArm',room:p.room,x:p.x,z:p.z});return;}
+    if(!tg.unblockable){this.reactToHit(p,e,'leftArm','light',.32,true);this.emit('guarded',{player:p.id,room:p.room,x:p.x,z:p.z});return;}
    }
    p.guard=false;p.guardPending=false;
   }
   if(p.wardUntil>this.time&&p.wardCharges>0){p.wardCharges--;this.emit('guarded',{player:p.id,room:p.room,x:p.x,z:p.z});return;}
   if(hasStatus(e,'blind',this.time)&&this.rng()<.35)return;
-  if(p.shield&&facing&&p.stamina>=5&&this.rng()<.38){this.spend(p,5,.08);p.guardUntil=this.time+.55;this.reactToHit(p,e,'leftArm','light',.32,true);this.emit('guarded',{player:p.id,target:p.id,source:e.id,part:'leftArm',room:p.room,x:p.x,z:p.z});return;}
-  const awareness=this.awareness(p,e);
-  if(awareness.engaged&&this.rng()<COMBAT_AWARENESS.engagedAvoid){this.emit('evaded',{room:p.room,player:p.id,x:p.x,z:p.z});return;}
+  if(p.shield&&facing&&p.stamina>=5&&this.rng()<.38){this.spend(p,5,.08);p.guardUntil=this.time+.55;this.reactToHit(p,e,'leftArm','light',.32,true);this.emit('guarded',{player:p.id,room:p.room,x:p.x,z:p.z});return;}
   const part=tg.part||BODY_PARTS[Math.floor(this.rng()*BODY_PARTS.length)],old=p.wounds[part]?.severity;
   let severity=e.elite||e.kind==='boss'||tg.unblockable?'heavy':'light';
   if(old==='light')severity='heavy';if(old==='heavy')severity=['head','torso'].includes(part)?'fatal':e.elite||e.kind==='boss'?'lost':'heavy';
-  if(awareness.unaware){if(['head','torso'].includes(part)&&this.rng()<COMBAT_AWARENESS.unawareFatal)severity='fatal';else if(severity==='light'&&this.rng()<COMBAT_AWARENESS.unawareHeavy)severity='heavy';}
-  const strength=e.elite||e.kind==='boss'||tg.unblockable?1:.60;
-  if(old==='lost'){this.inflictWound(p,'torso',p.wounds.torso?.severity==='heavy'?'fatal':'heavy',e,strength);return;}
-  const before=p.health;this.inflictWound(p,part,severity,e,strength);if(p.alive&&p.health<before&&e.attackCount%3===0){const status={crawler:'poison',wraith:'slow',maw:'root',goblin:'blind',mage:'burn',soldier:'bleed',elite:'weak'}[e.kind];if(status)this.applyStatus(p,status,4.5,e,this.getRoom(p));}
-}
-inflictWound(p,part,severity,source=null,strength=null){
-  if(!canAct(p)||!BODY_PARTS.includes(part)||!['light','heavy','lost','fatal'].includes(severity))return false;
-  this.stopTraversal(p);this.releaseRescue(p);
-  const previousSeverity=p.wounds[part]?.severity;
-  const report=level=>this.emit('wound',{player:p.id,target:p.id,source:source?.id,room:p.room,part,severity:level,strength:strength??(level==='light'?.60:1),dir:source?Math.atan2(p.x-source.x,p.z-source.z):(p.dir||0)+Math.PI,upgraded:previousSeverity!==level,x:p.x,z:p.z});
-  if(severity==='fatal'||severity==='lost'&&['head','torso'].includes(part)){report('fatal');this.downPlayer(p,BODY_NAMES[part]+'への致命傷',source,part);return true;}
+  if(old==='lost'){this.inflictWound(p,'torso',p.wounds.torso?.severity==='heavy'?'fatal':'heavy',e);return;}
+  const before=p.health;this.inflictWound(p,part,severity,e);if(p.alive&&p.health<before&&e.attackCount%3===0){const status={crawler:'poison',wraith:'slow',maw:'root',goblin:'blind',mage:'burn',soldier:'bleed',elite:'weak'}[e.kind];if(status)this.applyStatus(p,status,4.5,e,this.getRoom(p));}
+ }
+ inflictWound(p,part,severity,source=null){
+  if(!BODY_PARTS.includes(part)||!['light','heavy','lost','fatal'].includes(severity))return false;
+  if(severity==='fatal'||severity==='lost'&&['head','torso'].includes(part)){this.emit('wound',{player:p.id,room:p.room,part,severity:'fatal',x:p.x,z:p.z});this.die(p,BODY_NAMES[part]+'への致命傷');return true;}
   if(p.wounds[part]?.severity==='lost')return false;
   if(p.wounds[part]?.severity==='heavy'&&severity==='light')severity='heavy';
-  this.stopDash(p);this.stopActivity(p);p.seated=false;p.chain=null;p.sleepUntil=0;if(p.statuses)delete p.statuses.sleep;p.lastHurtAt=this.time;p.health=Math.max(0,(p.health??100)-PLAYER_WOUND_DAMAGE[severity]*(p.armor===2?.70:p.armor===1?.85:1)*(1-effectsOf(p,'fallResist'))-(part==='head'?7:part==='torso'?3:0));if(p.health<=0){report('fatal');this.downPlayer(p,'深手',source,part);return true;}
+  this.stopDash(p);this.stopActivity(p);p.seated=false;p.chain=null;p.sleepUntil=0;if(p.statuses)delete p.statuses.sleep;p.lastHurtAt=this.time;p.health=Math.max(0,(p.health??100)-({light:19,heavy:30,lost:40}[severity]||19)*(p.armor===2?.70:p.armor===1?.85:1)*(1-effectsOf(p,'fallResist'))-(part==='head'?7:part==='torso'?3:0));if(p.health<=0){this.die(p,'深手');return true;}
   p.wounds[part]={severity,since:p.age+p.ageFraction,healsAt:severity==='lost'?null:p.age+p.ageFraction+(severity==='heavy'?5:1)};
-  this.reactToHit(p,source,part,severity,strength);this.impact(source,p,part,severity!=='light');p.attackStep=null;p.retreatUntil=0;p.hitUntil=this.time+.48;p.stun=this.time+(severity==='lost'?1.35:severity==='heavy'?.85:.50);p.action=severity==='lost'?'break':'hit';p.actionStarted=this.time;p.actionUntil=p.stun;p.pendingSkill=null;p.combo=null;p.comboQueued=false;p.cooldown=Math.max(p.cooldown,p.stun+.35);p.guard=false;p.guardPending=false;
-  report(severity);return true;
- }
- tickRestHealing(p,dt){
-  if(!p.seated||!canAct(p)||p.prologue||p.rescueTarget||p.traversal||this.time-(p.sitSince||0)<=.35||p.stun>this.time||hasStatus(p,'sleep',this.time)||this.time-(p.lastHurtAt??-100)<=REST_HEALING.quiet)return;
-  p.health=Math.min(100,(p.health??100)+dt*REST_HEALING.healthRegen);
-  // Advance only the existing injury deadline; age, lifespan and lost limbs are unchanged.
-  const bonus=dt/this.yearSeconds*(REST_HEALING.woundRate-1);
-  for(const w of Object.values(p.wounds))if((w.severity==='light'||w.severity==='heavy')&&Number.isFinite(w.healsAt))w.healsAt-=bonus;
+  this.reactToHit(p,source,part,severity);this.impact(source,p,part,severity!=='light');p.attackStep=null;p.retreatUntil=0;p.hitUntil=this.time+.48;p.stun=this.time+(severity==='lost'?1.35:severity==='heavy'?.85:.50);p.action=severity==='lost'?'break':'hit';p.actionStarted=this.time;p.actionUntil=p.stun;p.pendingSkill=null;p.combo=null;p.comboQueued=false;p.cooldown=Math.max(p.cooldown,p.stun+.35);p.guard=false;p.guardPending=false;
+  this.emit('wound',{player:p.id,room:p.room,part,severity,x:p.x,z:p.z});return true;
  }
  tickRecovery(p,dt){
   const mods=injuryModifiers(p),max=Math.max(STAMINA.minCap,staminaMaximum(p)-(100-mods.cap)-(p.permanentFatigue||0));p.staminaMax=staminaMaximum(p);
-  const resting=p.seated&&this.time-(p.sitSince||0)>.35&&p.stun<=this.time&&!hasStatus(p,'sleep',this.time);
-  if(resting){p.staminaCap=Math.min(max,p.staminaCap+dt*(STAMINA.seatedCapRegen+effectsOf(p,'capRegen')));p.stamina=Math.min(p.staminaCap,p.stamina+dt*(STAMINA.seatedRegen+effectsOf(p,'regen')));}
+  if(p.seated&&this.time-(p.sitSince||0)>.35&&p.stun<=this.time&&!hasStatus(p,'sleep',this.time)){p.staminaCap=Math.min(max,p.staminaCap+dt*17);p.stamina=Math.min(p.staminaCap,p.stamina+dt*32);}
   if(!p.autoFight&&!p.seated&&this.time-(p.lastHurtAt??-100)>12&&this.getRoom(p)?.kind==='village'&&p.z>-27)p.health=Math.min(100,(p.health??100)+dt*1.8);
-  this.tickRestHealing(p,dt);
-  // Seated and ordinary recovery are exclusive, so sitting cannot double-dip.
-  if(!p.seated){
-   if(!p.dash&&this.time-p.lastExertion>STAMINA.delay&&!p.pendingSkill&&p.stun<=this.time)p.stamina=Math.min(p.staminaCap,p.stamina+dt*(STAMINA.regen+effectsOf(p,'regen'))*(p.guard?.28:(p.autoFight||p.combo||p.cooldown>this.time)?.45:1));
-   if(this.time-p.lastSkillAt>STAMINA.capDelay&&!p.pendingSkill&&this.time-p.lastExertion>1.4)p.staminaCap=Math.min(max,p.staminaCap+dt*(STAMINA.capRegen+effectsOf(p,'capRegen'))*(p.guard?.35:1));
-  }
+  if(!p.dash&&this.time-p.lastExertion>STAMINA.delay&&!p.pendingSkill&&p.stun<=this.time)p.stamina=Math.min(p.staminaCap,p.stamina+dt*(STAMINA.regen+effectsOf(p,'regen'))*(p.guard?.28:p.combo?.45:1));
+  if(this.time-p.lastSkillAt>STAMINA.capDelay&&!p.pendingSkill&&this.time-p.lastExertion>1.4)p.staminaCap=Math.min(max,p.staminaCap+dt*(STAMINA.capRegen+effectsOf(p,'capRegen'))*(p.guard?.35:1));
   p.staminaCap=Math.min(p.staminaCap,max);p.stamina=clamp(p.stamina,0,p.staminaCap);
   const age=p.age+p.ageFraction;for(const [part,w] of Object.entries(p.wounds))if(w.severity!=='lost'&&age>=w.healsAt){delete p.wounds[part];this.emit('healed',{player:p.id,room:p.room,part,x:p.x,z:p.z});}
  }
@@ -1023,16 +859,10 @@ inflictWound(p,part,severity,source=null,strength=null){
   }
   SkillSystem.sample(this,p);
  }
- bound(p,r,bodyRadius=this.collisionRadius(p),ignored=null){
+ bound(p,r,bodyRadius=this.collisionRadius(p)){
   if(r.kind==='village'){
    p.x=clamp(p.x,-35,35);p.z=clamp(p.z,-46,29.5);
-   // Shared fence and landing geometry is also used by ArtDirector.village.
-   for(const o of r.map.traversables||[]){
-    if(o.id===ignored||o.kind==='step'&&(ignored==='steps'||(p.supportHeight||0)>=o.height-.05))continue;
-    const rx=o.width/2+.42,rz=o.depth/2+.42,dx=p.x-o.x,dz=p.z-o.z;
-    if(Math.abs(dx)<rx&&Math.abs(dz)<rz){if(Math.abs(dx)/rx>Math.abs(dz)/rz)p.x=o.x+Math.sign(dx||1)*rx;else p.z=o.z+Math.sign(dz||1)*rz;}
-   }
-   for(const x of [-4.1,4.1]){const dx=p.x-x,dz=p.z+28;if(Math.abs(dx)<1.1&&Math.abs(dz)<1.1){if(Math.abs(dx)>Math.abs(dz))p.x=x+Math.sign(dx||1)*1.1;else p.z=-28+Math.sign(dz||1)*1.1;}}
+   if(p.z<-27&&p.z>-30&&Math.abs(p.x)>4.8)p.z=-27;
    if(p.z>23&&Math.abs(p.x)>4)p.z=23;
    for(const h of r.map.houses){const dx=p.x-h.x,dz=p.z-h.z;if(Math.abs(dx)<2&&Math.abs(dz)<1.8){if(Math.abs(dx)/2>Math.abs(dz)/1.8)p.x=h.x+Math.sign(dx||1)*2;else p.z=h.z+Math.sign(dz||1)*1.8;}}
    for(const s of r.map.schools.filter(s=>s.id!=='dance')){const dx=p.x-s.x,dz=p.z-(s.z-2);if(Math.abs(dx)<2.5&&Math.abs(dz)<1.5){if(Math.abs(dx)/2.5>Math.abs(dz)/1.5)p.x=s.x+Math.sign(dx||1)*2.5;else p.z=s.z-2+Math.sign(dz||1)*1.5;}}
@@ -1051,7 +881,6 @@ inflictWound(p,part,severity,source=null,strength=null){
    // Lifetime is checked before rescue, including simultaneous arrival/death.
    if(p.age+p.ageFraction>=p.lifespan){this.die(p,'寿命');continue;}
    if(p.rescueAt&&this.time>=p.rescueAt){this.returnHome(p);r=this.getRoom(p);}
-   if(this.tickLifeState(p,r,dt))continue;if(this.tickTraversal(p,r))continue;
    this.tickRecovery(p,dt);this.tickExploration(p,dt);if(this.tickHitStop(p,dt)){this.bound(p,r);continue;}if(p.prologue){this.tickCarriedMove(p,r,dt);continue;}this.tickAutoCombat(p,r,dt);this.tickChain(p);
    this.tickAttackStep(p);
    if(p.pendingSkill&&this.time>=p.pendingSkill.at)this.releaseSkill(p);
@@ -1070,7 +899,7 @@ inflictWound(p,part,severity,source=null,strength=null){
    if(p.guardPending&&p.stun<=this.time&&!p.pendingSkill&&!p.combo&&p.cooldown<=this.time)this.command(p.id,{type:'guard',active:true});
    const l=Math.hypot(p.input.x,p.input.z),mods=injuryModifiers(p);
    if(p.stun<=this.time&&!hasStatus(p,'sleep',this.time)){
-    let speed=(p.age<4?3.8:p.age<15?4.5:5.15)*ACTION_TUNING.move*(p.dash?DASH.speed:1)*(p.rescueTarget?LIFE_RULES.carrySpeed:1)*(1+effectsOf(p,'walk'))*(p.age>65?1-(p.age-65)*.004:1)*mods.move*(hasStatus(p,'slow',this.time)?.5:1)*(hasStatus(p,'root',this.time)||p.seated?0:1)*(p.guard?.42:1)*(p.pendingSkill?ACTION_TUNING.moveCharge:p.combo?ACTION_TUNING.moveCombo:p.cooldown>this.time?ACTION_TUNING.moveRecovery:1);
+    let speed=(p.age<4?3.8:p.age<15?4.5:5.15)*ACTION_TUNING.move*(p.dash?DASH.speed:1)*(1+effectsOf(p,'walk'))*(p.age>65?1-(p.age-65)*.004:1)*mods.move*(hasStatus(p,'slow',this.time)?.5:1)*(hasStatus(p,'root',this.time)||p.seated?0:1)*(p.guard?.42:1)*(p.pendingSkill?ACTION_TUNING.moveCharge:p.combo?ACTION_TUNING.moveCombo:p.cooldown>this.time?ACTION_TUNING.moveRecovery:1);
     if(p.retreatUntil>this.time&&!hasStatus(p,'root',this.time)){this.moveAttackStep(p,r,-Math.sin(p.dir)*p.retreatSpeed*dt*mods.move,-Math.cos(p.dir)*p.retreatSpeed*dt*mods.move);}
     else if(p.attackStep&&p.combo){this.moveAttackStep(p,r,p.input.x*speed*dt,p.input.z*speed*dt);}
     else if(l>.001&&speed>0){const moved=this.moveWalk(p,r,p.input.x*speed*dt,p.input.z*speed*dt);if(p.dash){p.dash.blocked=moved<.002?(p.dash.blocked||0)+dt:0;if(p.dash.blocked>.18){this.stopDash(p);p.input={x:0,z:0};}}}
@@ -1079,7 +908,7 @@ inflictWound(p,part,severity,source=null,strength=null){
     if(p.actionUntil<=this.time&&!p.pendingSkill)p.action=p.seated?'sit':p.activity?(ACTIVITY_DEFS[this.getArea(p)]?.motion||p.activity):p.guard?(l>.1?'guardWalk':'guard'):l>.1?(p.dash?'dash':'run'):'idle';
    }
    this.bound(p,r);p.zone=this.getArea(p);if(p.queued&&Math.hypot(p.x,p.z-28)>6)p.queued=false;
-   if(p.speechUntil<=this.time)p.speech='';this.detectContact(p,r);if(p.rescueTarget)this.syncRescue(p,r);
+   if(p.speechUntil<=this.time)p.speech='';this.detectContact(p,r);
   }
   for(const r of this.rooms.values()){
    if(r.abandoned)continue;const ps=[...this.players.values()].filter(p=>p.alive&&p.room===r.id);
@@ -1091,7 +920,7 @@ inflictWound(p,part,severity,source=null,strength=null){
      const guards=r.actors.filter(e=>e.alive&&e.kind==='guard');if(guards.length<4){const lane=[0,1,2,3].find(i=>!guards.some(g=>g.lane===i))??0,g=this.actor('guard',-10.5+lane*7,-30.5);g.lane=lane;r.actors.push(g);}
      r.waveAt=this.time+2;
     }
-    const cycle=Math.floor(this.time/this.boatInterval);if(cycle>r.boatCycle){r.boatCycle=cycle;const travelers=ps.filter(p=>canAct(p)&&!p.rescueTarget&&p.queued&&p.age>=15&&Math.hypot(p.x,p.z-28)<6);if(travelers.length)this.depart(r,travelers);}
+    const cycle=Math.floor(this.time/this.boatInterval);if(cycle>r.boatCycle){r.boatCycle=cycle;const travelers=ps.filter(p=>p.queued&&p.age>=15&&Math.hypot(p.x,p.z-28)<6);if(travelers.length)this.depart(r,travelers);}
    }else if(ps.length&&!r.bossDefeated){
     const alive=r.actors.filter(e=>e.alive);if(r.stage<5&&r.kills>=r.quota&&!alive.length){r.cleared.push(r.stage);r.stage++;r.kills=0;r.quota=this.frontQuota(r.partySize);this.emit('advance',{room:r.id,stage:r.stage});this.spawnFrontWave(r);}
     else if(r.stage<5&&alive.length<Math.min(8,2+Math.ceil(r.partySize/5))&&this.time>r.waveAt&&r.kills+alive.length<r.quota)this.spawnFrontWave(r);
@@ -1105,7 +934,7 @@ inflictWound(p,part,severity,source=null,strength=null){
  }
  frontQuota(party){return this.mode==='demo'?Math.max(3,Math.ceil(party*.6)):Math.max(16,party*7);}
  depart(r,travelers){const front=this.makeRoom('front');front.partySize=travelers.length;front.quota=this.frontQuota(travelers.length);front.expedition=travelers.map(p=>p.id);front.home=r.id;
-  for(const [i,p] of travelers.entries()){p.autoFight=null;p.chain=null;p.statuses={};p.seated=false;p.room=front.id;p.supportHeight=0;p.verticalOffset=0;p.expedition=front.id;p.x=(i%6-2.5)*1.6;p.z=5+Math.floor(i/6)*1.1;p.queued=false;p.activity=null;p.input={x:0,z:0};p.guard=false;p.combo=null;p.pendingSkill=null;p.attackStep=null;p.retreatUntil=0;this.emit('depart',{player:p.id,room:front.id});}this.spawnFrontWave(front);
+  for(const [i,p] of travelers.entries()){p.autoFight=null;p.chain=null;p.statuses={};p.seated=false;p.room=front.id;p.expedition=front.id;p.x=(i%6-2.5)*1.6;p.z=5+Math.floor(i/6)*1.1;p.queued=false;p.activity=null;p.input={x:0,z:0};p.guard=false;p.combo=null;p.pendingSkill=null;p.attackStep=null;p.retreatUntil=0;this.emit('depart',{player:p.id,room:front.id});}this.spawnFrontWave(front);
  }
  spawnFrontWave(r){const center=-(r.stage*44+20);if(r.stage===5){if(!r.actors.some(a=>a.kind==='boss'))r.actors.push(this.actor('boss',0,center,3));return;}
   const count=Math.min(4,Math.max(1,r.quota-r.kills-r.actors.filter(e=>e.alive).length));for(let i=0;i<count;i++){const kinds=r.stage===0?['goblin','maw','crawler']:r.stage===1?['soldier','crawler','archer']:['elite','soldier','mage','maw'];const kind=kinds[Math.floor(this.rng()*kinds.length)];r.actors.push(this.actor(kind,(this.rng()-.5)*17,center+(this.rng()-.5)*15,kind==='crawler'?0:kind==='elite'?2:1));}r.waveAt=this.time+4;
@@ -1116,34 +945,25 @@ inflictWound(p,part,severity,source=null,strength=null){
   if(e.telegraph?.ranged&&(e.wounds.rightArm?.severity==='lost'||e.wounds.leftArm?.severity==='lost'))e.telegraph=null;
   if(e.sleepUntil>this.time||hasStatus(e,'sleep',this.time)){e.action='sleep';e.telegraph=null;return;}
   if(e.stun>this.time){e.telegraph=null;if(e.actionUntil<=this.time)e.action='stagger';return;}
-  if(this.tickGuardRescue(e,r,ps,dt))return;
   const hostile=e.kind!=='guard';let targets=hostile?[...ps.filter(p=>r.kind!=='village'||p.z<-28),...r.actors.filter(g=>g.alive&&g.kind==='guard'&&!e.neutral)]:r.actors.filter(a=>a.alive&&enemiesOnly(a)&&!a.neutral);
   if(e.neutral&&!e.aggro){e.action='idle';return;}
   if(e.neutral)targets=ps.filter(p=>p.alive&&p.z<-28);
   const scored=targets.filter(t=>t.alive&&(e.kind!=='guard'||r.kind!=='village'||Math.abs(t.x-e.homeX)<5.2));
   const score=t=>dist(e,t)+(e.target===t.id?-.5:0)+(t.kind==='player'&&(t.cooldown>this.time||Math.abs(angleDiff(t.dir,Math.atan2(e.x-t.x,e.z-t.z)))>2)?-2:0);
-  const committed=e.telegraph?this.entity(r,e.telegraph.target):null;
-  const lured=this.entity(r,e.luredBy);if(e.luredBy&&(!(e.luredUntil>this.time)||!canAct(lured)||lured.rescueTarget||dist(e,lured)>COMBAT_AWARENESS.lureRange+4)){e.luredBy=null;e.luredUntil=0;}
-  const target=committed?.alive?committed:e.luredBy&&scored.includes(lured)?lured:scored.sort((a,b)=>score(a)-score(b))[0];if(!target||dist(e,target)>(r.kind==='village'?13:18)){e.action='idle';if(e.kind==='guard'){e.x+=(e.homeX-e.x)*dt*.5;e.z+=(-32-e.z)*dt*.5;}return;}
+  const target=scored.sort((a,b)=>score(a)-score(b))[0];if(!target||dist(e,target)>(r.kind==='village'?13:18)){e.action='idle';if(e.kind==='guard'){e.x+=(e.homeX-e.x)*dt*.5;e.z+=(-32-e.z)*dt*.5;}return;}
   e.target=target.id;
   if(e.kind==='guard'&&this.time>=(e.nextSpeechAt||0)){
    e.nextSpeechAt=this.time+10+this.rng()*10;
    const helper=ps.filter(p=>p.alive&&dist(p,e)<9).sort((a,b)=>dist(a,e)-dist(b,e))[0];
-   if(helper){
-    const type=(helper.health??100)<55?'hurt':helper.age<10?'young':helper.experience>30?'veteran':'helper',lines=GUARD_LINES[type],speech=lines[Math.floor(this.rng()*lines.length)];
-    // Keep the normal retry time and RNG draws even when another guard has the floor.
-    if(!r.actors.some(g=>g!==e&&g.alive&&g.kind==='guard'&&g.speech&&g.speechUntil>this.time)){
-     e.speech=speech;e.speechUntil=this.time+4.6;this.emit('guardline',{room:r.id,target:e.id,text:e.speech,x:e.x,z:e.z});
-    }
-   }
+   if(helper){const type=(helper.health??100)<55?'hurt':helper.age<10?'young':helper.experience>30?'veteran':'helper',lines=GUARD_LINES[type];e.speech=lines[Math.floor(this.rng()*lines.length)];e.speechUntil=this.time+4.6;this.emit('guardline',{room:r.id,target:e.id,text:e.speech,x:e.x,z:e.z});}
   }
   const ranged=false,reach=ranged?11:e.wounds.rightArm?.severity==='lost'?1.2:e.kind==='boss'?5:e.elite?3.4:2.3;
   if(e.telegraph){
    e.action='windup';if(target.kind!=='player'&&target.telegraph&&!ranged&&Math.abs(target.telegraph.at-e.telegraph.at)<.5&&Math.min(target.telegraph.at,e.telegraph.at)-this.time<.25&&dist(e,target)<reach+.4){this.resolveClash(e,target,r);return;}
    if(this.time>=e.telegraph.at){const tg=e.telegraph;e.telegraph=null;e.guard=false;e.action='attack';e.actionStarted=this.time;e.actionUntil=this.time+.75;e.cooldown=this.time+(e.elite?2.3:1.9);if(e.kind==='boss')e.exposedUntil=this.time+1.65;if(ranged)e.ammo--;
     this.emit('enemySwing',{room:r.id,source:e.id,target:target.id,x:e.x,z:e.z,dir:tg.dir,reach:tg.reach,arc:tg.arc,kind:e.kind,unblockable:tg.unblockable});
-    for(const t of targets){if(!t.alive||!this.clearPath(e,t,r)||dist(e,t)>tg.reach+.35||Math.abs(angleDiff(Math.atan2(t.x-e.x,t.z-e.z),tg.dir))>tg.arc/2)continue;
-     if(t.kind==='player')this.hitPlayer(t,e,tg);else{if(this.awareness(t,e).engaged&&this.rng()<COMBAT_AWARENESS.engagedAvoid)continue;this.releaseRescue(t);this.recordDamage(t,'torso',e.elite?1.05:.7);t.sleepUntil=0;if(t.statuses)delete t.statuses.sleep;const amount=(e.elite?1.05:.7)*(hasStatus(e,'weak',this.time)?.65:1);t.npcResolve-=amount;t.hp=(t.hp??70)-amount*(t.hpMax??70)/(t.npcResolveMax||12);this.reactToHit(t,e,'torso',e.elite?'heavy':'light');this.impact(e,t,'torso',e.elite);t.action='hit';t.actionStarted=this.time;t.actionUntil=this.time+.65;t.stun=t.actionUntil;if(t.npcResolve<=0||t.hp<=0)this.killActor(t,e,r);else this.emit('hit',{room:r.id,target:t.id,source:e.id,x:t.x,z:t.z,part:'torso'});if(t.alive&&e.attackCount%4===0){const status=e.kind==='guard'?'stun':({crawler:'poison',wraith:'slow',maw:'root',goblin:'blind',mage:'burn',elite:'weak'})[e.kind];if(status)this.applyStatus(t,status,3,e,r);}}if(ranged)break;
+    for(const t of targets){if(!t.alive||dist(e,t)>tg.reach+.35||Math.abs(angleDiff(Math.atan2(t.x-e.x,t.z-e.z),tg.dir))>tg.arc/2)continue;
+     if(t.kind==='player')this.hitPlayer(t,e,tg);else{t.sleepUntil=0;if(t.statuses)delete t.statuses.sleep;const amount=(e.elite?1.05:.7)*(hasStatus(e,'weak',this.time)?.65:1);t.npcResolve-=amount;t.hp=(t.hp??70)-amount*(t.hpMax??70)/(t.npcResolveMax||12);this.reactToHit(t,e,'torso',e.elite?'heavy':'light');this.impact(e,t,'torso',e.elite);t.action='hit';t.actionStarted=this.time;t.actionUntil=this.time+.65;t.stun=t.actionUntil;if(t.npcResolve<=0||t.hp<=0)this.killActor(t,e,r);else this.emit('hit',{room:r.id,target:t.id,source:e.id,x:t.x,z:t.z,part:'torso'});if(t.alive&&e.attackCount%4===0){const status=e.kind==='guard'?'stun':({crawler:'poison',wraith:'slow',maw:'root',goblin:'blind',mage:'burn',elite:'weak'})[e.kind];if(status)this.applyStatus(t,status,3,e,r);}}if(ranged)break;
     }
    }return;
   }
@@ -1151,16 +971,16 @@ inflictWound(p,part,severity,source=null,strength=null){
   const distance=dist(e,target),injury=injuryModifiers(e),vulnerable=target.cooldown>this.time||target.action==='recover'||Math.abs(angleDiff(target.dir,Math.atan2(e.x-target.x,e.z-target.z)))>1.9;
   if(e.smart&&distance<reach+1&&distance>reach*.7&&this.time>e.cooldown&&!vulnerable&&e.counterOpportunity<this.time){e.guard=e.wounds.leftArm?.severity!=='lost';e.action='guard';return;}
   if(e.smart&&e.counterOpportunity===undefined)e.counterOpportunity=0;
-  if(distance>reach*.82){const speed=(e.kind==='guard'?2.8:e.kind==='boss'?2.6:3.1)*injury.move*(hasStatus(e,'slow',this.time)?.5:1)*(hasStatus(e,'root',this.time)?0:1);if(e.luredBy)this.moveAttackStep(e,r,Math.sin(e.dir)*speed*dt,Math.cos(e.dir)*speed*dt,true);else{e.x+=Math.sin(e.dir)*speed*dt;e.z+=Math.cos(e.dir)*speed*dt;}e.action='run';e.guard=false;if(r.kind==='village')e.z=Math.min(-29.6,e.z);}
-  else if(this.time>=e.cooldown){e.attackCount++;const unblockable=(e.kind==='boss'&&e.attackCount%3===0)||(e.elite&&e.attackCount%4===0),duration=e.elite?1.55:e.smart&&vulnerable?1.05:1.35;e.guard=false;e.telegraph={target:target.id,at:this.time+duration,started:this.time,dir:e.dir,reach,arc:ranged?.65:unblockable?2.5:1.7,unblockable,ranged,part:e.elite&&e.attackCount%2===0?'rightArm':undefined};e.action='windup';}
+  if(distance>reach*.82){const speed=(e.kind==='guard'?2.8:e.kind==='boss'?2.6:3.1)*injury.move*(hasStatus(e,'slow',this.time)?.5:1)*(hasStatus(e,'root',this.time)?0:1);e.x+=Math.sin(e.dir)*speed*dt;e.z+=Math.cos(e.dir)*speed*dt;e.action='run';e.guard=false;if(r.kind==='village')e.z=Math.min(-29.6,e.z);}
+  else if(this.time>=e.cooldown){e.attackCount++;const unblockable=(e.kind==='boss'&&e.attackCount%3===0)||(e.elite&&e.attackCount%4===0),duration=e.elite?1.55:e.smart&&vulnerable?1.05:1.35;e.guard=false;e.telegraph={at:this.time+duration,started:this.time,dir:e.dir,reach,arc:ranged?.65:unblockable?2.5:1.7,unblockable,ranged,part:e.elite&&e.attackCount%2===0?'rightArm':undefined};e.action='windup';}
   else e.action='idle';
  }
- separateActors(r,dt){const list=r.actors.filter(e=>e.alive&&!e.rescueTarget&&!e.rescueReturn&&!(e.hitstopUntil>this.time)&&!['villager','dummy'].includes(e.kind));for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++){const a=list[i],b=list[j],d=dist(a,b),min=a.elite||b.elite?1.8:1.4;if(d<min){const angle=d<.001?(i+j)*2.4:Math.atan2(b.x-a.x,b.z-a.z),v=(min-d)*Math.min(.5,dt*5);a.x-=Math.sin(angle)*v;a.z-=Math.cos(angle)*v;b.x+=Math.sin(angle)*v;b.z+=Math.cos(angle)*v;}}
-  if(r.kind==='village')for(const e of list){const rescuing=e.kind==='guard'&&[...this.players.values()].some(p=>p.rescueClaim?.id===e.id&&p.rescueClaim.until>this.time);if(rescuing){this.bound(e,r);continue;}e.x=clamp(e.x,-25,25);e.z=clamp(e.z,-45,-29.6);if(e.kind==='guard')e.x=clamp(e.x,e.homeX-2.2,e.homeX+2.2);}
+ separateActors(r,dt){const list=r.actors.filter(e=>e.alive&&!(e.hitstopUntil>this.time)&&!['villager','dummy'].includes(e.kind));for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++){const a=list[i],b=list[j],d=dist(a,b),min=a.elite||b.elite?1.8:1.4;if(d<min){const angle=d<.001?(i+j)*2.4:Math.atan2(b.x-a.x,b.z-a.z),v=(min-d)*Math.min(.5,dt*5);a.x-=Math.sin(angle)*v;a.z-=Math.cos(angle)*v;b.x+=Math.sin(angle)*v;b.z+=Math.cos(angle)*v;}}
+  if(r.kind==='village')for(const e of list){e.x=clamp(e.x,-25,25);e.z=clamp(e.z,-45,-29.6);if(e.kind==='guard')e.x=clamp(e.x,e.homeX-2.2,e.homeX+2.2);}
  }
  bank(p,witness=null){
-  if(p.alive||p.recorded||p.legacyChoice?.state==='pending')return false;
-  const legacy=this.legacy(p.owner),memory=p.legacyChoice?p.legacyChoice.skill:strongestMemory(p),id=memory===null||memory===undefined?null:Number(memory);
+  if(p.alive)return false;
+  const legacy=this.legacy(p.owner),memory=strongestMemory(p),id=memory===null?null:Number(memory);
   if(id!==null)legacy.archive=[...new Set([...legacy.archive,id])];
   p.bankedSkills=id===null?[]:[id];
   const record={id:p.id,clan:p.clan,name:p.name,gen:p.gen,age:p.age,skills:[...p.bankedSkills],skill:id,uses:id===null?0:p.skillUses[id],kills:p.kills,cause:p.cause,alive:false,mode:this.mode,skillHistory:SkillSystem.remember(p),appearance:{race:p.race,gender:p.gender,hair:p.hair,skin:p.skin,age:p.age,appearanceSeed:p.appearanceSeed,weapon:p.weapon,armor:p.armor,shield:p.shield,wounds:JSON.parse(JSON.stringify(p.wounds))}};
@@ -1168,16 +988,14 @@ inflictWound(p,part,severity,source=null,strength=null){
   this.emit('banked',{player:p.id,room:p.room,skill:id});return true;
  }
  returnHome(p){
-  const front=this.getRoom(p);if(front.kind!=='front'||incapacitated(p)||p.rescueTarget)return false;
+  const front=this.getRoom(p);if(front.kind!=='front')return false;
   this.bank(p);for(const id of front.expedition||[]){const dead=this.players.get(id)||front.fallen?.[id];if(dead&&!dead.alive)this.bank(dead,p);}
   let home=this.rooms.get(p.home);if(!home||home.abandoned){home=this.makeRoom('village');home.clans[p.id]=0;p.home=home.id;}
-  p.autoFight=null;p.chain=null;p.statuses={};p.seated=false;p.attackBufferedUntil=0;p.room=home.id;p.supportHeight=0;p.verticalOffset=0;p.x=0;p.z=24;p.rescueAt=null;p.returned++;p.guard=false;p.attackStep=null;p.retreatUntil=0;p.combo=null;p.pendingSkill=null;p.cooldown=this.time+1;p.input={x:0,z:0};p.action='idle';p.activity=null;
+  p.autoFight=null;p.chain=null;p.statuses={};p.seated=false;p.attackBufferedUntil=0;p.room=home.id;p.x=0;p.z=24;p.rescueAt=null;p.returned++;p.guard=false;p.attackStep=null;p.retreatUntil=0;p.combo=null;p.pendingSkill=null;p.cooldown=this.time+1;p.input={x:0,z:0};p.action='idle';p.activity=null;
   this.emit('returned',{player:p.id,room:home.id,witnessed:(front.expedition||[]).filter(id=>!this.players.get(id)?.alive).length});return true;
  }
  die(p,cause){
-  if(!p.alive)return;p.wasDownedOnDeath=incapacitated(p);this.stopTraversal(p);this.releaseRescue(p);if(p.carrierId)this.releaseRescue(this.entity(this.getRoom(p),p.carrierId));p.lifeState='dead';delete p.baseY;
-  const candidates=legacyCandidates(p);p.legacyChoice={state:candidates.length?'pending':'chosen',candidates,skill:null};
-  p.dash=null;p.attackBufferedUntil=0;p.alive=false;p.health=0;p.statuses={};p.autoFight=null;p.chain=null;p.seated=false;p.deathAt=this.time;p.cause=cause;p.attackStep=null;p.retreatUntil=0;p.input={x:0,z:0};p.guard=false;p.pendingSkill=null;p.combo=null;p.queued=false;p.activity=null;p.action='fall';p.actionStarted=this.time;
+  if(!p.alive)return;p.dash=null;p.attackBufferedUntil=0;p.alive=false;p.health=0;p.statuses={};p.autoFight=null;p.chain=null;p.seated=false;p.deathAt=this.time;p.cause=cause;p.attackStep=null;p.retreatUntil=0;p.input={x:0,z:0};p.guard=false;p.pendingSkill=null;p.combo=null;p.queued=false;p.activity=null;p.action='fall';p.actionStarted=this.time;
   const room=this.getRoom(p);if(room?.kind==='front'){room.fallen||={};room.fallen[p.id]=JSON.parse(JSON.stringify({...p,speech:'',speechUntil:0}));}const home=this.rooms.get(p.home);if(home){delete home.clans[p.id];this.checkAbandoned(home);}this.bank(p);const legacy=this.legacy(p.owner);legacy.generation=Math.max(legacy.generation,p.gen+1);
   this.emit('death',{player:p.id,room:p.room,cause,age:p.age,kills:p.recorded?p.kills:0,skills:p.bankedSkills,x:p.x,z:p.z});
  }
@@ -1200,5 +1018,284 @@ inflictWound(p,part,severity,source=null,strength=null){
   for(const r of s.rooms.values())if(r.kind==='village')r.map=makeVillage(r.seed);
   return s;
  }
- static restore(data){data=this.migrateSave(data);if(data?.schema!==4||!Array.isArray(data.players)||!Array.isArray(data.rooms)||data.players.length>200)throw Error('この改修より前の進行中データは別保管されています。');const s=new Simulation({seed:data.seed,mode:data.mode});s.time=+data.time||0;s.seq=+data.seq||0;s.eid=+data.eid||0;s.roomSeq=+data.roomSeq||1;s.rooms=new Map(data.rooms);s.players=new Map(data.players);s.legacies=data.legacies||{};s.abandoned=data.abandoned||[];if(Number.isInteger(data.rngState))s.rng.setState(data.rngState);for(const p of s.players.values()){if(!s.rooms.has(p.room))throw Error('村の記録がありません。');p.attackBufferedUntil=0;p.attackStep??=null;p.hitReactAt??=0;p.hitReactUntil??=0;p.hitDir??=0;p.hitSeverity??=null;p.input={x:0,z:0};p.guard=false;p.guardPending=false;p.speech='';p.speechUntil=0;p.phaseLimitVersion=0;s.preparePlayer(p);p.dash=null;p.autoFight=null;p.chain=null;p.pendingSkill=null;p.combo=null;p.attackStep=null;s.stopTraversal(p);p.action=incapacitated(p)?p.lifeState:p.alive?(p.seated?'sit':'idle'):'fall';SkillSystem.restore(s,p);}for(const r of s.rooms.values()){if(r.kind==='village'){r.map=makeVillage(r.seed);const spot=villagePracticePosition(r.map);for(const a of r.actors)if(a.kind==='dummy'){a.x=a.homeX=spot.x;a.z=a.homeZ=spot.z;}}r.actors=r.actors.filter(a=>a.kind!=='villager');for(const a of r.actors){if(a.kind==='archer')a.kind='soldier';if(a.kind==='mage')a.kind='goblin';a.statuses??={};a.hp??=a.kind==='guard'?130:a.elite?120:70;a.hpMax??=a.hp;a.npcResolveMax??=a.kind==='guard'?18:14;if(data.version!==VERSION)a.npcResolve=a.npcResolveMax;}}for(const l of Object.values(s.legacies))l.archive=l.archive.filter(id=>skillById(id));return s;}
+ static restore(data){data=this.migrateSave(data);if(data?.schema!==4||!Array.isArray(data.players)||!Array.isArray(data.rooms)||data.players.length>200)throw Error('この改修より前の進行中データは別保管されています。');const s=new Simulation({seed:data.seed,mode:data.mode});s.time=+data.time||0;s.seq=+data.seq||0;s.eid=+data.eid||0;s.roomSeq=+data.roomSeq||1;s.rooms=new Map(data.rooms);s.players=new Map(data.players);s.legacies=data.legacies||{};s.abandoned=data.abandoned||[];if(Number.isInteger(data.rngState))s.rng.setState(data.rngState);for(const p of s.players.values()){if(!s.rooms.has(p.room))throw Error('村の記録がありません。');p.attackBufferedUntil=0;p.attackStep??=null;p.hitReactAt??=0;p.hitReactUntil??=0;p.hitDir??=0;p.hitSeverity??=null;p.input={x:0,z:0};p.guard=false;p.guardPending=false;p.speech='';p.speechUntil=0;s.preparePlayer(p);p.dash=null;p.autoFight=null;p.chain=null;p.pendingSkill=null;p.combo=null;p.attackStep=null;p.action=p.seated?'sit':'idle';SkillSystem.restore(s,p);}for(const r of s.rooms.values()){if(r.kind==='village'){r.map=makeVillage(r.seed);const spot=villagePracticePosition(r.map);for(const a of r.actors)if(a.kind==='dummy'){a.x=a.homeX=spot.x;a.z=a.homeZ=spot.z;}}r.actors=r.actors.filter(a=>a.kind!=='villager');for(const a of r.actors){if(a.kind==='archer')a.kind='soldier';if(a.kind==='mage')a.kind='goblin';a.statuses??={};a.hp??=a.kind==='guard'?130:a.elite?120:70;a.hpMax??=a.hp;a.npcResolveMax??=a.kind==='guard'?18:14;if(data.version!==VERSION)a.npcResolve=a.npcResolveMax;}}return s;}
 }
+
+
+/* Event-driven life experience. Uses its own saved RNG; never the combat/world RNG. */
+const BloodlineSkills = (() => {
+ 'use strict';
+ const REVISION = 3, MAX_JOURNAL = 96, MAX_CONTEXTS = 192;
+ const ACTIVE_PACING = Object.freeze({gain:.4,threshold:3.65,perKnown:.25,maxThreshold:9.5,cooldown:105,perKnownSeconds:15,maxCooldown:300,cost:4.6,perKnownCost:.35});
+ const TAGS = new Set(['weight','rhythm','craft','care','patience','play','light','explore','track','precision','combat','tension','observe','rest','study','pray','read','memory','bell','feather','stone','charcoal','net','cross','family','defeat','weapon']);
+ const finite = (v, fallback = 0) => Number.isFinite(v) ? v : fallback;
+ const object = v => v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+ const list = v => Array.isArray(v) ? v : [];
+ const validTags = v => [...new Set(list(v).filter(t => TAGS.has(t)))];
+ function hash(value) { let h=2166136261; for (const c of String(value)) { h^=c.charCodeAt(0); h=Math.imul(h,16777619); } return h>>>0||1; }
+ function next(state) { let x=state.rng>>>0; x^=x<<13; x^=x>>>17; x^=x<<5; state.rng=x>>>0||1; return state.rng/4294967296; }
+ function pick(items, weight, state) {
+  const weights=items.map(d=>Math.max(0,finite(weight(d)))), total=weights.reduce((a,b)=>a+b,0);
+  if (!total) return null;
+  let n=next(state)*total;
+  for(let i=0;i<items.length;i++) { n-=weights[i]; if(n<0) return items[i]; }
+  return items.at(-1);
+ }
+ function create(seed, life) {
+  return {version:1,revision:REVISION,life:String(life),lifeSeed:hash(seed+':'+life),rng:hash(seed+':'+life),experience:{},recent:{},contexts:{},acceptedAt:{},journal:[],discovered:[],memories:{},charge:0,lastDiscovery:-100,lastOpportunity:-100,activeInspiration:{charge:0,lastDiscovery:-100,rng:hash(seed+':'+life+':active')},lastEvent:-100,serial:0,unread:[],seenRegions:[],sampleAt:0,sampleX:null,sampleZ:null,connections:{},equipmentSeen:[],inheritedTags:[],inspiration:{route:null,sourceSerials:[]}};
+ }
+ function restore(raw,seed,life) {
+  const s=create(seed,life);
+  if(!raw || raw.version!==1) return s;
+  s.lifeSeed=Number.isInteger(raw.lifeSeed)&&raw.lifeSeed>0?raw.lifeSeed>>>0:s.lifeSeed;
+  s.rng=Number.isInteger(raw.rng)&&raw.rng>0?raw.rng>>>0:s.rng;
+  for(const field of ['experience','recent']) for(const [k,v] of Object.entries(object(raw[field]))) if(TAGS.has(k)&&Number.isFinite(v)&&v>=0) s[field][k]=Math.min(v,10000);
+  for(const field of ['contexts','acceptedAt']) s[field]=Object.fromEntries(Object.entries(object(raw[field])).filter(([k,v])=>k.length<120&&Number.isFinite(v)&&v>=0).slice(-MAX_CONTEXTS));
+  s.journal=list(raw.journal).filter(e=>e&&Number.isFinite(e.at)&&Array.isArray(e.tags)&&typeof e.text==='string').slice(-MAX_JOURNAL).map(e=>({at:e.at,serial:finite(e.serial),kind:String(e.kind).slice(0,32),context:String(e.context).slice(0,110),tags:validTags(e.tags),text:e.text.slice(0,180)}));
+  s.discovered=list(raw.discovered).filter(e=>e&&Number.isInteger(e.id)&&typeof e.key==='string').slice(-1024).map(e=>({id:e.id,key:e.key.slice(0,100),family:String(e.family||'').slice(0,64),at:finite(e.at),trigger:finite(e.trigger),route:['main','cross','deviation'].includes(e.route)?e.route:'main',reasons:list(e.reasons).slice(0,4).map(x=>String(x).slice(0,180)),tags:validTags(e.tags),sourceSerials:list(e.sourceSerials).filter(Number.isInteger).slice(0,4)}));
+  s.unread=[...new Set(list(raw.unread).filter(Number.isInteger))].slice(-1024);
+  for(const [k,m] of Object.entries(object(raw.memories))) if(TAGS.has(k)&&m&&typeof m.text==='string') s.memories[k]={text:m.text.slice(0,180),at:finite(m.at),origin:m.origin==='family'?'family':'found'};
+  for(const k of ['charge','lastDiscovery','lastEvent','serial','sampleAt']) s[k]=finite(raw[k],s[k]);
+  s.charge=Math.max(0,Math.min(s.charge,12));s.serial=Math.max(0,Math.floor(s.serial));
+  s.lastOpportunity=finite(raw.lastOpportunity,s.lastDiscovery);
+  const active=object(raw.activeInspiration);
+  s.activeInspiration={charge:Math.max(0,Math.min(finite(active.charge,s.charge*ACTIVE_PACING.gain),12)),lastDiscovery:finite(active.lastDiscovery,s.lastDiscovery),rng:Number.isInteger(active.rng)&&active.rng>0?active.rng>>>0:hash(s.lifeSeed+':active')};
+  for(const k of ['sampleX','sampleZ']) s[k]=Number.isFinite(raw[k])?raw[k]:null;
+  s.seenRegions=list(raw.seenRegions).filter(x=>typeof x==='string').slice(-96);
+  s.inheritedTags=validTags(raw.inheritedTags).slice(0,6);s.equipmentSeen=list(raw.equipmentSeen).filter(x=>typeof x==='string').slice(0,64);
+  s.connections=Object.fromEntries(Object.entries(object(raw.connections)).filter(([k,v])=>/^\d+:\d+$/.test(k)&&Number.isFinite(v)&&v>0).slice(-256).map(([k,v])=>[k,Math.min(10000,v)]));
+  s.inspiration={route:['main','cross','deviation'].includes(raw.inspiration?.route)?raw.inspiration.route:null,sourceSerials:list(raw.inspiration?.sourceSerials).filter(Number.isInteger).slice(0,4)};
+  return s;
+ }
+ // A crossing needs distinct kinds of experience, not two tags emitted by one task.
+ function witnesses(def,state) {
+  const groups=def.requiresExperience;
+  const memories=Object.entries(state.memories).map(([tag,m])=>({...m,kind:'memento',tags:[tag,'memory'],serial:0}));
+  const choices=groups.map(group=>[...state.journal].reverse().concat(memories).filter(r=>r.tags.some(t=>group.includes(t))));
+  if(choices.some(xs=>!xs.length)) return [];
+  if(groups.length===1) return [choices[0][0]];
+  for(const first of choices[0]) {
+   const result=[first];
+   for(const xs of choices.slice(1)) {
+    const found=xs.find(r=>result.every(other=>r.kind!==other.kind));
+    if(found) result.push(found);
+   }
+   if(result.length===groups.length) return result;
+  }
+  return [];
+ }
+ class Catalog {
+  constructor(defs) {
+   this.defs=defs;this.byId=new Map();this.byKey=new Map();this.families=new Map();this.index=new Map();this.metrics={events:0,evaluated:0,pools:0};
+   for(const d of defs) {
+    if(this.byId.has(d.id)||this.byKey.has(d.key)) throw Error('Duplicate skill identity');
+    this.byId.set(d.id,d);this.byKey.set(d.key,d);
+    if(!this.families.has(d.family)) this.families.set(d.family,[]);
+    this.families.get(d.family).push(d);
+    for(const tag of new Set(d.requiresExperience.flat())) { if(!this.index.has(tag))this.index.set(tag,new Set());this.index.get(tag).add(d.family); }
+   }
+  }
+  search(text,locale='ja',limit=30) { const q=String(text).toLowerCase().slice(0,100);return this.defs.filter(d=>(d.names[locale]||d.names.ja).toLowerCase().includes(q)||d.key.includes(q)).slice(0,Math.max(0,Math.min(100,limit))); }
+  pool(state,event,context={}) {
+   const families=new Set();
+   for(const tag of event.tags) for(const family of this.index.get(tag)||[]) families.add(family);
+   const learned=new Set([...(context.known||[]),...state.discovered.map(d=>d.id)]),result=[];
+   for(const family of families) {
+    const variants=[];
+    for(const d of this.families.get(family)) {
+     this.metrics.evaluated++;
+     if(learned.has(d.id)||!d.requiresExperience.every(group=>group.some(t=>(state.experience[t]||0)>=(state.memories[t]?1:1.25))))continue;
+     if(d.action?.school==='shield'&&!context.shield||d.action?.weapon>=0&&d.action.weapon!==context.weapon||(d.action?.requires||[]).some(part=>context.lost?.includes(part)))continue;
+     const proof=witnesses(d,state);if(!proof.length)continue;
+     variants.push({def:d,proof});
+    }
+    if(variants.length)result.push({family,variants});
+   }
+   this.metrics.pools++;return result;
+  }
+  observe(state,event,context={}) {
+   this.metrics.events++;
+   const at=finite(event.at),tags=validTags(event.tags),key=String(event.context||event.kind).slice(0,110);
+   if(!tags.length||typeof event.text!=='string'||at<state.lastEvent)return null;
+   if(at-(state.acceptedAt[key]??-100)<3.8)return null;
+   const n=state.contexts[key]||0,gain=Math.max(.06,1/Math.sqrt(1+n*.8));
+   state.contexts[key]=n+1;state.acceptedAt[key]=at;
+   for(const field of ['contexts','acceptedAt']) { const keys=Object.keys(state[field]);if(keys.length>MAX_CONTEXTS)delete state[field][keys[0]]; }
+   for(const tag of Object.keys(state.recent))state.recent[tag]*=.89;
+   for(const tag of tags){state.experience[tag]=Math.min(10000,(state.experience[tag]||0)+gain);state.recent[tag]=Math.min(12,(state.recent[tag]||0)+gain);}
+   // Inspiration matures from accepted experience; it is not XP or a level-up currency.
+   const inspirationGain=.35+.5*gain;
+   state.lastEvent=at;state.serial++;state.charge=Math.min(12,state.charge+inspirationGain);
+   const active=state.activeInspiration;active.charge=Math.min(12,active.charge+inspirationGain*ACTIVE_PACING.gain);
+   const record={at,kind:String(event.kind),context:key,tags,text:event.text.slice(0,180),serial:state.serial};
+   state.journal.push(record);if(state.journal.length>MAX_JOURNAL)state.journal.shift();
+   if(event.memento&&TAGS.has(event.memento)&&!state.memories[event.memento])state.memories[event.memento]={text:record.text,at,origin:event.origin||'found'};
+   state.inheritedTags=validTags(context.inheritedTags).slice(0,6);
+   if(context.age<4||context.prologue||state.charge<3.65||at-state.lastOpportunity<30)return null;
+   const pool=this.pool(state,{...event,tags},context);if(!pool.length)return null;
+   const chance=Math.min(.92,.24+Math.max(0,state.charge-3.65)*.14+Math.max(0,at-state.lastOpportunity-90)*.001);
+   if(next(state)>chance)return null;
+   const recentFamilies=state.discovered.slice(-5).map(d=>d.family);
+   const routeFor=v=>v.def.requiresExperience.length>1?'cross':v.def.tags.some(t=>tags.includes(t)&&!['memory','patience','rhythm'].includes(t))?'main':'deviation';
+   const familyWeight=f=>{
+    const d=f.variants[0].def,basis=d.requiresExperience.flat(),route=routeFor(f.variants[0]);
+    const focus=basis.reduce((n,t)=>n+(state.recent[t]||0),0)/basis.length,history=basis.reduce((n,t)=>n+Math.sqrt(state.experience[t]||0),0)/basis.length;
+    const inherited=basis.some(t=>state.inheritedTags.includes(t))?1+Math.min(.35,d.inheritance?.bias??.22):1;
+    const affinity=(d.affinities||[]).some(t=>(state.experience[t]||0)>1)?1.25:1;
+    const lifeBias=.7+(hash(state.lifeSeed+':'+f.family)%1000)/1000*.6;
+    const familiar=1/(1+recentFamilies.filter(x=>x===f.family).length*.6);
+    return d.rarity*(.55+focus*.35+history*.1)*({main:1,cross:1.7,deviation:.28}[route])*inherited*familiar*affinity*lifeBias;
+   };
+   let family=pick(pool,familyWeight,state);if(!family)return null;
+   const phases=new Set([0,...(context.known||[]).map(id=>this.byId.get(id)).filter(d=>d&&!d.passive).map(d=>d.phase)]);
+   const variantWeight=v=>(!v.def.passive&&!phases.has(v.def.phase)?1.5:1)*v.def.rarity;
+   let selected=pick(family.variants,variantWeight,state);
+   // Preserve the original opportunity cadence and mixed pool for passives.
+   // A still-maturing active idea spends this opportunity, never grants a passive instead.
+   state.lastOpportunity=at;state.charge=Math.max(0,state.charge-4.6);
+   if(!selected.def.passive){
+    const known=new Set([...(context.known||[]),...state.discovered.map(d=>d.id)]),count=[...known].filter(id=>{const d=this.byId.get(id);return d&&!d.passive;}).length;
+    const threshold=Math.min(ACTIVE_PACING.maxThreshold,ACTIVE_PACING.threshold+count*ACTIVE_PACING.perKnown),interval=Math.min(ACTIVE_PACING.maxCooldown,ACTIVE_PACING.cooldown+count*ACTIVE_PACING.perKnownSeconds);
+    if(active.charge<threshold||at-active.lastDiscovery<interval)return null;
+    const lastFamily=state.discovered.findLast(d=>!this.byId.get(d.id)?.passive)?.family;
+    const activePool=pool.map(f=>({...f,variants:f.variants.filter(v=>!v.def.passive)})).filter(f=>f.variants.length);
+    family=pick(activePool,f=>familyWeight(f)*(routeFor(f.variants[0])==='cross'?1.6:1)*(f.family===lastFamily?.35:1),active);
+    selected=pick(family.variants,variantWeight,active);
+    active.charge=Math.max(0,active.charge-ACTIVE_PACING.cost-count*ACTIVE_PACING.perKnownCost);active.lastDiscovery=at;
+   }
+   const d=selected.def;
+   const proof=[...selected.proof];
+   for(const tag of tags)if(state.memories[tag]&&proof.length<3&&!proof.some(r=>r.text===state.memories[tag].text))proof.push({...state.memories[tag],serial:0});
+   const discovery={id:d.id,key:d.key,family:d.family,at,reasons:[...new Set(proof.map(r=>r.text))],trigger:record.serial,tags:[...d.tags],route:routeFor(selected),sourceSerials:proof.map(r=>r.serial).filter(Boolean)};
+   state.discovered.push(discovery);state.unread.push(d.id);state.lastDiscovery=at;
+   state.inspiration={route:discovery.route,sourceSerials:discovery.sourceSerials};return discovery;
+  }
+ }
+ function connection(def,link,target,time,band) { return !!(def&&link&&link.target===target&&link.until>=time&&link.band<band&&def.entry.some(tag=>link.tags.includes(tag))); }
+ return {Catalog,create,restore,hash,next,connection,witnesses,REVISION};
+})();
+
+/* Explicit adapters to the existing Simulation. No prototype overrides or extra loop. */
+const BL_SKILL_CATALOG = new BloodlineSkills.Catalog(BL_SKILL_DEFINITIONS);
+for (const def of BL_SKILL_DEFINITIONS) {
+ const a=def.action||{};
+ art(def.id,def.names.ja,{...a,animation:a.anim||'slash',travel:a.step??.25,form:['slam','leap'].includes(a.anim)?6:['thrust','zigzag'].includes(a.anim)?2:a.hits>1?3:0,status:a.status?{id:a.status,duration:a.duration}:null,school:a.anim==='slam'?'heavy':a.school||'life',band:def.phase,passive:!!def.passive,trigger:def.passive?'passive':'combo',effect:def.effect,value:def.value,color:def.color,desc:def.descriptions.ja,motion:def.names.ja,skillKey:def.key});
+}
+const SkillSystem = (() => {
+ const activities={
+  observe:{tags:['craft','weight','rhythm'],text:'鍛冶場で、道具が打ち返す拍子を見た'},
+  care:{tags:['care','craft','patience'],text:'武具を手入れし、力の通り道を確かめた'},
+  play:{tags:['play','light','rhythm'],text:'庭で遊び、弾む足の拍子を覚えた'},
+  track:{tags:['track','explore','precision'],text:'狩人の足跡を学び、一歩先を読んだ'},
+  study:{tags:['study','combat','patience'],text:'指南書と稽古で、構えの意味を学んだ'},
+  read:{tags:['read','patience','rhythm'],text:'書物を読み、繰り返す形に気づいた'},
+  pray:{tags:['pray','rest','patience'],text:'祈りの間、息と静けさを確かめた'}
+ };
+ const names={bell:'鈴',stone:'小石',feather:'羽根',charcoal:'炭の欠片',net:'糸の網'};
+ const legacyTags={heavy:['weight','craft'],light:['light','explore'],blade:['combat','precision'],unarmed:['combat','rhythm'],shield:['patience','combat'],church:['rest','patience'],magic:['patience','rhythm']};
+ const identity=p=>p.id+':'+p.gen+':'+p.appearanceSeed;
+ function prepare(sim,p) {
+  if(!p.skillLife) { p.skillLife=BloodlineSkills.create(sim.seed,identity(p));p.skillLife.sampleAt=sim.time;p.skillLife.equipmentSeen.push(p.weapon+':'+p.armor+':'+p.shield); }
+  p.skillLifeNotice??='';
+ }
+ function restore(sim,p) {
+  const raw=p.skillLife;p.skillLifeNotice='';
+  if(raw&&(raw.version!==1||!Array.isArray(raw.journal)||!Array.isArray(raw.discovered)||typeof raw.experience!=='object')){p.skillLifeBackup??={raw:JSON.parse(JSON.stringify(raw)),reason:'invalid-skill-extension'};p.skillLifeNotice='技の記憶を修復しました。元の記録は別に保管しています。';}
+  p.skillLife=BloodlineSkills.restore(raw,sim.seed,identity(p));
+  p.skillLife.discovered=p.skillLife.discovered.filter(d=>BL_SKILL_CATALOG.byId.get(d.id)?.key===d.key&&(p.skills.includes(d.id)||p.passives.includes(d.id)));
+  p.skillLife.unread=p.skillLife.unread.filter(id=>p.skills.includes(id)||p.passives.includes(id));
+  reset(p);
+ }
+ function reset(p) { p.skillLink=null;p.skillCast=null;p.skillExit=null; }
+ function withMemento(p,event) {
+  const held=(p.inventory||[]).filter(id=>names[id]);if(!held.length)return event;
+  const id=held[p.skillLife.serial%held.length];
+  return {...event,tags:[...event.tags,id,'memory'],text:event.text+'。手元には'+names[id]+'があった'};
+ }
+ function record(sim,p,event) {
+  if(!p?.alive)return;prepare(sim,p);
+  const inherited=[...new Set((p.inherit||[]).flatMap(id=>BL_SKILL_CATALOG.byId.get(id)?.tags||legacyTags[skillById(id)?.school]||['combat']))];
+  // A witnessed defeat influences a future idea, never grants the parent's technique.
+  const ancestor=sim.legacy(p.owner).records.findLast(r=>(p.inherit||[]).includes(r.skill));
+  if(ancestor?.skillHistory?.defeat)inherited.push('tension','patience');
+  const d=BL_SKILL_CATALOG.observe(p.skillLife,{...event,at:sim.time},{age:p.age,prologue:p.prologue,known:[...p.skills,...p.passives],weapon:p.weapon,shield:p.shield,lost:Object.entries(p.wounds||{}).filter(([,v])=>v.severity==='lost').map(([k])=>k),inheritedTags:inherited});
+  if(d)sim.learn(p,d.id);
+ }
+ function onEvent(sim,e) {
+  const p=sim.players.get(e.player||e.source);if(!p)return;
+  prepare(sim,p);
+  if(['insight','passive'].includes(e.type)) { e.discovery=p.skillLife.discovered.find(d=>d.id===e.id);return; }
+  if(['wound','death','clash','depart','returned','released','sit'].includes(e.type))reset(p);
+  if(!p.alive)return;
+  let event=null;
+  if(e.type==='progress'&&activities[p.activity])event={kind:p.activity,context:'work:'+p.activity,...activities[p.activity]};
+  if(e.type==='pickup'&&names[e.item]) {
+   const origin=e.gift?'family':'found',text=(e.gift?'家族から受け取った':'道で拾った')+names[e.item];
+   // First provenance stays intact after discard/reacquisition and holding in later activities.
+   p.skillLife.memories[e.item]??={origin,text,at:sim.time};
+   event={kind:'memento',context:'pickup:'+e.item,tags:[e.item,'memory',...(e.gift?['family']:['explore'])],text,memento:e.item,origin};
+  }
+  if(e.type==='mother'&&p.prologue)event={kind:'family',context:'family:mother',tags:['family','patience'],text:'腕の中で、母の声を聞いた'};
+  if(e.type==='equipped'&&!p.skillLife.equipmentSeen.includes(p.weapon+':'+p.armor+':'+p.shield)){p.skillLife.equipmentSeen.push(p.weapon+':'+p.armor+':'+p.shield);event={kind:'equipment',context:'gear:'+p.weapon+':'+p.armor+':'+p.shield,tags:['weapon','care',...(p.weapon===2||p.armor===2?['weight']:['precision'])],text:'武具棚で身支度を変え、重心を確かめた'};}
+  if(e.type==='hit'&&e.source===p.id) {
+   const def=BL_SKILL_CATALOG.byId.get(e.skill),target=sim.getRoom(p)?.actors.find(a=>a.id===e.target);
+   if(target)event={kind:'contact',context:'contact:'+target.kind,tags:['combat','rhythm',...(target.kind==='dummy'?['patience']:['tension','weight'])],text:target.kind==='dummy'?'稽古人形に打ち込み、当たる拍子を確かめた':'敵に打ち込み、押し合う重みを知った'};
+  }
+  if(e.type==='wound'&&e.severity!=='fatal')event={kind:'setback',context:'combat:wound',tags:['combat','tension','defeat'],text:'傷を負い、攻め終わりの隙を思い知った'};
+  if(e.type==='clash')event={kind:'clash',context:'combat:clash',tags:['combat','weight','tension'],text:'敵とぶつかり、踏みとどまる重みを知った'};
+  if(e.type==='kill')event={kind:'victory',context:'combat:win',tags:['combat','precision'],text:'敵を倒し、最後の間合いを覚えた'};
+  if(e.type==='returned')event={kind:'return',context:'journey:return',tags:['explore','rest','tension'],text:'最前線から帰り、村の静けさを知った'};
+  if(event)record(sim,p,withMemento(p,event));
+ }
+ function contact(sim,p,target,sk) {
+  const def=BL_SKILL_CATALOG.byId.get(sk.id);if(!def)return;
+  // Called after the original damage / reaction resolution, never on a miss or guard.
+  if(target.alive&&sk.stagger&&target.kind!=='boss') {
+   target.stun=Math.max(target.stun,sim.time+sk.stagger/(target.elite?1.65:1));
+   target.actionUntil=Math.max(target.actionUntil,target.stun);target.telegraph=null;
+  }
+  const cast=p.skillCast;
+  if(cast?.linked&&cast.id===def.id&&cast.target===target.id&&!cast.announced) {
+   cast.announced=true;const key=cast.from+':'+def.id;
+   p.skillLife.connections[key]=Math.min(10000,(p.skillLife.connections[key]||0)+1);
+   sim.emit('skillconnection',{player:p.id,room:p.room,id:def.id,from:cast.from,target:target.id,x:p.x,z:p.z});
+  }
+  if(!target.alive){p.skillExit=null;return;}
+  const tags=def.exit.filter(tag=>tag!=='offbalance'||target.kind==='dummy'||target.stun>sim.time||target.exposedUntil>sim.time).filter(tag=>tag!=='close'||dist(target,p)<=2.4);
+  p.skillExit={id:def.id,target:target.id,tags,until:sim.time+5,band:p.combo?.band??0};
+ }
+ function sample(sim,p) {
+  const s=p.skillLife;if(p.prologue||p.age<4||sim.time<s.sampleAt)return;
+  s.sampleAt=sim.time+5;
+  const moved=s.sampleX!==null&&Math.hypot(p.x-s.sampleX,p.z-s.sampleZ)>3;
+  s.sampleX=p.x;s.sampleZ=p.z;
+  if(p.activity)return;
+  if(moved&&!p.autoFight) {
+   const region=p.room+':'+(p.z<-28?'outskirts':sim.getArea(p)),fresh=!s.seenRegions.includes(region);
+   if(fresh)s.seenRegions.push(region);if(s.seenRegions.length>96)s.seenRegions.shift();
+   record(sim,p,withMemento(p,{kind:'explore',context:'walk:'+region,tags:['explore','light',...(fresh?['precision']:[])],text:fresh?'歩いて、新しい場所の間合いを覚えた':'歩き慣れた道の、足の運びを確かめた'}));
+  } else if(p.seated&&sim.time-p.lastExertion<35)record(sim,p,withMemento(p,{kind:'rest',context:'rest:'+sim.getArea(p),tags:['rest','patience'],text:'動いたあとに腰を下ろし、息を整えた'}));
+ }
+ function prepareCast(sim,p,sk) {
+  p.skillCast=null;
+  const d=BL_SKILL_CATALOG.byId.get(sk.id);if(!d){p.skillLink=null;return sk;}
+  const target=sim.getRoom(p)?.actors.find(e=>e.id===p.autoFight&&e.alive),link=p.skillLink;p.skillLink=null;
+  if(!target||dist(target,p)>sk.reach+.8||!BloodlineSkills.connection(d,link,target.id,sim.time,p.combo?.band??0))return sk;
+  if(d.entry.includes('offbalance')&&link.tags.includes('offbalance')&&target.kind!=='dummy'&&!(target.stun>sim.time||target.exposedUntil>sim.time))return sk;
+  const bonus=d.connection||{},cast={id:sk.id,from:link.id,linked:true,target:target.id,announced:false};
+  for(const key of ['charge','recovery','cost'])if(bonus[key]!==undefined)cast[key]=sk[key]*bonus[key];
+  for(const key of ['reach','breakPower','knockback','tracking'])if(bonus[key]!==undefined)cast[key]=(sk[key]||0)+bonus[key];
+  p.skillCast=cast;return {...sk,...cast};
+ }
+ function active(p,id) { const sk=skillById(id);return sk&&p.skillCast?.id===id?{...sk,...p.skillCast}:sk; }
+ function complete(sim,p) {
+  p.skillLink=p.skillExit&&p.skillExit.id===p.currentSkill?p.skillExit:null;p.skillExit=null;
+ }
+ function remember(p) {
+  return {revision:BloodlineSkills.REVISION,defeat:p.cause!=='寿命'&&!!p.cause,families:[...new Set(p.skillLife.discovered.map(d=>d.family))],discoveries:p.skillLife.discovered.slice(-8).map(d=>({id:d.id,reasons:d.reasons,route:d.route})),connections:{...p.skillLife.connections}};
+ }
+ return {prepare,restore,reset,record,onEvent,contact,sample,prepareCast,active,complete,remember};
+})();
+
+
+export {Simulation};

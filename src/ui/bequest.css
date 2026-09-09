@@ -27,3 +27,13 @@
 @media(max-width:599px){.death .panel-content{padding:9px 12px 12px}.death .legacy-bequest{grid-template-columns:repeat(var(--bequest-mobile-columns),minmax(0,1fr));max-width:calc(var(--bequest-mobile-columns)*112px)}.death .death-name{font-size:19px}}
 @media(max-height:660px) and (orientation:portrait){.bequest-memory{width:52px;height:52px}.bequest-memory>.icon{width:28px;height:28px}.bequest-altar{gap:5px;padding:0}.bequest-rite{gap:8px}#bequest-detail{min-height:48px;max-height:72px}.bequest-invitation{margin:4px 0 8px}.death .bequest-token{min-height:92px}}
 @media(orientation:landscape) and (max-height:560px){.death .game-panel{width:min(740px,100%)}.death .panel-head{min-height:44px}.death .panel-content{padding:6px 14px 10px}.death .death-name{font-size:16px}.bequest-invitation{margin:3px 0 7px;font-size:11px}.bequest-rite{display:grid;grid-template-columns:minmax(120px,.9fr) minmax(0,1.1fr);grid-template-rows:minmax(0,1fr) 44px;gap:7px 14px}.bequest-altar{min-height:0;overflow:auto;padding:0;gap:4px}.bequest-memory{width:50px;height:50px}.bequest-memory>.icon{width:25px;height:25px}#bequest-detail{min-height:0;max-height:none;overflow:visible}#bequest-detail strong{font-size:16px}#bequest-detail p{font-size:11px;margin-top:4px}.death .legacy-bequest{grid-template-columns:repeat(var(--bequest-mobile-columns),minmax(0,1fr));max-width:calc(var(--bequest-mobile-columns)*112px);height:100%;align-self:stretch;justify-self:center;min-height:0;padding:5px;gap:6px}.death .bequest-token{min-height:91px}.death #bequest-confirm{grid-column:1/-1;min-height:44px;height:44px}}
+
+/* Let the player understand the loss before showing memories or inheritance. */
+.death-arrival .game-panel{width:min(410px,100%)}
+.death-arrival .panel-content{padding:18px 24px 26px}
+.death-arrival-emblem{margin:0 auto 18px;width:64px;height:64px;display:grid;place-items:center;border:1px solid #b9ad8060;border-radius:50%;color:#bdc29b;box-shadow:0 0 28px #a5b08120}
+.death-arrival-emblem .icon{width:32px;height:32px}
+.death-arrival .death-name{font-size:20px;line-height:1.7;margin:0 0 10px;letter-spacing:.08em}
+#death-cause{font-size:14px;line-height:1.9;margin:22px auto 0;max-width:26em;color:#e5dac1;overflow-wrap:anywhere}
+.death-arrival #death-continue{min-height:48px;width:100%;font-size:14px;letter-spacing:.06em;white-space:normal}
+@media(orientation:landscape) and (max-height:560px){.death-arrival .panel-content{padding:10px 22px 14px}.death-arrival-emblem{width:40px;height:40px;margin-bottom:8px}.death-arrival-emblem .icon{width:24px;height:24px}.death-arrival .death-name{font-size:18px;margin-bottom:5px}#death-cause{margin-top:10px}.death-arrival #death-continue{margin-top:12px}}

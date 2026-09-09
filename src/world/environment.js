@@ -48,11 +48,59 @@ class VillageArt extends ArtDirector{
   this.S(0,4.30,2.073,.12,.12,.045,'#ecd09a',0,0,0,4);
  });}
  armory(x,z){super.armory(x,z);this.with(rModel(x,0,z),()=>{this.barrel(-3.0,1.5,.73);this.C(2.45,.18,2.9,.56,.32,.56,'#aaa182',0,0,0,9);for(let j=0;j<3;j++)this.B(2.4,.41+j*.085,2.9,.72,.08,.40,['#929973','#b5b298','#79886a'][j],.14,0,0,0);});}
- dojo(x,z){this.cottage(x,z,1.12,2,0);this.with(rModel(x,0,z),()=>{
-  this.B(0,.24,2.6,4.8,.24,1.45,'#ac8457');for(let j=0;j<8;j++)this.B(-2.05+j*.59,.37,2.6,.53,.07,1.5,'#d3ae7e');
-  for(const side of [-1,1]){this.C(side*2.5,1.45,2.15,.065,2.5,.065,'#977849');this.B(side*2.5,1.9,2.16,.64,1.1,.06,'#856353',0,0,0,0);this.p('leaf',side*2.5,1.94,2.20,.15,.26,.025,'#ddc99d',0,0,0,0);}
-  this.B(.7,.52,3.3,.72,.11,.49,'#c5b58e');this.p('face',.7,.587,3.3,.32,.21,1,'#d4c4a2',0,0,-Math.PI/2,0);
- });}
+ dojo(x,z){
+  // A purpose-built timber training hall, within the existing 5 x 3 hull.
+  // Broad transverse roof, braced bays and wooden practice weapons distinguish
+  // it from homes without a chimney, dormer or residential window/flower boxes.
+  const side=Math.sign(x)||1,wood='#92704d',dark='#65523e',stone='#b2aa91';
+  this.with(rModel(x,0,z),()=>{
+   this.B(0,.20,0,4.9,.22,2.9,stone,0,0,0,9);
+   this.B(0,1.38,0,4.65,2.18,2.65,'#c1b392',0,0,0,9);
+   for(const xx of [-2.30,0,2.30])for(const zz of [-1.34,1.34]){
+    this.B(xx,1.46,zz,.20,2.45,.20,dark);
+    this.B(xx,.39,zz,.31,.36,.29,stone,0,0,0,9);
+   }
+   for(const zz of [-1.4,1.4]){
+    for(const yy of [.58,2.52])this.B(0,yy,zz,4.9,.18,.16,wood);
+    for(const a of [-1,1])this.line([a*2.25,1.78,zz],[a*1.48,2.49,zz],.08,wood);
+   }
+   // The ridge runs along the wide facade, unlike the village cottages.
+   this.with(rModel(0,0,0,1,1,1,Math.PI/2),()=>this.roof(3.65,5.65,2.61,1.24,'#526c66'));
+   for(const a of [-1,1]){
+    // Tall slatted training-hall shutters and iron strap hinges.
+    for(let j=0;j<5;j++)this.B(a*1.32+(j-2)*.19,1.45,1.405,.15,1.30,.08,j%2?'#a68a60':'#927750');
+    for(const yy of [1.02,1.89])this.B(a*1.32,yy,1.465,1.01,.065,.04,dark);
+    this.B(a*.32,1.16,1.42,.59,1.63,.12,'#826548');
+    for(const yy of [.62,1.64])this.B(a*.32,yy,1.495,.55,.055,.035,'#646758',0,0,0,10);
+    this.C(a*.13,1.15,1.515,.037,.10,.037,'#b6a06b',0,0,Math.PI/2,10);
+   }
+   // A small forward gable carries the crossed wooden-sword crest.
+   this.with(rModel(0,0,1.55),()=>this.roof(2.05,1.25,2.50,.95,'#526c66'));
+   this.C(0,2.86,2.22,.43,.08,.43,dark,0,0,Math.PI/2);
+   for(const a of [-1,1])this.with(rModel(0,2.88,2.28,.80,.80,.80,0,a*.67),()=>{
+    this.B(0,.04,0,.085,.74,.06,'#e0c697');this.B(0,-.21,.01,.29,.07,.08,'#c4a671');
+    this.B(0,-.36,0,.07,.19,.07,'#b78c58');
+   });
+   // Wooden practice weapons hang on the inner facade, clear of the doorway.
+   this.with(rModel(-side*1.32,0,1.50),()=>{
+    for(const a of [-1,1])this.B(a*.72,1.02,0,.10,1.65,.11,dark);
+    for(const yy of [.37,1.45])this.B(0,yy,0,1.62,.13,.16,wood);
+    for(let j=0;j<4;j++)this.with(rModel(-.54+j*.36,1.08,.10,1,1,1,0,(j-1.5)*.035),()=>{
+     this.B(0,0,0,.06,1.37,.06,'#d1b17c');this.B(0,-.38,.01,.25,.065,.08,wood);
+    });
+   });
+   this.lantern(side*2.04,2.04,1.48);
+  });
+  // Reading stand hugs the outer facade; its feet stay inside the old hull.
+  const reading={x:x+side*1.65,y:1.15,z:z+1.4};
+  this.with(rModel(reading.x,0,reading.z),()=>{
+   this.B(0,.29,-.12,.73,.20,.42,dark);this.B(0,.69,-.12,.15,.84,.15,wood);
+   this.B(0,1.08,-.03,.91,.10,.55,wood,0,0,.25);
+   for(const a of [-1,1])this.B(a*.19,reading.y,-.03,.36,.035,.42,'#e5d4aa',0,a*-.08,.25,0);
+   this.B(0,reading.y+.015,-.03,.025,.022,.42,'#94734f',0,0,.25);
+  });
+  this.r.blob(x,z,3.2,2.1,.3,this.r.groundFX);
+ }
  library(x,z){this.cottage(x,z,1.06,1,0);this.with(rModel(x,0,z),()=>{
   this.B(-2.0,.75,2.6,1.25,1.40,.38,'#826246');for(let k=0;k<2;k++){this.B(-2.0,.42+k*.52,2.6,1.3,.075,.5,'#ba9466');for(let j=0;j<6;j++)this.B(-2.5+j*.19,.66+k*.5,2.65,.14,.37+(j%3)*.035,.31,['#6e8b79','#936e5d','#788797','#b0976a'][j%4],0,j%2*.06,0,0);}
   this.B(.8,.75,2.9,1.5,.12,.80,'#b79669');for(const side of [-1,1])this.B(.8+side*.55,.38,2.9,.09,.74,.6,'#8d7151');for(let k=0;k<3;k++)this.B(.5+k*.23,.85+k*.034,2.9,.55,.055,.39,'#c5b088',k*.12,0,0,0);this.lantern(1.4,1.09,2.87);
