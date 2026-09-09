@@ -1,6 +1,6 @@
 /* Presentation only. Force travels from the contact to the trunk, then the
  * pelvis/support foot. All curves finish within the existing reaction clock. */
-function hitPose(p,t){
+function hitPose(p,t,stance={}){
  const active=p.hitReactUntil>t&&Number.isFinite(p.hitReactAt)&&t>=p.hitReactAt;
  // A completed reaction must not restart from actionStarted during residual stun.
  const legacy=!p.hitSeverity&&['hit','break','stagger'].includes(p.action)&&p.actionUntil>t;
@@ -14,15 +14,17 @@ function hitPose(p,t){
  const part=p.hitPart||'torso',leg=part.endsWith('Leg'),arm=part.endsWith('Arm');
  const dir=Number.isFinite(p.hitDir)?p.hitDir:(p.dir||0)+Math.PI;
  const side=Math.sin(dir-(p.dir||0)),front=Math.cos(dir-(p.dir||0));
+ const chestFront=Math.cos(dir-(p.dir||0)-(stance.turn||0)),chestSide=Math.sin(dir-(p.dir||0)-(stance.turn||0));
  const struck=part.startsWith('left')?-1:part.startsWith('right')?1:Math.abs(side)>.2?-Math.sign(side):((p.hitMotionId||0)%2?1:-1);
- const brace=blocked?.3:leg?1:.65,stepSide=leg?-struck:(Math.abs(side)>.3?Math.sign(side):struck);
- const step=(smooth((u-.13)/.22)-smooth((u-.67)/.33))*Math.max(0,force-.55)*.28;
- const lift=(Math.sin(Math.PI*clamp((u-.13)/.22,0,1))+Math.sin(Math.PI*clamp((u-.67)/.33,0,1)))*Math.max(0,force-.55)*.15;
+ const brace=blocked?.3:leg?1:.65,stepSide=stance.stepSide||(leg?-struck:(Math.abs(side)>.3?Math.sign(side):struck));
+ // One lifted catch step becomes the next support anchor. Do not drag it home.
+ const step=smooth((u-.13)/.22)*Math.max(0,force-.55)*.28;
+ const lift=Math.sin(Math.PI*clamp((u-.13)/.22,0,1))*Math.max(0,force-.55)*.15;
  const o={amount:contact,part,blocked,phase:u,stepSide,stepX:side*step,stepZ:front*step,stepLift:lift,
   x:Math.sin(dir)*balance*.045,z:Math.cos(dir)*balance*.045,
-  drop:balance*(blocked?.028:leg?.23:.095),pitch:(balance*.045-recover)*front,roll:-(balance*.045-recover)*side,
-  torso:(part==='torso'?-front*.36:front*.12)*body*(blocked?.32:1),
-  torsoRoll:-side*body*(arm?.25:.20),yaw:-struck*body*(arm?.20:.06),
+  drop:balance*(blocked?.028:leg?.23:.095)*(1+Math.abs(stance.lean||0)*.3),pitch:(balance*.045-recover)*front,roll:-(balance*.045-recover)*side,
+  torso:((part==='torso'?-chestFront*.36:chestFront*.12)-(stance.lean||0)*.20)*body*(blocked?.32:1),
+  torsoRoll:-chestSide*body*(arm?.25:.20),yaw:-(struck*(arm?.20:.06)+(stance.turn||0)*.12)*body,
   head:front*contact*(part==='head'?.43:.11)-front*recover,
   headRoll:-side*contact*(part==='head'?.36:.08),
   rightArm:0,leftArm:0,rightArmZ:0,leftArmZ:0,rightLeg:0,leftLeg:0,rightKnee:0,leftKnee:0};
@@ -40,25 +42,52 @@ function hitPose(p,t){
  * State lives on the renderer, is bounded and is never serialized into a save. */
 class DamageMotion{
  constructor(){this.actors=new Map();}
- sample(p,t){
-  const pose=hitPose(p,t),key=p.hitMotionId??p.lastImpactAt??p.hitReactAt;
+ sample(p,t,feet){
+  const key=p.hitMotionId??p.lastImpactAt??p.hitReactAt;
   let s=this.actors.get(p.id);
   if(s&&(t<s.t||t-s.t>.4||s.room!==p.room||Math.hypot(p.x-s.x,p.z-s.z)>1.5||p.alive===false)){this.actors.delete(p.id);s=null;}
-  if(!s){s={key,t,x:p.x,z:p.z,room:p.room,pose};this.actors.set(p.id,s);}
-  if(key!==s.key){s.from=s.pose.amount>0?s.pose:null;s.elapsed=0;s.key=key;s.clock=t-(p.hitReactAt||0);}
+  if(!s){s={key:null,t,x:p.x,z:p.z,room:p.room,velocity:{}};this.actors.set(p.id,s);}
+  if(key!==s.key){
+   const art=s.art||{},right=feet?.[0]?.lift||0,left=feet?.[1]?.lift||0;
+   s.stance={turn:clamp((art.yaw||0)+(art.torsoYaw||0),-.9,.9),lean:clamp((art.pitch||0)+(art.torso||0),-.6,.6),stepSide:Math.max(right,left)>.015?(right>left?1:-1):Math.abs(art.weightX||0)>.06?-Math.sign(art.weightX):0};
+   s.from=s.pose?.amount>0?s.pose:null;s.fromVelocity=s.velocity;s.elapsed=0;s.key=key;s.clock=t-(p.hitReactAt||0);
+  }
+  const pose=hitPose(p,t,s.stance),clock=t-(p.hitReactAt||0),delta=Math.max(0,clock-(s.clock??clock));
   if(s.from){
    // hitReactAt advances with hitstop, so reaction age is the frozen clock.
-   const clock=t-(p.hitReactAt||0),delta=Math.max(0,clock-(s.clock??clock));
-   s.elapsed+=delta;const mix=clamp(s.elapsed/.065,0,1),w=mix*mix*(3-2*mix);
-   if(pose.amount>0&&w<1){for(const k of Object.keys(pose))if(typeof pose[k]==='number'&&!['phase','stepSide'].includes(k))pose[k]=s.from[k]*(1-w)+pose[k]*w;}
+   s.elapsed+=delta;const mix=clamp(s.elapsed/.09,0,1),w=mix*mix*(3-2*mix);
+   if(pose.amount>0&&w<1){for(const k of Object.keys(pose))if(typeof pose[k]==='number'&&!['amount','phase','stepSide'].includes(k)){
+    const momentum=clamp(s.fromVelocity[k]||0,-3,3)*.09*mix*(1-mix)**2;
+    pose[k]=s.from[k]*(1-w)+pose[k]*w+momentum;
+    if(k==='drop'||k.endsWith('Lift'))pose[k]=Math.max(0,pose[k]);
+   }}
    else s.from=null;
   }
+  if(delta>0&&delta<.15&&s.pose&&pose.amount>0){const v={};for(const k of Object.keys(pose))if(typeof pose[k]==='number')v[k]=(pose[k]-s.pose[k])/delta;s.velocity=v;}
+  if(pose.amount<=0)s.velocity={};
   s.clock=t-(p.hitReactAt||0);s.pose=pose;s.t=t;s.x=p.x;s.z=p.z;
   if(this.actors.size>64&&t>=(this.nextPrune||0)){this.nextPrune=t+.5;for(const [id,a]of this.actors)if(t-a.t>.4)this.actors.delete(id);}
   return pose;
  }
 }
-function damagePose(renderer,p,t){renderer.damageMotion??=new DamageMotion();return renderer.damageMotion.sample(p,t);}
+function damagePose(renderer,p,t,feet){renderer.damageMotion??=new DamageMotion();return renderer.damageMotion.sample(p,t,feet);}
+
+/* Commit contact-relative offsets to the real floor anchor. On a new hit the
+ * already blended offset is subtracted, preventing double recoil / teleports. */
+function damageFoot(p,reaction,side,foot,scale=1){
+ if(!foot)return false;
+ if(reaction.amount<=0){foot.damageKey=null;return false;}
+ const key=p.hitMotionId??p.lastImpactAt??p.hitReactAt,name=side===1?'rightFoot':'leftFoot';
+ const x=(reaction[name+'X']||0)*scale,z=(reaction[name+'Z']||0)*scale;
+ if(foot.damageKey!==key){
+  foot.damageFrom=[...foot.anchor];foot.damageZero=foot.damageKey!=null?[x,z]:[0,0];foot.damageFacing=p.dir||0;foot.damageKey=key;foot.damageLift=foot.lift||0;foot.damagePhase=reaction.phase;
+ }
+ const cs=Math.cos(foot.damageFacing),sn=Math.sin(foot.damageFacing),dx=x-foot.damageZero[0],dz=z-foot.damageZero[1];
+ foot.anchor=[foot.damageFrom[0]+cs*dx+sn*dz,foot.damageFrom[1]-sn*dx+cs*dz];
+ const landing=clamp((reaction.phase-foot.damagePhase)/.18,0,1);
+ foot.lift=Math.max((reaction[name+'Lift']||0)*scale,foot.damageLift*(1-landing*landing*(3-2*landing)));foot.swing=foot.lift>1e-6;foot.step=null;foot.settle=null;foot.damageSettled=true;
+ return true;
+}
 
 /* Preserve the last authored attack pose only when the existing combat rules
  * interrupt it. Its momentum releases beneath the additive impact in 90 ms. */
@@ -68,10 +97,10 @@ function damageArtPose(renderer,p,t,pose){
  if(!attacking&&s.attacking&&s.pose.amount>0){s.attackFrom=s.art;s.attackAge=age;}
  if(s.attackFrom){
   const u=clamp((age-s.attackAge)/.09,0,1),w=(1-u)**2;
-  if(s.pose.amount>0&&!attacking&&w>0){for(const k of Object.keys(pose))if(typeof pose[k]==='number')pose[k]+=s.attackFrom[k]*w;pose.active=true;}
+  if(s.pose.amount>0&&!attacking&&w>0){for(const k of Object.keys(pose))if(typeof pose[k]==='number')pose[k]+=(s.attackFrom[k]??0)*w;pose.active=true;}
   else s.attackFrom=null;
  }
- s.attacking=attacking;s.art=attacking?{...pose}:null;return pose;
+ s.attacking=attacking;s.art={...pose};return pose;
 }
 
 /* Two-link contact correction for the existing rigid dolls. No raycasts, new
@@ -241,6 +270,7 @@ const SkillMotion=(()=>{
   r.skillMotionStates??=new Map();let s=r.skillMotionStates.get(p.id);
   if(!s||s.room!==p.room||t<s.t||t-s.t>.35||Math.hypot(p.x-s.x,p.z-s.z)>1.5){s={room:p.room};r.skillMotionStates.set(p.id,s);}
   Object.assign(s,{t,x:p.x,z:p.z});
+  if(incapacitated(p)||p.traversal||p.rescueTarget||p.action==='land'||p.standUpUntil>t){s.lastPose=null;s.carry=null;s.recover=null;s.stage=p.action;}
   if(r.skillMotionStates.size>48)for(const [id,old]of r.skillMotionStates)if(t-old.t>2)r.skillMotionStates.delete(id);
   if(p.pendingSkill&&s.stage!=='charge'){
    const target=r.currentSnapshot?.actors?.find(a=>a.id===p.autoFight&&a.alive);
@@ -298,7 +328,8 @@ const SkillMotion=(()=>{
   const dt=p.hitstopUntil>t?0:clamp(t-f.t,0,.1),turn=Math.atan2(Math.sin(dir-f.yaw),Math.cos(dir-f.yaw));
   const distance=Math.hypot(desired[0]-f.anchor[0],desired[1]-f.anchor[1]);
   const stepping=p.attackStep&&p.attackStep.moved>0&&c?.stage==='charge';
-  if(!f.step&&(distance>.10*scale||Math.abs(turn)>.3)&&(!c||c.stage==='charge'||c.beat>.65||stepping)){
+  if(c)f.damageSettled=false;
+  if(!f.step&&(distance>(f.damageSettled?.23:.10)*scale||Math.abs(turn)>.3)&&(!c||c.stage==='charge'||c.beat>.65||stepping)){
    const other=state[side===1?1:0];if(!other?.step||distance>.55*scale)f.step={from:[...f.anchor],to:desired,u:0,yaw:f.yaw,turn};
   }
   f.lift=0;
@@ -343,15 +374,25 @@ const SkillMotion=(()=>{
   for(const m of r.motionGroundCells.get(Math.floor(x)+','+Math.floor(z))||[]){const det=m[0]*m[10]-m[8]*m[2];if(Math.abs(det)<1e-8)continue;
    const dx=x-m[12],dz=z-m[14],u=(dx*m[10]-dz*m[8])/det,v=(dz*m[0]-dx*m[2])/det,edge=Math.max(Math.abs(u),Math.abs(v));
    if(edge<.50)y=Math.max(y,m[13]+Math.abs(m[5])*.5-.014*(1-ease((.50-edge)/.09)));
-  }return y;
+  }return Math.max(y,supportHeight(r.traversalMap,x,z));
  }
  return {sample,clock,shape,foot,groundAt,stateFor,twoHanded,grip};
 })();
 
+// Collision stays with the rescuer; the body lies across the supporting arms.
+function carriedVisualPose(p){if(p.lifeState!=='carried')return p;const d=p.dir||0;return {...p,x:p.x-Math.cos(d)*1.05+Math.sin(d)*.48,z:p.z+Math.sin(d)*1.05+Math.cos(d)*.48,dir:d+Math.PI/2};}
 /* Lifestyle poses are kept separate from the combat keys. */
 function artPose(p,t,state){
  const o={active:false,y:0,x:0,z:0,yaw:0,pitch:0,roll:0,torso:0,head:0,rightArm:0,leftArm:0,rightArmZ:0,leftArmZ:0,rightLeg:0,leftLeg:0,rightKnee:0,leftKnee:0};
  if(p.alive===false)return o;
+ if(p.traversal){const u=p.traversal.progress||0,lift=Math.sin(Math.PI*u);return {...o,active:true,pitch:.30*lift,rightArm:-1.35*lift,leftArm:-.9*lift,rightLeg:-1.25*lift,leftLeg:-.72*lift,rightKnee:1.9*lift,leftKnee:1.5*lift,head:-.08};}
+ if(p.action==='land'&&p.actionUntil>t){const u=clamp((t-p.actionStarted)/.16,0,1),bend=Math.sin(Math.PI*u);return {...o,active:true,y:-.1*bend,rightLeg:-.25*bend,leftLeg:-.25*bend,rightKnee:.5*bend,leftKnee:.5*bend};}
+ if(incapacitated(p)){
+  const u=clamp((t-(p.downedAt??t))/.7,0,1),settle=u*u*(3-2*u),carried=p.lifeState==='carried';
+  return {...o,active:true,pitch:carried?1.35:1.48*settle,y:carried?0:-.03,head:.12+Math.sin(t*1.8)*.018,rightArm:-.35,leftArm:-.5,rightLeg:-.12,leftLeg:.15,rightKnee:.25,leftKnee:.2};
+ }
+ if(p.standUpUntil>t){const u=clamp((t-p.standUpAt)/.8,0,1),rise=u*u*(3-2*u);return {...o,active:true,pitch:1.48*(1-rise),rightArm:-.7*(1-rise),leftArm:-.8*(1-rise),rightKnee:.7*Math.sin(Math.PI*u),leftKnee:.5*Math.sin(Math.PI*u)};}
+ if(p.rescueTarget)return {...o,active:true,pitch:.08,rightArm:-1.1,leftArm:-1.1,rightElbow:-.1,leftElbow:-.1,rightArmZ:-.2,leftArmZ:.2};
  if(p.seated){const settle=clamp((t-(p.sitSince??t))/.25,0,1);return {...o,active:true,y:-.65*settle,pitch:.06,head:.07+Math.sin(t*1.4)*.035,rightArm:-.72,leftArm:-.72,rightArmZ:-.13,leftArmZ:.13,rightLeg:-1.5*settle,leftLeg:-1.5*settle,rightKnee:1.62*settle,leftKnee:1.62*settle};}
  if(p.activity){
   const u=t-(p.activitySince||0),breath=Math.sin(u*1.6),page=Math.sin(u*.75);

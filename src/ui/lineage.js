@@ -4,8 +4,8 @@ class UILineage {
  get g(){return this.ui.g;}
  current(){
   const g=this.g;
-  if(g.profile.online){const p=g.online?g.snapshot?.player:null;return p?.alive&&p.owner===g.profile.owner?p:null;}
-  return [...g.sim.players.values()].find(p=>p.owner===g.profile.owner&&p.alive)||null;
+  if(g.profile.online){const p=g.online?g.snapshot?.player:null;return (p?.alive||p?.legacyChoice?.state==='pending')?p:null;}
+  return [...g.sim.players.values()].find(p=>p.owner===g.profile.owner&&(p.alive||p.legacyChoice?.state==='pending'))||null;
  }
  source(){
   const legacy=this.g.getLegacy(),ids=new Set([...(legacy.archive||[]),...(legacy.records||[]).map(r=>r.skills?.[0]??r.skill)]);
@@ -35,10 +35,11 @@ class UILineage {
    inGame,source:()=>this.source(),initialDraft:()=>this.initialDraft(),saveDraft:d=>this.saveDraft(d),
    motionEnabled:()=>this.g.profile.lineageMotion!==false,
    saveMotion:enabled=>{this.g.profile.lineageMotion=enabled;this.g.saveProfile();},
+   resetState:()=>this.resetState(),clear:()=>this.clear(),
    recordDetails:r=>this.recordDetails(r),
    buildLabel:typeof BUILD_INFO==='undefined'?'BLOODLINE LEGACY':BUILD_INFO.displayVersion,
    start:payload=>this.start(payload,inGame),
-   settings:()=>{this.focusBeforeSettings=view.scope.activeElement;this.ui.settings();},
+   settings:()=>{this.focusBeforeSettings=view.scope.querySelector('#settings');this.ui.settings();},
    back:()=>{if(inGame)this.ui.back();else this.ui.settings();}
   });
   return view;
@@ -65,7 +66,7 @@ class UILineage {
  }
  liveSignature(){
   const l=this.g.getLegacy(),p=this.current();
-  return JSON.stringify([this.key(),p?.id,l.generation,l.records?.length,l.archive]);
+  return JSON.stringify([this.key(),p?.id,p?.legacyChoice?.state,l.generation,l.records?.length,l.archive]);
  }
  update(){
   if(this.modalView&&this.signature!==this.liveSignature()){
@@ -78,6 +79,42 @@ class UILineage {
  }
  closeModal(){if(this.modalView){this.modalView.destroy();this.modalView=null;}}
  showGame(){this.home?.destroy();this.home=null;this.closeModal();}
+ resetState(){
+  const g=this.g;
+  if(g.profile.online||g.online)return {allowed:false,reason:'共有の系譜はサーバーの記録です。この画面からは消去できません。'};
+  if(g.screen!=='clan')return {allowed:false,reason:'系譜を消去するときは、設定から「一族へ戻る」を選んでください。'};
+  if(g.blockSave)return {allowed:false,reason:'保存先を確認できないため、系譜は消去できません。'};
+  return {allowed:true};
+ }
+ clear(){
+  const state=this.resetState();if(!state.allowed)throw Error(state.reason);
+  const g=this.g,owner=g.profile.owner,worldKey=STORAGE_PREFIX+'world4.'+g.loadedMode,profileKey=STORAGE_PREFIX+'profile';
+  // Prepare on a copy: a failed storage write must not erase the live simulation.
+  const previousWorld=g.sim.exportState(),next=Simulation.restore(previousWorld);
+  for(const p of [...next.players.values()])if(p.owner===owner){next.removePlayer(p.id);next.players.delete(p.id);}
+  for(const room of next.rooms.values())for(const [id,p] of Object.entries(room.fallen||{}))if(p.owner===owner)delete room.fallen[id];
+  delete next.legacies[owner];
+  const profile={...g.profile,name:'',inherit:[],villageCode:''};
+  const nextRaw=JSON.stringify({...next.exportState(),_profile:profile});
+  const backupKey=STORAGE_PREFIX+'backup.lineage.'+gameId();
+  let oldWorld,oldProfile,writtenWorld=false,writtenProfile=false;
+  try{
+   oldWorld=localStorage.getItem(worldKey);if(g.saveBaseRaw!==undefined&&oldWorld!==g.saveBaseRaw){g.blockSave=true;throw Error('Stale save');}oldProfile=localStorage.getItem(profileKey);
+   localStorage.setItem(backupKey,JSON.stringify({format:'AERIN-portable-1',version:VERSION,profile:g.profile,world:previousWorld}));
+   localStorage.setItem(worldKey,nextRaw);writtenWorld=true;
+   localStorage.setItem(profileKey,JSON.stringify(profile));writtenProfile=true;
+  }catch{
+   try{if(writtenWorld)oldWorld===null?localStorage.removeItem(worldKey):localStorage.setItem(worldKey,oldWorld);if(writtenProfile)oldProfile===null?localStorage.removeItem(profileKey):localStorage.setItem(profileKey,oldProfile);}catch{
+    g.blockSave=true;
+    throw Error('保存の復旧に失敗しました。自動保存を止めています。消去前の記録は端末内のバックアップに残っています。');
+   }
+   throw Error('記録を保存できませんでした。系譜は消去していません。保存先の空きを確認してください。');
+  }
+  g.stopInput();g.events?.close();g.events=null;g.sim=next;g.saveBaseRaw=nextRaw;Object.assign(g.profile,profile);
+  g.playerId=null;g.snapshot=null;g.seq=next.seq;g.pendingMove=null;g.commandBuffer=[];
+  g.motionInterpolation?.reset();g.renderer.effects=[];g.renderer.staticShadowDirty=true;
+  // Mount stays alive so the confirmation returns directly to the first-life UI.
+ }
  async start(payload,inGame){
   if(this.starting)return;
   if(inGame&&payload.kind==='resume'&&this.current()){this.ui.closeModal();return;}

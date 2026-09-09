@@ -26,3 +26,17 @@ test('quota failure reports failure while preserving the last valid save',t=>{
  w.Storage.prototype.setItem=function(){throw Error('QuotaExceededError');};g.sim.time+=2;
  assert.equal(g.saveWorld(),false);assert.equal(w.localStorage.getItem(prefix+'world4.normal'),raw);
 });
+test('pending bequest survives reload and resume; choosing it persists without creating a new player',async t=>{
+ const {g,w,p,sim}=fixture(t);g.profile.mode='normal';g.profile.uiExplained=true;g.renderer.camera={};g.renderer.effects=[];
+ p.skills=[4000];sim.die(p,'老衰');assert.equal(g.saveWorld(),true);g.loadMode();assert.equal(g.canResume(),true);await g.start();
+ assert.equal(g.playerId,p.id);assert.equal(g.sim.players.size,1);assert.equal(g.snapshot.player.legacyChoice.state,'pending');
+ assert.equal(g.command({type:'choose-legacy',skill:4000}),true);
+ const saved=JSON.parse(w.localStorage.getItem(prefix+'world4.normal'));assert.equal(saved.legacies[p.owner].records.length,1);assert(saved.legacies[p.owner].archive.includes(4000));
+ g.loadMode();assert.equal(g.canResume(),false);assert.equal(g.sim.legacy(p.owner).records.length,1);
+});
+test('portable pending bequest imports back into the same life',async t=>{
+ const {g,w,p,sim,api}=fixture(t);g.profile.mode='normal';g.profile.uiExplained=true;g.renderer.camera={};g.renderer.effects=[];w.confirm=()=>true;
+ p.skills=[4000];sim.die(p,'老衰');const data=JSON.stringify({format:'AERIN-portable-1',profile:g.profile,world:sim.exportState()});
+ await api.Game.prototype.importSave.call(g,{size:data.length,text:async()=>data});assert.equal(g.playerId,p.id);assert.equal(g.canResume(),true);await g.start();
+ assert.equal(g.sim.players.size,1);assert.equal(g.snapshot.player.legacyChoice.state,'pending');
+});

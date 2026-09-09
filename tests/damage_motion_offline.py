@@ -23,7 +23,7 @@ def geometry(f):
   g=f['geometries'][typ];M=np.array(m).reshape(4,4).T;P=np.array(g['p']).reshape(-1,3);N=np.array(g['n']).reshape(-1,3)
   pos=(np.c_[P,np.ones(len(P))]@M.T)[:,:3];nor=N@np.linalg.inv(M[:3,:3]);rows.append(np.c_[pos,nor,np.tile(c[:3],(len(P),1))])
  return np.concatenate(rows).astype('f4')
-for variant in ['before','after']:
+for variant in (sys.argv[2:] or ['before','after']):
  d=json.loads((root/(variant+'.json')).read_text());p['vp'].write(np.array(d['camera'],'f4').tobytes());sheets=[]
  for model in ['cm01','legacy','soldier']:
   sheet=Image.new('RGB',(1800,960),'#20272d');draw=ImageDraw.Draw(sheet)

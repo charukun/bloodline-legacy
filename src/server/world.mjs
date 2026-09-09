@@ -122,7 +122,7 @@ export class GameWorld {
             session={owner:uuid(),ack:0,receipts:[],expires:this.now()+SESSION_MS};
           }
           const existing=this.sim.players.get(session.playerId);
-          if(!existing||(body.beginLife&&!existing.alive)){
+          if(!existing||(body.beginLife&&!existing.alive&&existing.legacyChoice?.state!=='pending')){
             const config=body.config||{},inherit=Array.isArray(config.inherit)?config.inherit:[];
             if(inherit.some(id=>!this.sim.legacy(session.owner).archive.includes(id)))return reply({code:'INVALID_INHERITANCE'},400);
             const p=this.sim.addPlayer(uuid(),{...config,owner:session.owner,mode:this.sim.mode});session.playerId=p.id;
@@ -132,7 +132,8 @@ export class GameWorld {
           this.sim.command(session.playerId,{type:'move',x:0,z:0});
           const previous=this.streams.get(sessionKey);if(previous){try{previous.controller.enqueue(this.encode({control:'SESSION_REPLACED'}));previous.controller.close();}catch{}this.streams.delete(sessionKey);}
           await this.rollForward();await this.persist();
-          if(!session.lease){session=this.sessions.get(sessionKey);session.lease=uuid();await this.persist();}
+          session=this.sessions.get(sessionKey);
+          if(!session.lease){session.lease=uuid();await this.persist();}
           return reply({token:issued,playerId:session.playerId,...this.packet(session,true)});
         }
         if(!session)return reply({code:'SESSION_REQUIRED'},401);

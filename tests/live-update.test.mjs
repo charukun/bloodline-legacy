@@ -101,6 +101,20 @@ test('deploy-immediate new arrivals can join the pinned old rules using the reta
   const f=fixture();await join(f);const g=fixture({store:f.store,rules:'next',engines:{...engines,next:Simulation}});
   const b=await join(g,null,{...g.client,supportedRules:[currentRules,'next']});assert.equal(b.compatibility.rules,currentRules);assert.equal(b.snapshot.players.length,2);
 });
+test('join across a safe rules handoff returns the committed replacement lease',async()=>{
+  const f=fixture(),a=await join(f);makeSafe(f);f.world.engines={...engines,next:Simulation};f.world.target='next';
+  const client={...f.client,supportedRules:[currentRules,'next']},b=await join(f,a,client);
+  assert.equal(b.compatibility.rules,'next');assert.notEqual(b.epoch,a.epoch);
+  assert.equal(f.store.values.get('checkpoint').sessions[0][1].lease,b.lease);
+  assert.equal((await call(f,'command',{session:b,client,body:command(b)})).status,200);
+});
+test('dead player resumes an unconfirmed bequest and commits it exactly once before a new life',async()=>{
+  const f=fixture(),a=await join(f),p=f.world.sim.players.get(a.playerId);makeSafe(f);p.skills=[4000];f.world.sim.die(p,'老衰');await f.world.persist();
+  assert.equal(p.legacyChoice.state,'pending');const b=await join(f,a);assert.equal(b.playerId,a.playerId);assert.equal(f.world.sim.players.size,1);
+  const body=command(b,1,{type:'choose-legacy',skill:4000});assert.equal((await call(f,'command',{session:b,body})).body.accepted,true);
+  const saved=copy(f.store.values.get('checkpoint'));assert.equal((await call(f,'command',{session:b,body})).body.duplicate,true);assert.deepEqual(copy(f.store.values.get('checkpoint')),saved);
+  const c=await join(f,b);assert.notEqual(c.playerId,b.playerId);assert.equal(c.snapshot.legacy.records.length,1);assert(c.snapshot.legacy.archive.includes(4000));
+});
 test('save migration 3 -> 4 preserves lineage, inventory, injuries and is idempotent; unknown schemas fail',()=>{
   const s=new Simulation(),p=s.addPlayer('p',{owner:'o'});p.inventory=['bell'];p.wounds={head:{severity:1}};s.legacy('o').records=[{name:'ancestor'}];
   const old=s.exportState();old.schema=3;const before=copy(old),next=Simulation.migrateSave(old);
@@ -211,4 +225,13 @@ test('worker gates holding deployments, cross-origin commands and stale cached d
   assert.equal((await worker.fetch(new Request('https://test.invalid/index.html?build=old'),env)).status,409);
   const holding={...env,ASSETS:{fetch:async()=>Response.json({environment:'dev',mode:'holding'})}};
   assert.equal((await worker.fetch(new Request('https://test.invalid/api/join',{method:'POST'}),holding)).status,503);
+});
+test('updates defer during rescue, traversal, bequest, speech entry or pending movement',()=>{
+ const p={alive:true,input:{x:0,z:0}},g={screen:'game',snapshot:{player:p,t:10,actors:[]},ui:{}};
+ for(const lifeState of ['downed','carried','recovering'])assert.equal(safePlayer({...p,lifeState},g.snapshot,10),false);
+ for(const field of ['rescueTarget','carrierId','traversal'])assert.equal(safePlayer({...p,[field]:'active'},g.snapshot,10),false);
+ p.alive=false;p.recorded=true;p.legacyChoice={state:'pending'};g.screen='clan';assert.equal(safeGame(g),false);
+ delete p.legacyChoice;p.alive=true;g.screen='game';
+ for(const field of ['menu','pointer','recognition']){g.ui.talkFan={[field]:{}};assert.equal(safeGame(g),false);}
+ delete g.ui.talkFan;g.pendingMove={x:1,z:0};assert.equal(safeGame(g),false);g.pendingMove={x:0,z:0};assert.equal(safeGame(g),true);
 });

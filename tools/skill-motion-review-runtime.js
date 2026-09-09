@@ -1,25 +1,27 @@
 /* Review-only entry point. Uses the shipped renderer, rigs and actionTiming.
  * Synthetic snapshots exercise animation; no Game instance, save or network. */
 const MotionReview=(()=>{
- const clips={slash:[4001],thrust:[4004],slam:[4003],kick:[60020],spin:[60021],cast:[4300],chain:[60000,60001,60002]};
- const weapons={slash:0,thrust:3,slam:2,kick:-1,spin:0,cast:-1,chain:2};
- function sequence(key){
-  const ids=clips[key]||clips.slash,segments=[];let cursor=.35,travel=0;
+ const clips={golden:[4001,4001,4001],slash:[4001],thrust:[4004],slam:[4003],kick:[60020],spin:[60021],cast:[4300],chain:[60000,60001,60002]};
+ const weapons={golden:0,slash:0,thrust:3,slam:2,kick:-1,spin:0,cast:-1,chain:2};
+ function sequence(key,age=24){
+  const ids=clips[key]||clips.slash,segments=[];let cursor=key==='golden'?1.05:.35,travel=0;
   ids.forEach((id,index)=>{const sk=skillById(id),timing=actionTiming(sk),start=cursor,release=start+timing.charge,end=release+timing.swing;
-   segments.push({id,index,start,release,end,travel,timing,hits:sk.hits||1});cursor=end;travel+=.18;
+   const distance=Simulation.prototype.attackStepDistance.call({time:0},{age,wounds:{},statuses:{}},sk);
+   segments.push({id,index,start,release,end,travel,distance,timing,hits:sk.hits||1});cursor=end;travel+=distance;
   });
   const last=segments.at(-1),end=last.end+last.timing.recovery;
   return {segments,end,duration:end+.35};
  }
  function sample(base,key,time,age=24){
-  const seq=sequence(key),cycle=Math.floor(time/seq.duration),t=time-cycle*seq.duration;
+  const seq=sequence(key,age),cycle=Math.floor(time/seq.duration),t=time-cycle*seq.duration;
   const p={...base,id:'motion-review-'+cycle,age,gender:0,race:0,prologue:false,introUntil:-100,x:0,z:0,dir:0,weapon:weapons[key]??0,armor:0,shield:false,autoFight:'review-target',action:'idle',actionStarted:0,actionUntil:0,pendingSkill:null,combo:null,attackStep:null,hitReactUntil:0,hitstopUntil:0,wounds:{},statuses:{},input:{x:0,z:0},alive:true};
   const s=seq.segments.find(s=>t>=s.start&&t<s.end);let label='構え',beat=0,index=-1;
+  if(key==='golden'&&t<.7){p.action='run';p.z=-2.24+3.2*t;label='接近';}
   if(s){
    index=s.index;Object.assign(p,{attackSkill:s.id,currentSkill:s.id,combo:{total:s.index+1},z:s.travel});
-   if(t<s.release){const u=clamp((t-(s.release-.12))/.12,0,1),m=.18*u*u*(3-2*u);Object.assign(p,{action:'charge',actionStarted:s.start,actionUntil:s.release,pendingSkill:{id:s.id,started:s.start,at:s.release},z:s.travel+m,attackStep:{moved:m}});label='溜め';}
-   else{Object.assign(p,{action:'attack',actionStarted:s.release,actionUntil:s.end,z:s.travel+.18});const full=(t-s.release)/(s.end-s.release)*s.hits;beat=full-Math.floor(full);label=beat<.35?'振り出し':beat<.50?'命中':beat<.75?'振り抜き':'次の構え';}
-  }else if(t>=seq.segments.at(-1).end){const last=seq.segments.at(-1);Object.assign(p,{z:last.travel+.18,attackSkill:last.id,currentSkill:last.id,action:t<seq.end?'recover':'idle',actionStarted:last.end,actionUntil:seq.end});label=t<seq.end?'立て直し':'構え';}
+   if(t<s.release){const u=clamp((t-(s.release-.12))/.12,0,1),m=s.distance*(1-(1-u)**2);Object.assign(p,{action:'charge',actionStarted:s.start,actionUntil:s.release,pendingSkill:{id:s.id,started:s.start,at:s.release},z:s.travel+m,attackStep:{moved:m}});label='溜め';}
+   else{Object.assign(p,{action:'attack',actionStarted:s.release,actionUntil:s.end,z:s.travel+s.distance});const full=(t-s.release)/(s.end-s.release)*s.hits;beat=full-Math.floor(full);label=beat<.35?'振り出し':beat<.50?'命中':beat<.75?'振り抜き':'次の構え';}
+  }else if(t>=seq.segments.at(-1).end){const last=seq.segments.at(-1);Object.assign(p,{z:last.travel+last.distance,attackSkill:last.id,currentSkill:last.id,action:t<seq.end?'recover':'idle',actionStarted:last.end,actionUntil:seq.end});label=t<seq.end?'立て直し':'構え';}
   return {p,t,cycle,index,beat,label,seq};
  }
  async function start(session){
@@ -31,7 +33,7 @@ const MotionReview=(()=>{
    r.art.B(0,.05,0,9,.10,9,'#aaa58d');r.art.B(0,.102,1.8,1.4,.012,.025,'#d9c49c');
    r.art.statuses=()=>{};r.art.parentScene=()=>{};r.art.sources=[];
    const sim=new Simulation({seed:7349}),base=sim.addPlayer('review',{owner:'review'}),snapshot=sim.snapshot(base.id);
-   let config={clip:'slash',age:24,speed:1,paused:false,fx:false,view:'close',angle:.9},time=0,last=0,request=0,disposed=false,lastReport=0,lastContact='',previousCycle=0;
+   let config={clip:'golden',age:24,speed:1,paused:false,fx:false,view:'close',angle:.9},time=0,last=0,request=0,disposed=false,lastReport=0,lastContact='',previousCycle=0;
    const post=data=>parent.postMessage({type:'motion-review',session,...data},'*');
    const clearFX=()=>{r.effects.length=0;for(const id of r.combatPresentation.trails.keys())r.combatPresentation.forget(id);lastContact='';};
    const reset=()=>{r.skillMotionStates?.clear();r.art.skillFeet?.clear();r.damageMotion?.actors.clear();clearFX();if(r.characterMaster)r.characterMaster.state=null;for(const rec of r.rigs.records.values()){rec.parts=null;rec.from=null;rec.state=null;}};
@@ -47,7 +49,7 @@ const MotionReview=(()=>{
     if(e.source!==parent||e.data?.type!=='motion-control')return;const d=e.data;
     if(d.dispose){disposed=true;cancelAnimationFrame(request);r.gl.getExtension('WEBGL_lose_context')?.loseContext();return;}
     if(d.config){const old=config;config={...config,...d.config};if(config.clip!==old.clip||config.age!==old.age){time=0;previousCycle=0;reset();}if(config.fx!==old.fx)clearFX();}
-    if(Number.isFinite(d.seek)){time=clamp(d.seek,0,.999999)*sequence(config.clip).duration;prime();}
+    if(Number.isFinite(d.seek)){time=clamp(d.seek,0,.999999)*sequence(config.clip,config.age).duration;prime();}
     last=0;
    });
    document.addEventListener('visibilitychange',()=>{last=0;});

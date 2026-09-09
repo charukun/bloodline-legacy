@@ -19,7 +19,7 @@ assert(html.length < 25*1024*1024, 'Cloudflare per-asset size limit');
 if (manifest.mode === 'game') {
   assert.deepEqual(html, await fs.readFile(path.join(root, 'dist/index.html')), 'Game bytes changed');
   const text = html.toString();
-  const live=JSON.parse(text.match(/const LIVE_BUILD=([^\n]+);/)?.[1] || 'null');
+  const live=JSON.parse(text.match(/const LIVE_BUILD=Object\.freeze\(([^\n]+)\);/)?.[1] || 'null');
   assert.deepEqual(live,manifest.live,'Client and server compatibility differ');
   assert.deepEqual(live,{...LiveContract,...await liveBuild(root)},'Rules archive and artifact differ');
   const embedded=JSON.parse(text.match(/const BUILD_INFO=Object\.freeze\(([^\n]+)\);/)?.[1] || 'null');

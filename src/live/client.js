@@ -43,7 +43,7 @@ class LiveUpdate {
     this.notice.firstChild.textContent=message;this.notice.lastChild.hidden=!update;
   }
   disconnect(){
-    this.generation++;this.ready=false;this.abort?.abort();this.abort=null;
+    this.generation++;this.ready=false;this.g.ui?.talkFan?.cancel();this.abort?.abort();this.abort=null;
     clearTimeout(this.reconnectTimer);this.g.pendingMove=null;this.g.commandBuffer=[];
   }
   async response(response){
