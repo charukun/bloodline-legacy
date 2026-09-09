@@ -1,11 +1,11 @@
-# DEV CIの待ち時間短縮
+# DEV CI — reference
 
-通常のdevelop向けPR・develop push・DEV対象feature/manual CIでは、ブラウザのインストールと公開前のブラウザ検証を実行しない。Build、単体テスト、JS構文・埋め込みAsset照合は維持する。
+共通の検証方針は [v7 §4・7](COMMON_DEVELOPMENT_POLICY.md#4-テストと検証)。具体的な実行条件は対象branchの [deploy.yml](../.github/workflows/deploy.yml) を参照する。
 
-DEV公開後は `node deploy/smoke.mjs dev --http-only` でHTTPのみ確認する。manifestの全文commitと環境、公開HTMLのSHA256、MIME、cache、offline health、存在しないAssetの404、未実装APIの501を確認する。ブラウザやWebGL描画を確認した結果として扱わない。ゲームの見た目・操作はユーザーのDEV確認で行う。
+このtreeの通常deploy workflowは、DEV対象のPR・push・manual CIでChromiumの準備と公開前Browser smokeを省略する。Build・JS/Asset整合と、変更範囲に応じたテスト・Workers runtime検証は残る。[検証範囲の選択](CI_VALIDATION.md)はdevelop向けPRに適用し、最新developのpushとmanual CIは全体回帰を実行する。古いdevelopのsuperseded runは成功証拠にしない。
 
-staging/main向けPRとSTAGING/PRODUCTIONでは既存のブラウザ検証を維持する。branch mapping、Build失敗時のDeploy禁止、最新head確認、Secrets、Production公開flagは変更しない。通常PR/develop pushからProductionへdeployしない。
+DEV公開後は `node deploy/smoke.mjs dev --http-only` が、配布manifest、全文commitと環境、公開HTMLのSHA256、MIME/cache、healthのbuild/互換契約、存在しないAsset、契約のないjoin拒否を確認する。詳細なassertionは同スクリプトを参照する。HTTP成功はWebGL描画・Versionの画面表示・操作感を確認した証拠ではない。
 
-直近のDEV実行ではブラウザ準備と検証に約5分46秒かかっていた。その処理を省くが、queueやprovider待ちがあるため公開所要時間は保証しない。
+STAGING / PRODUCTIONは既存のBrowser検証を含む。Character・船の専用workflowも対象差分でBrowserを実行する。必要なVisual / Performance / 実機検証は変更リスクに応じて判断する。
 
-Integration WORK: このPRをdevelopへ統合後、CIのブラウザ関連stepがskipされ、公開HTTP検証が成功することを確認する。Build Version PR #10との統合では、同PRのVersion表示assertionをbrowser block内に維持する。HTTPモードもversion.jsonとHTML hashの一致を確認する。公開後のVersion画面表示assertionはDEVでは実行されない。
+旧版のPR番号に結び付いた統合命令と、初期測定の所要時間は現行説明から除去した。公開までの時間はqueueやproviderの状態にも依存する。

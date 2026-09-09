@@ -1,5 +1,7 @@
 # Whole-body skill footwork
 
+> **REFERENCE — この領域の技術・実装資料。** ゲームの確定仕様の正本を置き換える文書ではありません。本文の旧ポリシー、WORK固有の指示、PR依存・SHA・検証結果はhistoricalな来歴で、現在の共通運用やGitHub状態には適用しません。[現行の文書案内](../README.md)。
+
 Source: Common Development Policy v5, Implementation Prompt v2 (2026-09-08), and the user's follow-up approval to add full-body travel, weight transfer and connected foot placement while retaining the current skill rules. The combat reference was previously inspected for silhouette and weight-transfer intent. The user's GitHub publication instruction and policy v5 govern this work.
 
 Latest develop at start: `6cdbacdb627bd10bccf9fb4a06f771881cc5dd3a`.

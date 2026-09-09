@@ -1,5 +1,7 @@
 # Skill effect composition / review lab
 
+> **REFERENCE — この領域の技術・実装資料。** ゲームの確定仕様の正本を置き換える文書ではありません。本文の旧ポリシー、WORK固有の指示、PR依存・SHA・検証結果はhistoricalな来歴で、現在の共通運用やGitHub状態には適用しません。[現行の文書案内](../README.md)。
+
 This WORK starts from `develop` `66198ebc1b926f040e37d376399353f63af8a776`.
 The subsequent canopy update `7c7924345c4e27266b31e811864cb8c0acc50592`
 was incorporated before final validation, without conflicts.

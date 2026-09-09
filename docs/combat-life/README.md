@@ -1,5 +1,7 @@
 # Combat / Movement / Life State — 2026-09-09
 
+> **REFERENCE — この領域の技術・実装資料。** ゲームの確定仕様の正本を置き換える文書ではありません。本文の旧ポリシー、WORK固有の指示、PR依存・SHA・検証結果はhistoricalな来歴で、現在の共通運用やGitHub状態には適用しません。[現行の文書案内](../README.md)。
+
 Source: Project Sources 共通開発運用ポリシー v5、実装依頼書の6件、Implementation Prompt v2。
 開始時の develop は `b0174532818b078a9bc59dec83c11b9e06b00bad`。
 公開準備時に `cd5f0344a176802dbfbfd3e9d28edadcd98a9907` へrebase。

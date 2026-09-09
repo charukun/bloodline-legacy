@@ -1,7 +1,11 @@
 # Bloodline Legacy / 血脈の系譜
 
-現在開発中の世代継承型 WebGL ゲームの GitHub 反映用ソースです。
+現在開発中の世代継承型 WebGL ゲームのソースです。
 現行 Visual Slice は `継ぎ火の谷 VS-01 / simulation v0.6.0` を基準にしています。
+
+## 開発・文書の入口
+
+実装の正本はGitHubの最新 `develop`。共通運用は [AGENTS.md](AGENTS.md) から [v7](docs/COMMON_DEVELOPMENT_POLICY.md) を参照してください。担当領域の技術資料と過去記録は [文書案内](docs/README.md) で区別しています。
 
 ## 構成
 
@@ -12,7 +16,7 @@
 - `build.mjs` ソースとアセットを standalone HTML にまとめるビルド
 - `package.json` Node プロジェクト設定
 
-`dist/` はビルド生成物のため handoff には含めていません。
+`dist/` はビルド生成物です。
 
 ## Build
 
@@ -41,18 +45,6 @@ node build.mjs
 Visual Reference の画像そのものはゲーム素材に含めていません。
 `public/assets/ASSET_LICENSE.txt` も参照してください。
 
-## Current verification
+## 検証結果
 
-2026-09-08 時点:
-
-- `node build.mjs`: PASS
-- 生成 JavaScript の `node --check`: PASS
-- Chromium 144 + Xvfb + SwiftShader で WebGL2 起動: PASS
-- 一族画面 → ゲーム開始 → 村 → 雨天切替: PASS
-- 上記 smoke 中の JavaScript page error: 0
-- 上記 smoke 中の console error: 0
-- Visual review: 村画面まで実施
-- Pixel Fold 実機 FPS / 発熱 / 操作感: 未検証
-- Desktop 実 GPU 60fps: 未検証
-
-ソフトウェア描画環境の性能値は実機性能として扱わないでください。
+現在の結果はPRのhead SHAに対応するChecks / Actionsを参照してください。配信確認は [Deployment](docs/DEPLOYMENT.md) に記載しています。2026-09-08の初期build/smoke結果は [historicalの初期搬入記録](docs/historical/initial-migration/IMPORT_HANDOFF.md) に保存し、最新developの成功証拠とは区別しています。

@@ -29,10 +29,15 @@ test('material families have distinct geometry with identical path, tempo and no
  const signatures=Object.keys(FX.options.family).map(family=>JSON.stringify([.29,.42,.49,.58].map(t=>FX.frame(FX.resolve({family}),t).map(({color,...p})=>p))));
  assert.equal(new Set(signatures).size,18);
 });
-test('18 stable authored bindings use only real active catalog IDs and distinct recipes',()=>{
+test('18 existing bindings plus Cinderbrand and Storm Swallow use active IDs and distinct recipes',()=>{
  const source=JSON.parse(read('src/skills/catalog-source.json')),ids=source.families.flatMap(f=>f.variants.map(v=>v.id));
- const mapped=ids.map(id=>FX.forSkill(id)).filter(Boolean);assert.equal(mapped.length,18);
- assert.equal(new Set(mapped.map(r=>JSON.stringify({...r,seed:0}))).size,18);
+ const mapped=ids.map(id=>FX.forSkill(id)).filter(Boolean);assert.equal(mapped.length,20);
+ // These two authored additions are explicitly part of combat-flow; retain all
+ // eighteen existing bindings and check the new recipes rather than relaxing counts.
+ assert.equal(ids.filter(id=>id===60093||id===60073).length,2);
+ assert.equal(FX.forSkill(60093).family,'blade');assert.equal(FX.forSkill(60093).palette,'amber');
+ assert.equal(FX.forSkill(60073).family,'fulgur');assert.equal(FX.forSkill(60073).path,'fall');
+ assert.equal(new Set(mapped.map(r=>JSON.stringify({...r,seed:0}))).size,20);
  assert.equal(FX.forSkill(4000),null);assert(Object.isFrozen(mapped[0]));
 });
 test('ending modes change motion, and sound sources stop and release their graph',()=>{
