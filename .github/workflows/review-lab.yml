@@ -2,7 +2,7 @@ name: Review Lab Preview
 on:
   pull_request:
     branches: [develop]
-    types: [opened, synchronize, reopened, ready_for_review, closed]
+    types: [opened, synchronize, reopened, closed]
   push:
     branches: [develop]
 permissions:

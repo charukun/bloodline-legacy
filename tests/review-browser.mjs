@@ -10,12 +10,12 @@ const server=http.createServer(async(req,res)=>{try{
  const file=path.join(root,pathname),content=await fs.readFile(file);res.setHeader('Content-Type',({'.mjs':'text/javascript','.html':'text/html','.css':'text/css','.json':'application/json','.png':'image/png','.glb':'model/gltf-binary'})[path.extname(file)]||'application/octet-stream');res.end(content);
 }catch{res.writeHead(404);res.end();}});
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const base='http://127.0.0.1:'+server.address().port;
-let browser;const results=[];
+let browser,activePage;const results=[];
 try{
  browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
  for(const viewport of [{width:1280,height:800},{width:393,height:851}]){
   const context=await browser.newContext({viewport});await context.addInitScript(()=>{localStorage.setItem('bloodline-review-save-sentinel','unchanged');});
-  const page=await context.newPage(),errors=[],network=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>network.push(r.url()));
+  const page=await context.newPage(),errors=[],network=[];activePage=page;page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>network.push(r.url()));
   for(const mode of ['skills','enemies','combat']){
    await page.goto(base+`/review/${mode}?skill=4001&enemy=rime-guard&sha=${info.commit}`);await page.locator('#loading').waitFor({state:'hidden',timeout:90000});
    await page.waitForFunction(()=>document.getElementById('stats').textContent.includes('calls'));
@@ -31,7 +31,8 @@ try{
    assert.equal(await page.locator('#error').textContent(),'');assert.equal(errors.length,0,errors.join('\n'));
    const state=await page.evaluate(()=>({save:localStorage.getItem('bloodline-review-save-sentinel'),keys:Object.keys(localStorage),width:document.documentElement.scrollWidth,view:innerWidth,stats:document.getElementById('stats').textContent,readout:document.getElementById('readout').textContent}));
    assert.equal(state.save,'unchanged');assert.deepEqual(state.keys,['bloodline-review-save-sentinel']);assert.ok(state.width<=state.view,'no horizontal overflow');assert.doesNotMatch(state.readout,/NaN|undefined/);
-   assert.ok(!network.some(url=>url.includes('/api/')||!url.startsWith(base)),'no game API or external writes');
+   const unexpected=network.filter(url=>/^https?:/.test(url)&&(new URL(url).pathname.startsWith('/api/')||new URL(url).origin!==base));
+   assert.deepEqual(unexpected,[],'no game API or external HTTP requests; local blob/data decodes are allowed');
    await page.screenshot({path:path.join(evidence,`${mode}-${viewport.width}.png`),fullPage:true});results.push({mode,viewport,...state});
   }
   if(viewport.width===1280){
@@ -45,4 +46,4 @@ try{
  }
  await fs.writeFile(path.join(evidence,'result.json'),JSON.stringify({commit:info.commit,passed:true,results,note:'Software WebGL; target-device FPS not evaluated'},null,2));
  console.log('Review browser acceptance passed: desktop/mobile routes, real WebGL, controls, deep links, isolation and measurement');
-}finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}
+}catch(error){if(activePage&&!activePage.isClosed()){await activePage.screenshot({path:path.join(evidence,'failure.png'),fullPage:true}).catch(()=>{});await fs.writeFile(path.join(evidence,'failure.txt'),error.stack||String(error));}throw error;}finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}
