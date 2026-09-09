@@ -1114,7 +1114,13 @@ inflictWound(p,part,severity,source=null,strength=null){
   if(e.kind==='guard'&&this.time>=(e.nextSpeechAt||0)){
    e.nextSpeechAt=this.time+10+this.rng()*10;
    const helper=ps.filter(p=>p.alive&&dist(p,e)<9).sort((a,b)=>dist(a,e)-dist(b,e))[0];
-   if(helper){const type=(helper.health??100)<55?'hurt':helper.age<10?'young':helper.experience>30?'veteran':'helper',lines=GUARD_LINES[type];e.speech=lines[Math.floor(this.rng()*lines.length)];e.speechUntil=this.time+4.6;this.emit('guardline',{room:r.id,target:e.id,text:e.speech,x:e.x,z:e.z});}
+   if(helper){
+    const type=(helper.health??100)<55?'hurt':helper.age<10?'young':helper.experience>30?'veteran':'helper',lines=GUARD_LINES[type],speech=lines[Math.floor(this.rng()*lines.length)];
+    // Keep the normal retry time and RNG draws even when another guard has the floor.
+    if(!r.actors.some(g=>g!==e&&g.alive&&g.kind==='guard'&&g.speech&&g.speechUntil>this.time)){
+     e.speech=speech;e.speechUntil=this.time+4.6;this.emit('guardline',{room:r.id,target:e.id,text:e.speech,x:e.x,z:e.z});
+    }
+   }
   }
   const ranged=false,reach=ranged?11:e.wounds.rightArm?.severity==='lost'?1.2:e.kind==='boss'?5:e.elite?3.4:2.3;
   if(e.telegraph){
