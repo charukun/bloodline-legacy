@@ -46,4 +46,4 @@ Rebased onto `7bd8263` after the lineage-theatre integration (#23). The new thea
 
 The current branch changes presentation and regression tests. `core.js`, the skill catalog, combat rules and persistent save formats are unchanged.
 
-The facility-anchor PR #24 and other UI work may touch the same long `showGame` line or adjacent label rendering. Preserve facility anchors, remove only the carried leave control, retain the shared floating-text motion, and keep the existing four-page consciousness layout when resolving conflicts.
+After publication, `develop` advanced to `57bc1b3` with facility-anchor PR #24. Its anchors and every-frame placement were integrated into this branch; the HUD conflict preserves those anchors and the theatre lifecycle while removing only the carried leave control. Both facility-button regression tests and activity-text regression tests run together.
