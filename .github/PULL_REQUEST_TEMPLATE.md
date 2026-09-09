@@ -2,7 +2,7 @@
 
 ## 基準・影響範囲
 
-- POLICY_VERSION: v6
+- POLICY_VERSION: v7
 - BASE_BRANCH: develop
 - BASE_COMMIT:
 - TOUCHED_AREAS / 関連PR・依存順:

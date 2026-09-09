@@ -1,5 +1,7 @@
 # Plaza craft: material and exemplar asset loop
 
+> **REFERENCE — この領域の技術・実装資料。** ゲームの確定仕様の正本を置き換える文書ではありません。本文の旧ポリシー、WORK固有の指示、PR依存・SHA・検証結果はhistoricalな来歴で、現在の共通運用やGitHub状態には適用しません。[現行の文書案内](README.md)。
+
 Base: `e3502f519dbaea1d399d3a69b274f72f57494059` (latest develop checked again before handoff).
 Branch: `work/plaza-crafted-assets-20260910`.
 

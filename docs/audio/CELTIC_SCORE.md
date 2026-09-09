@@ -1,5 +1,11 @@
 # Celtic music revision
 
+> **REFERENCE — この領域の技術・実装資料。** ゲームの確定仕様の正本を置き換える文書ではありません。本文の旧ポリシー、WORK固有の指示、PR依存・SHA・検証結果はhistoricalな来歴で、現在の共通運用やGitHub状態には適用しません。[現行の文書案内](../README.md)。
+
+The composition and source recordings below are retained. The HTML media-deck
+runtime described here is superseded by [game audio lifecycle](GAME_AUDIO_LIFECYCLE.md),
+which uses bounded Web Audio chunks to avoid mobile media transport controls.
+
 Base: latest develop at start, `cd5f0344a176802dbfbfd3e9d28edadcd98a9907`.
 Branch: `work/celtic-score-20260909`. Project Sources policy v5 and implementation
 prompt were consulted. The user explicitly expanded this WORK's scope to music,
@@ -71,6 +77,7 @@ Check out the pinned GeneralUser GS and TinySoundFont revisions recorded in
 
 ```
 python3 tools/audio/author_score.py --soundfont /path/GeneralUser-GS.sf2 --tsf /path/TinySoundFont
+python3 tools/audio/pack_game_music.py
 npm test
 ```
 

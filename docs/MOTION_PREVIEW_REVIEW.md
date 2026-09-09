@@ -1,5 +1,7 @@
 # Motion preview: skill-menu follow-up
 
+> **HISTORICAL — 過去WORKの実装・検証記録。** 以下の旧ポリシー、命令形の統合手順、PR/branch状態、SHA、検証条件・結果は当時の記録であり、現行命令や現在headの成功証拠ではありません。担当調査に必要な場合だけ参照してください。[現行の文書案内](README.md)。
+
 The user reported missing combat animation at age 14 and an empty 心の采配
 modal. The supplied screenshot also shows 稽古をやめる, indicating contact
 was recognized. The affected user's save has not been supplied.

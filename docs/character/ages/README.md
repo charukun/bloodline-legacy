@@ -1,5 +1,7 @@
 # Age continuity for the four travelers
 
+> **REFERENCE — この領域の技術・実装資料。** ゲームの確定仕様の正本を置き換える文書ではありません。本文の旧ポリシー、WORK固有の指示、PR依存・SHA・検証結果はhistoricalな来歴で、現在の共通運用やGitHub状態には適用しません。[現行の文書案内](../../README.md)。
+
 Base: `eabe0cba5577949350058b1e1e3bd41bc6c7c5f3` (latest develop fetched 2026-09-09).
 Branch: `work/character-age-continuity-20260909-v2`. Target: `develop`; no merge by Character WORK.
 

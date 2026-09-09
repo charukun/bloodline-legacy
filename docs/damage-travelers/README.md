@@ -1,5 +1,7 @@
 # Damage motion for the four travelers
 
+> **REFERENCE — この領域の技術・実装資料。** ゲームの確定仕様の正本を置き換える文書ではありません。本文の旧ポリシー、WORK固有の指示、PR依存・SHA・検証結果はhistoricalな来歴で、現在の共通運用やGitHub状態には適用しません。[現行の文書案内](../README.md)。
+
 The four traveler rigs consume the existing damage events, with body proportions, protecting arms, planted recovery and a short authoritative recoil now handled together.
 
 - Source policy: supplied **Common Development Policy v5**, Implementation Prompt v2.0; the explicit user request authorizes this follow-up and the proposed short displacement/contact-spacing changes. Policy v5 and the user's PR instructions supersede v2's older handoff-only workflow.
