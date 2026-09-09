@@ -117,9 +117,9 @@ const CM01 = (()=>{
    if(!pose.skillMotion)st.skillFeet=null;
    let contactError=0,contacts=0;this.footDebug=[];const targets=[];
    for(const side of [1,-1]){const si=side===1?0:1,s=side===1?'R':'L',ti=asset.names.indexOf('thigh.'+s),ki=ti+1,fi=ti+2,toi=ti+3;const facing=p.dir||0,cs=Math.cos(facing),sn=Math.sin(facing),toWorld=(x,z)=>[p.x+cs*x+sn*z,p.z-sn*x+cs*z];
-    let foot=st.feet[si];if(!foot){foot=st.feet[si]={anchor:toWorld(side*.165,.025),swing:false,start:toWorld(side*.165,.025),target:toWorld(side*.165,.025),lift:0,yaw:facing,startPhase:0};}
+    let foot=st.feet[si];if(!foot){foot=st.feet[si]={anchor:toWorld(side*.28,.025),swing:false,start:toWorld(side*.28,.025),target:toWorld(side*.28,.025),lift:0,yaw:facing,startPhase:0};}
     const normalized=((st.phase+(si?.5:0))%1+1)%1,isSwing=normalized>duty&&gaitWeight>.12;
-    let desired=toWorld(side*.177,.025+(guard?side*.08:0));
+    let desired=toWorld(side*.28,.025+(guard?side*.08:0));
     const bracing=useGroundIK&&!moving&&reaction.amount>0&&!pose.skillMotion;
     const footKey=side===1?'rightFoot':'leftFoot';
     if(pose.skillMotion){
@@ -142,8 +142,8 @@ const CM01 = (()=>{
      else{foot.swing=false;foot.lift=0;}
     }else if(isSwing){
      foot.damageAnchor=null;foot.damageKey=null;
-     if(!foot.swing){foot.start=[...foot.anchor];foot.startPhase=normalized;foot.target=toWorld(side*.18,.025+stride*(1-normalized+duty*.5));foot.swing=true;}
-     const predicted=toWorld(side*.18,.025+stride*(1-normalized+duty*.5));foot.target=V.lerp(foot.target,predicted,1-Math.exp(-dt*22));
+     if(!foot.swing){foot.start=[...foot.anchor];foot.startPhase=normalized;foot.target=toWorld(side*.28,.025+stride*(1-normalized+duty*.5));foot.swing=true;}
+     const predicted=toWorld(side*.28,.025+stride*(1-normalized+duty*.5));foot.target=V.lerp(foot.target,predicted,1-Math.exp(-dt*22));
      const u=clamp((normalized-foot.startPhase)/Math.max(.001,1-foot.startPhase),0,1);foot.anchor=V.lerp(foot.start,foot.target,smooth(u));foot.lift=Math.sin(Math.PI*u)*(run?.27:.17)*gaitWeight;foot.yaw=facing;
     }else{
      foot.damageAnchor=null;foot.damageKey=null;
@@ -154,8 +154,11 @@ const CM01 = (()=>{
     // toward an unreachable old anchor. Only an airborne foot is repositioned.
     const reach=Math.hypot(foot.anchor[0]-desired[0],foot.anchor[1]-desired[1]);
     if(moving&&reach>.60){foot.swing=true;foot.lift=Math.max(foot.lift,.055);foot.anchor=desired.map((v,i)=>v+(foot.anchor[i]-v)*.60/reach);}
-    if(pose.skillMotion){const planted=SkillMotion.foot(p,pose,motionT,side,st.skillFeet);Object.assign(foot,planted,{target:[...planted.anchor],settle:null});}
-    const floor=Math.max(this.groundAt(foot.anchor[0],foot.anchor[1]),this.groundAt(foot.anchor[0]+Math.sin(foot.yaw)*.15,foot.anchor[1]+Math.cos(foot.yaw)*.15));
+    if(pose.skillMotion){// Broader authored hips/boots use a wider visual support stance. The
+     // copied root only offsets the presentation sampler; p is never written.
+     const visualRoot={...p,x:p.x+Math.cos(p.dir||0)*side*.10,z:p.z-Math.sin(p.dir||0)*side*.10};
+     const planted=SkillMotion.foot(visualRoot,pose,motionT,side,st.skillFeet);Object.assign(foot,planted,{target:[...planted.anchor],settle:null});}
+    const floor=Math.max(this.groundAt(foot.anchor[0],foot.anchor[1]),this.groundAt(foot.anchor[0]+Math.sin(foot.yaw)*.15,foot.anchor[1]+Math.cos(foot.yaw)*.15),this.groundAt(foot.anchor[0]+Math.cos(foot.yaw)*.21,foot.anchor[1]-Math.sin(foot.yaw)*.21),this.groundAt(foot.anchor[0]-Math.cos(foot.yaw)*.21,foot.anchor[1]+Math.sin(foot.yaw)*.21));
     const worldAnkle=[foot.anchor[0],floor+.125+foot.lift,foot.anchor[1]];
     targets.push({side,si,s,ti,ki,fi,toi,foot,floor,worldAnkle});
    }

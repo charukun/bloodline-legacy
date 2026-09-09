@@ -28,8 +28,11 @@ def reference_proportion(p,head=False,hand=False,boot=False):
  if hand:
   centre=.405 if x>0 else -.405;fullness=np.clip((1.15-y)/.10,0,1)
   x=centre+(x-centre)*(1+.35*fullness);z=.012+(z-.012)*(1+.24*fullness);y=1.12+(y-1.12)*1.18
- if boot and y>.15:y=.15+(y-.15)*1.18
- return np.array([x,1.16+(y-1.16)*.77 if y>1.16 else y,z])
+ if boot:
+  centre=.165 if x>0 else -.165;x=centre+(x-centre)*1.15
+  if y>.15:y=.15+(y-.15)*1.18
+ width=1.40-.28*np.clip((y-1.16)/.64,0,1)
+ return np.array([x*width,1.16+(y-1.16)*.77 if y>1.16 else y,z])
 BP=np.array([reference_proportion(b[2],b[0] in ['head','hair','eye.R','eye.L'],b[0].startswith(('fingers.','thumb.'))) for b in BONES],dtype=float)
 COLS=['#f3bd9d','#75432f','#eaddc1','#536042','#754934','#996448','#d2a45b','#939fa0','#ffffff','#39251d','#9d5947','#f5e8ce','#b59a66','#6c624e','#382e29','#db947d']
 ROUGH=[.72,.55,.89,.92,.71,.66,.28,.33,.22,.81,.75,.91,.83,.91,.90,.74]
@@ -54,7 +57,7 @@ def make_atlas():
    for z,(top,bot) in enumerate([(43,151),(23,80),(16,37)]):col[:,:,z]=top+(bot-top)*lit+streak*7
    outer=np.clip((r-.77)/.20,0,1);col=col*(1-outer[:,:,None])+np.array([40,33,26])*outer[:,:,None]
    pupil=np.clip((.53-r)/.07,0,1);col=col*(1-pupil[:,:,None])+np.array([22,14,12])*pupil[:,:,None]
-   hl=np.exp(-(((dx+.32)/.12)**2+((dy+.36)/.18)**2)*2);col=col*(1-hl[:,:,None])+np.array([253,245,221])*hl[:,:,None]
+   hl=np.exp(-(((dx+.31)/.19)**2+((dy+.34)/.23)**2)*2);col=col*(1-hl[:,:,None])+np.array([253,245,221])*hl[:,:,None]
    hl2=np.exp(-(((dx-.36)/.065)**2+((dy-.35)/.065)**2)*2)*.65;col=col*(1-hl2[:,:,None])+np.array([230,226,158])*hl2[:,:,None]
    a[:,:,:3]=np.clip(col,0,255)
   sl=(slice((k//4)*tile,(k//4+1)*tile),slice((k%4)*tile,(k%4+1)*tile))
@@ -95,12 +98,12 @@ class Mesh:
 
   # Weight and pigment authoring stay in the original coordinate system.
   # Transform all head surfaces together so eyes, ears and hair remain seated.
-  hand=name.startswith(('palm ','finger ','opposed thumb '));boot=name.startswith(('sculpted boot ','rolled boot cuff ','crossed boot lace'))
+  hand=name.startswith(('palm ','finger ','opposed thumb '));boot=name.startswith(('sculpted boot ','rolled boot cuff ','crossed boot lace','layered sole ','boot toe seam'))
   self.v.extend([reference_proportion(p,region==1,hand,boot) for p in verts]);self.f.extend(faces+start)
   if normals is None:self.normal_hints.extend([[0,0,0]]*len(verts))
   else:
    for p,n in zip(verts,normals):
-    scale=np.array([1.43,1.28,1.18]) if region==1 else np.array([1,.77 if p[1]>1.16 else 1,1]);nn=n/scale;self.normal_hints.append(nn/max(np.linalg.norm(nn),1e-9))
+    scale=np.array([1.43,1.28,1.18]) if region==1 else np.array([1.40-.28*np.clip((p[1]-1.16)/.64,0,1),.77 if p[1]>1.16 else 1,1]);nn=n/scale;self.normal_hints.append(nn/max(np.linalg.norm(nn),1e-9))
   self.uv.extend([((tile%4+.025+float(u)*.95)/4,(tile//4+.025+float(v)*.95)/4) for u,v in uvs])
   for i,p in enumerate(verts):
    wt=weights(p) if callable(weights) else {weights:1} if isinstance(weights,str) else weights
@@ -112,11 +115,18 @@ class Mesh:
  def loft(self,rows,tile,weight,region=0,seg=24,rings=15,deform=None,color=None,name=''):
   # rows: y, centreX, centreZ, half-width, half-depth; smooth anatomical cross-sections.
   rows=np.array(rows,float);rows=rows[np.argsort(rows[:,0])];seg=self.steps(seg,8);rings=self.steps(rings,4)
-  ip=PchipInterpolator(rows[:,0],rows[:,1:],axis=0);verts=[];uv=[];faces=[]
+  ip=PchipInterpolator(rows[:,0],rows[:,1:],axis=0);verts=[];uv=[];faces=[];head_normals=[] if name=='sculpted face and cranium' else None
   for j,y in enumerate(np.linspace(rows[0,0],rows[-1,0],rings+1)):
    cx,cz,rx,rz=ip(y)
    for i in range(seg+1):
-    a=i/seg*TAU;x=cx+rx*math.sin(a);z=cz+rz*math.cos(a);p=np.array([x,y,z]);
+    a=i/seg*TAU
+    if head_normals is not None:
+     signed=a if a<=math.pi else a-TAU;a=math.copysign(math.pi*(abs(signed)/math.pi)**1.35,signed)
+     def head_surface(yy,aa):
+      ccx,ccz,rrx,rrz=ip(yy);q=np.array([ccx+rrx*math.sin(aa),yy,ccz+rrz*math.cos(aa)])
+      return deform(q,aa,j/rings)
+     eps=1e-5;dy=head_surface(y+eps,a)-head_surface(y-eps,a);da=head_surface(y,a+eps)-head_surface(y,a-eps);nn=np.cross(dy,da);head_normals.append(nn/max(np.linalg.norm(nn),1e-9))
+    x=cx+rx*math.sin(a);z=cz+rz*math.cos(a);p=np.array([x,y,z]);
     if deform is not None:p=deform(p,a,j/rings)
     verts.append(p);uv.append((i/seg,j/rings))
   for j in range(rings):
@@ -125,9 +135,10 @@ class Mesh:
   # End caps; no repeated zero-area pole rings.
   for j,flip in [(0,True),(rings,False)]:
    idx=len(verts);part=np.asarray(verts[j*(seg+1):(j+1)*(seg+1)]);verts.append(part[:-1].mean(axis=0));uv.append((.5,j/rings))
+   if head_normals is not None:head_normals.append([0,0,0])
    for i in range(seg):
     a=j*(seg+1)+i;faces.append([idx,a+1,a] if flip else [idx,a,a+1])
-  self.add(verts,faces,uv,tile,weight,region,color,name)
+  self.add(verts,faces,uv,tile,weight,region,color,name,normals=head_normals)
  def sweep(self,points,widths,depths,tile,weight,region=0,rings=15,sides=10,normal=(0,0,1),color=None,name=''):
   p=np.array(points,float);t=np.linspace(0,1,len(p));u=np.linspace(0,1,self.steps(rings,5)+1);curve=PchipInterpolator(t,p,axis=0)(u);ww=PchipInterpolator(np.linspace(0,1,len(widths)),widths)(u);dd=PchipInterpolator(np.linspace(0,1,len(depths)),depths)(u)
   if name in ['upper eyelid','eyebrow','mouth expression','lower lip']:
@@ -255,12 +266,12 @@ def build(lod=0):
   m.sweep(pts,[.040,.044,.039,.033,.023],[.030,.024,.024,.021,.018],0,'head',1,rings=15,sides=10,name='ear helix')
   m.oval((side*.356,2.294,.039),.030,.045,.005,15,'head',1,tilt=side*.20,name='ear concha')
   x=side*.145;y=2.365;eye='eye.R' if side==1 else 'eye.L'
-  m.oval((x,y,.284),.105,.090,.022,0,eye,1,tilt=side*.1,name='eye socket rim')
-  m.oval((x,y+.002,.292),.100,.084,.021,11,eye,1,tilt=side*.10,name='almond eye white')
-  m.oval((x-side*.009,y-.003,.313),.065,.076,.008,8,eye,1,tilt=side*.03,name='hazel iris')
+  m.oval((x,y,.284),.105,.101,.022,0,eye,1,tilt=side*.1,name='eye socket rim')
+  m.oval((x,y+.002,.292),.100,.095,.021,11,eye,1,tilt=side*.10,name='almond eye white')
+  m.oval((x-side*.009,y-.003,.313),.066,.087,.008,8,eye,1,tilt=side*.03,name='hazel iris')
   lid=[]
   for i in range(13):
-   u=i/12;a=u*math.pi;lid.append((x+.105*math.cos(a),y+.087*math.sin(a)**1.22+side*.01*math.cos(a),.296+.008*math.sin(a)))
+   u=i/12;a=u*math.pi;lid.append((x+.105*math.cos(a),y+.098*math.sin(a)**1.22+side*.01*math.cos(a),.296+.008*math.sin(a)))
   m.sweep(lid,[.007,.008,.004],[.004,.005,.003],9,eye,1,rings=14,sides=6,name='upper eyelid')
   m.sweep([(x-side*.064,2.478,.283),(x,2.493,.282),(x+side*.074,2.47,.260)],[.011,.014,.004],[.005,.005,.003],1,'head',1,rings=12,sides=6,name='eyebrow')
  # Mouth follows muzzle surface rather than disconnected beads.

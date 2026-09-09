@@ -75,4 +75,18 @@ The preceding surface reconstruction at `a37c1da2d6a0db09fff95339aec8721d9fdac2d
 
 ## Latest-develop integration
 
-A new dedicated branch starts at develop `010f2d9615ac0492d3a118f7057a313667455df1`. Only the presentation delta from the previous CM01 was applied through a three-way patch. Build scripts, package configuration, UI, environment, Skill Motion, Damage Motion, ground sampling and render interpolation are retained from that develop. The CM01 runtime below the fragment shader is byte-identical to the new base. `reference-current-source-audit.json` records the preserved files. The next browser baseline is this same latest-develop commit, not an older game build. Earlier browser/CPU records remain historical and do not certify this integration.
+A new dedicated branch starts at develop `010f2d9615ac0492d3a118f7057a313667455df1`. Only the presentation delta from the previous CM01 was applied through a three-way patch. Build scripts, package configuration, UI, environment, Skill Motion, Damage Motion, ground sampling and render interpolation are retained from that develop. At integration revision f5016ffe, the CM01 runtime below the fragment shader was byte-identical to the new base. The later proportion pass below changes visual foot spacing and floor footprint only. `reference-current-source-audit.json` records the preserved files. The next browser baseline is this same latest-develop commit, not an older game build. Earlier browser/CPU records remain historical and do not certify this integration.
+
+
+Latest-develop run `34292088180` at `f5016ffe6178c73562be7bab7708fa94842dad34` passed 171 tests, 27 asset checks and 13 browser checks, including native run/stop/walk, contact attack, combat idle, simulation hit and sword attachment. The fixed base was `010f2d9615ac0492d3a118f7057a313667455df1`. Alternating recording-free SwiftShader median: 6.3 -> 6.1 ms; p95: 11.9 -> 11.9 ms. These values must not be compared directly to earlier runs on a different renderer/base. Full report and artifact identity are in `reference-verification.json`.
+
+Inspection rejected some motion captures as visual evidence because the moving actor left the close camera frame and roofs/foliage obscured other poses. The next pass records a centred, elevated pose-inspection camera for those shots, without changing the simulation state or village. Separate gameplay captures keep the native camera. Head authoring also redistributes the same number of vertices toward the nose/eye area, with analytic surface normals; no new geometry or runtime work is required. These changes are pending browser review. Exact reference acceptance remains unmet.
+
+
+## Proportion and face correction (pending browser review)
+
+The waist, trousers and boots now have the broader reference silhouette. Eye height, visible fringe ends and scarf volume were corrected without increasing vertex or triangle counts. The head uses redistributed samples and analytic normals to remove the faceted nasal bridge. The atlas iris highlight remains authored pigment, with no extra material/pass.
+
+Foot support is widened to match the new soles. Idle and movement use the same 0.28 half span; the current shared SkillMotion sampler receives a copied, laterally offset presentation root. Two lateral floor samples cover the wider sole edges. No player property, movement speed, collider, attack timing or shared Skill/Damage Motion implementation changes. A numerical test skins the actual sole vertices and checks separation and floor contact.
+
+Current resources: 13,493 vertices / 23,622 triangles at LOD0, 6,182 / 10,208 at LOD1, 31 bones, one material and one draw per pass; 2,275,944-byte GLB. Source regeneration is byte-identical. Browser motion, contact and paired performance review for this correction are pending.

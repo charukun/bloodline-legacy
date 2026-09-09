@@ -44,9 +44,9 @@ def hair(m):
   ([[-0.213, 2.5865, 0.25], [-0.3355, 2.489, 0.337], [-0.3505, 2.3725, 0.3], [-0.46, 2.4205, 0.18]],
    [0.02, 0.079, 0.058, 0.001]),
   ([[-0.27, 2.46, 0.2], [-0.37, 2.4, 0.28], [-0.32, 2.26, 0.24], [-0.43, 2.3, 0.1]], [0.018, 0.066, 0.05, 0.001]),
-  ([[0.12, 2.74, 0.15], [0.18, 2.71, 0.42], [0.12, 2.47, 0.43], [0.045, 2.39, 0.34]], [0.021, 0.073, 0.061, 0.001]),
-  ([[0.11, 2.7, 0.24], [0.08, 2.6, 0.42], [0.01, 2.43, 0.41], [-0.07, 2.36, 0.31]], [0.017, 0.059, 0.046, 0.001]),
-  ([[-0.04, 2.66, 0.29], [-0.03, 2.57, 0.42], [-0.14, 2.41, 0.38], [-0.23, 2.39, 0.28]],
+  ([[0.12, 2.74, 0.15], [0.18, 2.71, 0.42], [0.12, 2.47, 0.43], [0.045, 2.445, 0.34]], [0.021, 0.073, 0.061, 0.001]),
+  ([[0.11, 2.7, 0.24], [0.08, 2.6, 0.42], [0.01, 2.43, 0.41], [-0.07, 2.425, 0.31]], [0.017, 0.059, 0.046, 0.001]),
+  ([[-0.04, 2.66, 0.29], [-0.03, 2.57, 0.42], [-0.14, 2.41, 0.38], [-0.23, 2.445, 0.28]],
    [0.016, 0.066, 0.04, 0.001]),
   ([[0.16, 2.7735, 0.11], [0.3395, 2.8035, 0.2535], [0.3525, 2.589, 0.307], [0.46, 2.6635, 0.14]],
    [0.02, 0.09, 0.061, 0.001]),
@@ -78,9 +78,9 @@ def garments(m,body_w,blend_y):
  # The broad scarf is a continuous draped loop with a raised rim, not separate
  # flat triangular patches. Front folds descend diagonally toward the clasp.
  def scarf(t,a):
-  angle=a*math.tau;front=max(0,math.cos(angle));y=2.045-.20*t-.057*front*math.sin(t*math.pi/2)+.024*math.sin(angle)
-  radius=.158+.034*math.sin(t*math.pi)+.018*math.sin(t*math.pi*3+.4*math.sin(angle))
-  return np.array([math.sin(angle)*radius,y,.025+math.cos(angle)*(radius+.025+.027*t)])
+  angle=a*math.tau;front=max(0,math.cos(angle));y=2.045-.24*t-.067*front*math.sin(t*math.pi/2)+.024*math.sin(angle)
+  radius=.193+.044*math.sin(t*math.pi)+.018*math.sin(t*math.pi*3+.4*math.sin(angle))
+  return np.array([math.sin(angle)*radius,y,.025+math.cos(angle)*(radius+.035+.037*t)])
  surface(m,scarf,11,'chest',0,'draped scarf loop',nu=13,nv=30,closed=False)
  for edge in [0,1]:
   points=[scarf(edge,a/24) for a in range(25)]

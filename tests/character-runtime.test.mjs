@@ -228,3 +228,20 @@ test('interrupted attack releases the last arm pose beneath immediate impact wit
  assert(Math.hypot(...[0,1,2].map(k=>old[k]-next[k]))<.5,'arm cannot snap to bind pose at contact');
  assert.equal(hit.actionUntil,1.5);assert.equal(hit.hitReactUntil,1.71);
 });
+
+
+test('widened boot soles remain separated and touch the sampled floor at rest',()=>{
+  const {c}=poseSequence([{...player(),time:1},{...player(),time:1+1/30}]);
+  const a=cm.asset.lods[0].attrs,extents=[];
+  for(const [side,name,region] of [[1,'foot.R',4],[-1,'foot.L',5]]){
+    const j=cm.asset.names.indexOf(name),m=c.palette.subarray(j*16,j*16+16),points=[];
+    for(let i=0;i<a._REGION.length;i++)if(a._REGION[i]===region&&a._SURFACE[i]===14){
+      const x=a.POSITION[i*3],y=a.POSITION[i*3+1],z=a.POSITION[i*3+2];points.push([m[0]*x+m[4]*y+m[8]*z+m[12],m[1]*x+m[5]*y+m[9]*z+m[13]]);
+    }
+    assert(points.length>10,'actual sole geometry required');
+    const floor=c.footDebug.find(f=>f.side===side).floor;
+    assert(Math.abs(Math.min(...points.map(p=>p[1]))-floor)<.003,'sole floats or penetrates the floor');
+    extents.push({min:Math.min(...points.map(p=>p[0])),max:Math.max(...points.map(p=>p[0]))});
+  }
+  assert(extents[0].min-extents[1].max>.01,'boot meshes overlap at rest');
+});
