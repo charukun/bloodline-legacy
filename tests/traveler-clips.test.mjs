@@ -4,6 +4,15 @@ import {motionRuntime} from './skill-motion-harness.mjs';
 const api=await motionRuntime(null,null,true),{Travelers,renderer,player,review}=api;
 const pos=m=>Array.from(m.slice(12,15));
 const distance=(a,b)=>Math.hypot(...a.map((v,i)=>v-b[i]));
+test('unarmed composition stows all six weapons without changing equipment or borrowing sword clips and trails',()=>{
+ for(let weapon=0;weapon<6;weapon++){
+  const r=renderer(),art=new api.VillageArt(r);r.rigs=new api.RigRenderer(r);r.weaponTips=new Map();r.put=(type,m,color,surf,alpha)=>r.rigs.pending&&r.rigs.capture(type,m,color,surf,alpha);
+  const p={...player(),weapon,action:'attack',attackSkill:800011,actionStarted:1,actionUntil:2},before=JSON.stringify(p);
+  r.frame++;art.doll(p,1.43,true);const c=r.characterMaster;assert.equal(c.clipDebug,null);assert.equal(c.skillGripDebug,null);assert.equal(r.weaponTips.has(p.id),false);assert(c.palette.every(Number.isFinite));assert.equal(JSON.stringify(p),before);
+  assert.ok(r.rigs.active.length,'stowed equipment remains rendered');
+  const sk=[...api.book.values()].find(s=>s.weapon===weapon&&!s.passive&&!s.magic);p.attackSkill=sk.id;r.frame++;art.doll(p,1.43,true);assert(r.weaponTips.get(p.id)?.every(Number.isFinite),'weapon attack restores the actual held tip');
+ }
+});
 function trace(race,hz,blocked,visit){
  const r=renderer(),c=new Travelers.Character(r,race);c.groundAt=()=>0;
  for(let i=0;i<review.sequence('golden').duration*hz;i++){
@@ -40,5 +49,13 @@ test('four body proportions preserve arms, chest clearance and foot plants throu
 test('unsupported skills clear old clips; guard, damage, loss and activity retain their pose routes',()=>{
  for(let race=0;race<4;race++)for(const change of [{weapon:3},{guard:true},{seated:true},{lifeState:'downed'},{traversal:{kind:'vault'}},{rescueTarget:'other'},{activity:{kind:'fish'}},{statuses:{poison:{until:100}}},{wounds:{rightArm:{severity:'lost'}}},{attackSkill:60002}]){
   const r=renderer(),c=new Travelers.Character(r,race),p={...player(),race,gender:[0,1,0,1][race],action:'attack',attackSkill:4001,actionStarted:1,actionUntil:2};r.frame++;c.update(p,1.1);assert(c.clipDebug);r.frame++;c.update({...p,...change},1.2);assert.equal(c.clipDebug,null);r.frame++;c.update({...p,...change,action:'recover',actionStarted:2,actionUntil:3},2.1);assert.equal(c.clipDebug,null);assert(c.palette.every(Number.isFinite));
+ }
+});
+
+test('child and elder proportions retain the authored three-hit clock and reachable joints',()=>{
+ for(let race=0;race<4;race++)for(const age of [7,10,17,55,80])for(let total=1;total<=3;total++){
+  const r=renderer(),c=new Travelers.Character(r,race),p={...player(),race,gender:[0,1,0,1][race],age,combo:{total},action:'attack',attackSkill:4001,actionStarted:1,actionUntil:2},saved=JSON.stringify(p);
+  for(const t of [1,1.2,1.43,1.6,1.9]){r.frame++;c.update(Object.freeze(p),t);assert(c.palette.every(Number.isFinite));assert(c.metrics.contactError<.035);assert(c.clipDebug);if(t===1.43)assert(Math.abs(c.clipDebug.u-c.clipDebug.contact)<1e-6);}
+  assert.equal(JSON.stringify(p),saved);
  }
 });

@@ -48,18 +48,21 @@ const CM01 = (()=>{
  }
  function selectClip(p,t,st,phase,moving,run,reaction,clips=asset?.clips){
   if(incapacitated(p)||p.traversal||p.rescueTarget||!clips?.size||p.weapon!==0||!p.alive||p.seated||p.activity||p.guard||p.guardUntil>t||reaction.amount>.02||Object.keys(p.statuses||{}).length||Object.values(p.wounds||{}).some(w=>w.severity==='lost')||['carry','wave','sleep','sit','interact'].includes(p.action)){st.clipCut=null;return null;}
+  if(SkillMotion.unarmed(p)){st.clipCut=null;return null;}
   const clock=SkillMotion.clock(p,t);
   if(clock){
    if(clock.shape!=='slash'||clock.hits!==1){st.clipCut=null;return null;}
    const name=['diagonal','horizontal','chop'][Math.max(0,(p.combo?.total||1)-1)%3],clip=clips.get(name);if(!clip)return null;
-   st.clipCut=name;
-   // A Hermite time warp keeps a fast, continuous strike through the fixed .43 hit.
-   const hermite=(a,b,ma,mb,u)=>{const u2=u*u,u3=u2*u;return (2*u3-3*u2+1)*a+(u3-2*u2+u)*ma+(-2*u3+3*u2)*b+(u3-u2)*mb;};
-   const velocity=Math.min(3*(clip.contact-clip.release)/.43,3*(clip.follow-clip.contact)/.57)*.85;
-   const u=clock.stage==='charge'?clip.release*smooth(clock.u):clock.beat<.43?hermite(clip.release,clip.contact,0,velocity*.43,clock.beat/.43):hermite(clip.contact,clip.follow,velocity*.57,0,(clock.beat-.43)/.57);
-   return {name,clip,u,stage:clock.stage,entry:clock.stage==='charge'?smooth(clock.u/.3):1};
+   st.clipCut=name;const phrase=SkillMotion.phrasing(p,clock);
+   // Finish the cut promptly, then settle. Do not stretch the source's entire
+   // follow-through over the remaining 57% of every action.
+   const finish=clip.follow+(1-clip.follow)*phrase.settle;st.clipFinish=finish;
+   const load=smooth(clock.u/phrase.chargeEnd);
+   const u=clock.stage==='charge'?clip.release*(phrase.linked?.55+.45*load:load):
+    SkillMotion.curve(clip.release,clip.contact,clip.follow,finish,clock.beat,phrase.start,phrase.follow,phrase.settleAt);
+   return {name,clip,u,stage:clock.stage,entry:1};
   }
-  if(p.action==='recover'){if(!st.clipCut)return null;const clip=clips.get(st.clipCut),u=smooth((t-p.actionStarted)/Math.max(.001,p.actionUntil-p.actionStarted));return {name:st.clipCut,clip,u:clip.follow+(1-clip.follow)*u,stage:'recover',entry:1};}
+  if(p.action==='recover'){if(!st.clipCut)return null;const clip=clips.get(st.clipCut),u=smooth((t-p.actionStarted)/Math.max(.001,p.actionUntil-p.actionStarted)),from=st.clipFinish??clip.follow;return {name:st.clipCut,clip,u:from+(1-from)*u,stage:'recover',entry:1};}
   if(!['idle','run','guardWalk','dash','recover'].includes(p.action)){st.clipCut=null;return null;}
   const name=moving?(run?'run':'walk'):'ready',clip=clips.get(name);if(!clip)return null;
   return {name,clip,u:moving?((phase/TAU)%1+1)%1:(t/clip.duration)%1,stage:name,entry:1};
@@ -127,10 +130,14 @@ const CM01 = (()=>{
    else if(moving)st.phase+=d/stride;
    st.moving=moving;st.gaitMode=gaitMode;
    const phase=st.phase*TAU,reaction=damagePose(r,p,t,st.feet),pose=damageArtPose(r,p,t,artPose(p,t,SkillMotion.stateFor(r,p,t))),ail=ailmentPose(p,t),guard=p.guard||p.guardUntil>t||p.autoFight;
-   const fall=!p.alive?(p.wasDownedOnDeath?1:smooth((t-(p.deathAt??t))/1.12)):0;const sampledGround=p.traversal?Math.max(.10,p.supportHeight||0):this.groundAt(p.x,p.z);if(!Number.isFinite(st.ground))st.ground=sampledGround;st.ground+=(sampledGround-st.ground)*(1-Math.exp(-dt*14));const baseY=(p.baseY!=null?p.baseY:st.ground-.020)+(p.verticalOffset||0);
+   const fall=!p.alive?(p.wasDownedOnDeath?1:smooth((t-(p.deathAt??t))/1.12)):0;const sampledGround=p.traversal?Math.max(.10,p.supportHeight||0):this.groundAt(p.x,p.z);if(p.traversal||!Number.isFinite(st.ground))st.ground=sampledGround;st.ground+=(sampledGround-st.ground)*(1-Math.exp(-dt*14));const baseY=(p.baseY!=null?p.baseY:st.ground-.020)+(p.verticalOffset||0);
    const authored=selectClip(p,t,st,phase,moving,run,reaction);
-   const rootQ=Q.euler((authored?0:pose.pitch)+reaction.pitch+ail.pitch+fall*1.48,(p.dir||0)+(authored?0:pose.yaw),(authored?0:pose.roll)+reaction.roll+ail.roll);
-   const rootM=matrix([p.x+reaction.x+(authored?0:Math.cos(p.dir||0)*(pose.weightX||0)+Math.sin(p.dir||0)*(pose.weightZ||0)),baseY+(authored?0:pose.y)+ail.y-reaction.drop,p.z+reaction.z+(authored?0:-Math.sin(p.dir||0)*(pose.weightX||0)+Math.cos(p.dir||0)*(pose.weightZ||0))],rootQ);
+   const transition=SkillMotion.chargeTransition(st,p,reaction.amount>.02?null:pose.motionClock);
+   let rootQ=Q.euler((authored?0:pose.pitch)+reaction.pitch+ail.pitch+fall*1.48,(p.dir||0)+(authored?0:pose.yaw),(authored?0:pose.roll)+reaction.roll+ail.roll);
+   let rootOffset=[reaction.x+(authored?0:Math.cos(p.dir||0)*(pose.weightX||0)+Math.sin(p.dir||0)*(pose.weightZ||0)),(authored?0:pose.y)+ail.y-reaction.drop,reaction.z+(authored?0:-Math.sin(p.dir||0)*(pose.weightX||0)+Math.cos(p.dir||0)*(pose.weightZ||0))];
+   if(transition?.from){rootQ=Q.slerp(transition.from.rootQ,rootQ,transition.amount);rootOffset=V.lerp(transition.from.rootOffset,rootOffset,transition.amount);}
+   st.lastRootQ=rootQ;st.lastRootOffset=rootOffset;
+   const rootM=matrix([p.x+rootOffset[0],baseY+rootOffset[1],p.z+rootOffset[2]],rootQ);
    const q=asset.bind.map(()=>Q.identity()),offset=asset.bind.map(()=>[0,0,0]),scale=asset.bind.map(()=>[1,1,1]);
    const qi=(name,x=0,y=0,z=0)=>q[asset.names.indexOf(name)]=Q.euler(x,y,z);
    const sway=Math.sin(phase),breathe=Math.sin(t*1.8+1.1);
@@ -158,10 +165,11 @@ const CM01 = (()=>{
     // never filter the contact frame or drive the weapon on another clock.
     if(st.clipName!==authored.name){st.clipFrom=st.lastQ?.map(v=>[...v]);st.clipFromOffset=st.lastOffset?.map(v=>[...v]);st.clipChanged=t;st.clipName=authored.name;}
     sampleClip(authored.clip,authored.u,q,offset);
-    const entry=authored.stage==='charge'?authored.entry:['ready','walk','run'].includes(authored.stage)?smooth((t-st.clipChanged)/.14):1;
+    const entry=['ready','walk','run'].includes(authored.stage)?smooth((t-st.clipChanged)/.14):1;
     if(st.clipFrom&&entry<1)for(let i=0;i<q.length;i++){q[i]=Q.slerp(st.clipFrom[i],q[i],entry);if(st.clipFromOffset)offset[i]=V.lerp(st.clipFromOffset[i],offset[i],entry);}
     this.clipDebug={name:authored.name,stage:authored.stage,u:authored.u,contact:authored.clip.contact};
    }else{st.clipName=null;for(const foot of st.feet)if(foot)foot.clipStep=null;this.clipDebug=null;}
+   if(transition?.from&&transition.amount<1)for(let i=0;i<q.length;i++){q[i]=Q.slerp(transition.from.q[i],q[i],transition.amount);offset[i]=V.lerp(transition.from.offset[i],offset[i],transition.amount);}
    const amount=authored||pose.skillMotion||reaction.amount>.1||fall>0?1:1-Math.exp(-dt*22);
    if(st.lastQ)for(let i=1;i<q.length;i++)q[i]=Q.slerp(st.lastQ[i],q[i],amount);st.lastQ=q.map(v=>[...v]);
    st.lastOffset=offset.map(v=>[...v]);

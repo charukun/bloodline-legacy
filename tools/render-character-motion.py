@@ -16,9 +16,9 @@ def camera(yaw,pitch,height,aspect,focus):
  o=np.diag([2/(height*aspect),2/height,-2/50,1]);o[2,3]=-1
  return (o@v).astype('f4').T.tobytes()
 class Render:
- def __init__(self,capture,glb,size=640):
+ def __init__(self,capture,glb,size=640,context=None):
   self.cap=json.loads(Path(capture).read_text());self.glb=GLB(glb) if glb!="-" else None;self.size=size
-  c=self.c=moderngl.create_standalone_context(backend='egl');self.fbo=c.simple_framebuffer((size,size),components=4,samples=4);self.out=c.simple_framebuffer((size,size),components=4)
+  c=self.c=context or moderngl.create_standalone_context(backend='egl');self.fbo=c.simple_framebuffer((size,size),components=4,samples=4);self.out=c.simple_framebuffer((size,size),components=4)
   vertex='''#version 330
 in vec3 pos;in vec3 nor;in vec2 uv;in vec4 color;in vec4 joints;in vec4 weights;in float region;
 uniform mat4 vp;uniform mat4 bones[31];out vec3 N;out vec3 W;out vec2 U;out vec4 C;flat out int R;
@@ -41,6 +41,7 @@ void main(){if(R>=10)discard;vec3 p=C.rgb;if(textured)p*=texture(atlas,U).rgb;fl
   for key,geo in self.cap['geometry'].items():
    p=np.array(geo['positions']).reshape(-1,3);n=np.array(geo['normals']).reshape(-1,3);self.parts[key]=self.simple(p,n,[1,1,1,1])
   floor=np.array([[-8,.10,-8],[-8,.10,8],[8,.10,8],[-8,.10,-8],[8,.10,8],[8,.10,-8]])
+  origin=self.cap['frames'][0]['p'];floor[:,0]+=origin['x'];floor[:,2]+=origin['z']
   self.floor=self.simple(floor,np.tile([0,1,0],(6,1)),[.65,.69,.60,1],9)
  def vao(self,p,n,uv,col,j,w,reg,index=None):
   data=np.column_stack([p,n,uv,col,j,w,reg]).astype('f4');b=self.c.buffer(data.tobytes());ib=self.c.buffer(index) if index else None
@@ -65,7 +66,9 @@ void main(){if(R>=10)discard;vec3 p=C.rgb;if(textured)p*=texture(atlas,U).rgb;fl
 
 def main():
  ap=argparse.ArgumentParser();ap.add_argument('capture');ap.add_argument('glb');ap.add_argument('output');ap.add_argument('--before');ap.add_argument('--before-glb');ap.add_argument('--video',action='store_true');args=ap.parse_args()
- after=Render(args.capture,args.glb);before=Render(args.before,args.before_glb) if args.before else None
+ # Both sides must share the active EGL context. Independent standalone
+ # contexts can alias GL object IDs and accidentally draw the same side twice.
+ after=Render(args.capture,args.glb);before=Render(args.before,args.before_glb,context=after.c) if args.before else None
  font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',20)
  if args.video:
   w=1280 if before else 640;h=720

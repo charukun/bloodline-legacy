@@ -73,15 +73,4 @@ function rWeaponTip(r,p,m,length){r.weaponTips?.set(p.id,[m[12]+m[4]*length,m[13
 
 // Wound records stay legible on the replacement body. Place marks in the
 // deformation palette of the corresponding source bone, including its back.
-VillageArt.prototype.sentinelScars=function(p,rec){
- if(p.alive===false)return;
- const names={torso:'chest',head:'head',rightArm:'lowerarm.r',leftArm:'lowerarm.l',rightLeg:'lowerleg.r',leftLeg:'lowerleg.l'},anchors={torso:[0,.85,.347],head:[.06,1.77,.424],rightArm:[-.67,1.10,.12],leftArm:[.67,1.10,.12],rightLeg:[-.17,.23,.12],leftLeg:[.17,.23,.12]};
- for(const[part,bone]of Object.entries(names)){
-  const wound=p.wounds?.[part],mark=p.damageMarks?.[part];if((!wound&&!mark)||wound?.severity==='lost')continue;
-  const joint=EnemySentinel.asset.g.skins[0].joints.findIndex(n=>EnemySentinel.asset.g.nodes[n].name===bone);this.root=rec.palette.subarray(joint*16,(joint+1)*16);
-  const [x,y,z]=anchors[part],count=Math.min(3,Math.max(1,mark?.hits||1)),heavy=wound?.severity==='heavy'||mark?.depth>=2;
-  for(let i=0;i<count;i++)for(const side of [-1,1])this.with(rModel(x+(i-(count-1)/2)*.065,y,z*side,1,1,1,0,.48-i*.12,0),()=>{
-   this.p('box',0,0,0,.028,heavy?.20:.12,.012,'#d5b48b',0,0,0,0);this.p('box',.003,0,.009*side,.014,heavy?.18:.10,.009,'#674039',0,0,0,0);
-  });
- }
-};
+VillageArt.prototype.sentinelScars=function(p,rec){EnemyDamage.sentinel(this,p,rec);};

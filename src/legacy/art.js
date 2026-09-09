@@ -137,6 +137,51 @@ class ArtDirector{
   this.pot(-2.6,.25,.82);this.pot(2.4,.65,.67);
   this.B(-2.9,.41,-1.6,1.2,.14,.56,'#c1ac81');for(const side of [-1,1])this.B(-2.9+side*.45,.23,-1.6,.12,.44,.42,'#b39f78');
  }
+ sailingShip(ship){
+  const y=ship.deckY,wood='#947351',edge='#654e39',plank='#c4a778',cloth='#ece0bd';
+  // A broad, tapered clinker hull: every deck strip uses the collision outline.
+  for(let z=34.25;z<56;z+=.5){const w=shipHalfWidth(z)*2;
+   this.B(0,-.55,z,w*.78,2.4,.57,edge);
+   this.B(0,.30,z,w,1.65,.57,wood);
+   this.B(0,y-.09,z,w,.18,.48,Math.round(z*2)%3?'#c1a071':plank);
+  }
+  const points=[[-4.8,34],[-6,38],[-6,50],[-2.1,56],[2.1,56],[6,50],[6,38],[4.8,34]];
+  const rail=(a,b)=>{this.line([a[0],y+1,a[1]],[b[0],y+1,b[1]],.11,edge);this.line([a[0],y+.43,a[1]],[b[0],y+.43,b[1]],.07,wood);
+   this.line([a[0],y-.38,a[1]],[b[0],y-.38,b[1]],.15,'#d6b578');
+   const n=Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/1.6);for(let i=0;i<=n;i++)this.C(a[0]+(b[0]-a[0])*i/n,y+.49,a[1]+(b[1]-a[1])*i/n,.075,1,.075,edge);};
+  for(let i=1;i<points.length;i++)rail(points[i-1],points[i]);rail([-4.8,34],[-1.5,34]);rail([1.5,34],[4.8,34]);
+  // Open, gently sloping gangway. No menu, teleport, cabin door or jump needed.
+  // Short shore apron joins the ground to the raised gangway without a step.
+  this.B(0,.275/2-.08,29,3,.16,Math.hypot(1,.275),plank,0,0,-Math.atan2(.275,1));
+  const slope=Math.atan2(y-.275,4.5);
+  this.B(0,(y+.275)/2-.08,31.75,3,.16,Math.hypot(4.5,y-.275),plank,0,0,-slope);
+  for(let i=0;i<=12;i++){const z=29.5+i*4.5/12,h=shipSupport(0,z);this.B(0,h+.018,z,2.95,.035,.04,wood,0,0,-slope);}
+  for(const side of [-1,1]){this.line([side*1.5,1.15,29.5],[side*1.5,y+.85,34],.055,wood);for(const z of [29.5,31.75,34])this.C(side*1.5,shipSupport(0,z)+.4,z,.06,.85,.06,edge);}
+  // Two rigged masts and gathered canvas keep the entire practice deck readable.
+  for(const [i,m]of ship.masts.entries()){
+   const top=i?9.6:10.8,span=i?7.2:8.6;
+   this.C(m.x,(top+y)/2,m.z,.26,top-y,.26,edge);this.C(m.x,y+.16,m.z,.42,.32,.42,wood);
+   for(const h of [top-1,top-3.1]){this.line([-span/2,h,m.z],[span/2,h,m.z],.12,wood);
+    for(const [dy,dz,scale]of [[0,0,1],[-.14,.12,.94],[.05,.2,.88]])this.C(0,h-.16+dy,m.z+dz,.18,span*scale,.18,cloth,0,Math.PI/2,0,0);
+    for(const x of [-span*.36,0,span*.36])this.C(x,h-.17,m.z+.09,.018,.53,.018,edge,0,0,0,0);
+   }
+   for(const side of [-1,1])this.line([0,top-.5,m.z],[side*5.7,y+.8,m.z+2],.018,'#bca578');
+   this.B(.46,top-.12,m.z,.9,.48,.04,i?'#9a6655':'#67827a',0,-.1,0,0);
+  }
+  this.line([0,9.5,49],[0,y+.5,56],.024,'#c6b185');
+  // The foredeck is closed below: tiller, belaying pins and coiled rope above.
+  this.line([0,y+.35,54.4],[0,y+1.05,52.6],.13,edge);
+  for(const side of [-1,1]){this.B(side*4.8,y+.2,47,1,.4,1.4,wood);this.p('torus',side*4.8,y+.45,47,.35,.07,.35,'#ceb785',0,0,0,8);}
+  // A small wind-sheltered shrine and woven resting mats occupy the port side.
+  const s=ship.shrine;
+  this.B(s.x,y+.26,s.z-.55,1.3,.52,.55,wood);this.B(s.x,y+.95,s.z-.85,1.4,1.5,.15,edge);
+  this.B(s.x,y+1.13,s.z-.72,.10,.76,.10,'#dcc58f');this.B(s.x,y+1.24,s.z-.72,.5,.09,.10,'#dcc58f');
+  for(const dx of [-.42,.42]){this.C(s.x+dx,y+.65,s.z-.45,.09,.27,.09,cloth,0,0,0,0);this.S(s.x+dx,y+.82,s.z-.45,.035,.075,.035,'#f0bb64',0,0,0,4);}
+  this.B(s.x,y+.025,s.z+.32,1.4,.04,1.15,'#7e9283',0,0,0,0);
+  for(const z of [44.7,47.2]){this.B(-3.6,y+.025,z,1.45,.04,1.85,'#a4ac87',0,0,0,0);this.C(-3.6,y+.13,z-.7,.13,1.35,.13,cloth,0,Math.PI/2,0,0);}
+  // Visible target rings distinguish the three independent training stations.
+  for(const d of ship.dummies)this.p('ring:6.283185307179586',d.x,y+.035,d.z,1.45,1,1.45,'#8e7757',0,0,0,8);
+ }
  village(map){
   this.r.traversalMap=map;
   this.target=this.r.static;this.root=rModel();const rng=random(map.seed);this.r.groundFX.clear();this.r.labels=[];
@@ -148,21 +193,39 @@ class ArtDirector{
   for(const s of map.schools){path(0,s.z+3.6,s.x,s.z+3.6,2.7);this.p('disk',s.x,.14,s.z+1,4.4,1,4.1,'#e7d6b5',0,0,0,9);if(s.id==='church')this.chapel(s.x,s.z-2);else if(s.id==='forge')this.forge(s.x,s.z-2);else if(s.id==='sword')this.dojo(s.x,s.z-2);else if(s.id==='armory')this.armory(s.x,s.z-2);else if(s.id==='magic')this.library(s.x,s.z-2);else if(s.id==='dance')this.garden(s.x,s.z);else this.cottage(s.x,s.z-2,1.06,s.id==='magic'?1:0,0);this.r.labels.push({x:s.x,z:s.z,y:s.id==='church'?6:4.7,text:s.short,id:s.id});}
   for(const h of map.houses)this.cottage(h.x,h.z,.69*h.scale,h.id%4,h.rotation);
   for(let i=0;i<50;i++){let a=i/50*TAU,x=Math.sin(a)*38,z=Math.cos(a)*38-7;if(z>22&&Math.abs(x)<9)continue;this.S(x,-.68,z,1.7+rng(),1.5,1.4+rng(),'#c4bba0',a,0,0,9);if(i%3===0)this.tree(x*.9,z*.96,.85+rng()*.15,'#aab995',i+13);}
-  for(let i=0;i<48;i++){const x=(rng()-.5)*72,z=(rng()-.5)*64-6;if(Math.abs(x)<5||Math.abs(z-7)<3||Math.abs(z+19)<3||map.schools.some(s=>Math.hypot(x-s.x,z-s.z)<7)||map.houses.some(h=>Math.hypot(x-h.x,z-h.z)<4))continue;this.tree(x,z,.60+rng()*.4,'#b2c0a0',i+61);}
+  for(let i=0;i<48;i++){const x=(rng()-.5)*72,z=(rng()-.5)*64-6;if(terrainFootprint(map,x,z,1.5)||Math.abs(x)<5||Math.abs(z-7)<3||Math.abs(z+19)<3||map.schools.some(s=>Math.hypot(x-s.x,z-s.z)<7)||map.houses.some(h=>Math.hypot(x-h.x,z-h.z)<4))continue;this.tree(x,z,.60+rng()*.4,'#b2c0a0',i+61);}
   // Sparse grouped flowers, not a uniform noisy carpet.
-  for(let i=0;i<180;i++){const x=(rng()-.5)*71,z=(rng()-.5)*62-4;if(Math.abs(x)<3||Math.abs(z-7)<2||Math.abs(z+19)<2||map.houses.some(h=>Math.abs(x-h.x)<2.1&&Math.abs(z-h.z)<2.2)||map.schools.some(s=>Math.hypot(x-s.x,z-s.z)<4.9))continue;for(let k=0;k<3;k++)this.flower(x+rng()*.7,z+rng()*.7,k?'#f7edce':'#dcc4a3',.45+rng()*.3);this.tuft(x+.5,.08,z,1.1);}
+  for(let i=0;i<180;i++){const x=(rng()-.5)*71,z=(rng()-.5)*62-4;if(terrainFootprint(map,x,z,.9)||Math.abs(x)<3||Math.abs(z-7)<2||Math.abs(z+19)<2||map.houses.some(h=>Math.abs(x-h.x)<2.1&&Math.abs(z-h.z)<2.2)||map.schools.some(s=>Math.hypot(x-s.x,z-s.z)<4.9))continue;for(let k=0;k<3;k++)this.flower(x+rng()*.7,z+rng()*.7,k?'#f7edce':'#dcc4a3',.45+rng()*.3);this.tuft(x+.5,.08,z,1.1);}
   // Small gardens, loose stonework and workshop clutter give each frontage a role.
   for(const s of map.schools){if(s.id==='dance')continue;for(const side of [-1,1]){this.herbBed(s.x+side*3.75,s.z+1,1.55);for(let i=0;i<5;i++)this.flower(s.x+side*(3.15+i*.26),s.z+3.9+Math.sin(i)*.33,i%2?'#f8eacc':'#d6c5b6',.66);}this.stoneWall(s.x+3.8,s.z-3.9,3.2);}
   const forge=map.schools.find(s=>s.id==='forge');this.cart(forge.x-3.1,forge.z+3.3);this.barrel(forge.x+3.2,forge.z+1.9,.9);this.barrel(forge.x+3.8,forge.z+2.4,.66);
   // The outside hearth is readable from the playing camera, not hidden below a roof.
   this.with(rModel(forge.x+2.9,0,forge.z+.7),()=>{this.B(0,.18,0,1.75,.30,1.60,'#c6b294',0,0,0,9);this.B(0,.61,-.5,1.6,.86,.35,'#c1aa88',0,0,0,9);for(const side of [-1,1])this.B(side*.65,.46,0,.28,.60,1.3,'#cbb99b',0,0,0,9);this.B(0,.35,.12,1.1,.12,1,'#b37645',0,0,0,4);for(let i=0;i<5;i++)this.p('leaf',(i-2)*.19,.62,.06,.13,.34+(i%2)*.16,.12,i%2?'#f4d38e':'#e9b575',0,0,0,4);});
   for(const h of map.houses.filter(h=>h.id%4===0)){this.barrel(h.x+2.1,h.z+1.0,.65);this.herbBed(h.x,h.z+2.3,1.55);}
-  for(let i=0;i<28;i++){const x=(rng()-.5)*23,z=(rng()-.5)*34;if(Math.abs(x)<3||map.schools.some(s=>Math.hypot(x-s.x,z-s.z)<5)||Math.abs(z-7)<2)continue;for(let j=0;j<4;j++)this.S(x+Math.sin(j*2.3)*.38,.26,z+Math.cos(j*2.3)*.35,.50,.34,.42,j%2?'#becaa7':'#afbfa0',j,0,0,0);}
-  for(const o of map.traversables||[]){if(o.kind==='vault')this.fence(o.x,o.z,o.width);else{this.B(o.x,o.height/2,o.z,o.width,o.height,o.depth,'#c8ba97',0,0,0,9);this.B(o.x,o.height-.035,o.z,o.width+.04,.07,o.depth+.02,'#e2d1ad',0,0,0,9);}}
+  for(let i=0;i<28;i++){const x=(rng()-.5)*23,z=(rng()-.5)*34;if(terrainFootprint(map,x,z,1)||Math.abs(x)<3||map.schools.some(s=>Math.hypot(x-s.x,z-s.z)<5)||Math.abs(z-7)<2)continue;for(let j=0;j<4;j++)this.S(x+Math.sin(j*2.3)*.38,.26,z+Math.cos(j*2.3)*.35,.50,.34,.42,j%2?'#becaa7':'#afbfa0',j,0,0,0);}
+  this.drawingTerrain=true;for(const o of map.traversables||[])this.terrainLedge(o);this.drawingTerrain=false;
   // Gate has two different sentry caps, cloth banners and masonry piers.
   for(const side of [-1,1]){this.B(side*4.1,1.3,-28,1.35,2.5,1.4,'#d0c4a5',0,0,0,9);this.with(rModel(side*4.1,0,-28),()=>this.roof(2,2,2.7,.75,'#9da894'));this.B(side*4.1,2,-27.19,.66,1.12,.07,'#8fa59a',0,0,0,0);this.p('leaf',side*4.1,2.05,-27.13,.15,.32,.03,'#efe2bc');}
   for(let i=0;i<6;i++){this.B(0,.20,25+i*.76,4,.15,.62,'#c5ad82');if(i%2===0)for(const side of [-1,1])this.C(side*2.0,.32,25+i*.76,.10,1.05,.1,'#b09b71');}
+  if(map.ship)this.sailingShip(map.ship);
   for(const [x,z] of [[-3,-6],[3,17],[-6,7],[7,-18],[-15,7],[17,-5]]){this.C(x,1.5,z,.08,3,.08,'#a38e67');this.lantern(x,2.5,z);}
+ }
+ terrainLedge(o){
+  if(o.kind==='vault'&&!o.stone){this.fence(o.x,o.z,o.width);return;}
+  const stone=['#a9a28d','#b8ae97','#c1b49b','#989d8c'];
+  // Closed, instanced cores and flush caps: the visible top is the simulated top.
+  this.p('box',o.x,(o.height-.05)/2,o.z,o.width,o.height-.05,o.depth,'#aaa38b',0,0,0,9);
+  this.p('box',o.x,o.height-.025,o.z,o.width,.05,o.depth,o.terrace?'#9da373':'#d2c1a2',0,0,0,o.terrace?12:9);
+  if(o.stair)return;
+  const rows=Math.max(1,Math.round(o.height/.3));
+  for(const side of [-1,1])for(let row=0;row<rows;row++){
+   const n=Math.ceil(o.width/.85),w=o.width/n;
+   for(let i=0;i<n;i++)this.B(o.x-o.width/2+(i+.5)*w,(row+.5)*o.height/rows,o.z+side*(o.depth/2-.065),w-.035,o.height/rows-.025,.13,stone[(i+row)%4],0,0,0,9);
+   if(o.terrace){const n=Math.ceil(o.depth/.8),d=o.depth/n;for(let i=0;i<n;i++)this.B(o.x+side*(o.width/2-.065),(row+.5)*o.height/rows,o.z-o.depth/2+(i+.5)*d,.13,o.height/rows-.025,d-.035,stone[(i+row+1)%4],0,0,0,9);}
+  }
+  if(o.terrace){
+   for(let i=0;i<Math.floor(o.width/.8);i++)this.B(o.x-o.width/2+.45+i*.8,o.height-.017,o.z,.70,.05,1.3,stone[i%4],0,0,0,9);
+  }
  }
  front(seed,stage){this.r.traversalMap=null;this.target=this.r.static;this.root=rModel();this.r.groundFX.clear();this.r.labels=[];const rng=random(seed+stage*11),base=-stage*44;
   this.p('plane',0,-.10,base-15,150,1,160,stage>=3?'#c1b8a5':'#c5c6a4',0,0,0,12);this.B(0,.06,base-17,12,.1,66,'#ddccaa',0,0,0,9);
@@ -292,7 +355,7 @@ class ArtDirector{
   const oldTarget=this.target;this.target=this.r.dynamic;this.root=rModel();const step=Math.sin(t*6+(p.stance||0)),run=p.action==='run',react=damagePose(this.r,p,t),ail=ailmentPose(p,t),fall=!p.alive?clamp((t-(p.deathAt??t))/1.1,0,1):0;
   const kind=p.kind||'goblin',elite=p.elite||kind==='boss',sc=kind==='boss'?2.1:elite?1.45:1;
   const humanoid=['goblin','soldier','elite','boss','archer','mage'].includes(kind);
-  this.root=rModel(p.x+react.x,.20+ail.y+(run?Math.abs(step)*.04:0)-react.drop,p.z+react.z,sc,sc,sc,p.dir||0,(humanoid?0:react.roll)+ail.roll,fall*1.5+(humanoid?0:react.pitch)+ail.pitch);
+  this.root=rModel(p.x+react.x,(p.supportHeight||0)+.20+ail.y+(run?Math.abs(step)*.04:0)-react.drop,p.z+react.z,sc,sc,sc,p.dir||0,(humanoid?0:react.roll)+ail.roll,fall*1.5+(humanoid?0:react.pitch)+ail.pitch);
   const damageBase=this.root,damageUpper=humanoid&&react.amount>0?rMultiply(damageBase,rMultiply(rModel(0,.89,0,1,1,1,react.yaw,react.torsoRoll+react.roll,react.torso+react.pitch),rModel(0,-.89,0))):damageBase;
   let scarHead=damageUpper;
   let fur=elite?'#a7ac9b':kind==='goblin'?'#b3c394':kind==='guard'?'#aeb7a5':'#babfa0',top=2.3;

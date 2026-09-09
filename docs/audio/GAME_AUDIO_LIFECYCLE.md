@@ -28,6 +28,7 @@ All four FFmpeg-decoded reconstructions preserve exact sample counts. RMS change
 ## Verification
 
 - Build and full `npm test` after rebasing onto the publication baseline: **494/494 PASS**. This includes the source-hash build guard and the newer UI regression tests.
+- Publication conflict resolved against develop `bd984a847be674825c067e9feec7d45c22458b99`, retaining upstream skill catalog generation and character/enemy modules. Build (23,596,071 bytes / 49 modules) and the 15 audio tests pass on this final integration; the 494-test full run above was on `6cdbacdb627bd10bccf9fb4a06f771881cc5dd3a`.
 - 15 audio regression tests cover asset/chunk hashes and embedding, sample-aligned scheduling, bounded cache, exact pause position, serialized late decodes, disposal, malformed buffers, two-deck crossfade/retirement, area hysteresis, hidden/blur/page lifecycle, mute, pending context activation, initial-decode races and gesture retry.
 - Source/constructor checks reject `new Audio()` and `createMediaElementSource` in the game BGM route. Existing gameplay/UI/save/skill tests remain intact.
 - **Browser / Android device verification: UNVERIFIED.** The Work browser rejected the local built game with `net::ERR_BLOCKED_BY_CLIENT`. An offline diagnostic navigation was also explicitly blocked by its URL policy; no alternate browser execution was used. FFmpeg decoding and an instrumented Web Audio contract harness are not actual Chrome decoder, audible output or Android notification-panel verification.

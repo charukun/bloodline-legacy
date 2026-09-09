@@ -28,7 +28,7 @@ export async function loadScene(root = repository, options = {}) {
   }
   try { await fs.access(path.join(root, 'src/world/golden-slice.js')); files.push('world/golden-slice.js'); } catch {}
   files.push('weather/weather.js', 'character/rig.js', 'render/combat-presentation.js', 'render/adapter.js');
-  if(options.enemyReview)files.splice(files.indexOf('render/combat-presentation.js'),0,'enemies/sentinel.js','enemies/equipment.js','enemies/bestiary.js');
+  if(options.enemyReview)files.splice(files.indexOf('render/combat-presentation.js'),0,'enemies/damage.js','enemies/weakness.js','enemies/sentinel.js','enemies/equipment.js','enemies/bestiary.js','../tools/enemies/review-scenes.js');
   const assets = {};
   for (const file of await fs.readdir(path.join(root, 'public/assets'))) {
     if (/\.(png|glb)$/.test(file)) assets[file] = (await fs.readFile(path.join(root, 'public/assets', file))).toString('base64');
@@ -62,7 +62,7 @@ export async function loadScene(root = repository, options = {}) {
       program:{},shadowStatic:{tex:0},shadowDynamic:{tex:0},weather:new WeatherState(),frame:0});
     r.put=Renderer.prototype.put;
     r.art=new (typeof GoldenArt==='undefined'?VillageArt:GoldenArt)(r);
-    if(options.enemyReview){EnemyCreatures.install();r.enemyAPI={sentinel:EnemySentinel,creatures:EnemyCreatures,forms:ENEMY_FORMS};}
+    if(options.enemyReview){EnemyCreatures.install();r.enemyAPI={sentinel:EnemySentinel,creatures:EnemyCreatures,forms:ENEMY_FORMS,damage:EnemyDamage,review:EnemyReview};}
     const artStart=performance.now();r.art.village(snapshot.map);const artMs=performance.now()-artStart;
     if(options.isolatedMaterials){r.static.clear();r.art.root=rModel();r.art.target=r.static;r.art.B(0,-.20,options.z,20,.4,16,'#424a3d');}
     // Existing poses are flattened into rigid instance matrices for this offline
