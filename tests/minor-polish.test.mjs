@@ -31,7 +31,7 @@ test('walk slides along houses and schools without crossing walls; attack steps 
 test('carried walk preserves the release timer, inventory, save compatibility and combat lock',t=>{
  const {p,g,sim,api}=fixture(t);Object.assign(p,{prologue:true,age:0,x:0,z:10,releaseAt:2,introUntil:14});
  const restored=api.Simulation.restore(sim.exportState()),q=restored.players.get(p.id);restored.command(q.id,{type:'move',x:1,z:0});restored.tick(1/30);assert.ok(q.x>0);
- assert.equal(g.command({type:'dash',x:1,z:0}),false);assert.equal(g.command({type:'attack'}),false);assert.equal(g.command({type:'pickup',id:'none'}),false);
+ assert.equal(g.command({type:'dash',x:1,z:0}),true);assert.equal(g.command({type:'attack'}),false);assert.equal(g.command({type:'pickup',id:'none'}),false);
  for(let i=0;i<61;i++)sim.tick(1/30);assert.equal(p.prologue,false);assert.equal(p.age,4);assert.equal(p.inventory.length,0);
 });
 

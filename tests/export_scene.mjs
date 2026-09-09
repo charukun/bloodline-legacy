@@ -28,7 +28,7 @@ export async function loadScene(root = repository, options = {}) {
   }
   try { await fs.access(path.join(root, 'src/world/golden-slice.js')); files.push('world/golden-slice.js'); } catch {}
   files.push('weather/weather.js', 'character/rig.js', 'render/combat-presentation.js', 'render/adapter.js');
-  if(options.enemyReview)files.splice(files.indexOf('render/combat-presentation.js'),0,'enemies/damage.js','enemies/weakness.js','enemies/sentinel.js','enemies/equipment.js','enemies/bestiary.js','../tools/enemies/review-scenes.js');
+  if(options.enemyReview)files.splice(files.indexOf('render/combat-presentation.js'),0,'enemies/damage.js','enemies/weakness.js','enemies/sentinel.js','enemies/equipment.js','enemies/bestiary.js','enemies/fauna.js','../tools/enemies/review-scenes.js');
   const assets = {};
   for (const file of await fs.readdir(path.join(root, 'public/assets'))) {
     if (/\.(png|glb)$/.test(file)) assets[file] = (await fs.readFile(path.join(root, 'public/assets', file))).toString('base64');

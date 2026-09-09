@@ -1,0 +1,652 @@
+{
+  "base": "10fb501e635f953c529dfbfc6898d8c0fd21e66c",
+  "checks": [
+    {
+      "name": "before 0 calm",
+      "pass": true
+    },
+    {
+      "name": "before 0 hurt",
+      "pass": true
+    },
+    {
+      "name": "before no page errors",
+      "pass": true,
+      "details": []
+    },
+    {
+      "name": "after 0 calm",
+      "pass": true,
+      "details": "calm"
+    },
+    {
+      "name": "after 0 talk",
+      "pass": true,
+      "details": "talk"
+    },
+    {
+      "name": "after 0 focused",
+      "pass": true,
+      "details": "focused"
+    },
+    {
+      "name": "after 0 hurt",
+      "pass": true,
+      "details": "hurt"
+    },
+    {
+      "name": "after 0 sleep",
+      "pass": true,
+      "details": "sleep"
+    },
+    {
+      "name": "after 1 calm",
+      "pass": true,
+      "details": "calm"
+    },
+    {
+      "name": "after 1 talk",
+      "pass": true,
+      "details": "talk"
+    },
+    {
+      "name": "after 1 focused",
+      "pass": true,
+      "details": "focused"
+    },
+    {
+      "name": "after 1 hurt",
+      "pass": true,
+      "details": "hurt"
+    },
+    {
+      "name": "after 1 sleep",
+      "pass": true,
+      "details": "sleep"
+    },
+    {
+      "name": "after 2 calm",
+      "pass": true,
+      "details": "calm"
+    },
+    {
+      "name": "after 2 talk",
+      "pass": true,
+      "details": "talk"
+    },
+    {
+      "name": "after 2 focused",
+      "pass": true,
+      "details": "focused"
+    },
+    {
+      "name": "after 2 hurt",
+      "pass": true,
+      "details": "hurt"
+    },
+    {
+      "name": "after 2 sleep",
+      "pass": true,
+      "details": "sleep"
+    },
+    {
+      "name": "after 3 calm",
+      "pass": true,
+      "details": "calm"
+    },
+    {
+      "name": "after 3 talk",
+      "pass": true,
+      "details": "talk"
+    },
+    {
+      "name": "after 3 focused",
+      "pass": true,
+      "details": "focused"
+    },
+    {
+      "name": "after 3 hurt",
+      "pass": true,
+      "details": "hurt"
+    },
+    {
+      "name": "after 3 sleep",
+      "pass": true,
+      "details": "sleep"
+    },
+    {
+      "name": "age 0 4",
+      "pass": true,
+      "details": {
+        "face": "hurt",
+        "age": 4,
+        "finite": true,
+        "immutable": true,
+        "gl": 0
+      }
+    },
+    {
+      "name": "age 0 72",
+      "pass": true,
+      "details": {
+        "face": "hurt",
+        "age": 72,
+        "finite": true,
+        "immutable": true,
+        "gl": 0
+      }
+    },
+    {
+      "name": "age 1 4",
+      "pass": true,
+      "details": {
+        "face": "hurt",
+        "age": 4,
+        "finite": true,
+        "immutable": true,
+        "gl": 0
+      }
+    },
+    {
+      "name": "age 1 72",
+      "pass": true,
+      "details": {
+        "face": "hurt",
+        "age": 72,
+        "finite": true,
+        "immutable": true,
+        "gl": 0
+      }
+    },
+    {
+      "name": "age 2 4",
+      "pass": true,
+      "details": {
+        "face": "hurt",
+        "age": 4,
+        "finite": true,
+        "immutable": true,
+        "gl": 0
+      }
+    },
+    {
+      "name": "age 2 72",
+      "pass": true,
+      "details": {
+        "face": "hurt",
+        "age": 72,
+        "finite": true,
+        "immutable": true,
+        "gl": 0
+      }
+    },
+    {
+      "name": "age 3 4",
+      "pass": true,
+      "details": {
+        "face": "hurt",
+        "age": 4,
+        "finite": true,
+        "immutable": true,
+        "gl": 0
+      }
+    },
+    {
+      "name": "age 3 72",
+      "pass": true,
+      "details": {
+        "face": "hurt",
+        "age": 72,
+        "finite": true,
+        "immutable": true,
+        "gl": 0
+      }
+    },
+    {
+      "name": "native wounded movement",
+      "pass": true,
+      "details": {
+        "distance": 1.0342580938404526,
+        "rows": [
+          {
+            "face": "hurt",
+            "leg": 1,
+            "error": 5.123232098303108e-9,
+            "finite": true
+          },
+          {
+            "face": "hurt",
+            "leg": 1,
+            "error": 1.0757453414947378e-8,
+            "finite": true
+          },
+          {
+            "face": "hurt",
+            "leg": 1,
+            "error": 2.047056643990476e-9,
+            "finite": true
+          },
+          {
+            "face": "hurt",
+            "leg": 1,
+            "error": 4.897928545978036e-9,
+            "finite": true
+          },
+          {
+            "face": "hurt",
+            "leg": 1,
+            "error": 6.896947172457622e-9,
+            "finite": true
+          },
+          {
+            "face": "hurt",
+            "leg": 1,
+            "error": 7.820288075669641e-9,
+            "finite": true
+          },
+          {
+            "face": "hurt",
+            "leg": 1,
+            "error": 9.835618081479875e-9,
+            "finite": true
+          },
+          {
+            "face": "hurt",
+            "leg": 1,
+            "error": 4.411442330640066e-9,
+            "finite": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "simulation healing clears hurt face",
+      "pass": true,
+      "details": {
+        "wound": false,
+        "face": "calm"
+      }
+    },
+    {
+      "name": "downing owns pose and closes eyes",
+      "pass": true,
+      "details": {
+        "state": "downed",
+        "face": "downed",
+        "weight": 0
+      }
+    },
+    {
+      "name": "after no page errors",
+      "pass": true,
+      "details": []
+    }
+  ],
+  "states": [
+    {
+      "version": "before",
+      "race": 0,
+      "state": "calm",
+      "finite": true,
+      "immutable": true,
+      "gl": 0,
+      "calls": 25,
+      "triangles": 61920
+    },
+    {
+      "version": "before",
+      "race": 0,
+      "state": "hurt",
+      "finite": true,
+      "immutable": true,
+      "gl": 0,
+      "calls": 25,
+      "triangles": 61920
+    },
+    {
+      "version": "after",
+      "race": 0,
+      "state": "calm",
+      "expression": "calm",
+      "uniform": [
+        1,
+        0,
+        1,
+        0
+      ],
+      "finite": true,
+      "immutable": true,
+      "gl": 0,
+      "calls": 25,
+      "triangles": 61920
+    },
+    {
+      "version": "after",
+      "race": 0,
+      "state": "talk",
+      "expression": "talk",
+      "uniform": [
+        0.9,
+        0.04,
+        1.15,
+        0.5365466438931855
+      ],
+      "finite": true,
+      "immutable": true,
+      "gl": 0,
+      "calls": 25,
+      "triangles": 61920
+    },
+    {
+      "version": "after",
+      "race": 0,
+      "state": "focused",
+      "expression": "focused",
+      "uniform": [
+        0.82,
+        -0.18,
+        0.05,
+        0
+      ],
+      "finite": true,
+      "immutable": true,
+      "gl": 0,
+      "calls": 25,
+      "triangles": 61920
+    },
+    {
+      "version": "after",
+      "race": 0,
+      "state": "hurt",
+      "expression": "hurt",
+      "uniform": [
+        0.52,
+        0.2,
+        -0.4,
+        0.02
+      ],
+      "finite": true,
+      "immutable": true,
+      "gl": 0,
+      "calls": 25,
+      "triangles": 61920
+    },
+    {
+      "version": "after",
+      "race": 0,
+      "state": "sleep",
+      "expression": "sleep",
+      "uniform": [
+        0.055,
+        0.12,
+        0.1,
+        0
+      ],
+      "finite": true,
+      "immutable": true,
+      "gl": 0,
+      "calls": 26,
+      "triangles": 63360
+    },
+    {
+      "version": "after",
+      "race": 1,
+      "state": "calm",
+      "expression": "calm",
+      "uniform": [
+        1,
+        0,
+        1,
+        0
+      ],
+      "finite": true,
+      "immutable": true,
+      "gl": 0,
+      "calls": 25,
+      "triangles": 64096
+    },
+    {
+      "version": "after",
+      "race": 1,
+      "state": "talk",
+      "expression": "talk",
+      "uniform": [
+        0.9,
+        0.04,
+        1.15,
+        0.5365466438931855
+      ],
+      "finite": true,
+      "immutable": true,
+      "gl": 0,
+      "calls": 25,
+      "triangles": 64096
+    },
+    {
+      "version": "after",
+      "race": 1,
+      "state": "focused",
+      "expression": "focused",
+      "uniform": [
+        0.82,
+        -0.18,
+        0.05,
+        0
+      ],
+      "finite": true,
+      "immutable": true,
+      "gl": 0,
+      "calls": 25,
+      "triangles": 64096
+    },
+    {
+      "version": "after",
+      "race": 1,
+      "state": "hurt",
+      "expression": "hurt",
+      "uniform": [
+        0.52,
+        0.2,
+        -0.4,
+        0.02
+      ],
+      "finite": true,
+      "immutable": true,
+      "gl": 0,
+      "calls": 25,
+      "triangles": 64096
+    },
+    {
+      "version": "after",
+      "race": 1,
+      "state": "sleep",
+      "expression": "sleep",
+      "uniform": [
+        0.055,
+        0.12,
+        0.1,
+        0
+      ],
+      "finite": true,
+      "immutable": true,
+      "gl": 0,
+      "calls": 26,
+      "triangles": 65536
+    },
+    {
+      "version": "after",
+      "race": 2,
+      "state": "calm",
+      "expression": "calm",
+      "uniform": [
+        1,
+        0,
+        1,
+        0
+      ],
+      "finite": true,
+      "immutable": true,
+      "gl": 0,
+      "calls": 25,
+      "triangles": 65096
+    },
+    {
+      "version": "after",
+      "race": 2,
+      "state": "talk",
+      "expression": "talk",
+      "uniform": [
+        0.9,
+        0.04,
+        1.15,
+        0.5365466438931855
+      ],
+      "finite": true,
+      "immutable": true,
+      "gl": 0,
+      "calls": 25,
+      "triangles": 65096
+    },
+    {
+      "version": "after",
+      "race": 2,
+      "state": "focused",
+      "expression": "focused",
+      "uniform": [
+        0.82,
+        -0.18,
+        0.05,
+        0
+      ],
+      "finite": true,
+      "immutable": true,
+      "gl": 0,
+      "calls": 25,
+      "triangles": 65096
+    },
+    {
+      "version": "after",
+      "race": 2,
+      "state": "hurt",
+      "expression": "hurt",
+      "uniform": [
+        0.52,
+        0.2,
+        -0.4,
+        0.02
+      ],
+      "finite": true,
+      "immutable": true,
+      "gl": 0,
+      "calls": 25,
+      "triangles": 65096
+    },
+    {
+      "version": "after",
+      "race": 2,
+      "state": "sleep",
+      "expression": "sleep",
+      "uniform": [
+        0.055,
+        0.12,
+        0.1,
+        0
+      ],
+      "finite": true,
+      "immutable": true,
+      "gl": 0,
+      "calls": 26,
+      "triangles": 66536
+    },
+    {
+      "version": "after",
+      "race": 3,
+      "state": "calm",
+      "expression": "calm",
+      "uniform": [
+        1,
+        0,
+        1,
+        0
+      ],
+      "finite": true,
+      "immutable": true,
+      "gl": 0,
+      "calls": 25,
+      "triangles": 64096
+    },
+    {
+      "version": "after",
+      "race": 3,
+      "state": "talk",
+      "expression": "talk",
+      "uniform": [
+        0.9,
+        0.04,
+        1.15,
+        0.5365466438931855
+      ],
+      "finite": true,
+      "immutable": true,
+      "gl": 0,
+      "calls": 25,
+      "triangles": 64096
+    },
+    {
+      "version": "after",
+      "race": 3,
+      "state": "focused",
+      "expression": "focused",
+      "uniform": [
+        0.82,
+        -0.18,
+        0.05,
+        0
+      ],
+      "finite": true,
+      "immutable": true,
+      "gl": 0,
+      "calls": 25,
+      "triangles": 64096
+    },
+    {
+      "version": "after",
+      "race": 3,
+      "state": "hurt",
+      "expression": "hurt",
+      "uniform": [
+        0.52,
+        0.2,
+        -0.4,
+        0.02
+      ],
+      "finite": true,
+      "immutable": true,
+      "gl": 0,
+      "calls": 25,
+      "triangles": 64096
+    },
+    {
+      "version": "after",
+      "race": 3,
+      "state": "sleep",
+      "expression": "sleep",
+      "uniform": [
+        0.055,
+        0.12,
+        0.1,
+        0
+      ],
+      "finite": true,
+      "immutable": true,
+      "gl": 0,
+      "calls": 26,
+      "triangles": 65536
+    }
+  ],
+  "limitations": [
+    "Chromium / SwiftShader; native Pixel Fold performance unverified.",
+    "Race, camera and pose fixtures are deterministic; wounds, healing and input are verified through the actual game runtime."
+  ],
+  "passed": true
+}

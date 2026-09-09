@@ -109,7 +109,7 @@ export function createSkillComposition(){
    entry:phase===0?[]:[r.entry],exit:[e.exit],connection:phase===1?{recovery:.72}:{cost:.82},composition:recipe,action};
  }
  function expand(authored){
-  const anchors=new Map();for(const d of authored)if(!d.passive&&!d.composition&&!anchors.has(d.family))anchors.set(d.family,d);
+  const anchors=new Map();for(const d of authored)if(!d.passive&&!d.composition&&(!anchors.has(d.family)||d.id<anchors.get(d.family).id))anchors.set(d.family,d);
   const out=[];for(const f of forms){const anchor=anchors.get(f.family);if(!anchor)continue;
    for(const c of cadences)for(const w of feet)for(const r of reactions)for(const e of endings)
     out.push(build({form:f.key,cadence:c.key,footwork:w.key,reaction:r.key,ending:e.key},anchor));

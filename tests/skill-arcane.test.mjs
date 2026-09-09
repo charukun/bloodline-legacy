@@ -13,7 +13,7 @@ test('each spell stays finite, bounded and visible across lifecycle and quality 
   for(const f of frame){const g=Arc.geometry(f);assert(g.count>0);assert(g.radius<6);assert([...g.positions,...g.normals,...Arc.ink(f)].every(Number.isFinite));assert(f.alpha>=0&&f.alpha<=1);}
   assert.equal(Arc.impact(p.recipe,Arc.life(p.recipe),quality).length,0);
  }
- for(let mode=0;mode<=6;mode++)for(let u=0;u<=1;u+=.07)for(let v=0;v<=1;v+=.08){const alpha=Arc.mask(mode,u,v,.3,.7,1);assert(Number.isFinite(alpha)&&alpha>=0&&alpha<=1);}
+ for(let mode=0;mode<=7;mode++)for(let u=0;u<=1;u+=.07)for(let v=0;v<=1;v+=.08){const alpha=Arc.mask(mode,u,v,.3,.7,1);assert(Number.isFinite(alpha)&&alpha>=0&&alpha<=1);}
 });
 test('layers are independently removable and imports replay the same effect',()=>{
  for(const p of FX.presets.slice(6)){

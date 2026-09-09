@@ -6,6 +6,12 @@ const SkillPresentation = (() => {
   if(el.parentElement!==button)button.appendChild(el);ui.skillReveal=el;
   return el;
  }
+ function paint(ui){
+  const el=ensure(ui),e=ui.skillRevealEvent;if(!el||!e)return;
+  const names=e.ids.map(id=>skillById(id)?.name).filter(Boolean);
+  el.innerHTML=`<span class="revelation-rays" aria-hidden="true">${Array.from({length:12},(_,i)=>`<i style="--ray:${i};--angle:${i*30}deg"></i>`).join('')}</span><svg class="revelation-crest" viewBox="0 0 260 90" aria-hidden="true" fill="none" stroke="currentColor"><path d="M6 47 58 38 82 45M254 47 202 38 178 45M24 57 68 49 82 53M236 57 192 49 178 53"/><ellipse cx="130" cy="44" rx="49" ry="34"/><ellipse cx="130" cy="44" rx="44" ry="30" stroke-opacity=".45"/><path d="m130 2 4 11-4 5-4-5Zm0 68 4 5-4 12-4-12Z" fill="currentColor"/></svg><strong class="revelation-word">${e.ids.every(id=>skillById(id)?.passive)?'心得':'閃き'}</strong><span class="revelation-name">${ESC(names.slice(0,2).join('・'))}${names.length>2?` ＋${names.length-2}`:''}</span>`;
+  el.classList.add('visible');
+ }
  function clear(ui) { if(ui.skillReveal){ui.skillReveal.classList.remove('visible');ui.skillReveal.textContent='';}ui.skillRevealEvent=null; }
  function event(ui,e) {
   if(e.player!==ui.g.playerId)return false;
@@ -18,17 +24,22 @@ const SkillPresentation = (() => {
    if(!ui.skillRevealEvent) {ui.floatLines.push({...e,born:e.t,shown:performance.now(),life:4.6,text:uiMemoryText(e.text)});ui.floatLines=ui.floatLines.slice(-16);}
    return true;
   }
-  if(!['insight','passive'].includes(e.type)||!BL_SKILL_CATALOG.byId.has(e.id))return false;
-  const el=ensure(ui);if(!el)return false;
-  ui.skillRevealEvent={...e,shown:performance.now()};el.textContent=e.type==='passive'?'心得':'閃き';el.classList.add('visible');return false; // UI.event owns the single named discovery notice.
+  if(!['insight','passive'].includes(e.type)||!skillById(e.id))return false;
+  if(e.seq!=null&&ui.skillRevealOwner===e.player&&e.seq<=ui.skillRevealSeq)return true;
+  if(e.seq!=null){ui.skillRevealOwner=e.player;ui.skillRevealSeq=e.seq;}
+  const el=ensure(ui);if(!el)return true;
+  const now=performance.now(),previous=ui.skillRevealEvent;
+  const same=previous&&previous.player===e.player&&now<previous.until;
+  ui.skillRevealEvent={...e,shown:same?previous.shown:now,until:Math.min((same?previous.shown:now)+4200,now+3000),ids:[...new Set([...(same?previous.ids:[]),e.id])].slice(-16)};
+  paint(ui);return true;
  }
  function update(ui,s) {
   if(s.player.skillLifeNotice&&ui.skillNoticeLife!==s.player.id){ui.skillNoticeLife=s.player.id;ui.toast(s.player.skillLifeNotice);}
   document.querySelector('[data-menu="skills"]')?.classList.toggle('has-insight',!!s.player.skillLife?.unread?.length);
   if(!ui.skillRevealEvent)return;
   const e=ui.skillRevealEvent,elapsed=performance.now()-e.shown;
-  if(!s.player.alive||e.player!==s.player.id||elapsed>=2200){clear(ui);return;}
-  if(!ui.skillReveal.isConnected){const el=ensure(ui);if(el){el.textContent=e.type==='passive'?'心得':'閃き';el.classList.add('visible');}}
+  if(!s.player.alive||e.player!==s.player.id||performance.now()>=e.until){clear(ui);return;}
+  if(!ui.skillReveal.isConnected)paint(ui);
  }
  function opened(ui) { clear(ui);ui.g.command({type:'skill-read'});ui.g.saveWorld(); }
  function rendered(ui) {
@@ -56,8 +67,8 @@ const SkillPresentation = (() => {
  }
  function sound(audio,e) {
   if(!audio.enabled||!audio.ctx||audio.background)return false;
-  const d=BL_SKILL_CATALOG.byId.get(e.id??e.skill),t=audio.ctx.currentTime;
-  if(d&&['insight','passive'].includes(e.type)) { [62,69,76].forEach((n,i)=>audio.tone(n,t+[0,.23,.45][i],.65,.08,'triangle',false,audio.fxBus));return true; }
+  const t=audio.ctx.currentTime;
+  // All discoveries share AudioEngine's spatial, muted and bounded flourish.
   if(e.type==='skillconnection') {
    if(e.signal==='quiet')return true;
    if(e.first) [74,81,86].forEach((n,i)=>audio.tone(n,t+i*.045,.12,.035,'triangle',false,audio.fxBus));

@@ -1,0 +1,38 @@
+{
+  "createdAt": "2026-09-09T18:55:57.559339+00:00",
+  "initialDevelop": "56588fe73bb9716cf619afeae1ce128023a0a7f5",
+  "integratedDevelop": "ac9eb52d3853aa70c126209e158ef4a8d8cabf3a",
+  "branch": "work/enemy-wildborn-expansion",
+  "newHostileForms": 8,
+  "hostileForms": 39,
+  "neutralForms": 2,
+  "focusedTests": {
+    "pass": 73,
+    "fail": 0,
+    "skip": 0
+  },
+  "nativeGLESProgramsPassed": 9,
+  "browserVerification": false,
+  "devicePerformanceVerified": false,
+  "newExternalAssets": 0,
+  "newGeometryResources": 0,
+  "newTextures": 0,
+  "newBones": 0,
+  "newRenderPasses": 0,
+  "sha256": {
+    "docs/enemies/evidence/fauna-assets.json": "2a96308188a0f8379e532cacd7490743fc8dfd48853f56644036b25d53d100de",
+    "docs/enemies/evidence/fauna-budget.json": "7ee9bd1855f17c66e92822398d1f522d64a898a7d78b6df80e8ed619657cb037",
+    "docs/enemies/evidence/fauna-contact.jpg": "d86ddf52a1143a06acdc1d827c53c044222adbf75601e8f9a6e38061ce71ce75",
+    "docs/enemies/evidence/fauna-gles.json": "2d3fe5d4e107283bbb1f5c753b8cc07009756bbd69344e948130e66440109b00",
+    "docs/enemies/evidence/fauna-lineup.jpg": "3d961f41aee958c68e3d3ced6611753b3c48adbddc4ca6e436a1d58b3569e56a",
+    "docs/enemies/evidence/fauna-tests.txt": "a343d1e6b773c799b3724937865627f951753819492f7b83429deea05bdc1e24",
+    "src/enemies/bestiary.js": "5ae67f8e1b0fb553ea15d07b0665f20b99dee5a37c5d398f45860ac0296b9cd5",
+    "src/enemies/damage.js": "3ac0d7d8bfeb14e1b81ab856c62b998cf49fe71d66df9aa431a8ad6656e49a70",
+    "src/enemies/fauna.js": "1ae738848668901e3089edded70cab6cca7622473dd37298bc1931a321003afd",
+    "src/legacy/core.js": "b8ccd68d53fbf07ec2a063823d31151797622779a1de6c6d279781b114cde31b",
+    "src/server/engines/85dfa7bfd2a243202431489dc534d3318b17eefe8a121845889829374363ae59.mjs": "85dfa7bfd2a243202431489dc534d3318b17eefe8a121845889829374363ae59",
+    "tests/enemy-fauna.test.mjs": "bffb9dbcc8b09edd8706ae8897edaa62f379ad256baa8ec63b83b08bb50ed151",
+    "tools/enemies/review-runtime.js": "829562ce2de9d5010d9a436641bafe566766472ac2895146f76e2133508abb9e",
+    "tools/enemies/review-scenes.js": "6799d4d7489b9a7a7b05284f039f74608714702c4fcc7d97f5c7fd522c93d00a"
+  }
+}

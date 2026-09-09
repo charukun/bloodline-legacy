@@ -321,11 +321,16 @@ const SkillMotion=(()=>{
     out[k]=curve(load[k],hit[k],follow[k],next[k],v,Math.max(0,start-lead),end,c.index+1<c.hits?1:phrase.settleAt);
    }
    if(spin){out.yaw=(c.index+curve(0,.43,.62,1,v,start,end))*TAU;out.footTurn=out.yaw;}
-   if(c.shape==='leap'){
+   if(c.shape==='leap'&&c.sk.presentation!=='stormleap'){
     // Jump and landing fit BEFORE contact, followed by grounded compression.
     const jump=v<.12?0:v<.43?Math.sin(Math.PI*(v-.12)/.31):0;
     out.y+=Math.max(0,jump)*.40;out.air=jump>.05;
    }
+  }
+  if(c.sk.presentation==='stormleap'){
+   // Lift during the actual approach; settle before the fixed contact beat.
+   const u=c.stage==='charge'?clamp((c.u-.15)/.85,0,1)*.58:.58+clamp(c.beat/.43,0,1)*.42;
+   const lift=Math.sin(Math.PI*u)*.58;out.y+=lift;out.air=lift>.045;
   }
   out.head=-out.torso*.35;
   const aim=state?.aim??0;out.headYaw=-.65*Math.sin(out.yaw+out.torsoYaw-aim);
@@ -455,7 +460,15 @@ function carriedVisualPose(p){if(p.lifeState!=='carried')return p;const d=p.dir|
 function artPose(p,t,state){
  const o={active:false,y:0,x:0,z:0,yaw:0,pitch:0,roll:0,torso:0,head:0,rightArm:0,leftArm:0,rightArmZ:0,leftArmZ:0,rightLeg:0,leftLeg:0,rightKnee:0,leftKnee:0};
  if(p.alive===false)return o;
- if(p.traversal){const u=p.traversal.progress||0,lift=Math.sin(Math.PI*u);return {...o,active:true,pitch:.30*lift,rightArm:-1.35*lift,leftArm:-.9*lift,rightLeg:-1.25*lift,leftLeg:-.72*lift,rightKnee:1.9*lift,leftKnee:1.5*lift,head:-.08};}
+ if(p.traversal){
+  const a=p.traversal,u=clamp(a.progress||0,0,1),ease=x=>{x=clamp(x,0,1);return x*x*(3-2*x);};
+  if(a.kind==='vault'||a.profile!==1){const lift=Math.sin(Math.PI*u);return {...o,active:true,pitch:.30*lift,roll:.13*lift,rightArm:-1.35*lift,leftArm:-.9*lift,rightLeg:-1.25*lift,leftLeg:-.72*lift,rightKnee:1.9*lift,leftKnee:1.5*lift,head:-.08*lift};}
+  const reach=ease(u/.13)*(1-ease((u-(a.obstacle?.62:.42))/.20)),pull=ease((u-.13)/.18)*(1-ease((u-.55)/.19)),over=ease((u-.17)/.17)*(1-ease((u-.76)/.24)),trail=ease((u-.24)/.17)*(1-ease((u-.81)/.19));
+  return {...o,active:true,y:a.obstacle?0:-.18*reach,pitch:(a.obstacle?.80:.64)*reach+.10*over,torso:.10*pull,head:-.10*reach,
+   rightArm:-1.5*reach,leftArm:-1.5*reach,rightElbow:-.72*pull,leftElbow:-.72*pull,rightWrist:.28*reach,leftWrist:.28*reach,
+   rightArmZ:-.08*reach,leftArmZ:.08*reach,rightLeg:-1.95*over,leftLeg:-1.8*trail,rightKnee:2.25*over,leftKnee:2.15*trail,
+   traversalGrip:reach};
+ }
  if(p.action==='land'&&p.actionUntil>t){const u=clamp((t-p.actionStarted)/.16,0,1),bend=Math.sin(Math.PI*u);return {...o,active:true,y:-.1*bend,rightLeg:-.25*bend,leftLeg:-.25*bend,rightKnee:.5*bend,leftKnee:.5*bend};}
  if(incapacitated(p)){
   const u=clamp((t-(p.downedAt??t))/.7,0,1),settle=u*u*(3-2*u),carried=p.lifeState==='carried';

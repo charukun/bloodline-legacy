@@ -15,6 +15,9 @@ const EnemyDamage=(()=>{
  }
  function style(p){
   const id=p.enemyForm||p.kind;
+  if(['root-treant','reliquary-mimic'].includes(id))return {type:'wood',dirt:'#635e49',cut:'#484435',edge:'#c1a77c',inside:'#8c7955',surface:8};
+  if(id==='cairn-idol')return {type:'shell',dirt:'#777562',cut:'#4a5248',edge:'#c9c7b0',inside:'#777d6d',surface:9};
+  if(id==='mourning-bloom')return {type:'organic',dirt:'#626b4f',cut:'#4b5a47',edge:'#c1bb8f',inside:'#778460',surface:0};
   if(p.kind==='wraith'&&id!=='dusk-bat')return {type:'spirit',dirt:'#536368',cut:'#34444d',edge:'#a7c2b2',inside:'#61797a',surface:4};
   if(p.kind==='crawler'||id==='stone-colossus'||id==='rime-guard')return {type:'shell',dirt:'#70654e',cut:'#403e36',edge:'#c2b591',inside:'#747567',surface:9};
   if(['soldier','elite'].includes(p.kind))return {type:'bone',dirt:'#73654f',cut:'#50443b',edge:'#c5b38b',inside:'#756550',surface:9};
