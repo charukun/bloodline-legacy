@@ -49,15 +49,21 @@ jobs:
           python tests/character_asset_validation.py
       - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
       - run: deploy/node_modules/.bin/playwright install --with-deps chromium
-      - name: Build the fixed implementation baseline
+      - name: Build the pull request implementation baseline
+        env:
+          CHARACTER_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '717931fd92271104b89a9c5645ed4792bbf06c2e' }}
         run: |
-          git worktree add --detach /tmp/character-baseline f94513ed65342de1674a716b33c2ebb4a9c523d1
+          git worktree add --detach /tmp/character-baseline "$CHARACTER_BASE_SHA"
           node /tmp/character-baseline/build.mjs
-      - name: Verify the changed movement poses
-        timeout-minutes: 20
+      - name: Verify character input, equipment and save integration
+        # Software rendering of the integrated village needs several seconds
+        # per frame; retain the complete functional coverage and evidence.
+        timeout-minutes: 35
         env:
           CHARACTER_BASELINE: /tmp/character-baseline/dist/index.html
-          CHARACTER_MODE: ${{ inputs.full_review && 'functional' || 'motion' }}
+          CHARACTER_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '717931fd92271104b89a9c5645ed4792bbf06c2e' }}
+          CHARACTER_MODE: functional
+          CHARACTER_AFTER_ONLY: '1'
         run: node tests/character-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
@@ -71,6 +77,7 @@ jobs:
         timeout-minutes: 22
         env:
           CHARACTER_BASELINE: /tmp/character-baseline/dist/index.html
+          CHARACTER_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '717931fd92271104b89a9c5645ed4792bbf06c2e' }}
           CHARACTER_MODE: performance
         run: node tests/character-browser.mjs
       - uses: actions/upload-artifact@v4
