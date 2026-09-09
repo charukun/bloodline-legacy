@@ -1,0 +1,172 @@
+{
+  "base": "717931fd92271104b89a9c5645ed4792bbf06c2e",
+  "head": null,
+  "backend": "Chromium / SwiftShader",
+  "scope": "four local young player samples",
+  "versions": {
+    "before": {
+      "perf": {
+        "method": "20 completed renders after 4 warm-up frames; synchronous one-pixel readback brackets each frame; sequential baseline/current, no competing browser",
+        "frames": 20,
+        "medianFrameMs": 1271.5,
+        "medianCpuSubmitMs": 14.900000000372529,
+        "medianGpuMs": 1101.650716,
+        "stats": {
+          "calls": 39,
+          "triangles": 188952,
+          "instances": 2724,
+          "lodInstances": 67,
+          "resolution": "760×760",
+          "scale": 1,
+          "meshTypes": 36,
+          "skinnedCharacters": 1,
+          "characterMaster": {
+            "character": "CM01",
+            "lod": 0,
+            "triangles": 24431,
+            "solveMs": 1.400000000372529,
+            "contactError": 0,
+            "contacts": 0,
+            "pelvisDrop": 0,
+            "animation": "idle",
+            "bones": 31
+          },
+          "dioramaMode": "normal",
+          "dof": "subtle",
+          "dofActive": false,
+          "dofPasses": 0,
+          "dofTargetSize": null,
+          "dofBytes": 0,
+          "dofError": null,
+          "focusWorld": null,
+          "cpuSubmitMs": 16.2,
+          "gpuMs": 1274.746098,
+          "frameMs": 1330.4000000003725,
+          "weather": "clear",
+          "quality": "medium",
+          "textureMemoryEstimateMiB": 26.61,
+          "jsHeapMiB": 73.05,
+          "renderer": "WebGL2 / metallic-roughness / GPU bone palette",
+          "rigCount": 7
+        }
+      },
+      "errors": []
+    },
+    "after": {
+      "perf": {
+        "method": "20 completed renders after 4 warm-up frames; synchronous one-pixel readback brackets each frame; sequential baseline/current, no competing browser",
+        "frames": 20,
+        "medianFrameMs": 973.1999999992549,
+        "medianCpuSubmitMs": 14.799999998882413,
+        "medianGpuMs": 909.203365,
+        "stats": {
+          "calls": 39,
+          "triangles": 175786,
+          "instances": 2724,
+          "lodInstances": 67,
+          "resolution": "760×760",
+          "scale": 1,
+          "meshTypes": 31,
+          "skinnedCharacters": 1,
+          "characterMaster": {
+            "character": "TRAVELER",
+            "race": "human",
+            "lod": 0,
+            "triangles": 17848,
+            "bones": 16,
+            "solveMs": 1.6000000014901161,
+            "pelvisDrop": 0.033870716655267974,
+            "contactError": 7.073003575228632e-9,
+            "contacts": 2,
+            "animation": "idle"
+          },
+          "dioramaMode": "normal",
+          "dof": "subtle",
+          "dofActive": false,
+          "dofPasses": 0,
+          "dofTargetSize": null,
+          "dofBytes": 0,
+          "dofError": null,
+          "focusWorld": null,
+          "cpuSubmitMs": 18.7,
+          "gpuMs": 813.497697,
+          "frameMs": 969.0999999996275,
+          "weather": "clear",
+          "quality": "medium",
+          "textureMemoryEstimateMiB": 26.61,
+          "jsHeapMiB": 87.45,
+          "renderer": "WebGL2 / metallic-roughness / GPU bone palette",
+          "rigCount": 1
+        }
+      },
+      "errors": []
+    }
+  },
+  "limitations": [
+    "Software renderer timings do not certify Pixel Fold or native GPU FPS.",
+    "Fixture positioning and state sampling are distinct from the keyboard/input verification."
+  ],
+  "samples": [
+    {
+      "metrics": {
+        "character": "TRAVELER",
+        "race": "human",
+        "lod": 0,
+        "triangles": 17848,
+        "bones": 16,
+        "solveMs": 0.40000000037252903,
+        "pelvisDrop": 0.033870716655267974,
+        "contactError": 7.073003575228632e-9,
+        "contacts": 2,
+        "animation": "idle"
+      },
+      "gl": 0
+    },
+    {
+      "metrics": {
+        "character": "TRAVELER",
+        "race": "elf",
+        "lod": 0,
+        "triangles": 18936,
+        "bones": 16,
+        "solveMs": 0.40000000037252903,
+        "pelvisDrop": 0.03603241345372077,
+        "contactError": 6.368607671817743e-9,
+        "contacts": 2,
+        "animation": "idle"
+      },
+      "gl": 0
+    },
+    {
+      "metrics": {
+        "character": "TRAVELER",
+        "race": "dwarf",
+        "lod": 0,
+        "triangles": 19436,
+        "bones": 16,
+        "solveMs": 0.2999999988824129,
+        "pelvisDrop": 0.029510121335219408,
+        "contactError": 8.341566973711881e-9,
+        "contacts": 2,
+        "animation": "idle"
+      },
+      "gl": 0
+    },
+    {
+      "metrics": {
+        "character": "TRAVELER",
+        "race": "fox",
+        "lod": 0,
+        "triangles": 18936,
+        "bones": 17,
+        "solveMs": 0.30000000074505806,
+        "pelvisDrop": 0.03279294970286473,
+        "contactError": 6.9320995520145685e-9,
+        "contacts": 2,
+        "animation": "idle"
+      },
+      "gl": 0
+    }
+  ],
+  "immutable": true
+}

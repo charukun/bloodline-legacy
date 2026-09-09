@@ -24,7 +24,7 @@ const server=http.createServer((req,res)=>{
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const origin='http://127.0.0.1:'+server.address().port;
-const report={mode,base:'f94513ed65342de1674a716b33c2ebb4a9c523d1',head:process.env.GITHUB_SHA||null,checks:[],versions:{},passed:false,
+const report={mode,base:process.env.CHARACTER_BASE_SHA||'f94513ed65342de1674a716b33c2ebb4a9c523d1',head:process.env.GITHUB_SHA||null,checks:[],versions:{},passed:false,
   limitations:['SwiftShader is software rendering, not Desktop GPU or Pixel Fold performance approval.','Screenshots and videos require visual review; numeric success is not Golden Master approval.']};
 const flush=()=>writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));
 const check=(name,ok,details)=>{report.checks.push({name,pass:!!ok,details});flush();assert(ok,name+' '+JSON.stringify(details||''));console.log('PASS '+name);};
@@ -55,9 +55,9 @@ async function fixture(page,{close=false}={}){
 }
 async function shot(name){await page.screenshot({path:path.join(out,name+'.png')});report.lastScreenshot=name;flush();}
 try{
-  browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
-  for(const version of mode==='motion'?['after']:['before','after']){
-    const context=await browser.newContext({viewport:{width:1000,height:900},deviceScaleFactor:1,...(mode==='performance'?{}:{recordVideo:{dir:out,size:{width:1000,height:900}}})});
+  browser=await chromium.launch({executablePath:process.env.CHROMIUM_EXECUTABLE||undefined,headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+  for(const version of mode==='motion'||process.env.CHARACTER_AFTER_ONLY==='1'?['after']:['before','after']){
+    const context=await browser.newContext({viewport:{width:1000,height:900},deviceScaleFactor:1,...(mode==='performance'||process.env.CHARACTER_NO_VIDEO==='1'?{}:{recordVideo:{dir:out,size:{width:1000,height:900}}})});
     page=await context.newPage();page.setDefaultTimeout(120000);
     const record=report.versions[version]={errors:[],consoleErrors:[],states:[],performance:[]};
     page.on('pageerror',e=>record.errors.push(e.message));
@@ -95,7 +95,7 @@ try{
     record.stats=await page.evaluate(()=>AERIN_QA.stats());
     check(version+' WebGL has no error',await page.evaluate(()=>AERIN_QA.app.renderer.gl.getError()===0));
     check(version+' comparison has no diorama blur',await page.evaluate(()=>AERIN_QA.app.renderer.diorama.mode==='normal'&&!AERIN_QA.app.renderer.diorama.active));
-    check(version+' target renderer dispatch',!!record.stats.characterMaster===(version==='after'));
+    check(version+' target renderer dispatch',(record.stats.characterMaster?.character==='TRAVELER')===(version==='after'));
     await fixture(page,{close:true});await shot(version+'-close');
     if(version==='after'){
       for(const [label,yaw]of [['quarter',1.1],['side',1.82],['back',3.2]]){
@@ -158,7 +158,7 @@ try{
       check('hit is consumed from simulation',await page.evaluate(()=>AERIN_QA.player().health<100&&AERIN_QA.stats().characterMaster.animation==='hit'));await shot('after-hit');
       await fixture(page);
       check('renderer is simulation immutable',await page.evaluate(()=>{const a=AERIN_QA.app,b=JSON.stringify(a.sim.exportState());a.renderer.render(a.snapshot,.016,{freezeCamera:true});return b===JSON.stringify(a.sim.exportState());}));
-      const scope=await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player(),rows=[];for(const [age,gender,race,kind,prologue,expected]of [[17,0,0,'player',false,false],[18,0,0,'player',false,true],[34,0,0,'player',false,true],[35,0,0,'player',false,false],[24,1,0,'player',false,false],[24,0,1,'player',false,false],[24,0,0,'portrait',false,false],[1,0,0,'player',true,false]]){Object.assign(p,{age,gender,race,kind,prologue});a.snapshot=a.decorate(a.sim.snapshot(p.id,a.seq));a.renderer.render(a.snapshot,.016,{freezeCamera:true});rows.push({age,gender,race,kind,prologue,expected,actual:!!a.renderer.stats.characterMaster});}return rows;});
+      const scope=await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player(),rows=[];for(const [age,gender,race,kind,prologue,expected]of [[17,0,0,'player',false,false],[18,0,0,'player',false,true],[34,0,0,'player',false,true],[35,0,0,'player',false,false],[24,1,0,'player',false,false],[24,0,1,'player',false,false],[24,1,1,'player',false,true],[24,0,2,'player',false,true],[24,1,3,'player',false,true],[24,1,2,'player',false,false],[24,0,3,'player',false,false],[24,0,0,'portrait',false,false],[1,0,0,'player',true,false]]){Object.assign(p,{age,gender,race,kind,prologue});a.snapshot=a.decorate(a.sim.snapshot(p.id,a.seq));a.renderer.render(a.snapshot,.016,{freezeCamera:true});rows.push({age,gender,race,kind,prologue,expected,actual:!!a.renderer.stats.characterMaster});}return rows;});
       check('scope dispatch all boundaries',scope.every(s=>s.expected===s.actual),scope);
       await fixture(page,{close:true});
       const equipment=await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player(),rack=a.snapshot.map.schools.find(s=>s.id==='armory');p.x=rack.x;p.z=rack.z+3;const ok=[a.command({type:'equip',slot:'weapon',value:0}),a.command({type:'equip',slot:'armor',value:2}),a.command({type:'equip',slot:'shield',value:true})];a.renderer.camera.x=p.x;a.renderer.camera.z=p.z;a.renderer.render(a.snapshot,.016,{freezeCamera:true});return {ok,weapon:p.weapon,armor:p.armor,shield:p.shield,tip:a.renderer.weaponTips.has(p.id)};});
