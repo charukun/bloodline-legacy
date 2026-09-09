@@ -10,9 +10,9 @@ const target=process.argv[2]||'dev';
 const dir=await fs.mkdtemp(path.join(os.tmpdir(),'bloodline-live-runtime-'));
 const output=await bundle({entryPoints:['deploy/worker.mjs'],bundle:true,format:'esm',platform:'browser',write:false});
 const workerOptions={name:'app',modules:true,script:output.outputFiles[0].text,compatibilityDate:'2026-09-07',
- durableObjects:{WORLDS:{className:'GameWorld',useSQLite:true}},durableObjectsPersist:dir,bindings:{APP_ENV:target},
+ durableObjects:{WORLDS:{className:'GameWorld',useSQLite:true}},bindings:{APP_ENV:target},
  assets:{directory:path.resolve('deploy/out',target),binding:'ASSETS',routerConfig:{has_user_worker:true},run_worker_first:['/api/*','/','/index.html']}};
-const options=convertV4MiniflareOptions({workers:[workerOptions],durableObjectsPersist:dir});
+const options=convertV4MiniflareOptions({workers:[workerOptions],resourcePersistencePath:dir});
 let mf=new Miniflare(options);
 const client={...LiveContract,supportedRules:[currentRules],rules:currentRules};
 const headers=session=>({'Content-Type':'application/json','X-Bloodline-Client':JSON.stringify(client),...(session?{'X-Aerin-Session':session.token,'X-Bloodline-Lease':session.lease}:{})});
