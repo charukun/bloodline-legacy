@@ -42,3 +42,15 @@ test('repeat render sampling and teleport reset cannot advance authoritative tim
  const r=renderer(),c=new T.Character(r);for(let i=0;i<10;i++){const p=player();p.z+=i*.06;p.action='run';r.frame++;c.update(p,i/30);const phase=c.state.phase,mat=Array.from(c.palette);r.frame++;c.update(p,i/30);assert.equal(c.state.phase,phase);assert(mat.every((x,k)=>Math.abs(x-c.palette[k])<1e-5));}
  for(const [t,x]of [[2,20],[0,0]]){r.frame++;c.update({...player(),x},t);assert(c.palette.every(Number.isFinite));}
 });
+
+test('confirmed damage follows the active traveler skeleton rather than CM01 indices',()=>{
+ vm.runInContext(fs.readFileSync(new URL('../src/render/combat-presentation.js',import.meta.url),'utf8'),ctx);
+ const FX=vm.runInContext('CombatPresentation',ctx);
+ for(let race=0;race<4;race++){
+  const r=renderer(),c=new T.Character(r,race),p=player(race);r.characterMaster=c;c.update(p,.5);const fx=new FX(r);
+  for(const [part,index]of [['head',2],['torso',1],['rightArm',4],['leftArm',7],['rightLeg',10],['leftLeg',13]]){
+   const hit=Array.from(fx.contact({part},p,p.x,p.z,0)),m=c.transforms[index];
+   assert.deepEqual(hit,[m[12],m[13],m[14]-.12]);
+  }
+ }
+});
