@@ -1,5 +1,5 @@
 import {LiveContract} from '../src/live/contract.mjs';
-import {currentRules} from '../src/server/engines/registry.mjs';
+import {currentRules} from '../src/server/engines/loaders.mjs';
 export {GameWorld} from '../src/server/world.mjs';
 const versions=new WeakMap();
 async function manifest(env){

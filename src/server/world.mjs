@@ -1,5 +1,5 @@
 import {LiveContract,clientCompatible,safePlayer} from '../live/contract.mjs';
-import {engines,currentRules} from './engines/registry.mjs';
+import {engineLoaders,currentRules} from './engines/loaders.mjs';
 import {Accounts} from './accounts.mjs';
 
 const reply=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
@@ -11,27 +11,37 @@ const SESSION_MS=30*86400000;
 // stream state before its checkpoint has committed. No client-supplied player IDs.
 export class GameWorld {
   constructor(ctx,env,options={}) {
-    this.ctx=ctx;this.env=env;this.engines=options.engines||engines;this.target=options.rules||currentRules;
+    this.ctx=ctx;this.env=env;this.engines=options.engines||Object.create(null);this.target=options.rules||currentRules;
+    this.engineLoaders=options.engines?null:engineLoaders;
     this.contract=options.contract||LiveContract;this.now=options.now||Date.now;
     this.streams=new Map();this.tail=Promise.resolve();this.timer=null;this.tickBusy=false;this.accounts=new Accounts(this);
     this.ready=ctx.blockConcurrencyWhile(async()=>{
       const saved=await ctx.storage.get('checkpoint');
       if(saved){
-        if(saved.format!==1||!this.engines[saved.rules]){this.failure='RECOVERY_REQUIRED';return;}
+        if(saved.format!==1||!this.hasEngine(saved.rules)){this.failure='RECOVERY_REQUIRED';return;}
         try{
-          this.sim=this.engines[saved.rules].restoreLive(saved.world);this.rules=saved.rules;
+          const Engine=await this.engine(saved.rules);this.sim=Engine.restoreLive(saved.world);this.rules=saved.rules;
           this.sessions=new Map(saved.sessions);this.epoch=saved.epoch;this.revision=saved.revision;
           this.pending=saved.pending||null;
           // Reboot/redeploy fences all in-flight commands. Resume issues a fresh lease.
           for(const session of this.sessions.values())session.lease=null;
         }catch{this.failure='MIGRATION_FAILED';return;}
       }else{
-        this.fresh=true;this.rules=this.target;this.sim=new this.engines[this.rules]({mode:env.WORLD_MODE||'normal'});
+        this.fresh=true;this.rules=this.target;const Engine=await this.engine(this.rules);this.sim=new Engine({mode:env.WORLD_MODE||'normal'});
         this.sessions=new Map();this.epoch=uuid();this.revision=0;
       }
       try{await this.accounts.load();}catch{this.failure='ACCOUNT_RECOVERY_REQUIRED';}
       this.lastTick=this.now();
     });
+  }
+  hasEngine(rules){return Object.hasOwn(this.engines,rules)||!!this.engineLoaders&&Object.hasOwn(this.engineLoaders,rules);}
+  async engine(rules){
+    if(Object.hasOwn(this.engines,rules))return this.engines[rules];
+    if(!this.engineLoaders||!Object.hasOwn(this.engineLoaders,rules))throw Error('RECOVERY_REQUIRED');
+    // Bundled dynamic imports defer each immutable archive's initialization.
+    // Import caching preserves one runtime per rules version; no network fetch.
+    const {Simulation}=await this.engineLoaders[rules]();
+    this.engines[rules]=Simulation;return Simulation;
   }
   serial(fn){const job=this.tail.then(fn);this.tail=job.catch(()=>{});return job;}
   checkpoint(){return {format:1,rules:this.rules,epoch:this.epoch,revision:this.revision,
@@ -59,7 +69,7 @@ export class GameWorld {
     const lagging=[...this.streams.keys()].some(key=>!this.sessions.get(key)?.client.supportedRules?.includes(this.target));
     if(lagging&&this.now()<this.pending.until)return;
     const before=this.checkpoint();let next;
-    try{next=this.engines[this.target].restoreLive(before.world);}catch{this.migrationFailed=true;return;}
+    try{const Engine=await this.engine(this.target);next=Engine.restoreLive(before.world);}catch{this.migrationFailed=true;return;}
     // Backup and replacement are one storage transaction; rollback never guesses at
     // a newer save or silently restores an older checkpoint over newer progress.
     const epoch=uuid(),updated={...before,rules:this.target,world:next.exportState({live:true}),epoch,revision:this.revision+1,pending:null};
@@ -107,7 +117,7 @@ export class GameWorld {
     return this.serial(async()=>{
       try{
         if(this.failure)return reply({code:this.failure},503);
-        if(this.fresh){this.sim=new this.engines[this.rules]({mode:request.headers.get('X-Bloodline-Mode')||'normal'});this.fresh=false;}
+        if(this.fresh){const Engine=await this.engine(this.rules);this.sim=new Engine({mode:request.headers.get('X-Bloodline-Mode')||'normal'});this.fresh=false;}
         const url=new URL(request.url),client=JSON.parse(request.headers.get('X-Bloodline-Client')||'null');
         const token=request.headers.get('X-Aerin-Session'),key=token?await digest(token):null;
         let session=key&&this.sessions.get(key);
