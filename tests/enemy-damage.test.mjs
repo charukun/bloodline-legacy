@@ -107,10 +107,10 @@ test('marks follow moving parts, are deterministic during hitstop and persist th
  }
 });
 
-test('equipped bones lose shoulder armor while intact weapon reach stays unchanged',()=>{
+test('equipped bones lose shoulder armor and the weapon follows the weakened posture',()=>{
  for(const form of forms.filter(f=>['soldier','elite'].includes(f.kind))){h.ctx.form=form;
   const clean=h.run("damageFixture(form,'clean','torso')"),worn=h.run("damageFixture(form,'heavy','torso')");
-  assert(clean.weaponTip?.every(Number.isFinite),form.id);assert.deepEqual(clean.weaponTip,worn.weaponTip,form.id+' unchanged weapon contact');
+  assert(clean.weaponTip?.every(Number.isFinite),form.id);assert(worn.weaponTip?.every(Number.isFinite),form.id+' finite posed weapon');assert.notDeepEqual(clean.weaponTip,worn.weaponTip,form.id+' weapon follows fatigue posture');
   const lost=h.run("damageFixture(form,'lost','rightArm')");
   assert(lost.batches.filter(b=>!b.type.startsWith('enemy:')).length<clean.batches.length,form.id+' removed equipment');
  }

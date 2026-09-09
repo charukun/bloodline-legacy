@@ -68,7 +68,7 @@ test('delivered enemy review submits its first world frame and both versions in 
  for(const count of ['8','24'])for(const quality of ['low','medium','high']){
   r.change('count',count);r.change('quality',quality);r.step();assert.match(r.status(),/calls.*tris/);
  }
- for(const vitality of ['100','82','52','22','0'])for(const part of ['none','rightArm','leftArm','rightLeg','leftLeg']){
+ for(const vitality of ['100','82','52','22','0'])for(const part of ['none','rightArm','leftArm','rightLeg','leftLeg','bothLegs','bothArms','rightArmLeftLeg']){
   r.change('vitality',vitality);r.change('broken-part',part);r.step();assert.match(r.status(),/calls.*tris/);
   assert.equal(r.document.getElementById('vitality').value,vitality);
   assert.equal(r.document.getElementById('vitality-value').textContent,vitality+'%');
@@ -76,7 +76,7 @@ test('delivered enemy review submits its first world frame and both versions in 
  }
  r.change('seek','500');r.change('vitality','22');r.step();assert.equal(r.document.getElementById('pause').textContent,'▶ 再生');
  assert.equal(r.document.getElementById('seek').value,'500');
- r.change('vitality','100');r.step();assert.equal(r.document.getElementById('broken-part').value,'leftLeg');
+ r.change('vitality','100');r.step();assert.equal(r.document.getElementById('broken-part').value,'rightArmLeftLeg');
  r.document.getElementById('pause').click();r.change('vitality','52');r.step();assert.equal(r.document.getElementById('pause').textContent,'⏸ 停止');
  assert.equal(r.errors.length,0);
 });

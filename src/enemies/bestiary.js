@@ -44,11 +44,11 @@ const EnemyCreatures=(()=>{
  const eligible=p=>!!profiles[EnemyLooks.id(p)],profile=p=>profiles[EnemyLooks.id(p)];
  const smooth=x=>{x=clamp(x,0,1);return x*x*(3-2*x);};
  function motion(p,t,rec={}){
-  const time=p.renderPoseTime??t,c=profile(p),dt=time-(rec.time??time),distance=Math.hypot(p.x-(rec.x??p.x),p.z-(rec.z??p.z));
+  const time=p.renderPoseTime??t,c=profile(p),condition=enemyCondition(p),stride=c.stride*(condition.crawl||condition.drag?.35:condition.legs||condition.arms?.65:1),dt=time-(rec.time??time),distance=Math.hypot(p.x-(rec.x??p.x),p.z-(rec.z??p.z));
   if(dt<0||distance>=1.5)rec.phase=0;
-  else if(dt>0&&p.action==='run')rec.phase=(rec.phase||0)+distance/c.stride*TAU;
+  else if(dt>0&&p.action==='run')rec.phase=(rec.phase||0)+distance/stride*TAU;
   const wind=p.telegraph?smooth((time-p.telegraph.started)/Math.max(.001,p.telegraph.at-p.telegraph.started)):0;
-  const recovery=p.action==='attack'?clamp((time-p.actionStarted)/Math.max(.001,p.actionUntil-p.actionStarted),0,1):null;
+  const recovery=p.action==='attack'?clamp((time-p.actionStarted)/Math.min(.75,Math.max(.001,p.actionUntil-p.actionStarted)),0,1):null;
   // Contact is the same pose at telegraph.at and actionStarted. No new deadline.
   const strike=p.telegraph?smooth((wind-.66)/.34):recovery!==null?1-smooth(recovery):0;
   const lift=p.telegraph&&wind<1?Math.sin(wind*Math.PI)*.9:0;
@@ -77,8 +77,9 @@ const EnemyCreatures=(()=>{
   for(const[id,rec]of records)if(r.frame-rec.frame>2)records.delete(id);
   let rec=records.get(p.id);if(!rec){rec={};records.set(p.id,rec);}
   const c=profile(p),m=motion(p,t,rec),react=damagePose(r,p,t),ail=ailmentPose(p,t),id=EnemyLooks.id(p);
+  const weakness=EnemyWeakness.sample(p,t,m.phase),weakRoot=EnemyWeakness.root(weakness,c.scale[1]);m.weakness=weakness;
   const sideFall=['maw','stag','crawler'].includes(p.kind);
-  const root=rModel(p.x+react.x,(p.baseY??(.20+(p.supportHeight||0)))+(p.verticalOffset||0)+ail.y-react.drop+(p.kind==='wraith'?.18+m.breathe:0)+m.fall*.48*c.scale[1],p.z+react.z,...c.scale,p.dir||0,react.roll+ail.roll+m.fall*(sideFall?1.48:.14),react.pitch+ail.pitch+m.fall*(sideFall?.08:1.42));
+  const root=rModel(p.x+react.x,(p.baseY??(.20+(p.supportHeight||0)))+(p.verticalOffset||0)+ail.y-react.drop+weakRoot.y+(p.kind==='wraith'?.18+m.breathe:0)+m.fall*.48*c.scale[1],p.z+react.z,...c.scale,p.dir||0,react.roll+ail.roll+weakRoot.roll+m.fall*(sideFall?1.48:.14),react.pitch+ail.pitch+weakRoot.pitch+m.fall*(sideFall?.08:1.42));
   const oldRoot=art.root,oldTarget=art.target;art.root=root;art.target=r.dynamic;rec.sockets={};rec.damageAnchors={};rec.breaks=[];rec.frame=r.frame;rec.root=root;rec.motion=m;rec.config=c;
   const ctx={p,c,m,id,rec,root,react};
   try{
@@ -102,14 +103,14 @@ const EnemyCreatures=(()=>{
  }
  function humanoid(a,{p,c,m,id,rec,root,react}){
   const boss=p.kind==='boss',bog=id==='bog-goblin',miner=id==='scrap-goblin',shaman=id==='bone-shaman',fungal=id==='mushroom-goblin';
-  const step=Math.sin(m.phase),bend=-m.lift*.18+m.strike*.18,body=rMultiply(root,rModel(0,0,0,1,1,1,bog?m.strike*.22:0,0,bend));a.root=body;
+  const step=Math.sin(m.phase),bend=-m.lift*.18+m.strike*.18+(m.weakness.dead?0:m.weakness.bend),body=rMultiply(root,rModel(0,0,0,1,1,1,bog?m.strike*.22:0,0,bend));a.root=body;
   a.p('enemy:body',0,1.16,0,.50,.63,.38,c.skin);
   a.p('enemy:shell',0,1.31,-.03,.55,.35,.39,c.cloth,0,0,0,0);
   a.B(0,.98,.03,.84,.12,.66,'#655445');a.B(.12,.98,.38,.16,.15,.05,'#bd9e69',0,0,0,10);
   for(let i=-1;i<=1;i++)a.p('leaf',i*.23,.76,.27,.18,.32,.07,c.cloth,0,i*.15,0,0);
   socket(a,rec,'torso',[0,1.35,.42],[0,0,1],.23,[.09,1.30,.37]);
   EnemyDamage.onSurface(a,rec,'torso','enemy:shell',rModel(0,1.31,-.03,.55,.35,.39),[-.25,.30,.70],[0,0,1],.46);
-  a.with(rModel(0,1.91,.05,1,1,1,Math.sin(m.time*.75)*.025,react.headRoll,react.head-m.lift*.08),()=>{
+  a.with(rModel(0,1.91,.05,1,1,1,Math.sin(m.time*.75)*.025,react.headRoll,react.head-m.lift*.08-(m.weakness.crawl?.80:0)),()=>{
    a.p('enemy:head',0,.10,0,.55,.52,.46,c.skin);a.p('enemy:snout',0,-.11,.38,.29,.18,.22,c.skin);
    for(const s of [-1,1]){a.p('leaf',s*.54,.21,-.01,bog?.31:.25,.38,.10,c.skin,0,-s*1.01,0);a.B(s*.20,.27,.40,.26,.068,.09,'#5c7153',0,s*.15,0,0);a.p('horn',s*.18,-.17,.57,.048,.15,.044,'#e4d5ad',0,0,0,9);}
    eyes(a,.21,.14,.443,.087);a.B(0,-.18,.588,.22,.029,.019,'#424238',0,0,0,0);
@@ -126,7 +127,7 @@ const EnemyCreatures=(()=>{
    const leg=s===1?'rightLeg':'leftLeg';a.root=root;if(missing(p,leg))EnemyDamage.broken(a,rec,leg,[s*.26,.80,0],.17);if(!missing(p,leg)){a.root=root;a.with(rModel(s*.26,.82,0,1,1,1,0,0,(m.run?step*s*.50:0)+react[leg]),()=>{
     a.p('bead',0,-.22,0,.19,.33,.19,c.skin);a.with(rModel(0,-.42,0,1,1,1,0,0,m.run?Math.max(0,-step*s)*.6:0),()=>{a.B(0,-.16,.11,.36,.27,.48,'#6d674f');socket(a,rec,leg,[0,-.11,.25]);});});}
    const arm=s===1?'rightArm':'leftArm';a.root=body;if(missing(p,arm)){EnemyDamage.broken(a,rec,arm,[s*.48,1.53,0],.17,[s,-.4,0]);continue;}
-   const swing=s===1||missing(p,'rightArm')?-m.lift*2.4-m.strike*.95:(m.guard?-1.1:.1)-m.lift*.40;
+   const swing=m.weakness.crawl&&m.strike<.05?-1.05+(m.run?step*s*.3:0):s===1||missing(p,'rightArm')?-m.lift*2.4-m.strike*.95:(m.guard?-1.1:.1)-m.lift*.40;
    a.with(rModel(s*.55,1.56,0,1,1,1,0,s*.24+react[arm+'Z'],swing+react[arm]),()=>{
     a.p('bead',0,-.24,0,.19,.35,.20,c.skin);a.p('bead',0,-.53,.04,.21,.20,.20,c.skin);socket(a,rec,arm,[0,-.52,.14],[0,0,1],.11,[0,-.52,.241]);
     if(s===1){a.with(rModel(0,-.58,.02,1,1,1,0,0,Math.PI),()=>{
@@ -177,7 +178,7 @@ const EnemyCreatures=(()=>{
   }
  }
  function beast(a,{p,c,m,id,rec,root}){
-  const wolf=id==='moss-wolf',boar=id==='bristle-boar',bear=id==='cave-bear',lizard=id==='marsh-lizard',stag=p.kind==='stag',step=Math.sin(m.phase);
+  const w=m.weakness,wolf=id==='moss-wolf',boar=id==='bristle-boar',bear=id==='cave-bear',lizard=id==='marsh-lizard',stag=p.kind==='stag',step=Math.sin(m.phase);
   a.p('enemy:body',0,.99,-.18,wolf?.46:bear?.65:boar?.61:.57,lizard?.32:bear?.57:.49,lizard?1.02:.87,c.skin,0,0,-.10);
   if(bear){a.p('enemy:body',0,1.23,.12,.60,.51,.61,c.skin);for(const s of [-1,1])a.p('enemy:shell',s*.33,1.29,.36,.33,.32,.43,c.cloth);}
   else if(lizard){for(let i=0;i<6;i++)a.p('leaf',0,1.42,-.81+i*.27,.05,.19,.17,c.cloth,0,0,.3,9);}
@@ -187,14 +188,14 @@ const EnemyCreatures=(()=>{
   EnemyDamage.onSurface(a,rec,'torso','enemy:body',rModel(0,.99,-.18,wolf?.46:bear?.65:boar?.61:.57,lizard?.32:bear?.57:.49,lizard?1.02:.87,0,0,-.10),[-.8,.15,.20],[-1,0,0],.48);
   for(const s of [-1,1])for(const front of [false,true]){
    const part=(s===1?'right':'left')+(front?'Arm':'Leg');a.root=root;if(missing(p,part)){EnemyDamage.broken(a,rec,part,[s*.39,.87,front?.48:-.70],wolf?.12:.16);continue;}
-   a.root=root;a.with(rModel(s*.39,.88,front?.48:-.70,1,1,1,0,0,m.run?step*s*(front?1:-1)*.53:0),()=>{
+   a.root=root;a.with(rModel(s*.39,.88,front?.48:-.70,1,1,1,0,0,m.run?step*s*(front?1:-1)*(w.drag?.28:w.limp?.32:.53):0),()=>{
     a.p('bead',0,-.24,0,wolf?.12:.17,.31,.16,c.skin);
-    a.with(rModel(0,-.42,0,1,1,1,0,0,m.run?Math.max(0,-step*s*(front?1:-1))*.67:.10),()=>{
+    a.with(rModel(0,-.42,0,1,1,1,0,0,(m.run?Math.max(0,-step*s*(front?1:-1))*.67:.10)+(w.drag?.65:w.limp?.18:0)),()=>{
      a.p('bead',0,-.19,.045,.11,.23,.13,c.skin);a.B(0,-.32,.09,.22,.16,.30,stag?'#72694f':'#706b5c',0,0,0,9);socket(a,rec,part,[0,-.21,.10],[0,0,1],.075,[0,-.18,.177]);
     });
    });
   }
-  a.root=root;a.with(rModel(0,lizard?1.06:bear?1.37:1.26,.59,1,1,1,0,0,-m.lift*.40+m.strike*.43),()=>{
+  a.root=root;a.with(rModel(0,lizard?1.06:bear?1.37:1.26,.59,1,1,1,0,0,-m.lift*.40+m.strike*.43+w.bend*.65),()=>{
    a.p('enemy:head',0,.10,0,wolf?.34:bear?.47:lizard?.38:.43,stag?.46:lizard?.24:.36,.37,c.skin);
    a.p('enemy:snout',0,-.09,wolf?.39:lizard?.40:.31,wolf?.18:lizard?.30:.25,lizard?.12:.17,wolf?.37:lizard?.41:.24,c.skin);a.p('bead',0,-.06,wolf?.68:.54,wolf?.13:.22,.11,.06,'#4e5146');
    eyes(a,wolf?.20:.26,.22,.295,.066);
@@ -210,7 +211,7 @@ const EnemyCreatures=(()=>{
     if(wolf)for(const s of [-1,1])for(let i=0;i<3;i++)a.p('cone',s*.15,.045,.09+i*.12,.026,.075,.024,'#ded4b7',0,0,0,9);
    });socket(a,rec,'head',[0,.16,.38],[0,1,0],.14,[0,lizard?.345:stag?.59:.488,-.02]);EnemyDamage.onSurface(a,rec,'head','enemy:head',rModel(0,.10,0,wolf?.34:bear?.47:lizard?.38:.43,stag?.46:lizard?.24:.36,.37),[-.45,.40,.5],[0,1,0],.33);
   });
-  a.root=root;a.with(rModel(0,1.17,-.93,1,1,1,Math.sin(m.time*2)*.13,0,wolf?-.55:.35),()=>{
+  a.root=root;a.with(rModel(0,1.17,-.93,1,1,1,Math.sin(m.time*2)*.13*(1-w.fatigue*.8),0,(wolf?-.55:.35)+w.fatigue*.45),()=>{
    if(lizard){a.line([0,0,0],[.12,-.35,-.65],.14,c.skin);a.line([.12,-.35,-.65],[.3,-.51,-1.05],.065,c.cloth);a.p('horn',.32,-.50,-1.07,.048,.34,.05,c.cloth,0,0,-1.3,9);}
    else a.p('leaf',0,-.14,-.20,wolf?.20:.09,wolf?.54:.27,wolf?.20:.09,c.cloth,0,0,.8);
   });

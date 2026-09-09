@@ -40,22 +40,22 @@ const EnemySentinel=(()=>{
   if(p.alive===false)return{name:'death',time:Math.max(0,t-(p.deathAt??t)),key:'death'};
   if(p.hitReactUntil>t)return{name:'hit',time:clamp01((t-(p.hitReactAt||0))/Math.max(.01,p.hitReactUntil-(p.hitReactAt||0)))*asset.clips.hit.duration,key:'hit:'+p.hitReactAt};
   if(p.telegraph){const u=clamp01((t-p.telegraph.started)/Math.max(.001,p.telegraph.at-p.telegraph.started));return{name:clip,time:impact*u,key:'attack:'+p.telegraph.started};}
-  if(p.action==='attack'&&p.actionUntil>t){const u=clamp01((t-p.actionStarted)/Math.max(.001,p.actionUntil-p.actionStarted));return{name:clip,time:impact+(asset.clips[clip].duration-impact)*u,key:'attack-recover'};}
+  if(p.action==='attack'&&p.actionUntil>t&&t-p.actionStarted<.75){const u=clamp01((t-p.actionStarted)/Math.min(.75,Math.max(.001,p.actionUntil-p.actionStarted)));return{name:clip,time:impact+(asset.clips[clip].duration-impact)*u,key:'attack-recover'};}
   if(p.action==='run')return{name:'run',time:(phase%1)*asset.clips.run.duration,key:'run'};
   if(p.guard||p.action==='guard')return{name:'guard',time:asset.clips.guard.duration*.55,key:'guard'};
   const seed=String(p.id).split('').reduce((n,c)=>n+c.charCodeAt(0),0)%29;return{name:'idle',time:((t*.85+seed*.11)%asset.clips.idle.duration+asset.clips.idle.duration)%asset.clips.idle.duration,key:'idle'};
  }
- function pose(p,t,rec={}){const config=settings(p),motionT=p.renderPoseTime??t,dt=Math.max(0,Math.min(.1,motionT-(rec.time??motionT))),distance=Math.hypot(p.x-(rec.x??p.x),p.z-(rec.z??p.z));
-  if(distance<1.5&&motionT>=(rec.time??motionT)&&p.action==='run')rec.phase=(rec.phase||0)+distance/config.stride;else if(distance>=1.5||motionT<(rec.time??motionT))rec.phase=0;
+ function pose(p,t,rec={}){const config=settings(p),condition=enemyCondition(p),stride=config.stride*(condition.crawl?.32:condition.legs===1?.65:1),motionT=p.renderPoseTime??t,dt=Math.max(0,Math.min(.1,motionT-(rec.time??motionT))),distance=Math.hypot(p.x-(rec.x??p.x),p.z-(rec.z??p.z));
+  if(distance<1.5&&motionT>=(rec.time??motionT)&&p.action==='run')rec.phase=(rec.phase||0)+distance/stride;else if(distance>=1.5||motionT<(rec.time??motionT))rec.phase=0;
   const timing=clock(p,motionT,rec.phase||0),local=sample(timing.name,timing.time),critical=['death','hit','chop','unarmed'].includes(timing.name);
   if(rec.key!==timing.key){rec.from=rec.local;rec.transition=motionT;rec.key=timing.key;}
   const blend=critical||p.hitstopUntil>t?1:clamp01((motionT-(rec.transition??motionT))/.12);
   if(rec.from&&blend<1)for(let i=0;i<local.length;i++){for(const k of ['translation','scale'])local[i][k]=local[i][k].map((v,j)=>rec.from[i][k][j]+(v-rec.from[i][k][j])*blend);local[i].rotation=slerp(rec.from[i].rotation,local[i].rotation,blend);}
-  const matrices=local.map(n=>trs(n.translation,n.rotation,n.scale)),world=[];if(config.swing&&timing.name==='chop'){const chest=asset.g.nodes.findIndex(n=>n.name==='chest'),u=timing.time/asset.clips.chop.duration;matrices[chest]=rMultiply(matrices[chest],rModel(0,0,0,1,1,1,Math.sin(u*Math.PI)*config.swing));}function node(i){if(world[i])return world[i];return world[i]=asset.parent[i]<0?matrices[i]:rMultiply(node(asset.parent[i]),matrices[i]);}for(let i=0;i<local.length;i++)node(i);
-  const reaction=damagePose(rec.renderer||{},p,t),ail=ailmentPose(p,t),root=new Float32Array(rModel(p.x+reaction.x,(p.baseY??(.20+(p.supportHeight||0)))+(p.verticalOffset||0)+ail.y-reaction.drop,p.z+reaction.z,...config.scale,p.dir||0,ail.roll+reaction.roll,ail.pitch+reaction.pitch));
+  const weakness=EnemyWeakness.sample(p,motionT,(rec.phase||0)*Math.PI*2),matrices=local.map(n=>trs(n.translation,n.rotation,n.scale)),world=[];EnemyWeakness.skeleton(asset,matrices,p,weakness);if(config.swing&&timing.name==='chop'){const chest=asset.g.nodes.findIndex(n=>n.name==='chest'),u=timing.time/asset.clips.chop.duration;matrices[chest]=rMultiply(matrices[chest],rModel(0,0,0,1,1,1,Math.sin(u*Math.PI)*config.swing));}function node(i){if(world[i])return world[i];return world[i]=asset.parent[i]<0?matrices[i]:rMultiply(node(asset.parent[i]),matrices[i]);}for(let i=0;i<local.length;i++)node(i);EnemyWeakness.crawlArms(asset,world,matrices,p,weakness);
+  const reaction=damagePose(rec.renderer||{},p,t),ail=ailmentPose(p,t),weakRoot=EnemyWeakness.root(weakness,config.scale[1],true),root=new Float32Array(rModel(p.x+reaction.x,(p.baseY??(.20+(p.supportHeight||0)))+(p.verticalOffset||0)+ail.y-reaction.drop+weakRoot.y,p.z+reaction.z,...config.scale,p.dir||0,ail.roll+reaction.roll+weakRoot.roll,ail.pitch+reaction.pitch+weakRoot.pitch));
   const palette=new Float32Array(23*16);asset.g.skins[0].joints.forEach((n,i)=>palette.set(rMultiply(root,rMultiply(world[n],asset.ibm.subarray(i*16,(i+1)*16))),i*16));
   const sockets=Object.fromEntries(Object.entries(asset.g.extras.sockets).map(([k,i])=>[k,rMultiply(root,world[i])]));
-  Object.assign(rec,{damage:EnemyDamage.state(p),time:motionT,x:p.x,z:p.z,local,world,palette,sockets,timing,config,root,dt});return rec;
+  Object.assign(rec,{weakness,damage:EnemyDamage.state(p),time:motionT,x:p.x,z:p.z,local,world,palette,sockets,timing,config,root,dt});return rec;
  }
  const VS=`#version 300 es
  precision highp float;
@@ -83,7 +83,7 @@ const EnemySentinel=(()=>{
   dispose(){const gl=this.r.gl;for(const rec of this.records.values())gl.deleteTexture(rec.texture);this.records.clear();this.buffers.forEach(b=>gl.deleteBuffer(b));gl.deleteVertexArray(this.vao);gl.deleteProgram(this.program);gl.deleteProgram(this.depth);}
  }
  const eligible=p=>p&&['soldier','elite'].includes(p.kind);
- const top=p=>settings(p).scale[1]*2.6;
+ const top=p=>{const c=enemyCondition(p);return (p.baseY??(.20+(p.supportHeight||0)))+settings(p).scale[1]*(c.crawl?1.45:2.6-c.fatigue*.35);};
  const variation=p=>.96+(String(p.id).split('').reduce((n,c)=>n+c.charCodeAt(0),0)%9)*.009;
  return {load,sample,pose,clock,settings,variation,RendererAdapter,eligible,top,VS,FS,DS,get asset(){return asset;}};
 })();

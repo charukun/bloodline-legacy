@@ -1,5 +1,9 @@
 # Enemy damage presentation — vitality correction, 2026-09-09
 
+The subsequent user-approved [weakness-motion revision](WEAKNESS_MOTION.md)
+adds posture/gait and enemy speed/recovery changes. This document describes
+the earlier damage-layer scope; the motion document governs the current delta.
+
 All **31 hostile forms and 2 neutral creatures** use the enemy's remaining
 vitality to drive whole-body scratches, fractures and dirt. This corrects the
 initial per-part interpretation following the user's clarification. PR #58 is
