@@ -55,9 +55,9 @@ test('presentation cache evicts absent characters',()=>{
  const m=new api.DamageMotion();for(let i=0;i<150;i++)m.sample(actor({id:'actor'+i}),i*.5+1);assert(m.actors.size<=64);
 });
 // Compare every gameplay field and RNG state with the fixed develop source.
-// Only the documented render metadata is allowed to differ.
+// Only render metadata and the separately tested save-schema envelope may differ.
 const presentation=new Set(['hitPart','hitSeverity','hitReactAt','hitReactUntil','hitDir','hitStrength','hitMotionAt','hitMotionId','hitGuard']);
-const state=sim=>JSON.parse(JSON.stringify(sim.exportState(),(k,v)=>presentation.has(k)?undefined:v));
+const state=sim=>JSON.parse(JSON.stringify(sim.exportState(),(k,v)=>k==='schema'?4:presentation.has(k)?undefined:v));
 test('damage, wound progression, attack interruption, hitstop and RNG match develop',()=>{
  const before=runtime(true);
  for(const seed of [13,27,48])for(const power of [.3,1,1.5,2,3])for(const part of ['head','torso','rightArm','leftLeg']){

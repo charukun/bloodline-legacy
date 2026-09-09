@@ -138,7 +138,7 @@ test('lineage renders only actual lives and safely escapes imported names',t=>{
 });
 test('real save/restore retains inventory, equipment, wounds, age and recorded lineage',t=>{
  const {sim,p,g,api}=fixture(t);p.inventory=['stone','bell'];p.weapon=0;p.armor=1;p.shield=true;p.wounds={head:{severity:'light',healsAt:25}};sim.legacy(p.owner).records.push({id:'ancestor',name:'前の命',gen:1,age:60,skills:[4000]});sim.legacy(p.owner).archive=[4000];
- g.saveWorld();const saved=JSON.parse(g.renderer.canvas.ownerDocument.defaultView.localStorage.getItem('aerin.tactics.v3.world.normal'));assert.ok(saved);
+ g.saveWorld();const saved=JSON.parse(g.renderer.canvas.ownerDocument.defaultView.localStorage.getItem('aerin.tactics.v3.world4.normal'));assert.ok(saved);
  const restored=api.Simulation.restore(saved),rp=restored.players.get(p.id);for(const key of ['age','inventory','weapon','armor','shield','wounds'])assert.equal(JSON.stringify(rp[key]),JSON.stringify(p[key]));assert.equal(restored.legacy(p.owner).records[0].name,'前の命');
 });
 test('showGame invalidates caches across repeated lives and restores all HUD nodes',t=>{

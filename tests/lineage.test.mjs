@@ -19,7 +19,7 @@ test('first-play buttons pass through original onboarding and start exactly one 
  assert.equal(g.screen,'game');assert.equal(sim.players.size,1);const next=g.snapshot.player;
  assert.equal(next.name,'灯');assert.equal(next.age,0);assert.equal(next.gen,1);assert.equal(next.race,3);assert.deepEqual(Array.from(next.inherit),[]);
  assert.equal(root.childNodes.length,0,'clan decoder/listeners are disposed at game entry');assert.equal(ui.modal,null);
- const saved=JSON.parse(x.w.localStorage.getItem('aerin.tactics.v3.world.normal'));const restored=x.api.Simulation.restore(saved);assert.equal(restored.players.get(next.id).name,'灯');
+ const saved=JSON.parse(x.w.localStorage.getItem('aerin.tactics.v3.world4.normal'));const restored=x.api.Simulation.restore(saved);assert.equal(restored.players.get(next.id).name,'灯');
 });
 test('archive selection starts generation 1001 with one experience, without granting a learned skill',async t=>{
  const x=ready(t,true),{g,sim,ui}=x,legacy=sim.legacy(g.profile.owner);legacy.generation=1001;legacy.archive=[4001,4002];legacy.records=[{id:'old',gen:4,name:'先人',skills:[4001],appearance:{race:0}}];ui.renderClan();
