@@ -1,0 +1,42 @@
+{
+  "renderer": "llvmpipe (LLVM 20.1.2, 256 bits)",
+  "version": "4.5 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.2",
+  "backend": "offline EGL / same game shaders and drawBatches / not browser",
+  "initial_compile_upload_render_seconds": 1.9165504439952201,
+  "options": {
+    "width": 864,
+    "height": 1120,
+    "x": 12,
+    "z": 19,
+    "zoom": 16,
+    "yaw": 0.42,
+    "pitch": 0.68,
+    "seed": 7349,
+    "time": 0,
+    "weather": "clear",
+    "quality": "medium",
+    "gameplayCamera": true
+  },
+  "game_drawBatches_stats_including_shadow_refresh": {
+    "calls": 72,
+    "triangles": 444050,
+    "instances": 1901,
+    "lodInstances": 2579
+  },
+  "steady_scene_draw_calls": 50,
+  "unverified": [
+    "browser interaction",
+    "native WebGL frame pacing",
+    "hardware GPU",
+    "Pixel Fold",
+    "bone palette transitions"
+  ],
+  "camera": {
+    "x": 11.138568904120227,
+    "z": 16.21522745243442,
+    "zoom": 12.497142857142856,
+    "yaw": 0.3,
+    "pitch": 0.52
+  },
+  "meshBytes": 2254896
+}

@@ -14,14 +14,14 @@ test('scene authoring is deterministic and does not change the simulation',()=>{
 });
 
 test('paving is bounded to the district and stays below the existing foot plane',()=>{
-  const stones=scene.staticRows['golden:stone'].filter(m=>m[20]===20);
+  const stones=scene.staticRows['craft:paving'];
   assert.ok(stones.length>600 && stones.length<1600);
   for(const m of stones){assert.ok(Math.abs(m[12])<16 && m[14]>-14 && m[14]<22);
     assert.ok(m[13]+m[5]/2<=.18,'walking relief cannot raise the foot plane');}
 });
 
 test('authored meshes have finite nondegenerate triangles and upward paving faces',()=>{
-  for(const [name,g] of Object.entries(scene.geometries).filter(([k])=>k.startsWith('golden:'))){
+  for(const [name,g] of Object.entries(scene.geometries).filter(([k])=>k.startsWith('golden:')||k.startsWith('craft:'))){
     assert.equal(g.positions.length,g.count*3);assert.equal(g.normals.length,g.count*3);
     assert.ok(g.positions.every(Number.isFinite));assert.ok(g.normals.every(Number.isFinite));
     for(let i=0;i<g.positions.length;i+=9){const p=g.positions,u=[0,1,2].map(k=>p[i+3+k]-p[i+k]),v=[0,1,2].map(k=>p[i+6+k]-p[i+k]);
@@ -32,15 +32,58 @@ test('authored meshes have finite nondegenerate triangles and upward paving face
 
 test('well has an open center and water below the annular coping',()=>{
   const well=scene.snapshot.map.schools.find(s=>s.id==='dance');
-  const wall=scene.staticRows['golden:stone'].filter(m=>Math.hypot(m[12]-well.x,m[14]-well.z)<1.5&&m[13]>.2);
-  assert.equal(wall.length,64);
-  assert.ok(wall.every(m=>Math.hypot(m[12]-well.x,m[14]-well.z)>.9));
+  const rows=scene.staticRows['craft:well'];assert.equal(rows.length,1);
+  assert.ok(Math.abs(rows[0][12]-well.x)<1e-6);assert.ok(Math.abs(rows[0][14]-well.z)<1e-6);
+  for(const name of ['craft:well','craft:well-shadow']){
+    const {positions:p,craft}=scene.geometries[name];let rim=0;
+    // Limestone only: the suspended rope and bucket legitimately enter the opening.
+    for(let i=0;i<p.length;i+=3)if(p[i+1]>.86&&p[i+1]<1.12&&craft[i]<.25&&craft[i+1]>.75){rim++;assert.ok(Math.hypot(p[i],p[i+2])>.70,'well opening filled');}
+    assert.ok(rim>24);
+  }
 });
 
 test('surface sampler avoids the existing character bone palette on texture unit 5',()=>{
   assert.equal(scene.uniforms.goldenAtlas,6);
-  assert.equal(new Set(['shadowTex','dynamicShadow','materialAtlas','detailAtlas','terrainMap','goldenAtlas'].map(k=>scene.uniforms[k])).size,6);
-  assert.ok(!Object.values(scene.staticRows).flat().some(m=>m[20]>=24));
+  const slots=['shadowTex','dynamicShadow','materialAtlas','detailAtlas','terrainMap','goldenAtlas','craftColor','craftDetail'].map(k=>scene.uniforms[k]);
+  assert.equal(new Set(slots).size,8);assert.ok(!slots.includes(5));
+  // 24..27 are live combat materials. Reusing 24 previously discarded the well
+  // and turned paving into silk ribbons. Static environment must never use them.
+  for(const [name,rows]of Object.entries(scene.staticRows))for(const m of rows){
+    assert.ok(m[20]<24||m[20]===28||m[20]===29,name);
+    assert.equal(m[20]>=28,name.startsWith('craft:'),name);
+    if(name.startsWith('craft:'))assert.equal(m[20],name==='craft:paving'?29:28);
+  }
+  assert.match(scene.shaders.vertex,/vLocal=surface>=28\.&&surface<29\.5\?craft:pos/);
+  assert.match(scene.shaders.fragment,/crafted=authored>=28\.&&authored<29\.5/);
+});
+
+test('craft UVs/AO survive import and shadow proxies preserve detail only in the color pass',()=>{
+  for(const name of ['well','cottage']){
+    const g=scene.geometries['craft:'+name],proxy=scene.geometries['craft:'+name+'-shadow'];
+    assert.equal(g.craft.length,g.count*3);assert.ok(g.craft.every(v=>Number.isFinite(v)&&v>=0&&v<=1));
+    assert.ok(g.craft.some((v,i)=>i%3===2&&v<.8),'baked contact occlusion is present');
+    for(let i=0;i<g.normals.length;i+=3)assert.ok(Math.abs(Math.hypot(...g.normals.slice(i,i+3))-1)<1e-5);
+    assert.ok(proxy.count<g.count*.1,'shadow triangle reduction');
+    assert.ok(!scene.passes.staticShadow.some(b=>b.mesh==='craft:'+name));
+    assert.ok(scene.passes.static.some(b=>b.mesh==='craft:'+name));
+  }
+  assert.ok(!scene.passes.staticShadow.some(b=>b.mesh==='craft:paving'));
+});
+
+test('roof decking closes every slate column gap on both slopes',()=>{
+  const topAt=(p,x,z)=>{let top=-Infinity;
+    for(let i=0;i<p.length;i+=9){const ax=p[i+3]-p[i],az=p[i+5]-p[i+2],bx=p[i+6]-p[i],bz=p[i+8]-p[i+2],det=ax*bz-az*bx;
+      if(Math.abs(det)<1e-9)continue;
+      const u=((x-p[i])*bz-(z-p[i+2])*bx)/det,v=(ax*(z-p[i+2])-az*(x-p[i]))/det;
+      if(u>=-1e-6&&v>=-1e-6&&u+v<=1+1e-6)top=Math.max(top,p[i+1]+u*(p[i+4]-p[i+1])+v*(p[i+7]-p[i+1]));
+    }return top;};
+  for(const [name,width,depth,eave,rise]of [['well',2.96,2.02,2.98,.78],['cottage',5.70,4.48,3.14,1.40]]){
+    const p=scene.geometries['craft:'+name].positions,cols=Math.max(4,Math.round(depth/.48));
+    for(let k=1;k<cols;k++)for(const side of [-1,1]){
+      const y=topAt(p,side*width*.28,-depth/2+k*depth/cols-.009);
+      assert.ok(y>eave+rise*.4,`${name} open roof gap ${k}, ${side}`);
+    }
+  }
 });
 
 test('new furnishing keeps the centerline and well approach free',()=>{
@@ -54,7 +97,9 @@ test('new furnishing keeps the centerline and well approach free',()=>{
 });
 
 test('district draw budget is bounded with real culling and instancing',()=>{
-  assert.ok(scene.stats.calls<=72);assert.ok(scene.stats.triangles<1_050_000);
+  // Baseline 72 + two crafted color draws, two shadow proxies and one paving batch.
+  assert.ok(scene.stats.calls<=77);assert.ok(scene.stats.triangles<1_050_000);
+  assert.ok(Object.values(scene.passes).flat().filter(b=>b.mesh.startsWith('craft:')).length<=5);
   assert.equal(scene.r.static.get('golden:grout').length,1);
   assert.ok(scene.meshBytes<12*1024*1024);
   const materialGroups=Object.keys(scene.staticRows).filter(k=>k.startsWith('golden:'));
