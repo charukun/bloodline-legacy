@@ -17,6 +17,7 @@ historical化はゲーム仕様や技術上の制約の変更を意味しない�
 - [BRANCH_STRATEGY.md](BRANCH_STRATEGY.md): branchの役割
 - [DEPLOYMENT.md](DEPLOYMENT.md): 配信実装・確認方法
 - [DEV_FAST_CI.md](DEV_FAST_CI.md): DEVのHTTP確認と専用Browser workflowの区別
+- [CI_VALIDATION.md](CI_VALIDATION.md): 変更範囲に応じたPR検証と最終developの全体回帰
 - [BUILD_VERSION.md](BUILD_VERSION.md): Build Versionの生成と識別
 - [GITHUB_WORK_HANDOFF.md](GITHUB_WORK_HANDOFF.md)、[GITHUB_CICD_INSTRUCTIONS.md](GITHUB_CICD_INSTRUCTIONS.md): 上記への参照入口。初回搬入の重複手順は廃止
 - [初回移行記録](historical/initial-migration/README.md): 新規作成・main搬入・35ファイル固定を含む旧手順の来歴
@@ -27,7 +28,7 @@ historical化はゲーム仕様や技術上の制約の変更を意味しない�
 - 原本: 新「血脈の系譜」Project Sourcesの `Bloodline_Legacy_Common_Development_Policy_v7_FINAL.md`
 - 文書更新日: 2026-09-10
 - 同期コピーは原本とbyte単位で一致。SHA-256: `23f85f9933d53142304e2f40188c7e760d1984e1dbebc05d0d158236c589b5ce`
-- 共通ポリシーはこの1コピーへ集約。Repositoryにv1–v6の独立した共通ポリシーファイルはなく、旧版への言及は下記資料のhistoricalな来歴として残している。
+- 共通ポリシーはこの1コピーへ集約。旧 `COMMON_DEVELOPMENT_POLICY.txt` はこのコピーへの参照のみ。旧版への言及は下記資料のhistoricalな来歴として残している。
 - v7への文書整理はCI/CD実装の変更を意味しない。未mergeのworkflow改善は現行として扱わず、対象branchのworkflowとActionsを確認する。
 
 ## 技術資料・記録の索引

@@ -2,7 +2,7 @@
 
 共通の検証方針は [v7 §4・7](COMMON_DEVELOPMENT_POLICY.md#4-テストと検証)。具体的な実行条件は対象branchの [deploy.yml](../.github/workflows/deploy.yml) を参照する。
 
-このtreeの通常deploy workflowは、DEV対象のPR・push・manual CIでChromiumの準備と公開前Browser smokeを省略する。Build・テスト・JS/Asset整合・対象となるWorkers runtime検証は残る。未mergeのCI効率化PRの検証選択を、現行の動作と混同しない。
+このtreeの通常deploy workflowは、DEV対象のPR・push・manual CIでChromiumの準備と公開前Browser smokeを省略する。Build・JS/Asset整合と、変更範囲に応じたテスト・Workers runtime検証は残る。[検証範囲の選択](CI_VALIDATION.md)はdevelop向けPRに適用し、最新developのpushとmanual CIは全体回帰を実行する。古いdevelopのsuperseded runは成功証拠にしない。
 
 DEV公開後は `node deploy/smoke.mjs dev --http-only` が、配布manifest、全文commitと環境、公開HTMLのSHA256、MIME/cache、healthのbuild/互換契約、存在しないAsset、契約のないjoin拒否を確認する。詳細なassertionは同スクリプトを参照する。HTTP成功はWebGL描画・Versionの画面表示・操作感を確認した証拠ではない。
 

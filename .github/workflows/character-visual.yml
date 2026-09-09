@@ -6,8 +6,6 @@ on:
         description: Run the full visual and software performance comparison
         type: boolean
         default: false
-  push:
-    branches: ['work/character-golden-master-*']
   pull_request:
     branches: [develop]
     paths:
@@ -34,32 +32,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            deploy/package-lock.json
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Prepare native GLSL ES validation
-        run: |
-          if ! python3 -c "import ctypes; ctypes.CDLL('libEGL.so.1'); ctypes.CDLL('libEGL_mesa.so.0')"; then
-            # Hosted images already contain signed Ubuntu package indexes.
-            # An unrelated third-party index outage must not block EGL installation.
-            if ! sudo apt-get install -y --no-install-recommends libegl1 libegl-mesa0; then
-              sudo apt-get update -qq -o Acquire::Retries=3
-              sudo apt-get install -y --no-install-recommends libegl1 libegl-mesa0
-            fi
-          fi
-      - run: npm test
+      # General CI owns unit/regression/shader tests. This job owns the
+      # character assets and actual browser/input evidence, without a second full suite.
       - run: node build.mjs
       - name: Validate character assets
         run: |
           python -m pip install -r tools/requirements-character.txt
           python tests/character_asset_validation.py
       - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
-      - name: Install and verify Chromium
-        run: |
-          deploy/node_modules/.bin/playwright install chromium
-          # Hosted runners may already have the required native libraries.
-          # Probe the actual browser before requesting an OS dependency refresh.
-          if ! node --input-type=module -e "import {chromium} from './deploy/node_modules/playwright/index.mjs'; const browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']}); await browser.close();"; then
-            deploy/node_modules/.bin/playwright install-deps chromium
-          fi
+      - run: bash tools/ci/prepare-linux-deps.sh browser
       - name: Build the pull request implementation baseline
         env:
           CHARACTER_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '717931fd92271104b89a9c5645ed4792bbf06c2e' }}
@@ -76,13 +62,6 @@ jobs:
           CHARACTER_MODE: functional
           CHARACTER_AFTER_ONLY: '1'
         run: node tests/character-browser.mjs
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: character-functional-${{ github.run_id }}-${{ github.run_attempt }}
-          path: verification/current/
-          if-no-files-found: error
-          retention-days: 30
       - name: Compare sustained performance on the same runner
         if: inputs.full_review == true
         timeout-minutes: 22
