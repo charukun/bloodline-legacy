@@ -12,7 +12,7 @@ const COMBAT_FX = Object.freeze({
  parry:{life:.24,count:9,color:'#d8eee8'}
 });
 class CombatPresentation{
- constructor(r){this.r=r;this.trails=new Map();this.castSamples=new Map();this.castSerial=0;this.room=null;this.compositionBudget=512;this.silkKeys=new Set();this.silkSlot=0;}
+ constructor(r){this.r=r;this.motionSamples=new Map();this.dust=[];this.trails=new Map();this.castSamples=new Map();this.castSerial=0;this.room=null;this.compositionBudget=512;this.silkKeys=new Set();this.silkSlot=0;}
  castRecipe(a,skill,t){
   if(typeof SkillEffects==='undefined')return null;
   const base=SkillEffects.forSkill(skill?.id);if(!base){this.castSamples.delete(a.id);return null;}
@@ -111,7 +111,7 @@ class CombatPresentation{
     const g=SkillArcane.geometry(p,point,this.r.eye);if(!g)continue;
     this.compositionBudget-=cost;
     const key='skillfx:arcane:'+this.silkSlot++;this.silkKeys.add(key);RG_CACHE.set(key,g);
-    const target=p.mode===5?this.r.fxBatches:(this.r.arcaneFX??=new Map());
+    const target=p.mode===5||p.mode===7?this.r.fxBatches:(this.r.arcaneFX??=new Map());
     this.r.add(key,...g.center,1,1,1,SkillArcane.ink(p),0,0,0,SkillArcane.surface,p.alpha,target);continue;
    }
    if(p.kind==='ribbon'){
@@ -126,6 +126,65 @@ class CombatPresentation{
    else this.r.add('rbox',...point(p.p),...p.size.map(x=>x*(1+(p.mist??0)*.45)),p.color,p.turn,p.turn*.7,0,p.mist?27+p.mist*.49:4,p.alpha,this.r.fxBatches);
   }
  }
+ // World-space movement samples are cosmetic. No simulation RNG or actor writes.
+ resetMotion(){this.motionSamples.clear();this.dust.length=0;}
+ motionAccent(a,skill,t){
+  if(typeof SkillMotion==='undefined'||a.kind!=='player'||!this.motionSamples.has(a.id)&&this.motionSamples.size>=48)return;
+  const r=this.r,old=this.motionSamples.get(a.id),ground=a.baseY??SkillMotion.groundAt(r,a.x,a.z);
+  const clock=skill?SkillMotion.clock(a,t,skill):null,active=a.action==='attack'&&a.actionUntil>t;
+  const moved=old?Math.hypot(a.x-old.x,a.z-old.z):0,elapsed=old?t-old.t:0;
+  const valid=elapsed>0&&elapsed<.12&&moved<.8;
+  let emitted=false;
+  const retreat=valid&&moved>.012&&((a.x-old.x)*Math.sin(a.dir)+(a.z-old.z)*Math.cos(a.dir))<-.009;
+  const leap=skill?.presentation==='stormleap'&&((a.action==='charge'&&clock?.u>.15)||(active&&clock?.beat<.43));
+  const landed=old?.leap&&!leap;
+  if((retreat||landed)&&t-(old?.dustAt??-1)>.065){
+   const cm=r.characterMaster,feet=cm?.owner?.id===a.id&&cm.lastFrame===r.frame?cm.footDebug:[];
+   const contacts=feet.filter(f=>!f.swing&&f.soleY-f.floor<.12);
+   // Do not manufacture a foot contact when a rendered foot is airborne.
+   for(const f of contacts.slice(0,2)){
+    const p=[f.actual[0],f.floor+.10,f.actual[2]],n=this.dust.length;
+    emitted=true;this.dust.push({p,born:t,life:.42+(n%3)*.07,v:[-(a.x-(old?.x??a.x))*3,.24,-(a.z-(old?.z??a.z))*3],phase:n*2.399});
+   }
+  }
+  const sample={x:a.x,z:a.z,t,leap,dustAt:emitted?t:old?.dustAt??-1,wake:old?.wake??[],cinders:old?.cinders??[]};
+  if(leap&&valid&&moved>.025)sample.wake.push({p:[a.x,ground+.3,a.z],born:t});
+  sample.wake=sample.wake.filter(e=>t-e.born<.18).slice(-6);this.motionSamples.set(a.id,sample);
+  if(typeof SkillArcane==='undefined')return;
+  const field=(mode,strips,alpha,palette=0)=>this.composition([{kind:'field',mode,strips,age:clock?.beat??0,clock:clock?.elapsed??t,alpha,flutter:.8,palette,mist:.9}],v=>v);
+  if(active&&skill?.presentation==='cinderblade'){
+   const tip=r.weaponTips?.get(a.id),base=r.weaponBases?.get(a.id);if(tip&&base){
+    const time=t-(a.actionStarted??0),strips=[];
+    for(let j=0;j<(r.quality==='low'?3:5);j++){
+     const at=.24+j*.14,origin=base.map((v,i)=>v+(tip[i]-v)*at),angle=j*2.4;
+     strips.push(Array.from({length:9},(_,k)=>{const u=k/8,w=.22*Math.sin(Math.PI*u),curl=Math.sin(u*6-time*8+j)*.11*u;
+      const p=[origin[0]+Math.cos(angle)*curl,origin[1]+u*(.56+.17*Math.sin(time*7+j)),origin[2]+Math.sin(angle)*curl];
+      return {a:p.map((v,i)=>v-(i===0?w:0)),b:p.map((v,i)=>v+(i===0?w:0))};}));
+    }
+    field(1,strips,.86,1);
+    if(valid&&t-(old?.cinderAt??-1)>.06){sample.cinders.push({p:[...tip],born:t});sample.cinderAt=t;}else sample.cinderAt=old?.cinderAt;
+   }
+  }
+  if(leap){
+   const beat=clock.stage==='charge'?clock.u*.58:.58+clamp(clock.beat/.43,0,1)*.42,fade=Math.sin(Math.PI*beat),strips=[];
+   for(let j=0;j<(r.quality==='low'?2:3);j++){
+    const angle=j*2.1+(a.dir||0),start=[a.x,ground+.55+Math.sin(Math.PI*beat)*.58,a.z];
+    strips.push(Array.from({length:11},(_,k)=>{const u=k/10,jag=SkillSilk.noise(u*13,(t-(a.actionStarted??0))*12,j*19)*.13;
+     const p=[start[0]+Math.sin(angle)*(.92+u*.50)+Math.cos(angle)*jag,start[1]+u*1.35+Math.sin(u*9+j)*.10,start[2]+Math.cos(angle)*(.92+u*.50)+Math.sin(angle)*jag],w=.18*Math.sin(Math.PI*u);
+     return {a:[p[0]-w,p[1]-.025,p[2]],b:[p[0]+w,p[1]+.025,p[2]]};}));
+   }
+   field(6,strips,fade*.8,3);
+  }
+  sample.cinders=sample.cinders.filter(e=>t-e.born<.42).slice(-8);
+  if(sample.cinders.length)this.composition([{kind:'motes',mode:4,points:sample.cinders.map((e,i)=>{const u=(t-e.born)/.42;return {p:[e.p[0]+Math.sin(i*2.4+u)*u*.16,e.p[1]+u*.38,e.p[2]],size:.065*(1-u),alpha:(1-u)**2};}),age:.7,clock:t,alpha:.7,flutter:.8,palette:1,mist:.9}],v=>v);
+  if(sample.wake.length>1){const strips=[sample.wake.map(e=>{const u=(t-e.born)/.18,w=.13*(1-u);return {a:[e.p[0]-w,e.p[1],e.p[2]],b:[e.p[0]+w,e.p[1]+.15,e.p[2]]};})];field(6,strips,.45,3);}
+ }
+ drawDust(t){
+  this.dust=this.dust.filter(e=>t-e.born<e.life&&t>=e.born).slice(-32);
+  if(!this.dust.length||typeof SkillArcane==='undefined')return;
+  const points=this.dust.map(e=>{const age=t-e.born,u=age/e.life;return {p:e.p.map((v,i)=>v+e.v[i]*age+(i===0?Math.sin(e.phase+u*2)*age*.22:0)),size:.26+u*.58,alpha:Math.sin(Math.PI*u)**.8};});
+  this.composition([{kind:'motes',mode:7,points,age:1,clock:t,alpha:.72*(1-(this.r.weatherState.rain??0)*.7),flutter:.8,palette:0,mist:1}],v=>v);
+ }
  clearSilk(){
   for(const key of this.silkKeys){const g=this.r.geo?.get(key);if(g){this.r.gl.deleteBuffer(g.vertex);this.r.gl.deleteBuffer(g.instance);this.r.gl.deleteVertexArray(g.vao);this.r.geo.delete(key);}this.r.instanceScratch?.delete(key);RG_CACHE.delete(key);}
   this.silkKeys.clear();this.silkSlot=0;
@@ -137,10 +196,10 @@ class CombatPresentation{
  update(s){if(this.previewEnabled===false)return;const r=this.r,t=s.t,p=s.player,list=[...s.actors||[],...s.players||[]];if(p&&!list.some(e=>e.id===p.id))list.push(p);const byId=new Map(list.map(e=>[e.id,e]));
   this.compositionBudget=r.quality==='low'?256:512;
   this.silkSlot=0;
-  const room=s.room?.id??p?.room;if(this.room!==room){for(const id of this.trails.keys())this.forget(id);this.clearSilk();this.castSamples.clear();this.room=room;}
+  const room=s.room?.id??p?.room;if(this.room!==room){for(const id of this.trails.keys())this.forget(id);this.clearSilk();this.castSamples.clear();this.resetMotion();this.room=room;}
   const visible=new Set();
   for(const a of list){if(!a.alive||Math.hypot(a.x-r.camera.x,a.z-r.camera.z)>20)continue;visible.add(a.id);
-   const skill=skillById(a.pendingSkill?.id??a.attackSkill);
+   const skill=skillById(a.pendingSkill?.id??a.attackSkill);this.motionAccent(a,skill,t);
    if(a.telegraph){const q=a.telegraph,u=clamp((t-q.started)/Math.max(.01,q.at-q.started),0,1);for(let j=0;j<3;j++)r.add('gltf:spark-streak',a.x+Math.sin(q.dir??a.dir)*(.8+j*.22),.28,a.z+Math.cos(q.dir??a.dir)*(.8+j*.22),.45,.24,.2,'#db9c63',-(q.dir??a.dir),0,Math.PI/2,4,.2+u*.42,r.fxBatches);}
    let trail=this.trails.get(a.id);const attacking=a.action==='attack'&&a.actionUntil>t&&skill;
    const silkRecipe=this.castRecipe(a,skill,t);
@@ -182,6 +241,8 @@ class CombatPresentation{
     r.add(key,...center,1,1,1,'#fff6e0',0,0,0,4,.8*(1-clamp((t-trail[0].t)/COMBAT_FX.trailLife,0,1)),r.fxBatches);
    }
   }
+  for(const id of this.motionSamples.keys())if(!visible.has(id))this.motionSamples.delete(id);
+  this.drawDust(t);
   for(const id of this.trails.keys())if(!visible.has(id))this.forget(id);
   for(const id of this.castSamples.keys())if(!visible.has(id))this.castSamples.delete(id);
   r.effects=r.effects.filter(e=>{

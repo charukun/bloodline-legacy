@@ -290,11 +290,16 @@ const SkillMotion=(()=>{
     out[k]=curve(load[k],hit[k],follow[k],next[k],v,Math.max(0,start-lead),end);
    }
    if(spin){out.yaw=(c.index+ease(v))*TAU;out.footTurn=out.yaw;}
-   if(c.shape==='leap'){
+   if(c.shape==='leap'&&c.sk.presentation!=='stormleap'){
     // Jump and landing fit BEFORE contact, followed by grounded compression.
     const jump=v<.12?0:v<.43?Math.sin(Math.PI*(v-.12)/.31):0;
     out.y+=Math.max(0,jump)*.40;out.air=jump>.05;
    }
+  }
+  if(c.sk.presentation==='stormleap'){
+   // Lift during the actual approach; settle before the fixed contact beat.
+   const u=c.stage==='charge'?clamp((c.u-.15)/.85,0,1)*.58:.58+clamp(c.beat/.43,0,1)*.42;
+   const lift=Math.sin(Math.PI*u)*.58;out.y+=lift;out.air=lift>.045;
   }
   out.head=-out.torso*.35;
   const aim=state?.aim??0;out.headYaw=-.65*Math.sin(out.yaw+out.torsoYaw-aim);

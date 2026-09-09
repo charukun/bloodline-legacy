@@ -40,8 +40,33 @@ void main(){if(R>=10)discard;vec3 p=C.rgb;if(textured)p*=texture(atlas,U).rgb;fl
   self.parts={}
   for key,geo in self.cap['geometry'].items():
    p=np.array(geo['positions']).reshape(-1,3);n=np.array(geo['normals']).reshape(-1,3);self.parts[key]=self.simple(p,n,[1,1,1,1])
-  floor=np.array([[-8,.10,-8],[-8,.10,8],[8,.10,8],[-8,.10,-8],[8,.10,8],[8,.10,-8]])
+  floor=np.array([[-8,0,-8],[-8,0,8],[8,0,8],[-8,0,-8],[8,0,8],[8,0,-8]])
   self.floor=self.simple(floor,np.tile([0,1,0],(6,1)),[.65,.69,.60,1],9)
+ def prepare_fx(self):
+  # Reuse the shipped analytic material masks. Lighting/postprocessing remain
+  # simplified in this offline diagnostic; this does not certify browser output.
+  f=self.cap['fragment'];helpers=f[f.index('float silkLattice'):f.index('float shadowValue')]
+  body=f[f.index(' if(authored>23.5'):f.index(' // Existing line/debris')]
+  vertex="""#version 330
+in vec3 pos;in vec3 uv;uniform mat4 vp;uniform mat4 model;out vec3 vLocal;out vec3 vWorld;
+void main(){vLocal=uv;vec4 w=model*vec4(pos,1.);vWorld=w.xyz;gl_Position=vp*w;}
+"""
+  fragment="""#version 330
+in vec3 vLocal;in vec3 vWorld;uniform vec4 vInk;uniform float authored;out vec4 outColor;
+const float PI=3.14159265359;vec3 lin(vec3 c){return pow(max(c,vec3(0.)),vec3(2.2));}
+"""+helpers+"void main(){float alpha=vInk.a;vec3 V=vec3(0.,1.,0.);vec4 outNormal;\n"+body+"outColor=vInk;}"
+  self.fxprog=self.c.program(vertex_shader=vertex,fragment_shader=fragment)
+ def draw_fx(self,frame,yaw,pitch,height):
+  if not hasattr(self,'fxprog'):self.prepare_fx()
+  self.fxprog['vp'].write(camera(yaw,pitch,height,1,[frame['p']['x'],1.25,frame['p']['z']+.1]))
+  self.c.enable(moderngl.BLEND);self.c.depth_mask=False
+  for e in frame.get('fx',[]):
+   if e['surface']<23.5 or e['surface']>25.5:continue
+   self.c.blend_func=(moderngl.SRC_ALPHA,moderngl.ONE if e['additive'] else moderngl.ONE_MINUS_SRC_ALPHA)
+   data=np.column_stack([np.array(e['positions']).reshape(-1,3),np.array(e['uv']).reshape(-1,3)]).astype('f4')
+   b=self.c.buffer(data.tobytes());vao=self.c.vertex_array(self.fxprog,[(b,'3f 3f','pos','uv')])
+   self.fxprog['model'].write(np.array(e['m'],dtype='f4').tobytes());self.fxprog['vInk'].value=e['ink'];self.fxprog['authored'].value=e['surface'];vao.render();vao.release();b.release()
+  self.c.depth_mask=True;self.c.disable(moderngl.BLEND)
  def vao(self,p,n,uv,col,j,w,reg,index=None):
   data=np.column_stack([p,n,uv,col,j,w,reg]).astype('f4');b=self.c.buffer(data.tobytes());ib=self.c.buffer(index) if index else None
   return self.c.vertex_array(self.prog,[(b,'3f 3f 2f 4f 4f 4f 1f','pos','nor','uv','color','joints','weights','region')],ib,index_element_size=4)
@@ -60,6 +85,7 @@ void main(){if(R>=10)discard;vec3 p=C.rgb;if(textured)p*=texture(atlas,U).rgb;fl
    if key not in self.parts:
     geo=self.cap['geometry'][part['type']];p=np.array(geo['positions']).reshape(-1,3);n=np.array(geo['normals']).reshape(-1,3);self.parts[key]=self.simple(p,n,part['c'])
    self.parts[key].render()
+  if frame.get('fx'):self.draw_fx(frame,yaw,pitch,height)
   self.c.copy_framebuffer(self.out,self.fbo)
   return Image.frombytes('RGBA',(self.size,self.size),self.out.read(components=4)).transpose(Image.Transpose.FLIP_TOP_BOTTOM).convert('RGB')
 

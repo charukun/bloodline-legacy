@@ -54,6 +54,7 @@ const SkillEffects = (() => {
   60040:['blade','pierce','single','cleave','vanish'],60041:['blade','sweep','double','ripple','recoil'],60042:['blade','fall','single','cleave','vanish'],
   60060:['bell','pierce','single','ripple','vanish'],60061:['bell','orbit','double','ripple','recoil'],60062:['bell','fall','single','pinch','drift'],
   60080:['stone','pierce','single','fracture','vanish'],60081:['stone','orbit','double','cleave','recoil'],60082:['stone','fall','single','fracture','drift'],
+  60093:['blade','sweep','single','cleave','drift'],60073:['fulgur','fall','single','fracture','vanish'],
   60090:['ember','sweep','single','cleave','vanish'],60091:['ember','orbit','double','fracture','recoil'],60092:['ember','fall','single','fracture','drift'],
   60110:['shadow','pierce','single','pinch','vanish'],60111:['shadow','sweep','double','ripple','recoil'],60112:['shadow','orbit','single','cleave','drift']
  };
@@ -66,6 +67,7 @@ const SkillEffects = (() => {
   4016:['blade','orbit','single','ripple','recoil'],4017:['stone','fall','single','cleave','drift'],4019:['blade','sweep','single','pinch','vanish']
  });
  const bySkill=new Map(Object.entries(bindings).map(([id,v])=>[Number(id),resolve({family:v[0],path:v[1],rhythm:v[2],impact:v[3],release:v[4],seed:Number(id),variation:.65,...signature(v[0])})]));
+ if(bySkill.has(60093))bySkill.set(60093,resolve({...bySkill.get(60093),palette:'amber',thickness:3,afterglow:1.15}));
  const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)),mix=(a,b,t)=>a+(b-a)*t;
  const hash=(seed,i)=>{let x=(seed^Math.imul(i+1,0x9e3779b1))>>>0;x=Math.imul(x^(x>>>16),0x85ebca6b);return ((x^(x>>>13))>>>0)/4294967296;};
  // A cast owns one cosmetic sample. Same input token replays exactly; the
