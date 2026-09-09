@@ -38,8 +38,12 @@ jobs:
       - name: Prepare native GLSL ES validation
         run: |
           if ! python3 -c "import ctypes; ctypes.CDLL('libEGL.so.1'); ctypes.CDLL('libEGL_mesa.so.0')"; then
-            sudo apt-get update -qq
-            sudo apt-get install -y --no-install-recommends libegl1 libegl-mesa0
+            # Hosted images already contain signed Ubuntu package indexes.
+            # An unrelated third-party index outage must not block EGL installation.
+            if ! sudo apt-get install -y --no-install-recommends libegl1 libegl-mesa0; then
+              sudo apt-get update -qq -o Acquire::Retries=3
+              sudo apt-get install -y --no-install-recommends libegl1 libegl-mesa0
+            fi
           fi
       - run: npm test
       - run: node build.mjs
@@ -48,7 +52,14 @@ jobs:
           python -m pip install -r tools/requirements-character.txt
           python tests/character_asset_validation.py
       - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
-      - run: deploy/node_modules/.bin/playwright install --with-deps chromium
+      - name: Install and verify Chromium
+        run: |
+          deploy/node_modules/.bin/playwright install chromium
+          # Hosted runners may already have the required native libraries.
+          # Probe the actual browser before requesting an OS dependency refresh.
+          if ! node --input-type=module -e "import {chromium} from './deploy/node_modules/playwright/index.mjs'; const browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']}); await browser.close();"; then
+            deploy/node_modules/.bin/playwright install-deps chromium
+          fi
       - name: Build the pull request implementation baseline
         env:
           CHARACTER_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '717931fd92271104b89a9c5645ed4792bbf06c2e' }}
