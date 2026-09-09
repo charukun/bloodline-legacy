@@ -101,14 +101,14 @@ test('Escape returns one level; Tab stays inside modal; rerender does not grow n
  d.querySelector('.panel-back').focus();d.activeElement.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Tab',shiftKey:true,bubbles:true,cancelable:true}));assert.equal(d.activeElement.dataset.menu,'settings');
  const toggle=d.getElementById('sound-toggle');toggle.focus();toggle.click();await flush();assert.equal(ui.navigation.length,0);assert.equal(d.activeElement.id,'sound-toggle');
 });
-test('keyboard typing and pointer down during modal cannot begin game movement or rest',t=>{
- const {g,ui,d,w,p}=fixture(t);g.installInput();ui.talk();const input=d.getElementById('chat-text');input.focus();
+test('keyboard and pointer down during the talk fan cannot begin movement or rest',t=>{
+ const {g,ui,d,w,p}=fixture(t);g.installInput();ui.talk();const input=d.querySelector('[data-talk]');input.focus();
  for(const code of ['KeyW','KeyR','Space','KeyD']){input.dispatchEvent(new w.KeyboardEvent('keydown',{key:code.slice(-1),code,bubbles:true}));input.dispatchEvent(new w.KeyboardEvent('keyup',{key:code.slice(-1),code,bubbles:true}));}
  g.renderer.canvas.dispatchEvent(new w.MouseEvent('pointerdown',{button:0,bubbles:true}));assert.equal(g.keys.size,0);assert.ok(!g.pointer);assert.equal(p.seated,false);assert.equal(p.input.x,0);assert.equal(p.input.z,0);
 });
 test('talk uses surrounding speech and preserves the existing wake behavior',t=>{
- const {g,p,ui,d,sim}=fixture(t);g.command({type:'sit',active:true});assert.equal(p.seated,true);ui.talk();assert.equal(p.seated,false);assert.match(d.querySelector('[role="dialog"]').getAttribute('aria-label'),/周囲/);
- d.querySelector('[data-say="ありがとう"]').click();assert.equal(p.speech,'ありがとう');assert.equal(ui.modal,null);assert.ok(sim.events.some(e=>e.type==='speech'&&e.text==='ありがとう'));
+ const {g,p,ui,d,sim}=fixture(t);g.command({type:'sit',active:true});assert.equal(p.seated,true);ui.talk();assert.equal(p.seated,false);assert.match(d.querySelector('[role="menu"]').getAttribute('aria-label'),/周囲/);
+ d.querySelector('[data-talk="2"]').click();assert.equal(p.speech,'ありがとう');assert.equal(ui.modal,null);assert.ok(sim.events.some(e=>e.type==='speech'&&e.text==='ありがとう'));
 });
 test('world labels show only the engaged target and are removed after disengagement',t=>{
  const {g,p,ui,d,sim,sync}=fixture(t),r=sim.getRoom(p);const a=sim.actor('goblin',1,0),b=sim.actor('goblin',2,0);r.actors=[a,b];sync();assert.equal(d.querySelectorAll('.target-label').length,0);

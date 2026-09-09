@@ -1,0 +1,15 @@
+/* Parchment leaves and brass ribs, opening toward the world from the talk seal. */
+#talk-button{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+#talk-button.fan-open{z-index:7;outline-color:#ead7a1;box-shadow:0 0 12px #dec58665}
+.talk-fan{position:fixed;z-index:6;pointer-events:none;touch-action:none;user-select:none;-webkit-user-select:none;filter:drop-shadow(0 3px 5px #17231dc0)}
+#hud .talk-fan button{position:absolute;inset:0;width:100%;height:100%;padding:0;margin:0;border:0;border-radius:0;background:none;box-shadow:none;color:#f0e0b7;pointer-events:auto;touch-action:none;outline:none}
+.talk-fan button>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.talk-fan button>svg path{fill:#3e493bec;stroke:#bca16d;stroke-width:1.2;stroke-linejoin:round}
+.talk-fan button>span:not(.visually-hidden){position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font-family:var(--serif);font-size:11px;letter-spacing:.01em;line-height:1.2;text-shadow:0 1px 2px #17211b;pointer-events:none}
+.talk-fan .icon{display:block;width:23px;height:23px}
+.talk-fan button.selected>svg path,.talk-fan button:focus-visible>svg path{fill:#7b7850f5;stroke:#f5df9f;stroke-width:2.5}
+.talk-fan button[aria-disabled=true]{color:#b7afa0}
+.talk-fan button[aria-disabled=true]>svg path{fill:#3d413bf0;stroke:#797663}
+#talk-button.listening{color:#f7d393;outline:2px solid #f0cc8c;outline-offset:3px;animation:talk-listening 1.1s ease-in-out infinite}
+@keyframes talk-listening{50%{box-shadow:0 0 0 5px #edc78322,0 0 14px #edc78380}}
+@media(prefers-reduced-motion:reduce){#talk-button.listening{animation:none;box-shadow:0 0 10px #edc78380}}

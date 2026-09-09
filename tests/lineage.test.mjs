@@ -15,7 +15,8 @@ test('first-play buttons pass through original onboarding and start exactly one 
  root.querySelector('[data-origin-race="3"]').click();input(x,'#origin-name','灯');
  root.querySelector('#begin-life').click();root.querySelector('#begin-life').click();await settle();
  assert.equal(ui.modal,'onboarding');assert.equal(sim.players.size,0);assert.equal(root.querySelector('#dialog').open,false,'native overlay cannot obscure onboarding');
- for(let i=0;i<3;i++)d.getElementById('guide-next').click();await settle();
+ const pageCount=d.querySelectorAll('.guide-pages i').length;
+ for(let i=0;i<pageCount;i++)d.getElementById('guide-next').click();await settle();
  assert.equal(g.screen,'game');assert.equal(sim.players.size,1);const next=g.snapshot.player;
  assert.equal(next.name,'灯');assert.equal(next.age,0);assert.equal(next.gen,1);assert.equal(next.race,3);assert.deepEqual(Array.from(next.inherit),[]);
  assert.equal(root.childNodes.length,0,'clan decoder/listeners are disposed at game entry');assert.equal(ui.modal,null);
