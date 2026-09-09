@@ -13,8 +13,9 @@ test('carried movement accepts tap, drag and keyboard, cancels safely, and relea
  const x=p.x;pointer('pointerdown',100,100);pointer('pointermove',145,100);sim.tick(1/30);assert.ok(p.x>x);pointer('pointercancel',145,100);assert.equal(p.input.x,0);assert.equal(g.pointer,null);assert.equal(p.dash,null);
  canvas.dispatchEvent(new w.KeyboardEvent('keydown',{code:'KeyD',key:'d',bubbles:true}));g.updateMove();const before=p.x;sim.tick(1/30);assert.ok(p.x>before);canvas.dispatchEvent(new w.KeyboardEvent('keyup',{code:'KeyD',key:'d',bubbles:true}));assert.equal(p.input.x,0);
  const timeoutX=p.x;g.command({type:'move',x:1,z:0});for(let i=0;i<60;i++)sim.tick(1/30);assert.equal(p.input.x,0);assert.ok(p.x>timeoutX);
- sync();assert.equal(d.querySelector('[data-gift]'),null);assert.equal(d.querySelector('#gift-tray'),null);assert.ok(d.getElementById('leave-arms'));
- const release={x:p.x,z:p.z};d.getElementById('leave-arms').click();assert.equal(p.prologue,false);assert.equal(p.age,4);assert.equal(p.introX,release.x);assert.equal(p.introZ,release.z);assert.ok(Math.hypot(p.x-release.x,p.z-release.z)<1);assert.equal(p.inventory.length,0);
+ sync();assert.equal(d.querySelector('[data-gift]'),null);assert.equal(d.querySelector('#gift-tray'),null);assert.equal(d.getElementById('leave-arms'),null);
+ const release={x:p.x,z:p.z};g.command({type:'leaveIntro'}); // Legacy command remains compatible; the UI releases automatically.
+ assert.equal(p.prologue,false);assert.equal(p.age,4);assert.equal(p.introX,release.x);assert.equal(p.introZ,release.z);assert.ok(Math.hypot(p.x-release.x,p.z-release.z)<1);assert.equal(p.inventory.length,0);
  const restored=w.testAPI.Simulation.restore(sim.exportState());assert.equal(restored.players.get(p.id).prologue,false);
 });
 
@@ -34,7 +35,7 @@ test('carried walk preserves the release timer, inventory, save compatibility an
  for(let i=0;i<61;i++)sim.tick(1/30);assert.equal(p.prologue,false);assert.equal(p.age,4);assert.equal(p.inventory.length,0);
 });
 
-test('speech is small, switches side with the projected facing and hides outside the real viewport',t=>{
+test('speech is small, switches side with the camera view and hides outside the real viewport',t=>{
  const {p,g,ui,d,sync}=fixture(t);let flip=1;
  g.renderer.width=600;g.renderer.height=800;g.renderer.project=(x,y,z)=>({x:300+flip*x*20,y:500-y*25+z,visible:true});
  p.dir=Math.PI/2;p.speech='ここにいるよ';p.speechUntil=100;sync();const node=d.querySelector('.speech-bubble');assert.equal(node.dataset.side,'right');

@@ -3,14 +3,28 @@
 const COMBAT_FX = Object.freeze({
  trailLife:.105, trailWidth:.045, trailPoints:7,
  hit:{life:.21,count:7,color:'#ecd7ab'},
- wound:{life:.21,count:7,color:'#ecd7ab'},
+ wound:{life:.34,count:9,color:'#f4b48e'},
  partbreak:{life:.30,count:10,color:'#dfae79'},
  blocked:{life:.17,count:5,color:'#bdced0'},
  guard:{life:.17,count:5,color:'#bdced0'},
+ guarded:{life:.17,count:5,color:'#bdced0'},
  parry:{life:.24,count:9,color:'#d8eee8'}
 });
 class CombatPresentation{
  constructor(r){this.r=r;this.trails=new Map();this.room=null;}
+ contact(e,target,x,z,dir){
+  const r=this.r,cm=r.characterMaster,part=e.part||'torso';
+  if(cm?.owner?.id===target?.id&&cm.lastFrame===r.frame){
+   const bone=({head:'head',torso:'chest',rightArm:'elbow.R',leftArm:'elbow.L',rightLeg:'shin.R',leftLeg:'shin.L'})[part];
+   const m=cm.transforms[CM01.asset.names.indexOf(bone)];
+   if(m)return [m[12]-Math.sin(dir)*.12,m[13],m[14]-Math.cos(dir)*.12];
+  }
+  const age=target?.age??25,race=target?.race||0;
+  const scale=target?.bodyScale??(age<4?.46:age<10?.64+(age-4)*.022:age<18?.78+(age-10)*.027:1)*(race===2?.86:race===1?1.07:race===3?.95:1);
+  const height=part==='head'?2.4:part.endsWith('Leg')?.55:1.55,side=part.startsWith('right')?1:part.startsWith('left')?-1:0;
+  const local=side*(part.endsWith('Arm')?.49:.21)*scale,facing=target?.dir||0,q=r.damageMotion?.actors.get(target?.id)?.pose;
+  return [x+Math.cos(facing)*local-Math.sin(dir)*.18*scale+(q?.x||0),(target?.baseY??SkillMotion.groundAt(r,x,z))+height*scale-(q?.drop||0),z-Math.sin(facing)*local-Math.cos(dir)*.18*scale+(q?.z||0)];
+ }
  // All needles share one four-triangle mesh; length is the local Y axis.
  needle(from,to,width,color,alpha){
   const r=this.r,d=to.map((v,i)=>v-from[i]),len=Math.hypot(...d);if(len<.001||alpha<.015)return;
@@ -105,19 +119,22 @@ class CombatPresentation{
    if(e.type==='wound'&&r.effects.some(h=>h!==e&&['hit','partbreak'].includes(h.type)&&h.target===e.target&&Math.abs(h.born-e.born)<.025))continue;
    const target=byId.get(e.target||e.player||e.id),source=byId.get(e.source),x=e.x??target?.x,z=e.z??target?.z;
    if(!Number.isFinite(x)||!Number.isFinite(z)||Math.hypot(x-r.camera.x,z-r.camera.z)>22)continue;
-   const u=clamp(age/profile.life,0,1),strong=e.type==='partbreak',count=r.quality==='low'?4:profile.count;
-   const dir=source?Math.atan2(x-source.x,z-source.z):target?.dir||0;
-   const center=[x-Math.sin(dir)*.22,1.18,z-Math.cos(dir)*.22];
+   const hurt=e.type==='wound',own=hurt&&e.player===p?.id;
+   const u=clamp(age/profile.life,0,1),strong=e.type==='partbreak'||hurt&&e.severity!=='light',count=r.quality==='low'?(own?6:4):profile.count;
+   const dir=Number.isFinite(e.dir)?e.dir:source?Math.atan2(x-source.x,z-source.z):target?.dir||0;
+   // Fix the contact position on the first rendered frame; sparks then travel
+   // independently of the body's recoil. Attack VFX retain their existing path.
+   const center=hurt||e.type==='guarded'?(e.contact??=this.contact(e,target,x,z,dir)):[x-Math.sin(dir)*.22,1.18,z-Math.cos(dir)*.22];
    for(let j=0;j<count;j++){
     const angle=j*2.399963+(e.seq||0)*.13,speed=3.2+(j%3)*1.1;
     const v=[Math.sin(angle)*.8+Math.sin(dir)*.7,Math.cos(angle*1.3)*.65,Math.cos(angle)*.8+Math.cos(dir)*.7];
     const travel=age*speed,stretch=(.08+.22*(1-u))*(1-u);
     const tip=center.map((c,i)=>c+v[i]*travel-(i===1?age*age*1.2:0));
-    this.needle(tip.map((c,i)=>c-v[i]*stretch),tip,.018*(1-u)+.003,j%3?profile.color:'#fff9e9',(1-u)**1.6);
+    this.needle(tip.map((c,i)=>c-v[i]*stretch),tip,(own?(strong?.034:.025):.018)*(1-u)+.003,j%3?profile.color:'#fff9e9',(1-u)**1.6);
    }
    if(age<.075){const f=(1-age/.075)**2,c=r.camera.yaw;
     const side=[Math.cos(c),0,-Math.sin(c)];
-    this.needle(center.map((v,i)=>v-side[i]*(strong?.35:.23)*f),center.map((v,i)=>v+side[i]*(strong?.35:.23)*f),.027, '#fff9e9',f);
+    this.needle(center.map((v,i)=>v-side[i]*(own?(strong?.48:.33):strong?.35:.23)*f),center.map((v,i)=>v+side[i]*(own?(strong?.48:.33):strong?.35:.23)*f),own?.045:.027, '#fff9e9',f);
     this.needle([center[0],center[1]-.24*f,center[2]],[center[0],center[1]+.24*f,center[2]],.018,profile.color,f);
    }
    if(strong&&e.severed)r.add('softbox',x+age*1.6,.3+Math.sin(u*Math.PI)*1.1,z-age*.8,.18,.40,.2,'#99866a',age*4,age*7,age*3,19,1-u*.65,r.fxBatches);

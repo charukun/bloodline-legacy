@@ -89,8 +89,9 @@ class AudioEngine {
   if(!spatial&&ev.player&&l&&ev.player!==l.id)return false;
   const d=spatial&&l?Math.hypot(ev.x-l.x,ev.z-l.z):0;
   if(d>24)return false;const gain=1/(1+(d/6)**2);
-  const gap=type==='step'?.095:.028;
-  if(t-(this.lastFX.get(type)??-100)<gap)return false;
+  const localWound=type==='wound'&&ev.player===l?.id,fxKey=localWound?'wound:local':type;
+  const gap=type==='step'?.095:localWound?.09:.028;
+  if(t-(this.lastFX.get(fxKey)??-100)<gap)return false;
   const tone=(n,delay,dur,a=.2,wave='sine',end=null)=>this.tone(n,t+delay,dur,a*gain,wave,false,this.fxBus,end);
   const noise=(dur,a,hz,q=.7,delay=0)=>this.noise(t+delay,dur,a*gain,hz,q);
   if(type==='swing'||type==='enemySwing'){
@@ -100,7 +101,8 @@ class AudioEngine {
    const fist=ev.skill===4000||ev.kind==='practice';noise(.10,.50,430);tone(44,0,.13,.55,'sine',31);
    if(!fist)tone(86,0,.08,.08,'triangle',73);
   }else if(type==='wound'||type==='partbreak'){
-   noise(.18,.60,330);tone(42,0,.23,.70,'sine',27);tone(57,.018,.10,.08,'triangle',37);
+   const weight=localWound?(ev.strength??(ev.severity==='light'?.6:1)):1;
+   noise(.18,localWound?.48+weight*.16:.60,localWound?470:330);tone(localWound?39:42,0,.23,localWound?.55+weight*.15:.70,'sine',27);tone(57,.018,.10,.08,'triangle',37);
    if(type==='partbreak'||ev.severity==='heavy'||ev.severity==='lost')noise(.09,.38,1100,.8,.025);
   }else if(['clash','armor','guarded','blocked'].includes(type)){
    noise(.09,.35,2400,1.8);tone(90,0,.18,.18,'triangle');tone(97,.008,.11,.10,'sine');tone(43,0,.065,.22);
@@ -122,7 +124,7 @@ class AudioEngine {
   }else if(type==='skill'&&ev.id>=4030&&ev.id<=4035){
    noise(.4,.18,2600);[62,69,81].forEach((n,i)=>tone(n,i*.045,.55,.12,'triangle'));
   }else return false;
-  this.lastFX.set(type,t);this.effectCount++;return true;
+  this.lastFX.set(fxKey,t);this.effectCount++;return true;
  }
  updateFootsteps(p){
   if(!p)return;const old=this.foot;this.foot={x:p.x,z:p.z,distance:old?.distance||0};
@@ -131,5 +133,3 @@ class AudioEngine {
   this.foot.distance+=delta;if(this.foot.distance>(p.guard?.52:.92)){this.foot.distance=0;this.fx({type:'step',x:p.x,z:p.z});}
  }
 }
-
-
