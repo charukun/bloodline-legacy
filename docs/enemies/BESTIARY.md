@@ -159,3 +159,47 @@ settings/pose, creature contact sockets, status-marker height and build order.
 Existing game UI/input/AI/saves are retained. Review tools and tests are isolated
 under `tools/enemies` and `tests/enemies*`; the full changed-file list is the PR
 diff against the pinned develop base. No files are deleted.
+
+## 2026-09-09: delivered HTML shader failure
+
+The Pixel Fold screenshot reported GLSL line 75: adding a `highp float` to a
+`const int`. The delivered HTML (SHA-256
+`a16b7d262ae4a6704dfee1055480fec7d765d2bd2e4dfb25d3b3419c558f4499`)
+contained `seed+89` in the shared material fragment shader. Its main, rig and
+sentinel material programs failed compilation. This is invalid GLSL ES, not
+an unsupported-device diagnosis.
+
+Latest develop was rechecked at `72b889e917ac41dac30cfd69b7858b8c967f9dd6`.
+It already contains the exact fix from `20e224dddd0f925c1cbae25bdb483492b389b5ba`:
+`seed+89.`. This one-character correction is now carried into the existing,
+unmerged #52 branch and its standalone sample. The corrected shader file is
+byte-identical to that latest develop file; no gameplay or asset changes.
+
+The earlier native diagnostic converted GLSL ES 300 to desktop GLSL 330,
+which permitted the conversion. Mocked GL tests do not compile shaders either.
+Those checks missed this defect. The additional gate deliberately retains
+`#version 300 es` and compiles/links through native GLES3, without translation
+or a browser. It checks the actual embedded HTML shader strings for world,
+world shadow, display resolve, rig, rig shadow, sentinel, sentinel shadow,
+diorama CoC and diorama blur. Linux CI fails if GLES is unavailable; non-Linux
+local runners explicitly skip this native check.
+
+Validation for this correction:
+
+- Original delivered HTML: reproduced the same line 75 failure in GLES3.
+- Corrected delivered HTML: all **9 programs compile and link**.
+- Negative control: a float-plus-int fragment shader is rejected.
+- `node --test tests/enemy-review.test.mjs tests/enemy-shaders.test.mjs`:
+  **4 passed, 0 failed, 0 skipped** (including full catalogue/motion controls).
+- DEV build, embedded asset integrity and asset/license validation: PASS.
+- Full local `npm test` returned without a complete reporter summary in this
+  run; no new full-suite count is claimed. The focused results above are
+  complete, and the updated PR runs the existing full CI suite.
+- [Native GLES compile/link report](evidence/shader-gles-fix.json).
+- Browser startup and Pixel Fold rendering/FPS remain unverified here. GLES
+  compilation is an additional gate, not browser or device verification.
+
+Reproduce after `npm run build` and `node tools/enemies/build-review.mjs`:
+`node tools/enemies/check-shaders.mjs dist/Bloodline_Legacy_Enemy_Review.html`.
+The compiler uses Python 3 standard library plus Mesa `libEGL.so.1` on Linux.
+No runtime or packaged game dependency is added.
