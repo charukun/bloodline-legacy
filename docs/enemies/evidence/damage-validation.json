@@ -1,5 +1,5 @@
 {
-  "base": "8ade374c84709e9ebcdfc77944b76ead87c0c8ba",
+  "base": "6cdbacdb627bd10bccf9fb4a06f771881cc5dd3a",
   "sourceSHA256": {
     "src/enemies/damage.js": "4bed1d79b153819ca12b9bd88053d1eb18f8f12fb9133fa52c77acf8e2f9d503",
     "src/enemies/sentinel.js": "ac8b411391ad35079ec8500da722e34c995793ef53f25d167f091a92da870def",
@@ -9,7 +9,7 @@
     "tools/enemies/review-runtime.js": "c811cb287be83fb2ecc51008b8a5564a307560dfe6cf87b0dd309f4751b6ed8d"
   },
   "npmTest": {
-    "passed": 490,
+    "passed": 492,
     "failed": 0,
     "skipped": 0
   },
@@ -18,8 +18,9 @@
   "enemyAssetLicense": "PASS",
   "GLESProgramsPassed": 9,
   "floatIntNegativeControl": "rejected as expected",
-  "nativeDiagnostic": "9 captures of actual meshes/shaders at staged wounds, attack, limb break and death",
+  "nativeDiagnostic": "9 captures of actual meshes/shaders at staged wounds, attack, limb break and death; enemy rendering source unchanged by final UI merge",
   "browser": "UNVERIFIED: supported browser security rejection",
   "desktop60fps": "UNVERIFIED",
-  "pixelFold30fps": "UNVERIFIED"
+  "pixelFold30fps": "UNVERIFIED",
+  "simulationDelta": "none; #52 including its archive is now integrated in develop"
 }

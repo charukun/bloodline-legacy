@@ -2,10 +2,12 @@
 
 Implements the user's request for gradual wounds/dirt and lasting post-break
 appearance across all **31 hostile forms and 2 neutral creatures**. This branch
-carries the complete unmerged enemy work from #52. Created from develop
+started with the unmerged enemy work from #52. Created from develop
 `c53f9b2c918ff71525b76ea4b20c8b530429a26e`, then synchronized with develop
-`8ade374c84709e9ebcdfc77944b76ead87c0c8ba` (plaza craft integration). No merge
-into develop is performed here.
+`8ade374c84709e9ebcdfc77944b76ead87c0c8ba` (plaza craft integration). Integration subsequently merged #52 and the UI material work into develop
+`6cdbacdb627bd10bccf9fb4a06f771881cc5dd3a`. This branch was synchronized again;
+the final PR is now the damage-presentation delta on those integrated enemies.
+No merge into develop is performed by this WORK.
 
 ## Existing combat data, presentation only
 
@@ -63,11 +65,12 @@ creates Game or saves progress.
 
 ## Compatibility and provenance
 
-The only simulation difference inherited from #52 is the existing deterministic
+The simulation metadata already integrated through #52 is the deterministic
 appearance/name metadata for spawns. Latest develop now requires immutable
 simulation archives, so the merged source is registered as
 `4a4d9e684f5172142308358ae6a41a1d2854121571c08ebdb045beb44919d7be` using
-`node tools/archive-simulation.mjs`. Prior archives and schema migration remain
+`node tools/archive-simulation.mjs`. That exact archive is now present in develop too; the final PR has no
+simulation/core/archive delta. Prior archives and schema migration remain
 intact. No damage-presentation fields are added to the save schema.
 
 New damage geometry/shader code is original project work. The ten bone forms
@@ -106,7 +109,7 @@ exclude world drawing, combat, GPU and browser. They are not FPS results.
 
 ## Recorded integrated results
 
-- Full `npm test`: **490 passed, 0 failed, 0 skipped**. DEV deployment build and
+- Full `npm test`: **492 passed, 0 failed, 0 skipped**. DEV deployment build and
   embedded asset integrity: PASS. Native enemy GLES: **9 / 9**, plus the
   existing wider renderer GLES tests and negative controls in the full suite.
 - Nine final native captures after the plaza merge cover representative skin,
@@ -115,7 +118,7 @@ exclude world drawing, combat, GPU and browser. They are not FPS results.
 - Shared damage geometry: **2,232 bytes**, 3 meshes; zero new image textures,
   model downloads, bones, clips or per-actor geometry resources.
 - Maximum all-six-parts damage: **342 extra triangles / actor** at medium;
-  **66** at low. Break rims use the third shared mesh. At most three additional
+  **114** at low. Break rims use the third shared mesh. At most three additional
   rigid batch types per world/shadow pass globally, independent of actor count.
 - Node construction/pose at 24 mixed actors: medium clean p50/p95
   **7.48 / 13.37 ms**; every part heavily wounded **10.69 / 20.48 ms**.
