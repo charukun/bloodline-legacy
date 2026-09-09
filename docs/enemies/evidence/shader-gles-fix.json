@@ -1,0 +1,52 @@
+{
+  "backend": "OpenGL ES 3.2 Mesa 25.2.8-0ubuntu0.24.04.2",
+  "language": "OpenGL ES GLSL ES 3.20",
+  "renderer": "llvmpipe (LLVM 20.1.2, 256 bits)",
+  "programs": [
+    {
+      "name": "world",
+      "passed": true,
+      "failures": []
+    },
+    {
+      "name": "world-shadow",
+      "passed": true,
+      "failures": []
+    },
+    {
+      "name": "display",
+      "passed": true,
+      "failures": []
+    },
+    {
+      "name": "rig",
+      "passed": true,
+      "failures": []
+    },
+    {
+      "name": "rig-shadow",
+      "passed": true,
+      "failures": []
+    },
+    {
+      "name": "sentinel",
+      "passed": true,
+      "failures": []
+    },
+    {
+      "name": "sentinel-shadow",
+      "passed": true,
+      "failures": []
+    },
+    {
+      "name": "diorama-coc",
+      "passed": true,
+      "failures": []
+    },
+    {
+      "name": "diorama-blur",
+      "passed": true,
+      "failures": []
+    }
+  ]
+}

@@ -74,3 +74,12 @@ test('online display follows the server terrain revision while old rules remain 
  const g={online:true,mapCache:new Map()},s={room:{seed:13}};ctx.decorate.call(g,s);assert.equal(s.map.terrainRevision,0);assert(!s.map.traversables.some(o=>o.id==='north:upper'));
  const latest={room:{seed:13,terrainRevision:1}};ctx.decorate.call(g,latest);assert.equal(latest.map.terrainRevision,1);assert(latest.map.traversables.some(o=>o.id==='north:upper'));assert.notEqual(s.map,latest.map);
 });
+
+test('current hit recoil stays on a terrace and preserves contact spacing on raised ground',()=>{
+ const s=setup();s.room.map.traversables=[{id:'test:terrace',kind:'step',x:0,z:0,width:6,depth:4,height:1.2}];
+ Object.assign(s.p,{x:0,z:1.57,supportHeight:1.2});const source=s.sim.actor('soldier',0,.5);
+ s.sim.reactToHit(s.p,source,'torso','light',1);for(let i=0;i<30;i++)s.sim.tickHitRecoil(s.p,s.room,1/60);
+ assert(s.p.z<=1.58);assert.equal(s.p.supportHeight,1.2);
+ s.p.x=-1;s.p.z=0;source.x=1;source.z=0;source.supportHeight=1.2;s.room.actors=[source];
+ s.sim.moveAttackStep(s.p,s.room,3,0);assert(Math.hypot(s.p.x-source.x,s.p.z-source.z)>=s.sim.contactSpacing(s.p,source)-1e-8);assert.equal(s.p.supportHeight,1.2);
+});
