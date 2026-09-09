@@ -1542,6 +1542,56 @@
           }
         }
       ]
+    },
+    {
+      "key": "rescue_call",
+      "tags": [
+        "combat",
+        "tension",
+        "patience"
+      ],
+      "requiresExperience": [
+        [
+          "combat",
+          "tension"
+        ]
+      ],
+      "color": "#e8c983",
+      "rarity": 1,
+      "inheritance": {
+        "bias": 0.22,
+        "copy": false
+      },
+      "action": {
+        "cost": 12,
+        "fatigue": 1,
+        "charge": 0.35,
+        "swing": 0.45,
+        "recovery": 0.7,
+        "reach": 0,
+        "arc": 6.28,
+        "power": 0,
+        "hits": 1,
+        "anim": "counter",
+        "step": 0,
+        "school": "life",
+        "requires": [],
+        "weapon": -1,
+        "lure": true
+      },
+      "variants": [
+        {
+          "id": 60390,
+          "key": "opening",
+          "phase": 0,
+          "ja": "引き受けの声",
+          "en": "Rallying Call",
+          "desc": "対峙相手のいない近くの敵をひとり引き受ける。味方を横から狙う敵を優先。呼び声はしばらく届き、続けては使えない。",
+          "descEn": "Draw one nearby unengaged foe toward you, prioritizing free attackers threatening an ally. The call fades and needs time to renew.",
+          "entry": [],
+          "exit": []
+        }
+      ]
     }
   ],
   "passives": [
@@ -1658,6 +1708,33 @@
       "value": 0.07,
       "action": {},
       "color": "#c7c09b",
+      "inheritance": {
+        "bias": 0.16,
+        "copy": false
+      }
+    },
+    {
+      "id": 60904,
+      "key": "deep_faith",
+      "ja": "篤い信仰",
+      "en": "Deep Devotion",
+      "desc": "祈りを重ね、心に灯を宿す。奇跡を受け入れ、その祈りが少し届きやすくなる。",
+      "descEn": "Repeated prayer kindles devotion. Open your heart to miracles and make them a little more likely to answer.",
+      "tags": [
+        "pray",
+        "patience"
+      ],
+      "requiresExperience": [
+        [
+          "pray"
+        ]
+      ],
+      "effect": "faith",
+      "value": 2,
+      "action": {
+        "school": "church"
+      },
+      "color": "#dec78e",
       "inheritance": {
         "bias": 0.16,
         "copy": false

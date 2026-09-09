@@ -32,7 +32,7 @@ test('surviving player resumes unchanged regardless of stale next-life profile c
  assert.equal(root.querySelector('#prologue-controls').hidden,true);root.querySelector('#begin-life').click();await settle();assert.equal(g.playerId,p.id);assert.equal(JSON.stringify(p),signature);assert.equal(sim.players.size,count);assert.equal(g.screen,'game');
 });
 test('death records and draft selection survive state refresh without limiting generations',async t=>{
- const {g,p,sim,ui}=ready(t);sim.die(p,'老衰');const legacy=sim.legacy(p.owner);legacy.archive=[4000,4001];legacy.records.push({id:'memory',gen:22,name:'遺した人',skills:[4001]});legacy.generation=23;ui.renderClan();const root=ui.lineageView.home.scope;
+ const {g,p,sim,ui}=ready(t);sim.die(p,'老衰');sim.command(p.id,{type:'choose-legacy',skill:4000});const legacy=sim.legacy(p.owner);legacy.archive=[4000,4001];legacy.records.push({id:'memory',gen:22,name:'遺した人',skills:[4001]});legacy.generation=23;ui.renderClan();const root=ui.lineageView.home.scope;
  root.querySelector('#find-memory').click();root.querySelector('[data-choose-id="4001"]').click();assert.deepEqual(Array.from(g.profile.inherit),[4001]);
  ui.renderClan();assert.deepEqual(Array.from(ui.lineageView.home.getDraft().inherit===4001?[4001]:[]),[4001]);root.querySelector('#close-dialog').click();root.querySelector('#skip-inherit').click();assert.deepEqual(Array.from(g.profile.inherit),[]);root.querySelector('#confirm-birth').click();await settle();assert.equal(g.snapshot.player.gen,23);assert.deepEqual(Array.from(g.snapshot.player.inherit),[]);
 });

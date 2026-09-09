@@ -1,0 +1,19 @@
+{
+  "kind": "Node VM CPU pose only, GL calls stubbed; not device FPS",
+  "node": "v24.19.0",
+  "baseline": "b8c3183a681c8eb01911c8123e16ee1e21153856",
+  "results": [
+    {
+      "label": "before",
+      "samples": 1020,
+      "medianMs": 0.32348799999999756,
+      "p95Ms": 0.7375060000001668
+    },
+    {
+      "label": "after",
+      "samples": 1020,
+      "medianMs": 0.29525999999987107,
+      "p95Ms": 0.678906999999981
+    }
+  ]
+}

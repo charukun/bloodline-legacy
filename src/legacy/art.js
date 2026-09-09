@@ -138,6 +138,7 @@ class ArtDirector{
   this.B(-2.9,.41,-1.6,1.2,.14,.56,'#c1ac81');for(const side of [-1,1])this.B(-2.9+side*.45,.23,-1.6,.12,.44,.42,'#b39f78');
  }
  village(map){
+  this.r.traversalMap=map;
   this.target=this.r.static;this.root=rModel();const rng=random(map.seed);this.r.groundFX.clear();this.r.labels=[];
   this.p('plane',0,-1.5,0,220,1,220,'#bad0c5',0,0,0,1);
   this.C(0,-1.6,-7,43,3.3,43,'#c3b492',0,0,0,9);this.C(0,-.28,-7,42.6,.50,42.6,'#e9d9b8',0,0,0,9);this.C(0,.02,-7,42.1,.12,42.1,'#d4d7b7',0,0,0,12);
@@ -157,32 +158,35 @@ class ArtDirector{
   this.with(rModel(forge.x+2.9,0,forge.z+.7),()=>{this.B(0,.18,0,1.75,.30,1.60,'#c6b294',0,0,0,9);this.B(0,.61,-.5,1.6,.86,.35,'#c1aa88',0,0,0,9);for(const side of [-1,1])this.B(side*.65,.46,0,.28,.60,1.3,'#cbb99b',0,0,0,9);this.B(0,.35,.12,1.1,.12,1,'#b37645',0,0,0,4);for(let i=0;i<5;i++)this.p('leaf',(i-2)*.19,.62,.06,.13,.34+(i%2)*.16,.12,i%2?'#f4d38e':'#e9b575',0,0,0,4);});
   for(const h of map.houses.filter(h=>h.id%4===0)){this.barrel(h.x+2.1,h.z+1.0,.65);this.herbBed(h.x,h.z+2.3,1.55);}
   for(let i=0;i<28;i++){const x=(rng()-.5)*23,z=(rng()-.5)*34;if(Math.abs(x)<3||map.schools.some(s=>Math.hypot(x-s.x,z-s.z)<5)||Math.abs(z-7)<2)continue;for(let j=0;j<4;j++)this.S(x+Math.sin(j*2.3)*.38,.26,z+Math.cos(j*2.3)*.35,.50,.34,.42,j%2?'#becaa7':'#afbfa0',j,0,0,0);}
-  for(let x=-32;x<32;x+=4){if(Math.abs(x)<6)continue;this.fence(x,-28,3.7);}
+  for(const o of map.traversables||[]){if(o.kind==='vault')this.fence(o.x,o.z,o.width);else{this.B(o.x,o.height/2,o.z,o.width,o.height,o.depth,'#c8ba97',0,0,0,9);this.B(o.x,o.height-.035,o.z,o.width+.04,.07,o.depth+.02,'#e2d1ad',0,0,0,9);}}
   // Gate has two different sentry caps, cloth banners and masonry piers.
   for(const side of [-1,1]){this.B(side*4.1,1.3,-28,1.35,2.5,1.4,'#d0c4a5',0,0,0,9);this.with(rModel(side*4.1,0,-28),()=>this.roof(2,2,2.7,.75,'#9da894'));this.B(side*4.1,2,-27.19,.66,1.12,.07,'#8fa59a',0,0,0,0);this.p('leaf',side*4.1,2.05,-27.13,.15,.32,.03,'#efe2bc');}
   for(let i=0;i<6;i++){this.B(0,.20,25+i*.76,4,.15,.62,'#c5ad82');if(i%2===0)for(const side of [-1,1])this.C(side*2.0,.32,25+i*.76,.10,1.05,.1,'#b09b71');}
   for(const [x,z] of [[-3,-6],[3,17],[-6,7],[7,-18],[-15,7],[17,-5]]){this.C(x,1.5,z,.08,3,.08,'#a38e67');this.lantern(x,2.5,z);}
  }
- front(seed,stage){this.target=this.r.static;this.root=rModel();this.r.groundFX.clear();this.r.labels=[];const rng=random(seed+stage*11),base=-stage*44;
+ front(seed,stage){this.r.traversalMap=null;this.target=this.r.static;this.root=rModel();this.r.groundFX.clear();this.r.labels=[];const rng=random(seed+stage*11),base=-stage*44;
   this.p('plane',0,-.10,base-15,150,1,160,stage>=3?'#c1b8a5':'#c5c6a4',0,0,0,12);this.B(0,.06,base-17,12,.1,66,'#ddccaa',0,0,0,9);
   for(let i=0;i<40;i++){const side=i%2?1:-1,x=side*(10+rng()*13),z=base+12-rng()*62;this.S(x,.4,z,1.2+rng()*1.5,.8+rng(),1.4,'#bfc2a6',rng()*5,0,0,9);if(i%3===0)this.tree(x,z,.75+rng()*.5,stage>=3?'#aba083':'#a7b287',i*31+seed);}
   for(let i=0;i<12;i++){const x=i%2?8:-8,z=base-i*3.4;this.B(x,1,z,.8,2,.9,'#cbb99b',0,0,0,9);if(i%3===0){this.B(x,2.3,z,.14,2.7,.13,'#a08867');this.B(x+.45,3,z,.9,1.35,.065,stage>=3?'#b57e6a':'#889e97',0,0,0,0);}}
   for(let i=0;i<125;i++){const x=(rng()-.5)*25,z=base-rng()*40;if(Math.abs(x)>3)this.flower(x,z,i%4?'#f2e4c6':'#b1bfae',.4+rng()*.4);}
  }
  doll(p,t,local=false){
+  p=carriedVisualPose(p);
+  if(p.rescueTarget||incapacitated(p)||p.traversal)p={...p,weapon:-1,shield:false};
   if(p.kind&&!['player','guard','parent','portrait'].includes(p.kind)){this.monster(p,t);return;}
   if(p.kind==='guard')p={...p,age:28,weapon:0,armor:2,shield:true,race:0,hair:2,appearanceSeed:14};
+  if(p.rescueTarget)p={...p,weapon:-1,shield:false};
   const r=this.r,oldTarget=this.target;this.target=r.dynamic;this.root=rModel();
   if(p.kind==='player'&&p.prologue){const lower=clamp((t-(p.releaseAt-1.45))/1.45,0,1),ease=lower*lower*(3-2*lower);this.doll({...p,id:p.id+'parent',kind:'parent',prologue:false,age:34,gender:1,weapon:-1,skin:0,action:'carry',carryWalking:p.action==='run',wounds:{},baseY:-.34*ease},t,false);this.doll({...p,kind:'portrait',prologue:false,age:1,scaleOverride:.34+ease*.30,baseY:1.20*(1-ease)+.18*ease,x:p.x+Math.sin(p.dir)*(.32+ease*.24),z:p.z+Math.cos(p.dir)*(.32+ease*.24),dir:p.dir+.2,action:'idle',weapon:-1},t,false);this.target=oldTarget;return;}
   const race=(p.race||0)%4,stage=appearanceStage(p),seed=p.appearanceSeed||4,age=p.age??25,child=age<10;
   let scale=p.scaleOverride??(age<4?.46:age<10?.64+(age-4)*.022:age<18?.78+(age-10)*.027:age>72?.96:1);
   const width=race===2?1.23:race===1?.88:1;scale*=race===2?.86:race===1?1.07:race===3?.95:1;
-  const run=p.action==='run'||p.action==='guardWalk'||(p.action==='carry'&&p.carryWalking),walk=this.gait?this.gait(p,t):Math.sin(t*8.2),reaction=damagePose(r,p,t,this.skillFeet?.get(p.id)?.feet),pose=damageArtPose(r,p,t,artPose(p,t,SkillMotion.stateFor(r,p,t))),ail=ailmentPose(p,t),fall=!p.alive?clamp((t-(p.deathAt??t))/1.12,0,1):0;
+  const run=p.action==='run'||p.action==='guardWalk'||(p.action==='carry'&&p.carryWalking),walk=this.gait?this.gait(p,t):Math.sin(t*8.2),reaction=damagePose(r,p,t,this.skillFeet?.get(p.id)?.feet),pose=damageArtPose(r,p,t,artPose(p,t,SkillMotion.stateFor(r,p,t))),ail=ailmentPose(p,t),fall=!p.alive?(p.wasDownedOnDeath?1:clamp((t-(p.deathAt??t))/1.12,0,1)):0;
   // Keep the established floor anchors through recovery/idle. Returning to the
   // old short-leg rest matrices here would pop both soles above the ground.
-  const groundedMotion=p.alive!==false&&!run&&!p.seated&&!p.activity&&(pose.skillMotion||reaction.amount>0||this.skillFeet?.has(p.id));
+  const groundedMotion=p.alive!==false&&!incapacitated(p)&&!p.traversal&&!run&&!p.seated&&!p.activity&&(pose.skillMotion||reaction.amount>0||this.skillFeet?.has(p.id));
   if(p.kind==='guard'){const q=p.telegraph;if(q){const u=clamp((t-q.started)/Math.max(.01,q.at-q.started),0,1);pose.active=true;pose.rightArm=u<.65?-.55-u/.65*1.85:-2.4+((u-.65)/.35)**2*(3-2*(u-.65)/.35)*1.45;pose.leftArm=-1.0;pose.rightLeg=-.14;pose.leftLeg=.1;}else if(p.action==='attack'&&p.actionUntil>t){const u=clamp((t-p.actionStarted)/Math.max(.01,p.actionUntil-p.actionStarted),0,1);pose.active=true;pose.rightArm=-.95+u*1.2;pose.leftArm=-1.0;}}
-  const dying=fall*fall*(3-2*fall),baseY=(p.baseY||.18)+(pose.skillMotion?0:run?Math.abs(walk)*.055:Math.sin(t*1.8+seed)*.015)+pose.y+ail.y-reaction.drop;
+  const dying=fall*fall*(3-2*fall),baseY=(p.baseY??.18)+(p.supportHeight||0)+(p.verticalOffset||0)+(pose.skillMotion?0:run?Math.abs(walk)*.055:Math.sin(t*1.8+seed)*.015)+pose.y+ail.y-reaction.drop;
   const facing=(p.dir||0)+pose.yaw,guard=p.kind==='guard'||p.guard||p.guardUntil>t;
   this.root=rModel(p.x+reaction.x+scale*(Math.cos(p.dir||0)*(pose.weightX||0)+Math.sin(p.dir||0)*(pose.weightZ||0)),baseY,p.z+reaction.z+scale*(-Math.sin(p.dir||0)*(pose.weightX||0)+Math.cos(p.dir||0)*(pose.weightZ||0)),scale*width,scale,scale,facing,pose.roll+reaction.roll+ail.roll,dying*1.48+pose.pitch+reaction.pitch+ail.pitch+(age>65?.055:0));
   const palette=[['#e5d5b4','#8f9f80'],['#d9debf','#849b85'],['#e3cdb0','#b39771'],['#e9ceb1','#bd9473']][race];
@@ -227,7 +231,7 @@ class ArtDirector{
    this.root=elbow;this.S(0,-.07,.01,.125,.22,.14,cloth);this.B(0,-.18,.015,.25,.10,.26,'#d9c7a4',0,0,0,0);
    this.root=hand;this.S(0,0,0,.12,.14,.125,skin);
    if(side===1&&p.weapon>=0&&age>=7)this.with(rModel(0,-.035,.03,1,1,1,0,-.06,Math.PI-.12),()=>this.weapon(p.weapon,.84));
-   if(side===-1&&(p.shield||p.kind==='guard')&&age>=7)this.shield(-.08,.09,.19,.94);
+   if(side===-1&&(p.shield||p.kind==='guard'&&!p.rescueTarget)&&age>=7)this.shield(-.08,.09,.19,.94);
   }
   this.root=upperRoot;
   // Head is a smooth sculpted mesh. Facial features are actual geometry at close range.
@@ -263,30 +267,52 @@ class ArtDirector{
   if(local&&p.alive)r.add('ring:6.283',p.x,.23,p.z,.58,1,.58,'#f5e3b2',0,0,0,4,.62,r.fxBatches);
   this.target=oldTarget;
  }
+ damageScars(p,roots={}){
+  const originalRoot=this.root;
+  if(p.kind==='dummy'||!p.alive)return;
+  const crawler=p.kind==='crawler',beast=['maw','stag'].includes(p.kind),fungus=p.kind==='mushroom';
+  const anchors=crawler?{torso:[0,1.315,-.16],head:[0,1.025,.58],rightArm:[.58,.64,-.5],leftArm:[-.58,.64,-.5],rightLeg:[.62,.6,.42],leftLeg:[-.62,.6,.42]}:beast?{torso:[0,1.47,-.18],head:[0,1.85,.69],rightArm:[.4,.72,.55],leftArm:[-.4,.72,.55],rightLeg:[.4,.7,-.6],leftLeg:[-.4,.7,-.6]}:fungus?{torso:[0,.75,.37],head:[0,1.825,0],rightArm:[.66,1.5,0],leftArm:[-.66,1.5,0],rightLeg:[.25,.4,.18],leftLeg:[-.25,.4,.18]}:{torso:[0,1.4,.43],head:[0,2.08,.55],rightArm:[.65,1.3,.25],leftArm:[-.65,1.3,.25],rightLeg:[.28,.5,.27],leftLeg:[-.28,.5,.27]};
+  for(const part of BODY_PARTS){const w=p.wounds?.[part],mark=p.damageMarks?.[part];if(!w&&!mark)continue;
+   if(w?.severity==='lost'&&!['head','torso'].includes(part))continue;
+   this.root=roots[part]||originalRoot;
+   const anchor=p.kind==='wraith'&&part==='head'?[0,2.08,.40]:p.kind==='wraith'&&part==='torso'?[0,1.40,.225]:anchors[part];
+   const [x,y,z]=anchor,heavy=w?.severity==='heavy'||w?.severity==='lost'||mark?.depth>=2,count=Math.min(3,Math.max(1,mark?.hits||1)),top=(crawler||beast||fungus)&&['torso','head'].includes(part),lost=w?.severity==='lost';
+   for(let i=0;i<count;i++){const dx=(i-(count-1)/2)*.12,len=lost?.33:heavy?.28:.17;
+    for(const side of top?[1]:[-1,1])this.with(rModel(x+dx,y,z*side,1,1,1,0,.45-i*.12,top?Math.PI/2:0),()=>{
+     this.B(0,0,0,.065,len,.035,heavy?'#e5b68a':'#d8c6a6',0,0,0,4);
+     this.B(.006,0,.024,.032,len*.84,.025,heavy?'#773e35':'#8c6250',0,0,0,4);
+    });
+   }
+  }
+  this.root=roots.torso||originalRoot;
+  if(p.kind==='boss')for(let i=0;i<4;i++){const intact=i<(p.seals??4);this.B((i-1.5)*.2,1.63,.51,.15,intact?.21:.07,.045,intact?'#cbdac3':'#74483e',0,0,intact?0:.4,4);}
+  this.root=originalRoot;
+ }
  monster(p,t){
   const oldTarget=this.target;this.target=this.r.dynamic;this.root=rModel();const step=Math.sin(t*6+(p.stance||0)),run=p.action==='run',react=damagePose(this.r,p,t),ail=ailmentPose(p,t),fall=!p.alive?clamp((t-(p.deathAt??t))/1.1,0,1):0;
   const kind=p.kind||'goblin',elite=p.elite||kind==='boss',sc=kind==='boss'?2.1:elite?1.45:1;
   const humanoid=['goblin','soldier','elite','boss','archer','mage'].includes(kind);
   this.root=rModel(p.x+react.x,.20+ail.y+(run?Math.abs(step)*.04:0)-react.drop,p.z+react.z,sc,sc,sc,p.dir||0,(humanoid?0:react.roll)+ail.roll,fall*1.5+(humanoid?0:react.pitch)+ail.pitch);
   const damageBase=this.root,damageUpper=humanoid&&react.amount>0?rMultiply(damageBase,rMultiply(rModel(0,.89,0,1,1,1,react.yaw,react.torsoRoll+react.roll,react.torso+react.pitch),rModel(0,-.89,0))):damageBase;
+  let scarHead=damageUpper;
   let fur=elite?'#a7ac9b':kind==='goblin'?'#b3c394':kind==='guard'?'#aeb7a5':'#babfa0',top=2.3;
   if(kind==='dummy'){this.C(0,.9,0,.12,1.8,.12,'#bfa67c');this.S(0,1.6,0,.49,.60,.31,'#d7c9a2');this.S(0,2.2,0,.32,.35,.29,'#e5d4ad');this.B(0,1.6,.32,.035,.65,.022,'#a1916f');this.line([-.6,1.4,0],[.6,1.4,0],.08,'#ad9166');}
   else if(kind==='crawler'){
    this.S(0,.65,0,.57,.43,.68,'#b2b698');this.S(0,.95,-.16,.49,.35,.5,'#94a084');this.S(0,.69,.58,.40,.31,.34,'#c7c99f');
-   for(const side of [-1,1])for(let i=0;i<3;i++){const x=side*(.8+(run?Math.sin(t*6+i)*.11:0)),z=(i-1)*.50;this.line([side*.36,.60,z],[x,.44,z+.11],.09,'#aaa98a',0);this.line([x,.44,z+.11],[side*1.03,.06,z+.25],.065,'#c5bc96',0);}
+   for(const side of [-1,1])for(let i=0;i<3;i++){const part=(side===1?'right':'left')+(i===0?'Arm':'Leg');if(p.wounds?.[part]?.severity==='lost')continue;const x=side*(.8+(run?Math.sin(t*6+i)*.11:0)),z=(i-1)*.50;this.line([side*.36,.60,z],[x,.44,z+.11],.09,'#aaa98a',0);this.line([x,.44,z+.11],[side*1.03,.06,z+.25],.065,'#c5bc96',0);}
    for(let i=-1;i<=1;i++)this.S(i*.19,.79,.85,.07,.095,.038,'#645543',0,0,0,10);top=1.1;
   }else if(kind==='maw'||kind==='stag'){
    this.S(0,.89,-.15,.56,.56,.93,fur);this.S(0,1.34,.69,.45,.49,.43,'#c5c4a6');this.S(0,1.13,1.04,.26,.21,.20,'#a4a487');
-   for(const side of [-1,1]){for(const zz of [-.62,.52])this.S(side*.37,.43,zz,.16,.48,.16,'#a9ad92');this.S(side*.18,1.47,1.02,.063,.084,.035,'#574f3d',0,0,0,10);
+   for(const side of [-1,1]){for(const zz of [-.62,.52]){const part=(side===1?'right':'left')+(zz>0?'Arm':'Leg');if(p.wounds?.[part]?.severity!=='lost')this.S(side*.37,.43,zz,.16,.48,.16,'#a9ad92');}this.S(side*.18,1.47,1.02,.063,.084,.035,'#574f3d',0,0,0,10);
     if(kind==='stag'){this.line([side*.25,1.67,.61],[side*.4,2.65,.57],.072,'#d1c8a3');this.line([side*.35,2.15,.59],[side*.75,2.44,.63],.055,'#d1c8a3');}else this.p('horn',side*.28,1.16,1.1,.08,.49,.08,'#e8deba',0,side*.34,Math.PI*.74,0);}
   }else if(kind==='mushroom'){
-   this.S(0,.63,0,.36,.61,.36,'#e4d8b3');this.p('cap',0,1.20,0,.89,.6,.80,'#bc9a81');for(let i=0;i<7;i++){const a=i*2.4;this.S(Math.sin(a)*.48,1.50+(i%3)*.08,Math.cos(a)*.48,.13,.058,.12,'#eadbb8');}for(const side of [-1,1])this.S(side*.12,.77,.33,.05,.07,.027,'#7a6850');top=1.9;
+   this.S(0,.63,0,.36,.61,.36,'#e4d8b3');const lossMask=(p.wounds.rightArm?.severity==='lost'?1:0)+(p.wounds.leftArm?.severity==='lost'?2:0);this.p(lossMask?'cap-loss:'+lossMask:'cap',0,1.20,0,.89,.6,.80,'#bc9a81');for(let i=0;i<7;i++){const a=i*2.4;if(lossMask&1&&Math.sin(a)*.48>.30||lossMask&2&&Math.sin(a)*.48<-.30)continue;this.S(Math.sin(a)*.48,1.50+(i%3)*.08,Math.cos(a)*.48,.13,.058,.12,'#eadbb8');}for(const side of [-1,1])this.S(side*.12,.77,.33,.05,.07,.027,'#7a6850');top=1.9;
   }else if(kind==='wraith'){
-   this.p('cone',0,1.13,0,.66,1.9,.59,'#b6b6b8');this.S(0,1.9,0,.49,.52,.42,'#b6b6ba');this.p('arch',0,1.86,.35,.68,.79,.17,'#626b74');for(const side of [-1,1]){this.S(side*.14,1.89,.46,.09,.12,.023,'#c4d8d1',0,0,0,4);this.p('hair',side*.60,1.05,0,.17,.89,.14,'#c3c1bc',0,side*.4,0,0);}this.B(0,1.18,.44,.50,.06,.04,'#e6d7b0');
+   this.p('cone',0,1.13,0,.66,1.9,.59,'#b6b6b8');this.S(0,1.9,0,.49,.52,.42,'#b6b6ba');this.p('arch',0,1.86,.35,.68,.79,.17,'#626b74');for(const side of [-1,1]){this.S(side*.14,1.89,.46,.09,.12,.023,'#c4d8d1',0,0,0,4);if(p.wounds?.[side===1?'rightArm':'leftArm']?.severity!=='lost')this.p('hair',side*.60,1.05,0,.17,.89,.14,'#c3c1bc',0,side*.4,0,0);}this.B(0,1.18,.44,.50,.06,.04,'#e6d7b0');
   }else{
    this.root=damageUpper;
    this.S(0,1.26,0,.56,.63,.37,fur);this.B(0,1.29,.18,.81,.81,.43,elite?'#b08772':'#a5a884',0,0,0,0);this.B(0,1.10,.35,1.01,.13,.13,'#c2ac82');
-   const damageHead=rMultiply(damageUpper,rMultiply(rModel(0,1.82,0,1,1,1,0,react.headRoll,react.head),rModel(0,-1.82,0)));this.root=damageHead;
+   const damageHead=rMultiply(damageUpper,rMultiply(rModel(0,1.82,0,1,1,1,0,react.headRoll,react.head),rModel(0,-1.82,0)));this.root=damageHead;scarHead=damageHead;
    this.S(0,2.06,.01,.63,.58,.51,fur);this.S(0,1.83,.48,.34,.22,.23,'#c3be9b');this.S(0,1.88,.69,.18,.10,.035,'#766c52');
    for(const side of [-1,1]){
     this.root=damageHead;
@@ -317,6 +343,7 @@ class ArtDirector{
     this.B(0,1.39,-.37,.95,1.08,.15,'#b48575',0,0,.08,0);for(let i=0;i<7;i++)this.B(-.38+i*.12,1.83,-.48,.04,.02,.03,'#dfc89f',0,0,0,0);
    }
   }
+  this.root=damageBase;this.damageScars(p,humanoid?{torso:damageUpper,head:scarHead}:{});
   this.root=rModel();this.r.blob(p.x,p.z,.72*sc,.56*sc,.31,this.r.fxBatches);this.target=oldTarget;
  }
  parentScene(p,t){
