@@ -323,7 +323,8 @@ const SkillMotion=(()=>{
   }
   return s;
  }
- function twoHanded(p){return [2,3,4].includes(p.weapon)&&!p.shield&&p.wounds?.rightArm?.severity!=='lost'&&p.wounds?.leftArm?.severity!=='lost';}
+ function unarmed(p){return !!(p.pendingSkill||['charge','attack','recover'].includes(p.action))&&!!skillById(p.pendingSkill?.id??p.attackSkill??p.currentSkill)?.unarmed;}
+ function twoHanded(p){return !unarmed(p)&&[2,3,4].includes(p.weapon)&&!p.shield&&p.wounds?.rightArm?.severity!=='lost'&&p.wounds?.leftArm?.severity!=='lost';}
  // Analytic two-arm grip. Both rigs pass their actual joint matrices, so the
  // solve respects their limb lengths instead of stretching to an adult target.
  function grip(p,pose,right,left,equipmentY=-.035){
@@ -421,7 +422,7 @@ const SkillMotion=(()=>{
    if(edge<.50)y=Math.max(y,m[13]+Math.abs(m[5])*.5-.014*(1-ease((.50-edge)/.09)));
   }return Math.max(y,supportHeight(r.traversalMap,x,z));
  }
- return {sample,clock,shape,phrasing,curve,chargeTransition,foot,groundAt,stateFor,twoHanded,grip};
+ return {sample,clock,shape,phrasing,curve,chargeTransition,foot,groundAt,stateFor,unarmed,twoHanded,grip};
 })();
 
 // Collision stays with the rescuer; the body lies across the supporting arms.
