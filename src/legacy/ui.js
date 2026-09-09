@@ -45,7 +45,7 @@ class UI {
  }
  showClan(){SkillPresentation.clear(this);this.closeModal();this.notices=new UINoticeQueue();this.paintNotices();this.worldNodes.clear();this.hud.classList.add('hidden');document.getElementById('world-labels').innerHTML='';this.clan.classList.remove('hidden');this.renderClan();}
  renderClan(){this.lineageView.renderClan();}
- showGame(){this.facilityGroups=new Map();this.lastContext=null;this.hudPortrait='';this.lastWounds=null;this.lastMother=null;this.lastGifts=null;this.mapSignature=null;this.worldNodes.clear();document.getElementById('world-labels').replaceChildren();this.clan.classList.add('hidden');this.hud.classList.remove('hidden');this.hud.innerHTML=`<div class="player-mark"><div class="portrait-frame" id="hud-portrait">${icon('leaf')}</div><div class="player-info"><strong id="player-name"></strong><div class="life-line"><span id="age"></span><span id="condition"></span></div></div></div><button class="wound-mark" id="wound-mark" aria-label="傷のある部位"></button><div class="orb-wrap">${orb()}</div><div class="place-mark"><div class="day-line">${icon('sun')}<span id="day"></span></div><span id="place"></span></div><button class="mini-map" id="mini-map" aria-label="地図"><canvas id="map-preview" width="200" height="200"></canvas><i>${icon('map')}</i></button><nav class="hud-bottom" aria-label="旅のメニュー"><button data-menu="skills" class="hud-button" aria-controls="game-panel" aria-expanded="false">${icon('leaf')}${label('意識')}</button><button data-menu="body" class="hud-button" aria-controls="game-panel" aria-expanded="false">${icon('bag')}${label('身支度')}</button><button data-menu="settings" class="hud-button" aria-controls="game-panel" aria-expanded="false">${icon('menu')}${label('設定')}</button></nav><div id="context" class="context"></div><div id="facility-actions"></div><button class="talk-button" id="talk-button" aria-label="話す">${icon('talk')}<span>話す</span></button><div id="mother-dialogue"></div><div id="gift-tray"></div>`;
+ showGame(){this.lineageView.showGame();this.facilityGroups=new Map();this.lastContext=null;this.hudPortrait='';this.lastWounds=null;this.lastMother=null;this.lastGifts=null;this.pickupKey=null;this.mapSignature=null;this.worldNodes.clear();document.getElementById('world-labels').replaceChildren();this.clan.classList.add('hidden');this.hud.classList.remove('hidden');this.hud.innerHTML=`<div class="player-mark"><div class="portrait-frame" id="hud-portrait">${icon('leaf')}</div><div class="player-info"><strong id="player-name"></strong><div class="life-line"><span id="age"></span><span id="condition"></span></div></div></div><button class="wound-mark" id="wound-mark" aria-label="傷のある部位"></button><div class="orb-wrap">${orb()}</div><div class="place-mark"><div class="day-line">${icon('sun')}<span id="day"></span></div><span id="place"></span></div><button class="mini-map" id="mini-map" aria-label="地図"><canvas id="map-preview" width="200" height="200"></canvas><i>${icon('map')}</i></button><nav class="hud-bottom" aria-label="旅のメニュー"><button data-menu="skills" class="hud-button" aria-controls="game-panel" aria-expanded="false">${icon('leaf')}${label('意識')}</button><button data-menu="body" class="hud-button" aria-controls="game-panel" aria-expanded="false">${icon('bag')}${label('身支度')}</button><button data-menu="settings" class="hud-button" aria-controls="game-panel" aria-expanded="false">${icon('menu')}${label('設定')}</button></nav><div id="context" class="context"></div><div id="facility-actions"></div><button class="talk-button" id="talk-button" aria-label="話す">${icon('talk')}<span>話す</span></button><div id="mother-dialogue"></div><div id="carry-controls"></div><div id="world-pickup"></div>`;
   this.hudDock=this.hud.querySelector('.hud-bottom');this.hudDock.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>this.toggleMenu(b.dataset.menu,b));document.getElementById('talk-button').onclick=()=>this.talk();document.getElementById('mini-map').onclick=()=>this.map();document.getElementById('wound-mark').onclick=()=>this.wounds();this.deathShown='';
  }
  blocksWorldInput(){return !!this.modal&&this.modal!=='skills';}
@@ -64,6 +64,7 @@ class UI {
   this.hudDock.querySelectorAll('[data-menu]').forEach(b=>UIValue.attr(b,'aria-expanded',!!this.modal&&b.dataset.menu===section));
  }
  open(type,title,html){
+  this.lineageView.beforeOpen(type);
   const current=this.modal,focus=this.focusMark(),scroll=this.root.querySelector('.panel-content')?.scrollTop||0;
   if(!current){this.g.stopInput();this.returnFocus=document.activeElement;this.navigation=[];}
   else if(current!==type&&!this.navigating&&!this.menuSwitch)this.navigation.push({type:current,phase:this.phase,focus,scroll});
@@ -96,6 +97,7 @@ class UI {
   queueMicrotask(()=>{if(this.modal!==previous.type)return;this.root.querySelector('.panel-content').scrollTop=previous.scroll;this.restoreFocus(previous.focus);});
  }
  closeModal(){
+  this.lineageView.closeModal();
   const closing=this.modal,returnId=this.returnFocus?.id;
   this.skillPanelObserver?.disconnect();this.skillPanelTop=null;this.skillPanelLeft=null;
   this.pieDragging=false;this.modal=null;if(this.g.renderer.diorama)this.g.renderer.diorama.suspended=false;this.detail=null;this.navigation=[];this.focusGeneration=(this.focusGeneration||0)+1;
@@ -179,7 +181,7 @@ class UI {
   const row=(title,attr,items,current)=>`<div class="setting-row"><span>${title}</span><div class="segments">${items.map(([id,n])=>`<button ${attr}="${id}" class="${current===id?'chosen':''}" aria-pressed="${current===id}">${n}</button>`).join('')}</div></div>`;
   return row('ぼけの強さ','data-diorama-dof',[['subtle','控えめ'],['strong','強め']],d.dof);
  }
- settings(){const p=this.g.profile;this.open('settings','旅の支度',`<div class="setting-row"><span>${icon('sound')}音</span><button id="sound-toggle" class="pill">${p.sound?'響かせる':'静かに'}</button></div><div class="setting-row"><span>描画</span><div class="segments">${[['auto','自動'],['high','精細'],['medium','標準'],['low','軽量']].map(([id,n])=>`<button data-quality="${id}" class="${p.quality===id?'chosen':''}">${n}</button>`).join('')}</div></div>${this.dioramaSettings()}<button class="full-button" id="lineage-nav">${icon('book')}血の系譜${icon('arrow')}</button><button class="full-button" id="help-nav">${icon('hand')}操作の手ほどき${icon('arrow')}</button><button class="full-button" id="export-save">${icon('bag')}記録を持ち出す</button><button class="full-button" id="import-trigger">${icon('book')}記録を読み込む</button><input type="file" id="import-save" accept="application/json,.json" hidden><div class="settings-network"><label><input type="checkbox" id="online-mode" ${p.online?'checked':''}>共有の村へ</label><input class="room-code" id="room-code" placeholder="村の合言葉" value="${ESC(p.villageCode||'')}" maxlength="24"><small>${this.g.serverAvailable?'共有サーバーに接続済み':'共有は同梱サーバーから起動'}</small></div>${this.g.screen==='game'?'<button class="full-button" id="to-clan">一族へ戻る</button>':''}<div class="version">${GAME_TITLE} · ${buildVersionMarkup()}</div>`);document.getElementById('sound-toggle').onclick=()=>{p.sound=!p.sound;p.sound?this.g.audio.enable():this.g.audio.disable();this.g.saveProfile();this.settings();};this.root.querySelectorAll('[data-quality]').forEach(b=>b.onclick=()=>{p.quality=b.dataset.quality;this.g.renderer.setQuality(p.quality);this.g.saveProfile();this.settings();});this.root.querySelectorAll('[data-diorama-dof]').forEach(b=>b.onclick=()=>{this.g.renderer.diorama.configure(undefined,b.dataset.dioramaDof);this.settings();});document.getElementById('lineage-nav').onclick=()=>this.lineage();document.getElementById('help-nav').onclick=()=>this.onboarding(()=>{});document.getElementById('export-save').onclick=()=>this.g.exportSave();document.getElementById('import-trigger').onclick=()=>document.getElementById('import-save').click();document.getElementById('import-save').onchange=e=>this.g.importSave(e.target.files[0]);document.getElementById('online-mode').onchange=e=>{p.online=e.target.checked;this.g.saveProfile();};document.getElementById('room-code').onchange=e=>{p.villageCode=e.target.value;this.g.saveProfile();};const c=document.getElementById('to-clan');if(c)c.onclick=()=>this.g.toClan();}
+ settings(){const p=this.g.profile;this.open('settings','旅の支度',`<div class="setting-row"><span>${icon('sound')}音</span><button id="sound-toggle" class="pill">${p.sound?'響かせる':'静かに'}</button></div><div class="setting-row"><span>描画</span><div class="segments">${[['auto','自動'],['high','精細'],['medium','標準'],['low','軽量']].map(([id,n])=>`<button data-quality="${id}" class="${p.quality===id?'chosen':''}">${n}</button>`).join('')}</div></div>${this.dioramaSettings()}<button class="full-button" id="lineage-nav">${icon('book')}血脈の系譜${icon('arrow')}</button><button class="full-button" id="help-nav">${icon('hand')}操作の手ほどき${icon('arrow')}</button><button class="full-button" id="export-save">${icon('bag')}記録を持ち出す</button><button class="full-button" id="import-trigger">${icon('book')}記録を読み込む</button><input type="file" id="import-save" accept="application/json,.json" hidden><div class="settings-network"><label><input type="checkbox" id="online-mode" ${p.online?'checked':''}>共有の村へ</label><input class="room-code" id="room-code" placeholder="村の合言葉" value="${ESC(p.villageCode||'')}" maxlength="24"><small>${this.g.serverAvailable?'共有サーバーに接続済み':'共有は同梱サーバーから起動'}</small></div>${this.g.screen==='game'?'<button class="full-button" id="to-clan">一族へ戻る</button>':''}<div class="version">${GAME_TITLE} · ${buildVersionMarkup()}</div>`);document.getElementById('sound-toggle').onclick=()=>{p.sound=!p.sound;p.sound?this.g.audio.enable():this.g.audio.disable();this.g.saveProfile();this.settings();};this.root.querySelectorAll('[data-quality]').forEach(b=>b.onclick=()=>{p.quality=b.dataset.quality;this.g.renderer.setQuality(p.quality);this.g.saveProfile();this.settings();});this.root.querySelectorAll('[data-diorama-dof]').forEach(b=>b.onclick=()=>{this.g.renderer.diorama.configure(undefined,b.dataset.dioramaDof);this.settings();});document.getElementById('lineage-nav').onclick=()=>this.lineage();document.getElementById('help-nav').onclick=()=>this.onboarding(()=>{});document.getElementById('export-save').onclick=()=>this.g.exportSave();document.getElementById('import-trigger').onclick=()=>document.getElementById('import-save').click();document.getElementById('import-save').onchange=e=>this.g.importSave(e.target.files[0]);document.getElementById('online-mode').onchange=e=>{p.online=e.target.checked;this.g.saveProfile();};document.getElementById('room-code').onchange=e=>{p.villageCode=e.target.value;this.g.saveProfile();};const c=document.getElementById('to-clan');if(c)c.onclick=()=>this.g.toClan();}
  death(p){if(this.deathShown===p.id)return;this.deathShown=p.id;this.g.stopInput();setTimeout(()=>{if(this.g.snapshot?.player.id!==p.id||p.alive)return;const sk=skillById(p.bankedSkills?.[0]);this.open('death','命の灯',`<div class="death-leaf">${icon('leaf')}</div><h3 class="death-name">${ESC(p.name)}</h3><p class="death-age">享年 ${Math.floor(p.age)}歳</p><p>${sk?`「${ESC(sk.name)}」を、系譜に刻んだ。`:'静かな灯が、系譜に残った。'}</p><button id="next-life" class="begin-button">${label('次の命へ')}${icon('arrow')}</button><button class="full-button" id="view-lineage">系譜をひらく</button>`);document.getElementById('next-life').onclick=()=>this.g.toClan();document.getElementById('view-lineage').onclick=()=>this.lineage();},1600);}
  event(e){
   if(SkillPresentation.event(this,e))return;
@@ -193,7 +195,7 @@ class UI {
   if(e.type==='death')this.notify({key:'death',parts:['人生を、系譜に刻む'],priority:4});
   if(e.type==='notice')this.toast(e.text);if(e.type==='pickup')this.toast(ITEMS[e.item]?.name+'を受け取った');if(e.type==='depart')this.toast('向こう岸へ');if(e.type==='returned')this.toast('ただいま');
  }
- update(s){
+ update(s,world=true){
   this.paintNotices();if(this.g.screen!=='game'||!s?.player)return;
   const p=s.player,t=s.t,max=staminaMaximum(p),cap=clamp(p.staminaCap/max,0,1),fill=clamp(p.stamina/max,0,1);
   UIValue.text(document.getElementById('player-name'),p.name);UIValue.attr(document.getElementById('player-name'),'title',p.name);UIValue.text(document.getElementById('age'),Math.floor(p.age)+'歳');
@@ -207,75 +209,62 @@ class UI {
   const portraitKey=[p.id,Math.floor(p.age/7),p.race,p.armor,p.weapon,p.shield,p.skin,p.hair].join(':');if(portraitKey!==this.hudPortrait){this.hudPortrait=portraitKey;this.queuePortrait(p,document.getElementById('hud-portrait'),'hud');}
   const mapSignature=JSON.stringify([s.room.id,s.room.stage,Math.round(p.x*5),Math.round(p.z*5),Math.round(p.dir*10),s.actors.filter(a=>a.alive).map(a=>[a.id,Math.round(a.x),Math.round(a.z)]),this.modal==='map']);
   if(mapSignature!==this.mapSignature){this.mapSignature=mapSignature;this.paintMap(document.getElementById('map-preview'),s);if(this.modal==='map')this.paintMap(document.getElementById('large-map'),s,true);}
-  this.updateContext(s);this.updateMother(s);this.updateWorldLabels(s);
+  this.updateContext(s);if(world)this.updateWorld(s);
   this.lineageView.update();SkillPresentation.update(this,s);
   if(this.modal==='skills'&&!this.pieDragging){const signature=this.skillsSignature(p);if(signature!==this.lastSkills)this.renderSkills();}
   if(this.modal==='rack'){const signature=[p.weapon,p.armor,p.shield,p.age<EQUIP_AGE,this.g.nearRack()].join(':');if(signature!==this.lastGear)this.rack();}
   if(this.modal==='body'&&this.bodySignature(p)!==this.lastBody)this.body();if(!p.alive)this.death(p);
  }
  updateContext(s){const p=s.player,t=s.t,school=s.room.kind==='village'?s.map.schools.find(a=>Math.hypot(a.x-p.x,a.z-p.z)<a.r):null,item=s.room.items?.find(i=>i.ready<=t&&Math.hypot(i.x-p.x,i.z-p.z)<2.3),dummy=s.actors.find(a=>a.kind==='dummy'&&a.alive&&Math.hypot(a.x-p.x,a.z-p.z)<4),options=[];
-  if(!p.prologue&&p.alive){if(this.g.nearRack())options.push({id:'rack',name:'武具棚',glyph:'sword'});if(school&&p.age>=4){const a=ACTIVITY_DEFS[school.id];if(a)options.push({id:'activity',value:a.id,name:p.activity===a.id?'やめる':a.label,glyph:p.activity===a.id?'close':a.id==='pray'?'sun':a.id==='observe'?'eye':a.id==='play'?'leaf':'book'});}if(dummy&&!p.activity)options.push({id:'practice',value:dummy.id,name:p.autoFight===dummy.id?'稽古をやめる':'人形と稽古',glyph:'sword'});if(item)options.unshift(uiPickup(item,p));if(s.room.kind==='village'&&p.z>22)options.push({id:'boat',name:p.queued?'乗船をやめる':'舟に乗る',glyph:'boat'});if(s.room.kind==='front')options.push({id:'return',name:'帰り舟を呼ぶ',glyph:'boat'});}
-  for(const o of options){
-   const facility=o.id==='activity'?school:o.id==='rack'?s.map.schools.find(a=>a.id==='armory'):null;
-   if(facility)o.anchor={id:facility.id,x:facility.x,y:1.2,z:facility.z+1.5};
-   if(o.id==='boat')o.anchor={id:'dock',x:0,y:.8,z:26};
-  }
-  const signature=JSON.stringify(options);
-  if(signature!==this.lastContext){
-   this.lastContext=signature;const node=document.getElementById('context');
-   node.innerHTML=options.filter(o=>!o.anchor).slice(0,3).map(o=>this.contextButton(o)).join('');this.bindContextButtons(node);
-   this.syncFacilityActions(options.filter(o=>o.anchor));
-  }
+  if(!p.prologue&&p.alive){if(this.g.nearRack())options.push({id:'rack',name:'武具棚',glyph:'sword'});if(school&&p.age>=4){const a=ACTIVITY_DEFS[school.id];if(a)options.push({id:'activity',value:a.id,name:p.activity===a.id?'やめる':a.label,glyph:p.activity===a.id?'close':a.id==='pray'?'sun':a.id==='observe'?'eye':a.id==='play'?'leaf':'book'});}if(dummy&&!p.activity)options.push({id:'practice',value:dummy.id,name:p.autoFight===dummy.id?'稽古をやめる':'人形と稽古',glyph:'sword'});if(s.room.kind==='village'&&p.z>22)options.push({id:'boat',name:p.queued?'乗船をやめる':'舟に乗る',glyph:'boat'});if(s.room.kind==='front')options.push({id:'return',name:'帰り舟を呼ぶ',glyph:'boat'});}
+  this.updatePickup(item&&!p.prologue&&p.alive?item:null,p);
+  for(const o of options){const facility=o.id==='activity'?school:o.id==='rack'?s.map.schools.find(a=>a.id==='armory'):null;if(facility)o.anchor={id:facility.id,x:facility.x,y:1.2,z:facility.z+1.5};if(o.id==='boat')o.anchor={id:'dock',x:0,y:.8,z:26};}
+  const signature=JSON.stringify(options);if(signature!==this.lastContext){this.lastContext=signature;const node=document.getElementById('context');node.innerHTML=options.filter(o=>!o.anchor).slice(0,3).map(o=>this.contextButton(o)).join('');this.bindContextButtons(node);this.syncFacilityActions(options.filter(o=>o.anchor));}
   this.positionFacilityActions(s);
  }
  contextButton(o){return `<button data-context="${o.id}" data-value="${ESC(o.value||'')}" ${o.disabled?'disabled':''}>${icon(o.glyph)}<span>${ESC(o.name)}${o.detail?`<small>${ESC(o.detail)}</small>`:''}</span></button>`;}
  bindContextButtons(node){node.querySelectorAll('[data-context]').forEach(b=>b.onclick=()=>this.activateContext(b.dataset.context,b.dataset.value));}
- activateContext(id,value){
-  if(id==='rack'){this.rack();return;}
-  this.g.stopInput();
-  if(id==='activity')this.g.command({type:'activity',activity:value});
-  if(id==='boat')this.g.command({type:'board'});
-  if(id==='return')this.g.command({type:'return'});
-  if(id==='pickup')this.g.command({type:'pickup',id:value});
-  if(id==='practice'){
-   const target=this.g.snapshot.actors.find(a=>a.id===value);if(!target)return;
-   if(this.g.snapshot.player.autoFight===target.id){this.g.command({type:'sit',active:true});return;}
-   this.g.command({type:'move',x:0,z:0});this.g.walkTarget={x:target.x,z:target.z,until:performance.now()+7000};
-  }
+ activateContext(id,value){if(id==='rack'){this.rack();return;}this.g.stopInput();if(id==='activity')this.g.command({type:'activity',activity:value});if(id==='boat')this.g.command({type:'board'});if(id==='return')this.g.command({type:'return'});if(id==='practice'){const target=this.g.snapshot.actors.find(a=>a.id===value);if(!target)return;if(this.g.snapshot.player.autoFight===target.id){this.g.command({type:'sit',active:true});return;}this.g.command({type:'move',x:0,z:0});this.g.walkTarget={x:target.x,z:target.z,until:performance.now()+7000};}}
+ syncFacilityActions(options){const root=document.getElementById('facility-actions'),groups=new Map();for(const o of options){if(!groups.has(o.anchor.id))groups.set(o.anchor.id,[]);groups.get(o.anchor.id).push(o);}this.facilityGroups??=new Map();for(const [id,items] of groups){let entry=this.facilityGroups.get(id);if(!entry){const node=document.createElement('div');node.className='facility-context';node.dataset.facility=id;root.appendChild(node);entry={node};this.facilityGroups.set(id,entry);}entry.anchor=items[0].anchor;const html=items.map(o=>this.contextButton(o)).join('');if(entry.html!==html){const focus=entry.node.contains(document.activeElement)?{id:document.activeElement.dataset.context,value:document.activeElement.dataset.value}:null;entry.node.innerHTML=html;entry.html=html;entry.size=null;this.bindContextButtons(entry.node);if(focus)[...entry.node.querySelectorAll('[data-context]')].find(b=>b.dataset.context===focus.id&&b.dataset.value===focus.value)?.focus({preventScroll:true});}}for(const [id,entry] of this.facilityGroups)if(!groups.has(id)){entry.node.remove();this.facilityGroups.delete(id);}}
+ positionFacilityActions(s){const r=this.g.renderer,w=r.width||innerWidth,h=r.height||innerHeight,p=s?.player;for(const entry of this.facilityGroups?.values()||[]){const {node,anchor}=entry,pos=r.project(anchor.x,anchor.y,anchor.z);const facility=s?.room.kind==='village'&&s.map.schools.find(a=>a.id===anchor.id);const inRange=anchor.id==='dock'?s?.room.kind==='village'&&p.z>22:facility&&([...node.querySelectorAll('[data-context]')].some(b=>b.dataset.context==='rack'?this.g.nearRack():Math.hypot(p.x-facility.x,p.z-facility.z)<facility.r));const visible=this.g.screen==='game'&&p?.alive&&!p.prologue&&!this.modal&&inRange&&pos.visible&&pos.x>=0&&pos.x<=w&&pos.y>=0&&pos.y<=h;UIValue.style(node,'display',visible?'':'none');if(!visible)continue;if(!entry.size||entry.size.viewport!==w+'x'+h)entry.size={viewport:w+'x'+h,width:node.offsetWidth||160,height:node.offsetHeight||44};const x=clamp(pos.x-entry.size.width/2,8,Math.max(8,w-entry.size.width-8)),y=Math.max(8,pos.y-entry.size.height-10);UIValue.style(node,'transform',`translate3d(${x}px,${y}px,0)`);}}
+ updateWorld(s){this.updateMother(s);this.updateWorldLabels(s);this.positionPickup(s);this.positionFacilityActions(s);}
+ updatePickup(item,p){
+  const node=document.getElementById('world-pickup'),o=item?uiPickup(item,p):null,key=JSON.stringify(o);
+  if(key===this.pickupKey)return;this.pickupKey=key;
+  node.replaceChildren();if(!o)return;
+  const b=document.createElement('button');b.className='world-pickup';b.dataset.context='pickup';b.dataset.value=o.value;b.disabled=o.disabled;
+  b.innerHTML=`${icon(o.glyph)}<span>${ESC(o.name)}<small>${ESC(o.detail)}</small></span>`;
+  b.onclick=()=>{this.g.stopInput();this.g.command({type:'pickup',id:o.value});this.updateContext(this.g.snapshot);this.positionPickup(this.g.snapshot);};node.appendChild(b);
  }
- syncFacilityActions(options){
-  const root=document.getElementById('facility-actions'),groups=new Map();
-  for(const o of options){if(!groups.has(o.anchor.id))groups.set(o.anchor.id,[]);groups.get(o.anchor.id).push(o);}
-  this.facilityGroups??=new Map();
-  for(const [id,items] of groups){
-   let entry=this.facilityGroups.get(id);
-   if(!entry){const node=document.createElement('div');node.className='facility-context';node.dataset.facility=id;root.appendChild(node);entry={node};this.facilityGroups.set(id,entry);}
-   entry.anchor=items[0].anchor;
-   const html=items.map(o=>this.contextButton(o)).join('');
-   if(entry.html!==html){
-    const focus=entry.node.contains(document.activeElement)?{id:document.activeElement.dataset.context,value:document.activeElement.dataset.value}:null;
-    entry.node.innerHTML=html;entry.html=html;entry.size=null;this.bindContextButtons(entry.node);
-    if(focus)[...entry.node.querySelectorAll('[data-context]')].find(b=>b.dataset.context===focus.id&&b.dataset.value===focus.value)?.focus({preventScroll:true});
-   }
-  }
-  for(const [id,entry] of this.facilityGroups)if(!groups.has(id)){entry.node.remove();this.facilityGroups.delete(id);}
+ positionPickup(s){
+  const node=document.getElementById('world-pickup'),b=node?.firstElementChild;if(!b)return;
+  const p=s.player,item=s.room.items?.find(i=>i.id===b.dataset.value&&i.ready<=s.t&&Math.hypot(i.x-p.x,i.z-p.z)<2.3),r=this.g.renderer;
+  const pos=item&&r.project(item.x,.65,item.z),w=r.width||innerWidth,h=r.height||innerHeight;
+  const visible=p.alive&&!p.prologue&&pos?.visible&&pos.x>=0&&pos.x<=w&&pos.y>=0&&pos.y<=h;
+  UIValue.attr(node,'class',visible?'':'hidden');if(visible)UIValue.style(node,'transform',`translate3d(${pos.x}px,${pos.y-8}px,0) translate(-50%,-100%)`);
  }
- positionFacilityActions(s){
-  const r=this.g.renderer,w=r.width||innerWidth,h=r.height||innerHeight,p=s?.player;
-  for(const entry of this.facilityGroups?.values()||[]){
-   const {node,anchor}=entry,pos=r.project(anchor.x,anchor.y,anchor.z);
-   const facility=s?.room.kind==='village'&&s.map.schools.find(a=>a.id===anchor.id);
-   const inRange=anchor.id==='dock'?s?.room.kind==='village'&&p.z>22:facility&&([...node.querySelectorAll('[data-context]')].some(b=>b.dataset.context==='rack'?this.g.nearRack():Math.hypot(p.x-facility.x,p.z-facility.z)<facility.r));
-   const visible=this.g.screen==='game'&&p?.alive&&!p.prologue&&!this.modal&&inRange&&pos.visible&&pos.x>=0&&pos.x<=w&&pos.y>=0&&pos.y<=h;
-   UIValue.style(node,'display',visible?'':'none');if(!visible)continue;
-   if(!entry.size||entry.size.viewport!==w+'x'+h)entry.size={viewport:w+'x'+h,width:node.offsetWidth||160,height:node.offsetHeight||44};
-   const x=clamp(pos.x-entry.size.width/2,8,Math.max(8,w-entry.size.width-8)),y=Math.max(8,pos.y-entry.size.height-10);
-   UIValue.style(node,'transform',`translate3d(${x}px,${y}px,0)`);
-  }
+ updateMother(s){
+  const p=s.player,t=s.t,node=document.getElementById('mother-dialogue'),parent=parentWorldPose(p,t),text=p.motherUntil>t&&parent?p.motherText:'';
+  if(text!==this.lastMother){this.lastMother=text;node.innerHTML=text?`<small>母</small><p>${ESC(text).replaceAll('\n','<br>')}</p>`:'';node._speechSize=null;}
+  UIValue.attr(node,'class','mother-bubble');this.positionSpeech(node,parent,3.05,text);
+  const key=!!p.prologue;if(key!==this.lastGifts){this.lastGifts=key;const controls=document.getElementById('carry-controls');controls.innerHTML=key?'<button id="leave-arms">降ろして</button>':'';const leave=document.getElementById('leave-arms');if(leave)leave.onclick=()=>{this.g.stopInput();this.g.command({type:'leaveIntro'});};}
  }
-
- updateMother(s){const p=s.player,t=s.t,node=document.getElementById('mother-dialogue'),text=p.motherUntil>t?p.motherText:'';UIValue.attr(node,'class',text?'mother-bubble':'hidden');if(text!==this.lastMother){this.lastMother=text;node.innerHTML=text?`<small>母</small><p>${ESC(text).replaceAll('\n','<br>')}</p>`:'';}if(text){const pos=this.g.renderer.project(p.prologue?p.x:p.introX,2.4,p.prologue?p.z:p.introZ);const ww=innerWidth,hh=innerHeight;UIValue.style(node,'left',Math.round(clamp(pos.x,Math.min(135,ww/2),ww-Math.min(135,ww/2)))+'px');UIValue.style(node,'top',Math.round(clamp(pos.y-60,Math.min(250,hh*.62),Math.max(250,hh-170)))+'px');}
-  const giftKey=p.prologue?[p.inventory.join(','),p.giftOffer?.join(',')].join('|'):'none';if(giftKey!==this.lastGifts){this.lastGifts=giftKey;const tray=document.getElementById('gift-tray');tray.innerHTML=p.prologue?`<div class="gift-caption">手をのばす</div><div class="gift-buttons">${(p.giftOffer||[]).map(id=>`<button data-gift="${id}" ${p.inventory.length>=2?'disabled':''} aria-label="${ESC(ITEMS[id].name)}を受け取る">${itemIcon(id)}<span>${ESC(ITEMS[id].name)}</span></button>`).join('')}</div><button id="leave-arms">降ろして</button>`:'';tray.querySelectorAll('[data-gift]').forEach(b=>b.onclick=()=>this.g.command({type:'gift',item:b.dataset.gift}));const leave=document.getElementById('leave-arms');if(leave)leave.onclick=()=>this.g.command({type:'leaveIntro'});}
+ positionSpeech(node,a,height,text){
+  const r=this.g.renderer,w=r.width||innerWidth,h=r.height||innerHeight,head=a&&r.project(a.x,height,a.z),body=a&&r.project(a.x,height*.5,a.z);
+  // Renderer visibility includes an overscan margin. Dialogue uses the actual viewport.
+  const visible=!!text&&a&&head?.visible&&body?.visible&&body.x>=0&&body.x<=w&&body.y>=0&&body.y<=h&&head.x>=0&&head.x<=w&&head.y>=0&&head.y<=h;
+  UIValue.style(node,'display',visible?'':'none');if(!visible)return;
+  const sizeKey=text+'|'+w+'|'+h;
+  if(node._speechSize?.key!==sizeKey)node._speechSize={key:sizeKey,w:node.offsetWidth||180,h:node.offsetHeight||60};
+  const size=node._speechSize,gap=13,margin=8;
+  const facing=r.project(a.x+Math.sin(a.dir||0),height,a.z+Math.cos(a.dir||0)),dx=facing.x-head.x;
+  let side=node.dataset.side||'right';
+  if(dx>6)side='right';else if(dx< -6)side='left';
+  const right=w-margin-head.x-gap,left=head.x-gap-margin;
+  if(side==='right'&&right<size.w&&left>right)side='left';else if(side==='left'&&left<size.w&&right>left)side='right';
+  UIValue.attr(node,'data-side',side);
+  const x=clamp(side==='right'?head.x+gap:head.x-gap-size.w,margin,Math.max(margin,w-size.w-margin)),y=Math.max(margin,head.y-size.h-12);
+  UIValue.style(node,'transform',`translate3d(${x}px,${y}px,0)`);
  }
  updateWorldLabels(s){
   const p=s.player,t=s.t,r=this.g.renderer,labels=[],head=a=>((a.age??25)<10?2.2:3.15)*(a.race===2?.86:1);
@@ -284,13 +273,13 @@ class UI {
   if(p.alive&&p.combo){const band=clamp(p.combo.band,0,2),sk=skillById(p.pendingSkill?.id??p.attackSkill??p.currentSkill);add('combo','combat-callout phase-'+band,p,head(p),'',`<b class="phase-seal">${PHASES[band]}</b><span>${ESC(sk?.name||'')}</span>`,-25);}
   if(target&&Math.hypot(target.x-p.x,target.z-p.z)<15){const fill=Math.round(clamp((target.hp??50)/(target.hpMax||50),0,1)*100);add('target','target-label',target,target.elite?4.3:head(target),'',`<span>${ESC(target.name||'交戦中')}</span><i class="target-meter"><i style="width:${fill}%"></i></i>`,10);}
   const statuses=uiActiveStatuses(p,t);if(statuses)add('status','status-caption',p,head(p),statuses,'',-91);
-  for(const a of [...s.players,...s.actors])if(a.alive&&a.speechUntil>t&&a.speech&&Math.hypot(a.x-p.x,a.z-p.z)<13)add('speech:'+a.id,'speech-bubble',a,head(a),a.speech,'',-50);
+  for(const a of [...s.players,...s.actors])if(a.alive&&a.speechUntil>t&&a.speech&&Math.hypot(a.x-p.x,a.z-p.z)<13)labels.push({key:'speech:'+a.id,cls:'speech-bubble',a,h:head(a),text:a.speech});
   this.floatLines=this.floatLines.filter(e=>t-e.born<4.6);
   const latest=new Map();for(const e of this.floatLines)if(e.type!=='speech')latest.set(e.player,e);
   for(const e of latest.values()){const a=s.players.find(a=>a.id===e.player);if(a&&Math.hypot(a.x-p.x,a.z-p.z)<14)add('progress:'+e.player,'progress-float',a,head(a)+.3,e.text,'',p.combo?-125:-40);}
   if(p.activity)add('activity','activity-mark',p,head(p),'',icon(p.activity==='pray'?'sun':p.activity==='play'?'leaf':'book'));
   const root=document.getElementById('world-labels'),live=new Set();
-  for(const l of labels){live.add(l.key);let n=this.worldNodes.get(l.key);if(!n||!n.isConnected){n=document.createElement('div');this.worldNodes.set(l.key,n);root.appendChild(n);}UIValue.attr(n,'class',l.cls);if(l.html){if(n._uiHTML!==l.html){n.innerHTML=l.html;n._uiHTML=l.html;}}else{UIValue.text(n,l.text);n._uiHTML=null;}UIValue.style(n,'left',l.x+'px');UIValue.style(n,'top',l.y+'px');}
+  for(const l of labels){live.add(l.key);let n=this.worldNodes.get(l.key);if(!n||!n.isConnected){n=document.createElement('div');this.worldNodes.set(l.key,n);root.appendChild(n);}UIValue.attr(n,'class',l.cls);if(l.html){if(n._uiHTML!==l.html){n.innerHTML=l.html;n._uiHTML=l.html;}}else{UIValue.text(n,l.text);n._uiHTML=null;}if(l.a)this.positionSpeech(n,l.a,l.h,l.text);else{UIValue.style(n,'left',l.x+'px');UIValue.style(n,'top',l.y+'px');}}
   for(const [key,n] of this.worldNodes)if(!live.has(key)){n.remove();this.worldNodes.delete(key);}
  }
 }

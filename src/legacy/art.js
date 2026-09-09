@@ -169,11 +169,11 @@ class ArtDirector{
   if(p.kind&&!['player','guard','parent','portrait'].includes(p.kind)){this.monster(p,t);return;}
   if(p.kind==='guard')p={...p,age:28,weapon:0,armor:2,shield:true,race:0,hair:2,appearanceSeed:14};
   const r=this.r,oldTarget=this.target;this.target=r.dynamic;this.root=rModel();
-  if(p.kind==='player'&&p.prologue){const lower=clamp((t-(p.releaseAt-1.45))/1.45,0,1),ease=lower*lower*(3-2*lower);this.doll({...p,id:p.id+'parent',kind:'parent',prologue:false,age:34,gender:1,weapon:-1,skin:0,action:'carry',wounds:{},baseY:-.34*ease},t,false);this.doll({...p,kind:'portrait',prologue:false,age:1,scaleOverride:.34+ease*.30,baseY:1.20*(1-ease)+.18*ease,x:p.x+Math.sin(p.dir)*(.32+ease*.24),z:p.z+Math.cos(p.dir)*(.32+ease*.24),dir:p.dir+.2,action:'idle',weapon:-1},t,false);this.target=oldTarget;return;}
+  if(p.kind==='player'&&p.prologue){const lower=clamp((t-(p.releaseAt-1.45))/1.45,0,1),ease=lower*lower*(3-2*lower);this.doll({...p,id:p.id+'parent',kind:'parent',prologue:false,age:34,gender:1,weapon:-1,skin:0,action:'carry',carryWalking:p.action==='run',wounds:{},baseY:-.34*ease},t,false);this.doll({...p,kind:'portrait',prologue:false,age:1,scaleOverride:.34+ease*.30,baseY:1.20*(1-ease)+.18*ease,x:p.x+Math.sin(p.dir)*(.32+ease*.24),z:p.z+Math.cos(p.dir)*(.32+ease*.24),dir:p.dir+.2,action:'idle',weapon:-1},t,false);this.target=oldTarget;return;}
   const race=(p.race||0)%4,stage=appearanceStage(p),seed=p.appearanceSeed||4,age=p.age??25,child=age<10;
   let scale=p.scaleOverride??(age<4?.46:age<10?.64+(age-4)*.022:age<18?.78+(age-10)*.027:age>72?.96:1);
   const width=race===2?1.23:race===1?.88:1;scale*=race===2?.86:race===1?1.07:race===3?.95:1;
-  const run=p.action==='run'||p.action==='guardWalk',walk=this.gait?this.gait(p,t):Math.sin(t*8.2),reaction=damagePose(r,p,t),pose=damageArtPose(r,p,t,artPose(p,t)),ail=ailmentPose(p,t),fall=!p.alive?clamp((t-(p.deathAt??t))/1.12,0,1):0;
+  const run=p.action==='run'||p.action==='guardWalk'||(p.action==='carry'&&p.carryWalking),walk=this.gait?this.gait(p,t):Math.sin(t*8.2),reaction=damagePose(r,p,t),pose=damageArtPose(r,p,t,artPose(p,t)),ail=ailmentPose(p,t),fall=!p.alive?clamp((t-(p.deathAt??t))/1.12,0,1):0;
   // Keep the established floor anchors through recovery/idle. Returning to the
   // old short-leg rest matrices here would pop both soles above the ground.
   const groundedMotion=p.alive!==false&&!run&&!p.seated&&!p.activity&&(pose.skillMotion||reaction.amount>0||this.skillFeet?.has(p.id));
@@ -305,9 +305,8 @@ class ArtDirector{
   this.root=rModel();this.r.blob(p.x,p.z,.72*sc,.56*sc,.31,this.r.fxBatches);this.target=oldTarget;
  }
  parentScene(p,t){
-  if(!p||p.prologue||t>p.introUntil+5||!p.alive)return;
-  const age=t-(p.releaseAt||0),walk=age>5,u=clamp((age-5)/5,0,1),ix=p.introX??p.x,iz=p.introZ??p.z,hx=p.introHomeX??ix-2.8,hz=p.introHomeZ??iz;
-  const x=ix+(hx-ix)*u,z=iz+(hz-iz)*u,dir=walk?Math.atan2(hx-ix,hz-iz):(p.introDir??p.dir??0);
+  if(!p||p.prologue)return;const parent=parentWorldPose(p,t);if(!parent)return;
+  const age=(p.renderPoseTime??t)-(p.releaseAt||0),walk=age>5,{x,z,dir}=parent;
   this.doll({...p,id:p.id+'parent',kind:'parent',prologue:false,age:34,gender:1,weapon:-1,armor:0,shield:false,x,z,dir,baseY:-.34*(1-clamp(age,0,1)),action:age<.8?'carry':walk?'run':'wave',seated:false,hitReactUntil:0,wounds:{},statuses:{},pendingSkill:null},t,false);
  }
 

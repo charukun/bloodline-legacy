@@ -54,7 +54,7 @@ test('building names follow every rendered frame while the HUD stays throttled',
    motionInterpolation:{capture(){},reset(){},sample:s=>s},audio:{setListener(){},updateFootsteps(){}},updateMove(){},saveWorld(){}
   });
   const ui=Object.assign(Object.create(f.UI.prototype),{g:game,floatLines:[],portraitQueue:[],worldNodes:new Map(),
-   update(s){hudUpdates++;this.updateWorldLabels(s);},toast(){}});
+   update(s){hudUpdates++;this.updateWorldLabels(s);},updateWorld(s){this.updateWorldLabels(s);},toast(){}});
   game.ui=ui;
   // A moving camera projects the same world anchor differently on every frame.
   f.renderer.render=()=>{renders++;f.renderer.camera.x+=.006;f.renderer.camera.z+=.003;f.renderer.matrix();};
