@@ -40,6 +40,7 @@ export async function loadScene(root = repository, options = {}) {
       seed: 7349, time: 0, weather: 'clear', quality: 'medium', ...options },
     VISUAL_ASSETS: assets, BL_SKILL_DEFINITIONS: skillDefinitions,
   });
+  if(await fs.access(path.join(root,'src/assets/plaza-craft.js')).then(()=>true,()=>false))files.splice(files.indexOf('assets/loader.js'),0,'assets/plaza-craft.js');
   const code = (await Promise.all(files.map(f => fs.readFile(path.join(root, 'src', f), 'utf8')))).join('\n');
   vm.runInContext(code, ctx);
   return await vm.runInContext(`(async()=>{
@@ -83,7 +84,7 @@ export async function loadScene(root = repository, options = {}) {
     const submitMs=performance.now()-submitStart;
     const geometries={};for(const pass of Object.values(passes))for(const batch of pass){
       if(geometries[batch.mesh])continue;const g=rGeometry(batch.mesh);
-      geometries[batch.mesh]={positions:Array.from(g.positions),normals:Array.from(g.normals),count:g.count};}
+      geometries[batch.mesh]={positions:Array.from(g.positions),normals:Array.from(g.normals),craft:g.craft?Array.from(g.craft):null,count:g.count};}
     let rainShaders; r.programOf=(v,f)=>{rainShaders={vertex:v,fragment:f};return{};};
     Object.assign(r.gl,{createVertexArray(){return 'rain';},createBuffer(){return 0;},
       enableVertexAttribArray(){},vertexAttribPointer(){},vertexAttribDivisor(){}});
@@ -91,7 +92,7 @@ export async function loadScene(root = repository, options = {}) {
     const staticRows=Object.fromEntries([...r.static].map(([k,v])=>[k,v.map(m=>Array.from(m))]));
     return {r,sim,snapshot,staticRows,geometries,passes,uniforms,rainSeeds,rainShaders,
       shaders:{skinVertex:SKINVERT,vertex:RVERT,fragment:RFRAG,depth:RDEPTH,postVertex:RPOSTV,postFragment:RPOSTF},
-      options,artMs,submitMs,stats:r.stats,totalStaticTriangles:[...r.static].reduce((s,[k,v])=>s+rGeometry(k).count/3*v.length,0),meshBytes:[...RG_CACHE.values()].reduce((s,g)=>s+g.positions.byteLength+g.normals.byteLength,0)};
+      options,artMs,submitMs,stats:r.stats,totalStaticTriangles:[...r.static].reduce((s,[k,v])=>s+rGeometry(k).count/3*v.length,0),meshBytes:[...RG_CACHE.values()].reduce((s,g)=>s+g.positions.byteLength+g.normals.byteLength+(g.craft?.byteLength||0),0)};
   })()`, ctx);
 }
 
