@@ -95,7 +95,7 @@ const Travelers = (()=>{
    st.moving=moving;st.gaitMode=run?'run':'walk';const phase=st.phase*TAU;
    const reaction=damagePose(r,p,t,st.feet),pose=damageArtPose(r,p,t,artPose(p,t,SkillMotion.stateFor(r,p,t))),ail=ailmentPose(p,t),guard=p.guard||p.guardUntil>t||p.autoFight;
    const fall=!p.alive?(p.wasDownedOnDeath?1:smooth((t-(p.deathAt??t))/1.12)):0;
-   const sampledGround=p.traversal?Math.max(.10,p.supportHeight||0):this.groundAt(p.x,p.z);if(!Number.isFinite(st.ground))st.ground=sampledGround;st.ground+=(sampledGround-st.ground)*(1-Math.exp(-dt*14));
+   const sampledGround=p.traversal?Math.max(.10,p.supportHeight||0):this.groundAt(p.x,p.z);if(p.traversal||!Number.isFinite(st.ground))st.ground=sampledGround;st.ground+=(sampledGround-st.ground)*(1-Math.exp(-dt*14));
    const rootQ=Q.euler(pose.pitch+reaction.pitch+ail.pitch+fall*1.48,(p.dir||0)+pose.yaw,pose.roll+reaction.roll+ail.roll);
    const rootM=matrix([p.x+reaction.x+Math.cos(p.dir||0)*(pose.weightX||0)+Math.sin(p.dir||0)*(pose.weightZ||0),(p.baseY??st.ground)+(p.verticalOffset||0)+pose.y+ail.y-reaction.drop,p.z+reaction.z-Math.sin(p.dir||0)*(pose.weightX||0)+Math.cos(p.dir||0)*(pose.weightZ||0)],rootQ);
    const q=asset.bind.map(()=>Q.identity()),qi=(i,x=0,y=0,z=0)=>q[i]=Q.euler(x,y,z),wave=Math.cos(phase);

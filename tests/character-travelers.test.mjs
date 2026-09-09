@@ -54,3 +54,21 @@ test('confirmed damage follows the active traveler skeleton rather than CM01 ind
   }
  }
 });
+
+test('all four new models follow an actual climb, landing and descent without ground IK pinning them in midair',()=>{
+ const Simulation=vm.runInContext('Simulation',ctx);
+ for(let race=0;race<4;race++){
+  const sim=new Simulation({seed:13}),p=sim.addPlayer('terrain-'+race,{owner:'terrain-'+race,race}),room=sim.getRoom(p),o=room.map.traversables.find(o=>o.id==='north:lower');room.actors=[];room.waveAt=1e8;
+  Object.assign(p,{prologue:false,age:24,ageFraction:0,gender:[0,1,0,1][race],introUntil:-100,releaseAt:-100,farewellStage:3,stun:0,cooldown:0,x:o.x,z:-18.7,supportHeight:0});
+  const r=renderer();r.traversalMap=room.map;const c=new T.Character(r,race);let direction=1,climbed=false,air=0,landed=0;
+  for(let i=0;i<600;i++){
+   sim.command(p.id,{type:'move',x:0,z:direction});sim.tick(1/60);const snapshot=freeze(JSON.parse(JSON.stringify(p))),saved=JSON.stringify(p);r.frame++;c.update(snapshot,sim.time);
+   assert(c.palette.every(Number.isFinite));assert.equal(JSON.stringify(p),saved);
+   if(p.traversal){air++;assert.equal(c.footDebug.length,0);assert(Math.abs(c.transforms[0][13]-(Math.max(.1,p.supportHeight)+(p.verticalOffset||0)))<1e-5);}
+   else {for(const f of c.footDebug)assert(f.soleY>=f.floor-.035);if(p.action==='land')landed++;}
+   if(!p.traversal&&p.supportHeight===1.2){climbed=true;direction=-1;}
+   if(climbed&&!p.traversal&&p.supportHeight===0&&p.z<-18.55)break;
+  }
+  assert(climbed&&air>60&&landed>=4);assert.equal(p.supportHeight,0);assert.equal(p.traversal,null);
+ }
+});

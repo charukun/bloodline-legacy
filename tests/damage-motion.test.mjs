@@ -57,7 +57,7 @@ test('presentation cache evicts absent characters',()=>{
 // Compare every gameplay field and RNG state with the fixed develop source.
 // The neutral frontal case retains prior damage/reaction behavior. New persisted
 // life, surface and damage-mark metadata is checked by the feature suites.
-const presentation=new Set(['hitPart','hitSeverity','hitReactAt','hitReactUntil','hitDir','hitStrength','hitMotionAt','hitMotionId','hitGuard','lifeState','traversables','damageMarks','grounded','supportHeight','verticalOffset']);
+const presentation=new Set(['hitPart','hitSeverity','hitReactAt','hitReactUntil','hitDir','hitStrength','hitMotionAt','hitMotionId','hitGuard','lifeState','terrainRevision','traversables','damageMarks','grounded','supportHeight','verticalOffset']);
 const state=sim=>JSON.parse(JSON.stringify(sim.exportState(),(k,v)=>k==='schema'?4:presentation.has(k)||k==='phaseLimitVersion'?undefined:v));
 test('damage, wound progression, attack interruption, hitstop and RNG match develop',()=>{
  const before=runtime(true);

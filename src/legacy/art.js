@@ -148,21 +148,38 @@ class ArtDirector{
   for(const s of map.schools){path(0,s.z+3.6,s.x,s.z+3.6,2.7);this.p('disk',s.x,.14,s.z+1,4.4,1,4.1,'#e7d6b5',0,0,0,9);if(s.id==='church')this.chapel(s.x,s.z-2);else if(s.id==='forge')this.forge(s.x,s.z-2);else if(s.id==='sword')this.dojo(s.x,s.z-2);else if(s.id==='armory')this.armory(s.x,s.z-2);else if(s.id==='magic')this.library(s.x,s.z-2);else if(s.id==='dance')this.garden(s.x,s.z);else this.cottage(s.x,s.z-2,1.06,s.id==='magic'?1:0,0);this.r.labels.push({x:s.x,z:s.z,y:s.id==='church'?6:4.7,text:s.short,id:s.id});}
   for(const h of map.houses)this.cottage(h.x,h.z,.69*h.scale,h.id%4,h.rotation);
   for(let i=0;i<50;i++){let a=i/50*TAU,x=Math.sin(a)*38,z=Math.cos(a)*38-7;if(z>22&&Math.abs(x)<9)continue;this.S(x,-.68,z,1.7+rng(),1.5,1.4+rng(),'#c4bba0',a,0,0,9);if(i%3===0)this.tree(x*.9,z*.96,.85+rng()*.15,'#aab995',i+13);}
-  for(let i=0;i<48;i++){const x=(rng()-.5)*72,z=(rng()-.5)*64-6;if(Math.abs(x)<5||Math.abs(z-7)<3||Math.abs(z+19)<3||map.schools.some(s=>Math.hypot(x-s.x,z-s.z)<7)||map.houses.some(h=>Math.hypot(x-h.x,z-h.z)<4))continue;this.tree(x,z,.60+rng()*.4,'#b2c0a0',i+61);}
+  for(let i=0;i<48;i++){const x=(rng()-.5)*72,z=(rng()-.5)*64-6;if(terrainFootprint(map,x,z,1.5)||Math.abs(x)<5||Math.abs(z-7)<3||Math.abs(z+19)<3||map.schools.some(s=>Math.hypot(x-s.x,z-s.z)<7)||map.houses.some(h=>Math.hypot(x-h.x,z-h.z)<4))continue;this.tree(x,z,.60+rng()*.4,'#b2c0a0',i+61);}
   // Sparse grouped flowers, not a uniform noisy carpet.
-  for(let i=0;i<180;i++){const x=(rng()-.5)*71,z=(rng()-.5)*62-4;if(Math.abs(x)<3||Math.abs(z-7)<2||Math.abs(z+19)<2||map.houses.some(h=>Math.abs(x-h.x)<2.1&&Math.abs(z-h.z)<2.2)||map.schools.some(s=>Math.hypot(x-s.x,z-s.z)<4.9))continue;for(let k=0;k<3;k++)this.flower(x+rng()*.7,z+rng()*.7,k?'#f7edce':'#dcc4a3',.45+rng()*.3);this.tuft(x+.5,.08,z,1.1);}
+  for(let i=0;i<180;i++){const x=(rng()-.5)*71,z=(rng()-.5)*62-4;if(terrainFootprint(map,x,z,.9)||Math.abs(x)<3||Math.abs(z-7)<2||Math.abs(z+19)<2||map.houses.some(h=>Math.abs(x-h.x)<2.1&&Math.abs(z-h.z)<2.2)||map.schools.some(s=>Math.hypot(x-s.x,z-s.z)<4.9))continue;for(let k=0;k<3;k++)this.flower(x+rng()*.7,z+rng()*.7,k?'#f7edce':'#dcc4a3',.45+rng()*.3);this.tuft(x+.5,.08,z,1.1);}
   // Small gardens, loose stonework and workshop clutter give each frontage a role.
   for(const s of map.schools){if(s.id==='dance')continue;for(const side of [-1,1]){this.herbBed(s.x+side*3.75,s.z+1,1.55);for(let i=0;i<5;i++)this.flower(s.x+side*(3.15+i*.26),s.z+3.9+Math.sin(i)*.33,i%2?'#f8eacc':'#d6c5b6',.66);}this.stoneWall(s.x+3.8,s.z-3.9,3.2);}
   const forge=map.schools.find(s=>s.id==='forge');this.cart(forge.x-3.1,forge.z+3.3);this.barrel(forge.x+3.2,forge.z+1.9,.9);this.barrel(forge.x+3.8,forge.z+2.4,.66);
   // The outside hearth is readable from the playing camera, not hidden below a roof.
   this.with(rModel(forge.x+2.9,0,forge.z+.7),()=>{this.B(0,.18,0,1.75,.30,1.60,'#c6b294',0,0,0,9);this.B(0,.61,-.5,1.6,.86,.35,'#c1aa88',0,0,0,9);for(const side of [-1,1])this.B(side*.65,.46,0,.28,.60,1.3,'#cbb99b',0,0,0,9);this.B(0,.35,.12,1.1,.12,1,'#b37645',0,0,0,4);for(let i=0;i<5;i++)this.p('leaf',(i-2)*.19,.62,.06,.13,.34+(i%2)*.16,.12,i%2?'#f4d38e':'#e9b575',0,0,0,4);});
   for(const h of map.houses.filter(h=>h.id%4===0)){this.barrel(h.x+2.1,h.z+1.0,.65);this.herbBed(h.x,h.z+2.3,1.55);}
-  for(let i=0;i<28;i++){const x=(rng()-.5)*23,z=(rng()-.5)*34;if(Math.abs(x)<3||map.schools.some(s=>Math.hypot(x-s.x,z-s.z)<5)||Math.abs(z-7)<2)continue;for(let j=0;j<4;j++)this.S(x+Math.sin(j*2.3)*.38,.26,z+Math.cos(j*2.3)*.35,.50,.34,.42,j%2?'#becaa7':'#afbfa0',j,0,0,0);}
-  for(const o of map.traversables||[]){if(o.kind==='vault')this.fence(o.x,o.z,o.width);else{this.B(o.x,o.height/2,o.z,o.width,o.height,o.depth,'#c8ba97',0,0,0,9);this.B(o.x,o.height-.035,o.z,o.width+.04,.07,o.depth+.02,'#e2d1ad',0,0,0,9);}}
+  for(let i=0;i<28;i++){const x=(rng()-.5)*23,z=(rng()-.5)*34;if(terrainFootprint(map,x,z,1)||Math.abs(x)<3||map.schools.some(s=>Math.hypot(x-s.x,z-s.z)<5)||Math.abs(z-7)<2)continue;for(let j=0;j<4;j++)this.S(x+Math.sin(j*2.3)*.38,.26,z+Math.cos(j*2.3)*.35,.50,.34,.42,j%2?'#becaa7':'#afbfa0',j,0,0,0);}
+  this.drawingTerrain=true;for(const o of map.traversables||[])this.terrainLedge(o);this.drawingTerrain=false;
   // Gate has two different sentry caps, cloth banners and masonry piers.
   for(const side of [-1,1]){this.B(side*4.1,1.3,-28,1.35,2.5,1.4,'#d0c4a5',0,0,0,9);this.with(rModel(side*4.1,0,-28),()=>this.roof(2,2,2.7,.75,'#9da894'));this.B(side*4.1,2,-27.19,.66,1.12,.07,'#8fa59a',0,0,0,0);this.p('leaf',side*4.1,2.05,-27.13,.15,.32,.03,'#efe2bc');}
   for(let i=0;i<6;i++){this.B(0,.20,25+i*.76,4,.15,.62,'#c5ad82');if(i%2===0)for(const side of [-1,1])this.C(side*2.0,.32,25+i*.76,.10,1.05,.1,'#b09b71');}
   for(const [x,z] of [[-3,-6],[3,17],[-6,7],[7,-18],[-15,7],[17,-5]]){this.C(x,1.5,z,.08,3,.08,'#a38e67');this.lantern(x,2.5,z);}
+ }
+ terrainLedge(o){
+  if(o.kind==='vault'&&!o.stone){this.fence(o.x,o.z,o.width);return;}
+  const stone=['#a9a28d','#b8ae97','#c1b49b','#989d8c'];
+  // Closed, instanced cores and flush caps: the visible top is the simulated top.
+  this.p('box',o.x,(o.height-.05)/2,o.z,o.width,o.height-.05,o.depth,'#aaa38b',0,0,0,9);
+  this.p('box',o.x,o.height-.025,o.z,o.width,.05,o.depth,o.terrace?'#9da373':'#d2c1a2',0,0,0,o.terrace?12:9);
+  if(o.stair)return;
+  const rows=Math.max(1,Math.round(o.height/.3));
+  for(const side of [-1,1])for(let row=0;row<rows;row++){
+   const n=Math.ceil(o.width/.85),w=o.width/n;
+   for(let i=0;i<n;i++)this.B(o.x-o.width/2+(i+.5)*w,(row+.5)*o.height/rows,o.z+side*(o.depth/2-.065),w-.035,o.height/rows-.025,.13,stone[(i+row)%4],0,0,0,9);
+   if(o.terrace){const n=Math.ceil(o.depth/.8),d=o.depth/n;for(let i=0;i<n;i++)this.B(o.x+side*(o.width/2-.065),(row+.5)*o.height/rows,o.z-o.depth/2+(i+.5)*d,.13,o.height/rows-.025,d-.035,stone[(i+row+1)%4],0,0,0,9);}
+  }
+  if(o.terrace){
+   for(let i=0;i<Math.floor(o.width/.8);i++)this.B(o.x-o.width/2+.45+i*.8,o.height-.017,o.z,.70,.05,1.3,stone[i%4],0,0,0,9);
+  }
  }
  front(seed,stage){this.r.traversalMap=null;this.target=this.r.static;this.root=rModel();this.r.groundFX.clear();this.r.labels=[];const rng=random(seed+stage*11),base=-stage*44;
   this.p('plane',0,-.10,base-15,150,1,160,stage>=3?'#c1b8a5':'#c5c6a4',0,0,0,12);this.B(0,.06,base-17,12,.1,66,'#ddccaa',0,0,0,9);
