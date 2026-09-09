@@ -61,7 +61,7 @@ const EFFECT_NAMES = ['貫通','押し返し','早業','武装崩し','受け流
 const BODY_PARTS = ['head','torso','rightArm','leftArm','rightLeg','leftLeg'];
 const BODY_NAMES = {head:'頭部',torso:'胴体',rightArm:'右腕',leftArm:'左腕',rightLeg:'右脚',leftLeg:'左脚'};
 const WOUND_NAMES = {light:'軽傷',heavy:'重傷',lost:'欠損'};
-const STAMINA = Object.freeze({max:100,minCap:22,regen:19,capRegen:1.1,delay:.38,capDelay:3.2});
+const STAMINA = Object.freeze({max:100,minCap:22,regen:14,capRegen:.2,delay:.55,capDelay:6,fatiguePerCost:.18,seatedRegen:32,seatedCapRegen:8});
 const PASSIVES = [
  {id:3072,name:'炉辺の呼吸',school:'village',deed:'村で落ち着いて過ごす',need:35,effect:'regen',value:3,desc:'スタミナの自然回復を小さく高める。'},
  {id:3073,name:'剣士の手ほどき',school:'sword',deed:'剣術学校で訓練する',need:10,effect:'attackCost',value:.2,desc:'通常攻撃のスタミナ消費を小さく軽減する。'},
@@ -678,7 +678,8 @@ class Simulation {
  tryInsight(p,trigger){if(p.age>=4)this.progressDeed(p,trigger,1);}
  spend(p,cost,fatigue=0){
   if(!Number.isFinite(cost)||cost<0||p.stamina+.0001<cost)return false;
-  p.staminaCap=Math.max(STAMINA.minCap,p.staminaCap-Math.max(0,fatigue));p.stamina=Math.min(p.staminaCap,p.stamina-cost);p.lastExertion=this.time;
+  // Tie fatigue to actual exertion, including per-frame running and cost discounts.
+  p.staminaCap=Math.max(STAMINA.minCap,p.staminaCap-Math.max(0,fatigue,cost*STAMINA.fatiguePerCost));p.stamina=Math.min(p.staminaCap,p.stamina-cost);p.lastExertion=this.time;
   if(p.age>=4&&(p.autoFight||this.getRoom(p)?.actors.some(e=>e.alive&&dist(e,p)<4&&e.kind==='dummy'))){p.enduranceXP=(p.enduranceXP||0)+cost*.32;}
   return true;
  }
@@ -969,10 +970,14 @@ inflictWound(p,part,severity,source=null,strength=null){
  }
  tickRecovery(p,dt){
   const mods=injuryModifiers(p),max=Math.max(STAMINA.minCap,staminaMaximum(p)-(100-mods.cap)-(p.permanentFatigue||0));p.staminaMax=staminaMaximum(p);
-  if(p.seated&&this.time-(p.sitSince||0)>.35&&p.stun<=this.time&&!hasStatus(p,'sleep',this.time)){p.staminaCap=Math.min(max,p.staminaCap+dt*17);p.stamina=Math.min(p.staminaCap,p.stamina+dt*32);}
+  const resting=p.seated&&this.time-(p.sitSince||0)>.35&&p.stun<=this.time&&!hasStatus(p,'sleep',this.time);
+  if(resting){p.staminaCap=Math.min(max,p.staminaCap+dt*(STAMINA.seatedCapRegen+effectsOf(p,'capRegen')));p.stamina=Math.min(p.staminaCap,p.stamina+dt*(STAMINA.seatedRegen+effectsOf(p,'regen')));}
   if(!p.autoFight&&!p.seated&&this.time-(p.lastHurtAt??-100)>12&&this.getRoom(p)?.kind==='village'&&p.z>-27)p.health=Math.min(100,(p.health??100)+dt*1.8);
-  if(!p.dash&&this.time-p.lastExertion>STAMINA.delay&&!p.pendingSkill&&p.stun<=this.time)p.stamina=Math.min(p.staminaCap,p.stamina+dt*(STAMINA.regen+effectsOf(p,'regen'))*(p.guard?.28:p.combo?.45:1));
-  if(this.time-p.lastSkillAt>STAMINA.capDelay&&!p.pendingSkill&&this.time-p.lastExertion>1.4)p.staminaCap=Math.min(max,p.staminaCap+dt*(STAMINA.capRegen+effectsOf(p,'capRegen'))*(p.guard?.35:1));
+  // Seated and ordinary recovery are exclusive, so sitting cannot double-dip.
+  if(!p.seated){
+   if(!p.dash&&this.time-p.lastExertion>STAMINA.delay&&!p.pendingSkill&&p.stun<=this.time)p.stamina=Math.min(p.staminaCap,p.stamina+dt*(STAMINA.regen+effectsOf(p,'regen'))*(p.guard?.28:(p.autoFight||p.combo||p.cooldown>this.time)?.45:1));
+   if(this.time-p.lastSkillAt>STAMINA.capDelay&&!p.pendingSkill&&this.time-p.lastExertion>1.4)p.staminaCap=Math.min(max,p.staminaCap+dt*(STAMINA.capRegen+effectsOf(p,'capRegen'))*(p.guard?.35:1));
+  }
   p.staminaCap=Math.min(p.staminaCap,max);p.stamina=clamp(p.stamina,0,p.staminaCap);
   const age=p.age+p.ageFraction;for(const [part,w] of Object.entries(p.wounds))if(w.severity!=='lost'&&age>=w.healsAt){delete p.wounds[part];this.emit('healed',{player:p.id,room:p.room,part,x:p.x,z:p.z});}
  }
