@@ -61,9 +61,11 @@ test('normal front spawns reach every hostile form and new/legacy saves retain t
  const result=h.run(`(()=>{const s=new Simulation({seed:7349}),seen=new Set();
   for(let pass=0;pass<100;pass++)for(let stage=0;stage<6;stage++){const room={actors:[],stage,quota:8,kills:0};s.spawnFrontWave(room);room.actors.forEach(a=>seen.add(a.enemyForm));}
   const player=s.addPlayer('save-test',{owner:'save-test'}),room=s.getRoom(player);room.actors=[s.actor('soldier',0,-35),s.actor('maw',1,-35)];
-  const data=s.exportState(),expected=room.actors.map(a=>a.enemyForm);const restored=Simulation.restore(JSON.parse(JSON.stringify(data))).getRoom(player).actors.map(a=>a.enemyForm);
+  // Village restore also repairs authored ship dummies; keep this assertion on the saved combat actors.
+  const combatActors=room=>room.actors.filter(a=>a.shipStation==null);
+  const data=s.exportState(),expected=room.actors.map(a=>a.enemyForm);const restored=combatActors(Simulation.restore(JSON.parse(JSON.stringify(data))).getRoom(player)).map(a=>a.enemyForm);
   const legacy=JSON.parse(JSON.stringify(data));for(const [,r]of legacy.rooms)for(const a of r.actors)delete a.enemyForm;
-  const old=Simulation.restore(legacy).getRoom(player).actors;
+  const old=combatActors(Simulation.restore(legacy).getRoom(player));
   return {seen:[...seen],expected,restored,old:old.map(a=>({form:enemyForm(a).id,kind:a.kind,hasField:Object.hasOwn(a,'enemyForm')}))};
  })()`);
  assert.equal(result.seen.length,31);assert.deepEqual(result.restored,result.expected);

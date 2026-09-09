@@ -122,7 +122,8 @@ test('existing snapshot/save damage data restores identical presentation without
   room.actors=Object.values(ENEMY_FORMS).flat().map((f,i)=>EnemyReview.damage({...sim.actor(f.kind,i,-34),enemyForm:f.id},['light','medium','heavy','lost'][i%4],'rightArm'));
   const rng=sim.rng.getState(),expected=room.actors.map(EnemyDamage.state),encoded=JSON.stringify(sim.exportState());
   room.actors.forEach(p=>EnemyDamage.state(p));const unchanged=rng===sim.rng.getState()&&encoded===JSON.stringify(sim.exportState());
-  const saved=Simulation.restore(JSON.parse(encoded)).getRoom(player).actors.map(EnemyDamage.state);
+  const restored=Simulation.restore(JSON.parse(encoded)).getRoom(player).actors;
+  const saved=room.actors.map(p=>EnemyDamage.state(restored.find(q=>q.id===p.id)));
   return{expected,saved,unchanged};
  })()`);
  assert(result.unchanged);assert.deepEqual(plain(result.saved),plain(result.expected));
