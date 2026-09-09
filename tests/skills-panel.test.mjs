@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import {definitions} from './skills/harness.mjs';
 import {createRequire} from 'node:module';
 const {fixture,flush}=createRequire(import.meta.url)('./ui-fixture.cjs');
 
@@ -77,11 +78,13 @@ test('wheel drag uses the visible circle when a narrow panel letterboxes the SVG
 });
 
 test('passives have their own page and inspection never changes active phase weights',async t=>{
- const {sim,p,ui,d,sync}=fixture(t);sim.learn(p,60900);sync();ui.skills();await flush();
+ const {sim,p,ui,d,sync}=fixture(t);sim.learn(p,60900);sim.learn(p,700011);sync();ui.skills();await flush();
  assert.equal(d.querySelectorAll('[data-phase]').length,4);assert.ok(d.querySelector('.skill-overview #pie-wrap'));assert.ok(d.querySelector('.skill-overview #skill-detail'));
  const before=JSON.stringify(p.phaseWeights);d.querySelector('[data-phase="3"]').click();d.querySelector('[data-passive="60900"]').click();
  assert.match(d.getElementById('skill-detail').textContent,/炉辺の息/);assert.equal(d.getElementById('balance-pie'),null);assert.equal(d.getElementById('skill-toggle'),null);assert.equal(JSON.stringify(p.phaseWeights),before);
+ assert.equal(d.querySelector('#skill-detail [lang="en"]').textContent,definitions.find(d=>d.id===60900).names.en);
  d.querySelector('[data-phase="0"]').click();assert.ok(d.getElementById('balance-pie'));assert.equal(d.getElementById('skill-toggle'),null);
+ d.querySelector('[data-phase="1"]').click();ui.describeSkill(700011);const names=definitions.find(d=>d.id===700011).names;assert.equal(d.querySelector('#skill-detail strong').textContent,names.ja);assert.equal(d.querySelector('#skill-detail [lang="en"]').textContent,names.en);assert.equal(JSON.stringify(p.phaseWeights),before);
 });
 
 test('combat continues while the panel edits a build, with normal world input available',async t=>{

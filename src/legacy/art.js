@@ -137,6 +137,51 @@ class ArtDirector{
   this.pot(-2.6,.25,.82);this.pot(2.4,.65,.67);
   this.B(-2.9,.41,-1.6,1.2,.14,.56,'#c1ac81');for(const side of [-1,1])this.B(-2.9+side*.45,.23,-1.6,.12,.44,.42,'#b39f78');
  }
+ sailingShip(ship){
+  const y=ship.deckY,wood='#947351',edge='#654e39',plank='#c4a778',cloth='#ece0bd';
+  // A broad, tapered clinker hull: every deck strip uses the collision outline.
+  for(let z=34.25;z<56;z+=.5){const w=shipHalfWidth(z)*2;
+   this.B(0,-.55,z,w*.78,2.4,.57,edge);
+   this.B(0,.30,z,w,1.65,.57,wood);
+   this.B(0,y-.09,z,w,.18,.48,Math.round(z*2)%3?'#c1a071':plank);
+  }
+  const points=[[-4.8,34],[-6,38],[-6,50],[-2.1,56],[2.1,56],[6,50],[6,38],[4.8,34]];
+  const rail=(a,b)=>{this.line([a[0],y+1,a[1]],[b[0],y+1,b[1]],.11,edge);this.line([a[0],y+.43,a[1]],[b[0],y+.43,b[1]],.07,wood);
+   this.line([a[0],y-.38,a[1]],[b[0],y-.38,b[1]],.15,'#d6b578');
+   const n=Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/1.6);for(let i=0;i<=n;i++)this.C(a[0]+(b[0]-a[0])*i/n,y+.49,a[1]+(b[1]-a[1])*i/n,.075,1,.075,edge);};
+  for(let i=1;i<points.length;i++)rail(points[i-1],points[i]);rail([-4.8,34],[-1.5,34]);rail([1.5,34],[4.8,34]);
+  // Open, gently sloping gangway. No menu, teleport, cabin door or jump needed.
+  // Short shore apron joins the ground to the raised gangway without a step.
+  this.B(0,.275/2-.08,29,3,.16,Math.hypot(1,.275),plank,0,0,-Math.atan2(.275,1));
+  const slope=Math.atan2(y-.275,4.5);
+  this.B(0,(y+.275)/2-.08,31.75,3,.16,Math.hypot(4.5,y-.275),plank,0,0,-slope);
+  for(let i=0;i<=12;i++){const z=29.5+i*4.5/12,h=shipSupport(0,z);this.B(0,h+.018,z,2.95,.035,.04,wood,0,0,-slope);}
+  for(const side of [-1,1]){this.line([side*1.5,1.15,29.5],[side*1.5,y+.85,34],.055,wood);for(const z of [29.5,31.75,34])this.C(side*1.5,shipSupport(0,z)+.4,z,.06,.85,.06,edge);}
+  // Two rigged masts and gathered canvas keep the entire practice deck readable.
+  for(const [i,m]of ship.masts.entries()){
+   const top=i?9.6:10.8,span=i?7.2:8.6;
+   this.C(m.x,(top+y)/2,m.z,.26,top-y,.26,edge);this.C(m.x,y+.16,m.z,.42,.32,.42,wood);
+   for(const h of [top-1,top-3.1]){this.line([-span/2,h,m.z],[span/2,h,m.z],.12,wood);
+    for(const [dy,dz,scale]of [[0,0,1],[-.14,.12,.94],[.05,.2,.88]])this.C(0,h-.16+dy,m.z+dz,.18,span*scale,.18,cloth,0,Math.PI/2,0,0);
+    for(const x of [-span*.36,0,span*.36])this.C(x,h-.17,m.z+.09,.018,.53,.018,edge,0,0,0,0);
+   }
+   for(const side of [-1,1])this.line([0,top-.5,m.z],[side*5.7,y+.8,m.z+2],.018,'#bca578');
+   this.B(.46,top-.12,m.z,.9,.48,.04,i?'#9a6655':'#67827a',0,-.1,0,0);
+  }
+  this.line([0,9.5,49],[0,y+.5,56],.024,'#c6b185');
+  // The foredeck is closed below: tiller, belaying pins and coiled rope above.
+  this.line([0,y+.35,54.4],[0,y+1.05,52.6],.13,edge);
+  for(const side of [-1,1]){this.B(side*4.8,y+.2,47,1,.4,1.4,wood);this.p('torus',side*4.8,y+.45,47,.35,.07,.35,'#ceb785',0,0,0,8);}
+  // A small wind-sheltered shrine and woven resting mats occupy the port side.
+  const s=ship.shrine;
+  this.B(s.x,y+.26,s.z-.55,1.3,.52,.55,wood);this.B(s.x,y+.95,s.z-.85,1.4,1.5,.15,edge);
+  this.B(s.x,y+1.13,s.z-.72,.10,.76,.10,'#dcc58f');this.B(s.x,y+1.24,s.z-.72,.5,.09,.10,'#dcc58f');
+  for(const dx of [-.42,.42]){this.C(s.x+dx,y+.65,s.z-.45,.09,.27,.09,cloth,0,0,0,0);this.S(s.x+dx,y+.82,s.z-.45,.035,.075,.035,'#f0bb64',0,0,0,4);}
+  this.B(s.x,y+.025,s.z+.32,1.4,.04,1.15,'#7e9283',0,0,0,0);
+  for(const z of [44.7,47.2]){this.B(-3.6,y+.025,z,1.45,.04,1.85,'#a4ac87',0,0,0,0);this.C(-3.6,y+.13,z-.7,.13,1.35,.13,cloth,0,Math.PI/2,0,0);}
+  // Visible target rings distinguish the three independent training stations.
+  for(const d of ship.dummies)this.p('ring:6.283185307179586',d.x,y+.035,d.z,1.45,1,1.45,'#8e7757',0,0,0,8);
+ }
  village(map){
   this.r.traversalMap=map;
   this.target=this.r.static;this.root=rModel();const rng=random(map.seed);this.r.groundFX.clear();this.r.labels=[];
@@ -162,6 +207,7 @@ class ArtDirector{
   // Gate has two different sentry caps, cloth banners and masonry piers.
   for(const side of [-1,1]){this.B(side*4.1,1.3,-28,1.35,2.5,1.4,'#d0c4a5',0,0,0,9);this.with(rModel(side*4.1,0,-28),()=>this.roof(2,2,2.7,.75,'#9da894'));this.B(side*4.1,2,-27.19,.66,1.12,.07,'#8fa59a',0,0,0,0);this.p('leaf',side*4.1,2.05,-27.13,.15,.32,.03,'#efe2bc');}
   for(let i=0;i<6;i++){this.B(0,.20,25+i*.76,4,.15,.62,'#c5ad82');if(i%2===0)for(const side of [-1,1])this.C(side*2.0,.32,25+i*.76,.10,1.05,.1,'#b09b71');}
+  if(map.ship)this.sailingShip(map.ship);
   for(const [x,z] of [[-3,-6],[3,17],[-6,7],[7,-18],[-15,7],[17,-5]]){this.C(x,1.5,z,.08,3,.08,'#a38e67');this.lantern(x,2.5,z);}
  }
  terrainLedge(o){
@@ -309,7 +355,7 @@ class ArtDirector{
   const oldTarget=this.target;this.target=this.r.dynamic;this.root=rModel();const step=Math.sin(t*6+(p.stance||0)),run=p.action==='run',react=damagePose(this.r,p,t),ail=ailmentPose(p,t),fall=!p.alive?clamp((t-(p.deathAt??t))/1.1,0,1):0;
   const kind=p.kind||'goblin',elite=p.elite||kind==='boss',sc=kind==='boss'?2.1:elite?1.45:1;
   const humanoid=['goblin','soldier','elite','boss','archer','mage'].includes(kind);
-  this.root=rModel(p.x+react.x,.20+ail.y+(run?Math.abs(step)*.04:0)-react.drop,p.z+react.z,sc,sc,sc,p.dir||0,(humanoid?0:react.roll)+ail.roll,fall*1.5+(humanoid?0:react.pitch)+ail.pitch);
+  this.root=rModel(p.x+react.x,(p.supportHeight||0)+.20+ail.y+(run?Math.abs(step)*.04:0)-react.drop,p.z+react.z,sc,sc,sc,p.dir||0,(humanoid?0:react.roll)+ail.roll,fall*1.5+(humanoid?0:react.pitch)+ail.pitch);
   const damageBase=this.root,damageUpper=humanoid&&react.amount>0?rMultiply(damageBase,rMultiply(rModel(0,.89,0,1,1,1,react.yaw,react.torsoRoll+react.roll,react.torso+react.pitch),rModel(0,-.89,0))):damageBase;
   let scarHead=damageUpper;
   let fur=elite?'#a7ac9b':kind==='goblin'?'#b3c394':kind==='guard'?'#aeb7a5':'#babfa0',top=2.3;

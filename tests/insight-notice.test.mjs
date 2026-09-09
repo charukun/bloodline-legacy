@@ -13,7 +13,7 @@ test('insight and passive discovery show only one small noninteractive label on 
  const {ui,d,w,p,reveal}=noticeFixture(t),style=d.createElement('style');style.textContent=fs.readFileSync(new URL('../src/skills/skills.css',import.meta.url),'utf8');d.head.appendChild(style);
  for(const id of [60000,60900]){
   reveal(id);const badge=d.getElementById('skill-revelation'),button=d.querySelector('[data-menu="skills"]');
-  assert.equal(badge.parentElement,button);assert.equal(badge.textContent,'閃き');assert.equal(badge.getAttribute('role'),'status');
+  assert.equal(badge.parentElement,button);assert.equal(badge.textContent,id===60900?'心得':'閃き');assert.equal(badge.getAttribute('role'),'status');
   assert.equal(d.querySelectorAll('#skill-revelation').length,1);assert.equal(badge.querySelector('button,a,[tabindex]'),null);
   assert.equal(d.querySelector('.reveal-open,.reveal-memory,.reveal-name,.reveal-english'),null);assert.equal(ui.modal,null);assert.equal(ui.blocksWorldInput(),false);
   const css=w.getComputedStyle(badge);assert.equal(css.width,'36px');assert.equal(css.height,'18px');assert.equal(css.position,'absolute');assert.equal(css.pointerEvents,'none');assert.equal(w.getComputedStyle(button).position,'relative');

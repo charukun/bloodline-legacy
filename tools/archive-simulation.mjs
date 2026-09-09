@@ -2,11 +2,11 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
-import {compileCatalog} from './skill-catalog.mjs';
+import {compileCatalog,catalogProgram} from './skill-catalog.mjs';
 export const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 export async function simulationSource(projectRoot=root){
   const definitions=compileCatalog(JSON.parse(await fs.readFile(path.join(projectRoot,'src/skills/catalog-source.json'),'utf8')));
-  let code='// Generated immutable rules runtime. Regenerate with node tools/archive-simulation.mjs\nconst BL_SKILL_DEFINITIONS='+JSON.stringify(definitions)+';\n';
+  let code='// Generated immutable rules runtime. Regenerate with node tools/archive-simulation.mjs\n'+catalogProgram(JSON.parse(await fs.readFile(path.join(projectRoot,'src/skills/catalog-source.json'),'utf8')))+'\n';
   for(const p of ['legacy/dialogue.js','legacy/core.js','skills/engine.js','skills/runtime.js'])code+=await fs.readFile(path.join(projectRoot,'src',p),'utf8')+'\n';
   return code+'\nexport {Simulation};\n';
 }

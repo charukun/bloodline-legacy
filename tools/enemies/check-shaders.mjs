@@ -10,7 +10,7 @@ const html=fs.readFileSync(process.argv[2]||'dist/Bloodline_Legacy_Enemy_Review.
 const modules=new Map([...html.matchAll(/\/\/ SOURCE MODULE: ([^\n]+)\n([\s\S]*?)(?=\n\/\/ SOURCE MODULE: |$)/g)].map(m=>[m[1],m[2]]));
 const context=vm.createContext({});
 vm.runInContext('class VillageArt {} const AssetBank={load:async()=>{}};',context);
-for(const name of ['render/tilt-shift.js','render/shaders.js','character/rig.js','enemies/sentinel.js']){
+for(const name of ['render/tilt-shift.js','render/shaders.js','character/rig.js','enemies/damage.js','enemies/sentinel.js']){
  if(!modules.has(name))throw Error('Missing embedded shader module: '+name);
  vm.runInContext(modules.get(name),context,{filename:name});
 }
