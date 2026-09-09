@@ -70,7 +70,8 @@ test('damage, wound progression, attack interruption, hitstop and RNG match deve
 test('approved player damage tuning preserves guarding, timers, event counts and RNG',()=>{
  const before=runtime(true);let guards=0;
  for(let seed=11;seed<20;seed++)for(const guarding of [false,true]){
-  const pair=[before,api].map(a=>{const f=life(a,seed);f.sim.time=10;const e=f.sim.actor('soldier',0,6,0);Object.assign(f.p,{x:0,z:5,dir:0,guard:guarding});f.e=e;f.room.actors.push(e);return f;});
+  // Compare the identical encounter, independent of authored village prop positions.
+  const pair=[before,api].map(a=>{const f=life(a,seed);f.sim.time=10;const e=f.sim.actor('soldier',0,6,0);Object.assign(f.p,{x:0,z:5,dir:0,guard:guarding});f.e=e;f.room.actors=[e];return f;});
   for(const f of pair){f.sim.hitPlayer(f.p,f.e,{part:'leftLeg'});}
   const wounded=pair[1].sim.events.some(e=>e.type==='wound');
   assert.equal(pair[1].p.health,pair[0].p.health-(wounded?11:0));

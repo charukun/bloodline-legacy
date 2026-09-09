@@ -132,8 +132,9 @@ function makeVillage(seed=1) {
 }
 function supportHeight(map,x,z){return (map?.traversables||[]).reduce((y,o)=>o.kind==='step'&&Math.abs(x-o.x)<=o.width/2&&Math.abs(z-o.z)<=o.depth/2?Math.max(y,o.height):y,0);}
 const TRAVERSAL_RULES=Object.freeze({maxVault:1.25,maxStep:.95,radius:.42,cooldown:.16});
-// Open forecourt: inside the dojo activity area and the village shore boundary.
-function villagePracticePosition(map){const dojo=map.schools.find(s=>s.id==='sword');return {x:dojo.x,z:dojo.z+3};}
+// Inner forecourt: clear of the reading stand and inside the existing
+// dojo activity area and village shore boundary in either mirrored layout.
+function villagePracticePosition(map){const dojo=map.schools.find(s=>s.id==='sword');return {x:dojo.x-(Math.sign(dojo.x)||1)*1.75,z:dojo.z+3};}
 const ZONES = [
  {name:'白樺の渡り',sub:'THE BIRCH MARCH',ground:'#6c8970',tree:'#75946e'},
  {name:'霧鳴りの峡谷',sub:'THE HOLLOW WIND',ground:'#657f7d',tree:'#799b98'},
