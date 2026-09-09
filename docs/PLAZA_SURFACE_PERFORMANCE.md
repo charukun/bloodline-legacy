@@ -1,5 +1,7 @@
 # Plaza collision, surfaces and rendering cost
 
+> **REFERENCE — この領域の技術・実装資料。** ゲームの確定仕様の正本を置き換える文書ではありません。本文の旧ポリシー、WORK固有の指示、PR依存・SHA・検証結果はhistoricalな来歴で、現在の共通運用やGitHub状態には適用しません。[現行の文書案内](README.md)。
+
 Base: develop `4b9693364c5687ffc04bf57101c80394738fe59c` (camera PR #17 merged).
 Branch: `work/plaza-surface-performance-20260909`.
 Project Sources: Common Development Policy v5; Implementation Prompt v2; user reference `1000002824.png` and explicit request to fix well collision and improve visual quality/rendering cost. The user's GitHub workflow and v5 supersede the older implementation prompt's handoff-only rule. User reviewed the supplied playable preview and explicitly requested PR creation on 2026-09-09. PR-time develop is `fad97fc` (Skill Motion PR #18); its changed files do not overlap this work. Integration and CI should verify the combined result.
