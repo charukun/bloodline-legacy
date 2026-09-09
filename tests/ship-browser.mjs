@@ -11,13 +11,13 @@ const html=await fs.readFile(path.join(root,'dist/index.html'));
 const server=http.createServer((req,res)=>{if(req.url.startsWith('/api/')||req.url==='/version.json'){res.setHeader('Content-Type','application/json');return res.end('{"online":false}');}res.setHeader('Content-Type','text/html; charset=utf-8');res.end(html);});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const report={head:process.env.GITHUB_SHA,backend:'Chromium / SwiftShader',checks:[],errors:[],passed:false,limitations:['QA fixtures position adult players and advance the simulation clock.','Software WebGL verifies rendering and input, not mobile hardware performance.','The sea passage uses the existing direct transition to the front.']};
-let browser;
+let browser,page;
 try{
  browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
- const page=await browser.newPage({viewport:{width:1000,height:800},deviceScaleFactor:1});page.setDefaultTimeout(120000);
+ page=await browser.newPage({viewport:{width:1000,height:800},deviceScaleFactor:1});page.setDefaultTimeout(120000);
  page.on('pageerror',e=>report.errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port+'/?qa');await page.waitForFunction('window.AERIN_QA');
- await page.locator('#begin-life').click();for(let i=0;i<3;i++)await page.locator('#guide-next').click();await page.waitForFunction('AERIN_QA.app.screen==="game"');
+ await page.locator('#begin-life').click();const pages=await page.locator('.guide-pages i').count();assert.ok(pages>0&&pages<=10);for(let i=0;i<pages;i++)await page.locator('#guide-next').click();await page.waitForFunction('AERIN_QA.app.screen==="game"');
  await page.evaluate(()=>{
   const a=AERIN_QA.app,p=AERIN_QA.player();a.closed=true;a.stopInput();a.ui.closeModal();a.renderer.setQuality('medium');a.renderer.weather.setOverride('clear');
   Object.assign(p,{age:24,ageFraction:0,prologue:false,introUntil:-100,releaseAt:-100,x:0,z:27,stun:0,cooldown:0,action:'idle',actionUntil:0,activity:null});
@@ -49,4 +49,4 @@ try{
  await page.evaluate(()=>{const a=AERIN_QA.app;a.sim.time=a.sim.boatInterval-.05;a.saveWorld();a.loadMode();a.screen='game';AERIN_QA.step(4);a.renderer.render(a.snapshot,1/30);a.ui.update(a.snapshot);});
  await check('saved passenger departs once at five-year boundary',()=>{const a=AERIN_QA.app;return a.snapshot.room.kind==='front'&&a.sim.events.filter(e=>e.type==='depart').length===1&&AERIN_QA.player().supportHeight===0;});
  await shot('arrival');await check('no WebGL errors',()=>AERIN_QA.app.renderer.gl.getError()===0);assert.deepEqual(report.errors,[]);report.passed=true;
-}finally{await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));await browser?.close();await new Promise(r=>server.close(r));}
+}catch(error){report.failure=error.message;report.state=await page?.evaluate(()=>({screen:window.AERIN_QA?.app.screen,player:window.AERIN_QA?.player(),body:document.body.innerText.slice(-2000)})).catch(()=>null);await page?.screenshot({path:path.join(out,'failure.png'),timeout:30000}).catch(()=>{});throw error;}finally{await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));await browser?.close();await new Promise(r=>server.close(r));}
