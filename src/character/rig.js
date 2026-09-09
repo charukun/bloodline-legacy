@@ -18,7 +18,7 @@ class RigRenderer{
   // Crossfade at state boundaries, not across a confirmed impact freeze.
   const state=frame.p.alive===false?'death':frame.p.hitReactUntil>frame.t?'hit':frame.p.activity?.kind||frame.p.action||'idle';
   if(rec.state!==state){rec.transition=frame.t;rec.state=state;rec.from=rec.parts?.map(p=>({...p,m:[...p.m]}));}
-  const blend=(SkillMotion.clock(frame.p,frame.t)?.stage==='attack'||frame.p.hitstopUntil>frame.t||state==='hit'||state==='death')?1:clamp((frame.t-(rec.transition??frame.t))/.10,0,1);
+  const blend=(SkillMotion.clock(frame.p,frame.t)||frame.p.action==='recover'||frame.p.hitstopUntil>frame.t||state==='hit'||state==='death')?1:clamp((frame.t-(rec.transition??frame.t))/.10,0,1);
   for(let j=0;j<frame.parts.length;j++){const p=frame.parts[j],old=rec.from?.[j];let matrix=p.m;if(old&&blend<1){matrix=p.m.map((v,k)=>v*blend+old.m[k]*(1-blend));}rec.palette.set(matrix,j*24);rec.palette.set(p.c,j*24+16);rec.palette[j*24+20]=p.surf;}
   rec.parts=frame.parts;rec.lastT=frame.t;rec.owner=frame.p;rec.lastFrame=this.r.frame;gl.bindTexture(gl.TEXTURE_2D,rec.texture);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,6,frame.parts.length,gl.RGBA,gl.FLOAT,rec.palette);this.active.push(rec);
   // Dead actors/old generations never accumulate GPU resources without a bound.

@@ -598,7 +598,7 @@ class Simulation {
   // Small swept substeps retain the existing scenery and body collision hulls.
   const steps=Math.max(1,Math.ceil(Math.hypot(dx,dz)/.045)),sx=dx/steps,sz=dz/steps;
   const bodies=[...r.actors,...this.players.values()].filter(a=>a!==p&&a.alive&&(a.kind!=='player'||a.room===r.id));
-  const sceneryBlocked=q=>{const bounded={...q};this.bound(bounded,r);return Math.hypot(bounded.x-q.x,bounded.z-q.z)>1e-6;};
+  const sceneryBlocked=q=>{const bounded={...q};this.bound(bounded,r,this.collisionRadius(p));return Math.hypot(bounded.x-q.x,bounded.z-q.z)>1e-6;};
   const bodyBlocked=q=>bodies.some(a=>{const before=dist(a,p),after=dist(a,q),radius=this.collisionRadius(p)+this.collisionRadius(a);return after<radius&&after<before-.000001;});
   let travelled=0;
   for(let i=0;i<steps;i++){
@@ -803,13 +803,18 @@ class Simulation {
   }
   SkillSystem.sample(this,p);
  }
- bound(p,r){
+ bound(p,r,bodyRadius=this.collisionRadius(p)){
   if(r.kind==='village'){
    p.x=clamp(p.x,-35,35);p.z=clamp(p.z,-46,29.5);
    if(p.z<-27&&p.z>-30&&Math.abs(p.x)>4.8)p.z=-27;
    if(p.z>23&&Math.abs(p.x)>4)p.z=23;
    for(const h of r.map.houses){const dx=p.x-h.x,dz=p.z-h.z;if(Math.abs(dx)<2&&Math.abs(dz)<1.8){if(Math.abs(dx)/2>Math.abs(dz)/1.8)p.x=h.x+Math.sign(dx||1)*2;else p.z=h.z+Math.sign(dz||1)*1.8;}}
    for(const s of r.map.schools.filter(s=>s.id!=='dance')){const dx=p.x-s.x,dz=p.z-(s.z-2);if(Math.abs(dx)<2.5&&Math.abs(dz)<1.5){if(Math.abs(dx)/2.5>Math.abs(dz)/1.5)p.x=s.x+Math.sign(dx||1)*2.5;else p.z=s.z-2+Math.sign(dz||1)*1.5;}}
+   // The square is walkable, but its stone well and posts occupy a 1.30m radius.
+   // Use the same bound for walking, dash, attack steps and restored positions.
+   const well=r.map.schools.find(s=>s.id==='dance');
+   if(well){const dx=p.x-well.x,dz=p.z-well.z,d=Math.hypot(dx,dz),radius=1.30+bodyRadius;
+    if(d<radius){p.x=well.x+(d>1e-8?dx/d:0)*radius;p.z=well.z+(d>1e-8?dz/d:1)*radius;}}
   }else{p.x=clamp(p.x,-13,13);p.z=clamp(p.z,-(r.stage*44+43),9);}
  }
  tick(dt){

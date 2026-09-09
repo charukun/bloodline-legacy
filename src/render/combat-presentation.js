@@ -83,9 +83,11 @@ class CombatPresentation{
    if(attacking){
     const clock=SkillMotion.clock(a,t,skill);
     const duration=clock.duration,beat=clock.beat,full=clock.index+beat;
-    this.cut(a,skill,beat,duration,full);
-    const tip=r.weaponTips?.get(a.id);
-    if(tip&&beat>=.25&&beat<=.48){
+    const weaponStrike=!['kick','cast','roar','counter','backflip','bow'].includes(clock.shape)&&!skill.magic;
+    const tip=weaponStrike?r.weaponTips?.get(a.id):null;
+    // A real blade/shaft uses its own path instead of a second, unrelated arc.
+    if(!tip)this.cut(a,skill,beat,duration,full);
+    if(tip&&beat>=.18&&beat<=.57){
      if(!trail){trail=[];this.trails.set(a.id,trail);}
      // Sample genuine weapon motion only; a hitstop cannot add more geometry.
      if(!trail.length||Math.hypot(...tip.map((v,i)=>v-trail[0].p[i]))>.04)trail.unshift({p:[...tip],t});

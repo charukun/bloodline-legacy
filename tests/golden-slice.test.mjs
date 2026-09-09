@@ -101,3 +101,21 @@ test('batched grout bounds cover its real footprint and offscreen meshes still c
     assert.equal(r.geometryBounds('golden:grout'),bounds,'static bounds are cached');
   }finally{r.camera=oldCamera;r.matrix();}
 });
+
+test('static shadow proxies reduce geometry while retaining roof shells and character passes',()=>{
+  const shadow=scene.passes.staticShadow;
+  assert.ok(shadow.reduce((n,b)=>n+b.count*b.instances/3,0)<430_000);
+  assert.ok(shadow.some(b=>b.mesh==='roof'),'building roof silhouette survives');
+  assert.ok(scene.passes.static.some(b=>b.mesh==='golden:slate'),'roof detail stays visible');
+  for(const pass of [scene.passes.dynamic,scene.passes.dynamicShadow])
+    assert.ok(pass.every(b=>b.mesh!=='beadlow'&&b.mesh!=='toruslow'),'character geometry is unchanged');
+});
+
+test('instance uploads reuse capacity and send only live rows on consecutive frames',()=>{
+  const r=scene.r,oldGL=r.gl,frames=[];let type,frame,uploaded;
+  r.gl={...oldGL,bindVertexArray(v){type=v;},bufferData(_,data){uploaded=data;frame.set(type,data.buffer);},
+    drawArraysInstanced(_,start,count,instances){assert.equal(uploaded.length,instances*21);assert.ok(count>0);}};
+  try{for(let i=0;i<2;i++){frame=new Map();r.drawBatches(r.static,{},false);frames.push(frame);}
+    assert.ok(frames[0].size>10);for(const [mesh,buffer]of frames[0])assert.equal(frames[1].get(mesh),buffer);
+  }finally{r.gl=oldGL;}
+});

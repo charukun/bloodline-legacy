@@ -75,7 +75,7 @@ const CM01 = (()=>{
    if(moving&&!st.moving){st.phase=duty*.5+d/stride;for(const foot of st.feet)if(foot)foot.settle=null;}
    else if(moving)st.phase+=d/stride;
    st.moving=moving;st.gaitMode=gaitMode;
-   const phase=st.phase*TAU,reaction=damagePose(r,p,t,st.feet),pose=damageArtPose(r,p,t,artPose(p,t)),ail=ailmentPose(p,t),guard=p.guard||p.guardUntil>t||p.autoFight;
+   const phase=st.phase*TAU,reaction=damagePose(r,p,t,st.feet),pose=damageArtPose(r,p,t,artPose(p,t,SkillMotion.stateFor(r,p,t))),ail=ailmentPose(p,t),guard=p.guard||p.guardUntil>t||p.autoFight;
    const fall=!p.alive?smooth((t-(p.deathAt??t))/1.12):0;const sampledGround=this.groundAt(p.x,p.z);if(!Number.isFinite(st.ground))st.ground=sampledGround;st.ground+=(sampledGround-st.ground)*(1-Math.exp(-dt*14));const baseY=p.baseY!=null?p.baseY:st.ground-.020;
    const rootQ=Q.euler(pose.pitch+reaction.pitch+ail.pitch+fall*1.48,(p.dir||0)+pose.yaw,pose.roll+reaction.roll+ail.roll);
    const rootM=matrix([p.x+reaction.x+Math.cos(p.dir||0)*(pose.weightX||0)+Math.sin(p.dir||0)*(pose.weightZ||0),baseY+pose.y+ail.y-reaction.drop,p.z+reaction.z-Math.sin(p.dir||0)*(pose.weightX||0)+Math.cos(p.dir||0)*(pose.weightZ||0)],rootQ);
@@ -86,7 +86,7 @@ const CM01 = (()=>{
    qi('pelvis',0,Math.sin(phase)*.055*gaitWeight+reaction.yaw*.3,.018*Math.sin(phase)*gaitWeight);
    qi('spine',pose.torso+reaction.torso*.65+(run?.10:.035)*gaitWeight+breathe*.007,(pose.torsoYaw||0)-sway*.068*gaitWeight+reaction.yaw*.7,reaction.torsoRoll*.5);
    qi('chest',reaction.torso*.35,-sway*.028*gaitWeight,.015*Math.sin(t*.9)*(1-gaitWeight)+reaction.torsoRoll*.5);
-   qi('neck',-.02+pose.head*.3+reaction.head*.3+ail.head*.3,-(pose.torsoYaw||0)*.65+Math.sin(t*.41)*.023*(1-gaitWeight));
+   qi('neck',-.02+pose.head*.3+reaction.head*.3+ail.head*.3,pose.skillMotion?(pose.headYaw||0):-(pose.torsoYaw||0)*.65+Math.sin(t*.41)*.023*(1-gaitWeight));
    qi('head',pose.head*.7+reaction.head*.7+ail.head*.7,-sway*.024*gaitWeight,Math.sin(t*.73)*.008+reaction.headRoll);
    scale[3]=[1+breathe*.0025,1+breathe*.003,1+breathe*.005];
    const blinkU=(t+1.73)%4.73,blink=hasStatus(p,'sleep',t)||p.action==='sleep'?0.08:blinkU<.15?Math.max(.06,Math.abs(blinkU/.075-1)):1;scale[7]=[1,blink,1];scale[8]=[1,blink,1];
@@ -99,10 +99,18 @@ const CM01 = (()=>{
    qi('hair',Math.sin(t*4)*.008+gaitWeight*Math.sin(phase-1)*.025,0,0);
    qi('mantle',-.04-gaitWeight*.16+Math.sin(t*2)*.015,Math.sin(phase-.5)*gaitWeight*.06,0);qi('mantle.tip',-.07+Math.sin(phase-1)*gaitWeight*.12,0,Math.sin(t*2.3)*.025);qi('coat.R',Math.sin(phase-.6)*gaitWeight*.06);qi('coat.L',-Math.sin(phase-.6)*gaitWeight*.06);
    // Rotational blending preserves orthonormal transforms, unlike matrix-entry lerp.
-   const amount=pose.motionClock?.stage==='attack'||reaction.amount>.1||fall>0?1:1-Math.exp(-dt*22);
+   const amount=pose.skillMotion||reaction.amount>.1||fall>0?1:1-Math.exp(-dt*22);
    if(st.lastQ)for(let i=1;i<q.length;i++)q[i]=Q.slerp(st.lastQ[i],q[i],amount);st.lastQ=q.map(v=>[...v]);
    const localM=asset.bind.map(()=>rModel()),globalM=asset.bind.map(()=>rModel());
    for(let i=0;i<q.length;i++){const par=asset.parents[i],translation=V.add(V.sub(asset.bind[i],par>=0?asset.bind[par]:[0,0,0]),offset[i]);localM[i]=matrix(translation,q[i],scale[i]);globalM[i]=par>=0?rMultiply(globalM[par],localM[i]):localM[i];this.globalQ[i]=par>=0?Q.mul(this.globalQ[par],q[i]):q[i];}
+   const gripping=SkillMotion.grip(p,pose,{arm:globalM[9],elbow:globalM[10],hand:globalM[11]},{arm:globalM[14],elbow:globalM[15],hand:globalM[16]},-.075);
+   this.skillGripDebug=gripping;
+   if(gripping){
+    for(const [start,chain]of [[9,gripping.right],[14,gripping.left]]){
+     globalM[start]=chain.arm;globalM[start+1]=chain.elbow;globalM[start+2]=chain.hand;
+     for(let i=start+3;i<=start+4;i++)globalM[i]=rMultiply(globalM[asset.parents[i]],localM[i]);
+    }
+   }
    const useGroundIK=!p.seated&&!p.activity&&fall===0&&(pose.skillMotion||Math.abs(pose.y)<.22&&Math.abs(pose.rightLeg)<1.2&&Math.abs(pose.leftLeg)<1.2);
    if(pose.skillMotion&&!st.skillFeet)st.skillFeet=st.feet.map(f=>f?{anchor:[...f.anchor],yaw:f.yaw,t,motionT,rootX:p.x,rootZ:p.z,lift:0}:null);
    if(!pose.skillMotion)st.skillFeet=null;

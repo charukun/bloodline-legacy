@@ -1,67 +1,10 @@
-/* Cloth markers and a paper family ledger. No background illustration or new
- * character asset: portraits are drawn from the existing recorded appearance. */
-.hud-bottom .hud-button{width:72px;min-width:44px;font-size:12px;border-color:#aa9569;background:linear-gradient(130deg,#514b39f5,#2f3c33fa);color:#f4e7c6}
-.hud-bottom .hud-button[aria-expanded=true]{background:#45583c;color:#fff1c8;border-color:#eee0aa;box-shadow:inset 0 -3px #d4bd7a}
-.hud-button:focus-visible{outline:2px solid #ffe2a0;outline-offset:3px}
-.modal-root.has-dock{padding-bottom:calc(80px + var(--safe-bottom))}
-.modal-root .hud-bottom{position:fixed;z-index:1}
-.lineage .game-panel{width:min(940px,100%)}
-.lineage .panel-content{padding:0;scroll-padding:16px}
-.lineage .panel-head{background:#d8c397;border-bottom-color:#a88a5e}
-.family-book{--book-ink:#463b29;--book-muted:#706045;color:var(--book-ink);padding:22px;background:#ecdbb8 url('asset:parchment.png') center/512px;line-height:1.65}
-.family-book *{min-width:0}
-.book-title{display:flex;align-items:center;gap:15px;padding:0 0 18px;border-bottom:1px solid #a48a6059}
-.book-title h2{font-size:clamp(25px,4vw,34px);letter-spacing:.14em;font-weight:600;line-height:1.4}
-.book-title p{font-size:12px;color:var(--book-muted);margin:4px 0 0}
-.book-emblem{width:52px;height:64px;display:grid;place-items:center;background:#69795b;color:#f0ddb0;border:1px solid #9a825a;border-radius:3px 3px 20px 20px;flex:none}
-.book-emblem .icon{width:30px;height:34px}
-.book-eyebrow{display:block;font-size:11px;letter-spacing:.1em;color:var(--book-muted)}
-.book-guide{display:flex;align-items:flex-start;gap:12px;position:relative;margin:18px 0 22px;padding:16px 52px 12px 16px;background:#f9eed59c;border:1px solid #b79b703b;border-radius:3px;box-shadow:0 2px 0 #ad8f6020}
-.book-guide[hidden]{display:none}
-.book-guide>span{color:#87764e;padding-top:3px}.book-guide p{font-size:13px;margin:0 0 5px}.book-guide small{font-size:11px;color:var(--book-muted)}
-.book-guide label{display:flex;align-items:center;gap:9px;font-size:12px;min-height:44px;cursor:pointer}.book-guide input{width:20px;height:20px;flex:none;accent-color:#536744}
-.family-book .guide-dismiss{position:absolute;top:4px;right:4px;width:44px;height:44px;display:grid;place-items:center;background:none;border:0;box-shadow:none;color:#76603d;padding:10px}
-.chapter-heading{display:flex;align-items:baseline;justify-content:space-between;gap:8px;border-bottom:1px solid #a88b5a55;padding-bottom:9px;margin-bottom:15px}
-.chapter-heading h3,.birth-chapter h3{font-size:18px;letter-spacing:.09em;font-weight:600}.chapter-heading>span{font-size:11px;color:var(--book-muted);white-space:nowrap}
-.blood-chapter{margin:20px 0 24px}.blood-banners{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;padding:5px 4px 0}
-.family-book .blood-banner{--banner:#58704e;position:relative;min-height:142px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:18px 5px;color:#fff1d3;background:var(--banner);border:1px solid #a89068;border-radius:3px 3px 42% 42% / 3px 3px 18px 18px;box-shadow:inset 0 0 0 4px #e8d5a71c,0 3px 3px #5b432326;text-align:center;text-shadow:none}
-.family-book .blood-banner:after{content:'';position:absolute;inset:6px;border:1px dashed #efdcb46b;border-radius:1px 1px 40% 40% / 1px 1px 15px 15px;pointer-events:none}
-.family-book .blood-banner-1{--banner:#48687a}.family-book .blood-banner-2{--banner:#985645}.family-book .blood-banner-3{--banner:#765b7e}
-.family-book .blood-banner[aria-pressed=true]{outline:2px solid #59472c;outline-offset:3px}.family-book button.blood-banner:hover{filter:brightness(1.08)}
-.banner-pin{position:absolute;top:-6px;left:calc(50% - 5px);width:10px;height:12px;background:linear-gradient(120deg,#f1d59a,#947247);border:1px solid #84643c;border-radius:50%;box-shadow:0 2px 3px #392b2966}
-.banner-glyph{height:40px;display:grid;place-items:center}.banner-glyph .icon{width:34px;height:34px}.blood-banner strong{font-size:15px;font-weight:500;letter-spacing:.12em}.banner-status{font-size:11px}.family-book .blood-description,.chapter-note{color:var(--book-muted);font-size:11px;line-height:1.7;margin:12px 0 0;text-align:left}
-.book-spread{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(210px,1fr);align-items:start;gap:24px}
-.book-sidebar{display:flex;flex-direction:column;gap:24px;border-left:1px solid #ac90604a;padding-left:22px}
-.family-book .lineage-list{border:0;padding:0;gap:16px}.family-book .lineage-list>li:before{display:none}
-.life-record{border:1px solid #b294655c;padding:0 14px 10px;background:linear-gradient(115deg,#fff3d79e,#ecdbb424);border-radius:3px;position:relative;box-shadow:0 2px 0 #9776440e}
-.life-ribbon{display:inline-block;padding:4px 14px 5px;background:#8d6f4e;color:#fceac5;font-size:11px;letter-spacing:.1em;border-radius:0 0 3px 3px}
-.record-overview{display:grid;grid-template-columns:100px minmax(0,1fr);gap:14px;align-items:center;padding:4px 0 8px}
-.family-book .ancestor-portrait{width:100%;height:144px;color:#a08d68;display:flex;flex-direction:column;justify-content:center;align-items:center;background:radial-gradient(ellipse at 50% 75%,#93794621,transparent 70%)}
-.ancestor-portrait>small{font-size:10px}.family-book .ancestor-portrait img{width:100%;height:100%;object-fit:contain}
-.family-book .ancestor-meta{gap:2px}.family-book .ancestor-meta strong{font-size:21px;line-height:1.5}.family-book .ancestor-meta>span{font-size:12px}.family-book .ancestor-meta>small{font-size:10px;margin-top:8px;color:var(--book-muted)}.family-book .ancestor-meta b{font-size:15px;margin:0;overflow-wrap:anywhere}
-.family-book .inherit-choice{min-height:44px;display:flex;width:100%;align-items:center;justify-content:center;gap:8px;padding:8px;border:1px solid #a08d6480!important;background:#ebdeba;text-align:center;font-size:12px;line-height:1.5}
-.family-book .inherit-choice .icon{width:18px;height:18px;flex:none}.family-book .inherit-choice.chosen{outline:none;background:#4e6648;color:#fff1d3;border-color:#4e6648!important}.family-book .inherit-choice:disabled{color:#75664c;background:transparent;border-style:dashed!important}
-.life-details{margin-top:5px;font-size:12px}.life-details summary{min-height:44px;padding:10px 2px;cursor:pointer;color:#78613e}.life-details[open] summary{color:#4b5435}.life-details>div{padding:5px 0 8px;border-top:1px dashed #b3986b66}.life-details p{margin:0 0 8px}
-.family-book h4{font-size:12px;letter-spacing:.06em;font-weight:600;margin:16px 0 6px}.family-book .book-gear{margin:0}.book-gear>div{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dotted #a1875652}.book-gear dt{font-size:11px;color:var(--book-muted);flex:none}.book-gear dd{font-size:13px;margin:0;text-align:right;overflow-wrap:anywhere}
-.inheritance-seal{background:#e1cca151;padding:16px 14px;border-top:2px solid #8b774e;border-bottom:1px solid #b69b6c80}.inheritance-seal strong{display:block;font-size:20px;color:#425839;line-height:1.5;margin:9px 0 5px;overflow-wrap:anywhere}.inheritance-seal p{font-size:12px;margin:0;color:var(--book-muted)}
-.family-book .book-text-button{min-height:44px;padding:8px 0;border:0;background:none;box-shadow:none;font-size:12px;text-decoration:underline;text-underline-offset:4px}
-.book-current-portrait{height:180px;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 80%,#9a82562b,transparent 65%)}.book-current-portrait img{width:100%;height:100%;object-fit:contain}.book-current-name{text-align:center;display:flex;flex-direction:column;gap:3px;margin-bottom:18px}.book-current-name strong{font-size:22px;font-weight:500;overflow-wrap:anywhere}.book-current-name span{font-size:12px;color:var(--book-muted)}
-.book-inventory{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.book-inventory>div{min-height:76px;background:#d5c29857;border:1px solid #b29a704d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:8px;font-size:12px;overflow-wrap:anywhere}
-.family-book .empty-lineage{text-align:center;padding:28px 8px;margin:0;color:var(--book-muted);font-size:12px}.empty-lineage .empty-emblem .icon{width:48px;height:48px;color:#948059}.empty-lineage strong{display:block;font-size:20px;color:var(--book-ink);font-weight:500;margin:16px 0 9px}.empty-lineage small{font-size:11px}.family-book .lineage-note{font-size:12px;color:var(--book-muted);margin:22px 0 6px;letter-spacing:.05em}
-.family-book .book-more{width:100%;display:flex;justify-content:center;gap:10px;align-items:center;min-height:48px;margin-top:16px;background:#dbc8a078;font-size:12px;border-radius:3px;box-shadow:none}
-#clan-screen.family-screen{display:block;pointer-events:auto;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;padding:calc(16px + var(--safe-top)) calc(16px + var(--safe-right)) calc(100px + var(--safe-bottom)) calc(16px + var(--safe-left));background:linear-gradient(100deg,#2d3524e8,#4b3b29ba);color:#f2e1bb}
-.family-top,.family-screen>.family-book{width:min(960px,100%);margin:0 auto}.family-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 0 14px;font-size:17px;letter-spacing:.12em}.family-top small{display:block;font-size:10px;opacity:.75;margin-top:3px}.family-top .quiet-button{min-height:44px;color:#f4e5c8;border-color:#bca678;background:#554d39;font-size:12px}
-.family-screen>.family-book{border:1px solid #b19a70;border-radius:5px;box-shadow:0 8px 28px #18150c3b}
-.family-footer{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;gap:24px;padding:12px calc(16px + var(--safe-right)) calc(12px + var(--safe-bottom)) calc(16px + var(--safe-left));background:#343b2df5;border-top:1px solid #a89160;z-index:1}.family-footer>span{font-size:11px}.family-footer .begin-button{width:min(360px,65%);min-height:48px}
-.birth-chapter label{display:block;font-size:12px;margin:16px 0 3px}.birth-chapter input{width:100%;min-height:48px;color:#443a28;font-size:16px;background:#f6eacd6b;border:1px solid #a9906470;border-radius:3px;padding:9px 10px}.birth-chapter p{font-size:11px;color:var(--book-muted);margin:8px 0 0}
-.family-book button:focus-visible,.family-book input:focus-visible,.family-book summary:focus-visible{outline:2px solid #384e32;outline-offset:3px}
-@media(max-width:639px){
- .family-book{padding:16px 12px}.book-title{gap:12px}.book-title h2{font-size:27px}.book-emblem{width:42px;height:57px}.book-guide{padding:12px 38px 8px 10px;gap:8px}.book-guide>span{display:none}.book-guide p{font-size:12px}
- .blood-banners{gap:9px}.family-book .blood-banner{min-height:116px;padding:12px 3px;gap:4px}.banner-glyph{height:32px}.banner-glyph .icon{width:28px;height:28px}.blood-banner strong{font-size:13px}.banner-status{font-size:10px}
- .book-spread{display:flex;flex-direction:column;gap:22px}.book-sidebar{display:contents}.inheritance-seal{order:0;width:100%;padding:12px}.birth-chapter{order:1;width:100%}.history-chapter{order:2;width:100%}.living-chapter{order:3;width:100%}
- .living-chapter .book-current-portrait{height:152px}.record-overview{grid-template-columns:85px minmax(0,1fr);gap:10px}.family-book .ancestor-portrait{height:127px}.family-book .ancestor-meta strong{font-size:19px}.life-record{padding:0 10px 8px}.chapter-heading h3{font-size:17px}
- #clan-screen.family-screen{padding-left:calc(8px + var(--safe-left));padding-right:calc(8px + var(--safe-right))}.family-top{padding:0 8px 12px}.family-footer{gap:12px}
-}
-@media(max-height:560px) and (orientation:landscape){
- .modal-root.has-dock{padding-bottom:calc(66px + var(--safe-bottom))}.lineage .game-panel{width:min(940px,100%)}.hud-bottom .hud-button{width:66px;min-height:44px}.family-book{padding:16px}.family-footer{padding-top:7px;padding-bottom:calc(7px + var(--safe-bottom))}.family-footer .begin-button{min-height:44px}
-}
+/* Full-screen native lineage view. Character-play controls stay in the game. */
+#clan-screen.lineage-home{position:fixed;inset:0;padding:0;margin:0;max-width:none;width:100%;height:100%;display:block;pointer-events:auto;overflow:hidden;background:#e6d5b0}
+.lineage-theatre-host{width:100%;height:100%;min-height:0;pointer-events:auto}
+#modal-root.lineage{padding:0;display:block}
+#modal-root.lineage>.game-panel{position:absolute;inset:0;margin:0;border:0;border-radius:0;padding:0;max-width:none;max-height:none;width:100%;height:100%;box-shadow:none;animation:none;transform:none}
+#modal-root.lineage .panel-head{display:none}
+#modal-root.lineage .panel-content{padding:0;margin:0;max-height:none;height:100%;overflow:hidden}
+
+#modal-root.lineage>.game-panel{outline:0}
+#modal-root.lineage>.game-panel::after{display:none}

@@ -15,7 +15,7 @@ function installGoldenGeometry(){
   RG_CACHE.set(name,{positions:new Float32Array(p),normals:new Float32Array(n),count:p.length/3,radius:1});
  };
  prism('golden:stone',[[-.50,-.34],[-.31,-.5],[.45,-.48],[.50,.24],[.27,.50],[-.48,.41]],.09);
- prism('golden:slate',[[-.5,-.48],[.46,-.5],[.50,.36],[.35,.5],[-.49,.46]],.055);
+ prism('golden:slate',[[-.5,-.48],[.46,-.5],[.50,.36],[.35,.5],[-.49,.46]],.10);
  // A leaf spray has a branched silhouette instead of a smooth green sphere.
  const p=[],n=[];for(let i=0;i<19;i++){const a=i*2.399963,r=.12+.30*Math.sqrt(i/19),y=.18+Math.sin(i*7.1)*.18+(1-r)*.38;
   const c=[Math.sin(a)*r,y,Math.cos(a)*r],dx=Math.cos(a)*(.12+i%3*.025),dz=-Math.sin(a)*(.12+i%3*.025);
@@ -31,7 +31,7 @@ class GoldenArt extends VillageArt{
   if(this.local(x,y,z)){
    // Only legacy path stones; steps, thresholds and ground outside the district survive.
    if(this.buildingVillage&&type==='rbox'&&surf===9&&y===.205&&sy===.10)return;
-   if(surf===9&&y>.25){surf=21;const a=Array.isArray(c)?c:rColor(c);c=[a[0]*.82,a[1]*.84,a[2]*.85,1];}
+   if(surf===9&&y>.25){surf=21;const a=Array.isArray(c)?c:rColor(c);c=[a[0]*.94,a[1]*.90,a[2]*.84,1];}
    else if(surf===8)surf=22;
    if(surf===0&&['sphere','bead'].includes(type)){const a=Array.isArray(c)?c:rColor(c);if(sx>.24&&sy>.18&&a[1]>a[0]*1.015&&a[2]<a[1]*.99){type='golden:spray';surf=13;c='#5e774a';sy*=1.8;}}
   }
@@ -41,10 +41,10 @@ class GoldenArt extends VillageArt{
   if(!this.local())return super.roof(width,depth,base,height,col);
   const a=rColor(col),palette=a[2]>a[0]*.98?'#526779':a[0]>a[1]*1.035?'#865d51':a[1]>a[0]*1.03?'#526c66':'#696375';
   this.g('roof',0,base+height/2-.055,0,width,height,depth,'#514e46',0,0,0,22);
-  const rows=7,cols=Math.ceil(depth/.49),slope=Math.atan2(height,width/2),run=Math.hypot(width/2,height)/rows;
+  const rows=6,cols=Math.ceil(depth/.58),slope=Math.atan2(height,width/2),run=Math.hypot(width/2,height)/rows;
   for(const side of [-1,1])for(let row=0;row<rows;row++)for(let j=0;j<cols;j++){
-   const u=(row+.48)/rows,zz=(j-(cols-1)/2)*depth/cols,ink=rColor(palette).map((v,k)=>k<3?v*(.94+((row*17+j*7)%11)*.010):v);
-   this.g('golden:slate',side*u*width/2,base+height*(1-u)+.055+(rows-row)*.017,zz,run*1.12,.055,depth/cols*.99,ink,0,-side*slope,0,23);
+   const u=(row+.48)/rows,zz=(j-(cols-1)/2)*depth/cols,ink=rColor(palette).map((v,k)=>k<3?v*(.91+((row*17+j*7)%11)*.016):v);
+   this.g('golden:slate',side*u*width/2,base+height*(1-u)+.055+(rows-row)*.017,zz,run*1.13,.085,depth/cols*.99,ink,0,-side*slope,0,23);
   }
   for(let j=0;j<cols;j++)this.g('golden:slate',0,base+height+.08,(j-(cols-1)/2)*depth/cols,.22,.12,depth/cols*1.02,'#797e83',0,0,0,23);
   if(width>3.5)for(const end of [-1,1]){
@@ -110,7 +110,7 @@ class GoldenArt extends VillageArt{
  }
  village(map){
   this.goldenActive=true;super.village(map);this.target=this.r.static;this.root=rModel();
-  const well=map.schools.find(s=>s.id==='dance'),rng=random(map.seed+8301),stone=['#7f8376','#898b7e','#96927e','#858c7d','#9e9783'];
+  const well=map.schools.find(s=>s.id==='dance'),rng=random(map.seed+8301),stone=['#a29a85','#b3a68e','#beb095','#a69e89','#c0b39b'];
   // Connected, irregular coursed paving. Low relief stays below the existing foot plane.
   const paved=(x,z)=>inGoldenDistrict(x,z)&&((Math.abs(x)<2.35&&z<20)||(x*x/42+(z-well.z)**2/31<1)||(Math.abs(z-7)<1.45&&Math.abs(x)<15)||map.schools.some(s=>s.id!=='dance'&&Math.abs(z-(s.z+3.6))<1.40&&x>=Math.min(0,s.x)-.5&&x<=Math.max(0,s.x)+.5));
   const grout=[];
@@ -120,14 +120,20 @@ class GoldenArt extends VillageArt{
     if(paved(cx,cz)){
      // Dark earth/grout substrate is shared with the paver, no large overlay plane.
      const a=[x/18,0,z/18],b=[(x+width)/18,0,z/18],c=[(x+width)/18,0,(z+depth)/18],d=[x/18,0,(z+depth)/18];grout.push(...a,...c,...b,...a,...d,...c);
-     this.g('golden:stone',cx,.148+(rng()-.5)*.009,cz,width-.025,.053,depth-.023,stone[Math.floor(rng()*stone.length)],(rng()-.5)*.047,0,0,20);
+     const edge=!paved(cx+width*.7,cz)||!paved(cx-width*.7,cz)||!paved(cx,cz+depth*.7)||!paved(cx,cz-depth*.7);
+     const wear=Math.sin(cx*1.7+cz*.43)+Math.cos(cz*1.23-cx*.32);
+     const inset=edge?.12:.055;
+     // Earth showing between worn, uneven courses breaks up the tiled carpet.
+     // Authoring stays seed-stable; no additional material or render pass.
+     if(wear<1.58||Math.hypot(cx-well.x,cz-well.z)<1.8)
+      this.g('golden:stone',cx,.148+(rng()-.5)*.009,cz,width-inset,.053,depth-inset*.8,stone[Math.floor(rng()*stone.length)],(rng()-.5)*(edge?.14:.07),0,0,20);
      if(rng()<.035&&Math.abs(cx)>2.8)this.g('golden:spray',cx+width*.40,.14,cz,.22,.10,.30,'#6b8050',rng()*6,0,0,13);
     }x+=width;
    }z+=depth;
   }
   const gn=new Float32Array(grout.length);for(let i=1;i<gn.length;i+=3)gn[i]=1;
   RG_CACHE.set('golden:grout',{positions:new Float32Array(grout),normals:gn,count:grout.length/3,radius:1.6,dirty:true});
-  this.g('golden:grout',0,.124,0,18,1,18,'#686e54',0,0,0,16);
+  this.g('golden:grout',0,.124,0,18,1,18,'#82775e',0,0,0,16);
   // Groups hug existing school footprints and leave all approaches / crossroads open.
   for(const s of map.schools){if(s.id==='dance'||!inGoldenDistrict(s.x,s.z))continue;
    const side=s.x<0?-1:1,bx=s.x+side*3.7,bz=s.z-3.0;
