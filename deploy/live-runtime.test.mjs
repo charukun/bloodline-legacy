@@ -18,7 +18,7 @@ const client={...LiveContract,supportedRules:[currentRules],rules:currentRules};
 const headers=session=>({'Content-Type':'application/json','X-Bloodline-Client':JSON.stringify(client),...(session?{'X-Aerin-Session':session.token,'X-Bloodline-Lease':session.lease}:{})});
 async function join(session){const r=await mf.dispatchFetch('https://local.test/api/join',{method:'POST',headers:headers(session),body:JSON.stringify({config:{name:'検証'},beginLife:false})});assert.equal(r.status,200,await r.clone().text());return r.json();}
 try{
- const health=await mf.dispatchFetch('https://local.test/api/health');assert.equal(health.status,200);assert.equal((await health.json()).online,true);
+ const health=await mf.dispatchFetch('https://local.test/api/health');assert.equal(health.status,200,await health.clone().text());assert.equal((await health.json()).online,true);
  const a=await join(),b=await join();assert.equal(b.snapshot.players.length,2);
  const r=await mf.dispatchFetch('https://local.test/api/command',{method:'POST',headers:headers(a),body:JSON.stringify({id:'first',sequence:1,epoch:a.epoch,lease:a.lease,command:{type:'talk'}})});assert.equal(r.status,200);
  const stream=await mf.dispatchFetch('https://local.test/api/events',{headers:headers(a)}),reader=stream.body.getReader();
