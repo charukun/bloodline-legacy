@@ -135,7 +135,10 @@ try{
     await fixture(page);
     await page.mouse.move(550,470);await page.mouse.down();await page.waitForTimeout(600);await page.mouse.up();
     check(version+' long press rests',await page.evaluate(()=>AERIN_QA.player().seated));await page.evaluate(()=>characterStep(15));await shot(version+'-rest');
-    await page.keyboard.press('t');check(version+' talk wakes',await page.evaluate(()=>!AERIN_QA.player().seated));
+    await page.keyboard.press('t');
+    // Speaking now requires an explicit phrase selection in the shared talk fan.
+    await page.locator('[data-talk="0"]').click();
+    check(version+' talk wakes',await page.evaluate(()=>!AERIN_QA.player().seated));
     await fixture(page);
     // Move into the existing dummy with native keyboard; no attack command is fabricated.
     await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player(),d=a.sim.getRoom(p).actors.find(e=>e.kind==='dummy');p.x=d.x;p.z=d.z+2.1;p.dir=Math.PI;a.snapshot=a.decorate(a.sim.snapshot(p.id,a.seq));a.renderer.camera={x:d.x,z:d.z+.5,zoom:16,yaw:0,pitch:.68};a.renderer.render(a.snapshot,0,{freezeCamera:true});});
