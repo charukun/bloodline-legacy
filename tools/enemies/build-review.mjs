@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import vm from 'node:vm';
 import {fileURLToPath} from 'node:url';
-const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..'),base='10fb501e635f953c529dfbfc6898d8c0fd21e66c';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..'),base='56588fe73bb9716cf619afeae1ce128023a0a7f5';
 const html=await fs.readFile(path.join(root,'dist/index.html'),'utf8');let code=html.match(/<script>([\s\S]*?)<\/script>/)[1];
 const boot=code.indexOf('// SOURCE MODULE: bootstrap.js');if(boot<0)throw Error('Missing build bootstrap');
 code=code.slice(0,boot).replace(/^const MUSIC_ASSETS=.*;$/m,'const MUSIC_ASSETS={};')+(await fs.readFile(path.join(root,'tools/enemies/review-scenes.js'),'utf8'))+'\n'+(await fs.readFile(path.join(root,'tools/enemies/review-runtime.js'),'utf8')).replace('__BASE_SHA__',base)+'\n})();';new vm.Script(code);

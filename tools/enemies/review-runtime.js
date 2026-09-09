@@ -9,7 +9,8 @@
   // Match Game.decorate: Simulation snapshots omit the renderer's map data.
   snapshot.map=makeVillage(snapshot.room.seed);
   const templates=Object.fromEntries(Object.keys(ENEMY_FORMS).map(kind=>[kind,sim.actor(kind,0,0)]));
-  for(const[kind,forms]of Object.entries(ENEMY_FORMS)){const group=document.createElement('optgroup');group.label=({goblin:'小鬼',soldier:'骨兵',elite:'執行者',crawler:'蟲',maw:'獣',wraith:'亡霊・浮遊魔物',boss:'魔王',stag:'中立の獣',mushroom:'中立の菌'})[kind];for(const f of forms){const option=document.createElement('option');option.value=f.id;option.textContent=f.name;group.append(option);}$('form').append(group);}$('form').value='soldier';
+  const newGroup=document.createElement('optgroup');newGroup.label='今回追加した敵';for(const id of EnemyFauna.ids){const f=EnemyReview.forms.find(f=>f.id===id),option=document.createElement('option');option.value=f.id;option.textContent=f.name;newGroup.append(option);}$('form').append(newGroup);
+  for(const[kind,forms]of Object.entries(ENEMY_FORMS)){const group=document.createElement('optgroup');group.label=({goblin:'小鬼',soldier:'骨兵',elite:'執行者',crawler:'蟲',maw:'獣',wraith:'亡霊・浮遊魔物',boss:'魔王',stag:'中立の獣',mushroom:'中立の菌'})[kind];for(const f of forms.filter(f=>!EnemyFauna.ids.includes(f.id))){const option=document.createElement('option');option.value=f.id;option.textContent=f.name;group.append(option);}$('form').append(group);}$('form').value=EnemyFauna.ids[0];
   const replacement=VillageArt.prototype.monster,original=ENEMY_PREVIOUS_MONSTER;
   let time=0,last=0,paused=false,version='after',lastReport=-Infinity,measurement=null,needsPrime=true;
   const clearHistory=()=>{r.enemySentinels?.dispose();r.enemySentinels=null;r.enemyCreatures?.clear();needsPrime=true;r.damageMotion?.actors.clear();r.effects.length=0;};

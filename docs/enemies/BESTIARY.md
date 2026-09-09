@@ -1,3 +1,9 @@
+# Current follow-up
+
+[Eight additional constructions](WILDBORN_EXPANSION.md) bring the current catalog
+to **39 hostile forms + 2 neutral creatures**. The report below records the earlier
+31-form milestone.
+
 # Enemy bestiary expansion — 2026-09-09
 
 Base: `develop` at `e3502f519dbaea1d399d3a69b274f72f57494059`.
