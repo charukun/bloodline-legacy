@@ -16,9 +16,9 @@ def camera(yaw,pitch,height,aspect,focus):
  o=np.diag([2/(height*aspect),2/height,-2/50,1]);o[2,3]=-1
  return (o@v).astype('f4').T.tobytes()
 class Render:
- def __init__(self,capture,glb,size=640):
+ def __init__(self,capture,glb,size=640,context=None):
   self.cap=json.loads(Path(capture).read_text());self.glb=GLB(glb) if glb!="-" else None;self.size=size
-  c=self.c=moderngl.create_standalone_context(backend='egl');self.fbo=c.simple_framebuffer((size,size),components=4,samples=4);self.out=c.simple_framebuffer((size,size),components=4)
+  c=self.c=context or moderngl.create_standalone_context(backend='egl');self.fbo=c.simple_framebuffer((size,size),components=4,samples=4);self.out=c.simple_framebuffer((size,size),components=4)
   vertex='''#version 330
 in vec3 pos;in vec3 nor;in vec2 uv;in vec4 color;in vec4 joints;in vec4 weights;in float region;
 uniform mat4 vp;uniform mat4 bones[31];out vec3 N;out vec3 W;out vec2 U;out vec4 C;flat out int R;
@@ -41,6 +41,7 @@ void main(){if(R>=10)discard;vec3 p=C.rgb;if(textured)p*=texture(atlas,U).rgb;fl
   for key,geo in self.cap['geometry'].items():
    p=np.array(geo['positions']).reshape(-1,3);n=np.array(geo['normals']).reshape(-1,3);self.parts[key]=self.simple(p,n,[1,1,1,1])
   floor=np.array([[-8,0,-8],[-8,0,8],[8,0,8],[-8,0,-8],[8,0,8],[8,0,-8]])
+  origin=self.cap['frames'][0]['p'];floor[:,0]+=origin['x'];floor[:,2]+=origin['z']
   self.floor=self.simple(floor,np.tile([0,1,0],(6,1)),[.65,.69,.60,1],9)
  def prepare_fx(self):
   # Reuse the shipped analytic material masks. Lighting/postprocessing remain
@@ -59,21 +60,21 @@ const float PI=3.14159265359;vec3 lin(vec3 c){return pow(max(c,vec3(0.)),vec3(2.
  def draw_fx(self,frame,yaw,pitch,height):
   if not hasattr(self,'fxprog'):self.prepare_fx()
   self.fxprog['vp'].write(camera(yaw,pitch,height,1,[frame['p']['x'],1.25,frame['p']['z']+.1]))
-  self.c.enable(moderngl.BLEND);self.c.depth_mask=False
+  self.c.enable(moderngl.BLEND);self.fbo.depth_mask=False
   for e in frame.get('fx',[]):
    if e['surface']<23.5 or e['surface']>25.5:continue
    self.c.blend_func=(moderngl.SRC_ALPHA,moderngl.ONE if e['additive'] else moderngl.ONE_MINUS_SRC_ALPHA)
    data=np.column_stack([np.array(e['positions']).reshape(-1,3),np.array(e['uv']).reshape(-1,3)]).astype('f4')
    b=self.c.buffer(data.tobytes());vao=self.c.vertex_array(self.fxprog,[(b,'3f 3f','pos','uv')])
    self.fxprog['model'].write(np.array(e['m'],dtype='f4').tobytes());self.fxprog['vInk'].value=e['ink'];self.fxprog['authored'].value=e['surface'];vao.render();vao.release();b.release()
-  self.c.depth_mask=True;self.c.disable(moderngl.BLEND)
+  self.fbo.depth_mask=True;self.c.disable(moderngl.BLEND)
  def vao(self,p,n,uv,col,j,w,reg,index=None):
   data=np.column_stack([p,n,uv,col,j,w,reg]).astype('f4');b=self.c.buffer(data.tobytes());ib=self.c.buffer(index) if index else None
   return self.c.vertex_array(self.prog,[(b,'3f 3f 2f 4f 4f 4f 1f','pos','nor','uv','color','joints','weights','region')],ib,index_element_size=4)
  def simple(self,p,n,col,region=0):
   count=len(p);return self.vao(p,n,np.zeros((count,2)),np.tile(col,(count,1)),np.zeros((count,4)),np.tile([1,0,0,0],(count,1)),np.full((count,1),region))
  def render(self,index,yaw=.9,pitch=.38,height=4.5,silhouette=False):
-  self.fbo.use();self.c.enable(moderngl.DEPTH_TEST);self.fbo.clear(.23,.28,.26,1,depth=1)
+  self.fbo.use();self.fbo.depth_mask=True;self.c.enable_only(moderngl.DEPTH_TEST);self.fbo.clear(.23,.28,.26,1,depth=1)
   frame=self.cap['frames'][index];x,z=frame['p']['x'],frame['p']['z'];self.prog['vp'].write(camera(yaw,pitch,height,1,[x,1.25,z+.1]));self.prog['silhouette'].value=silhouette;self.prog['focusXZ'].value=(x,z)
   identity=np.tile(np.eye(4,dtype='f4').flatten(),31);self.prog['bones'].write(identity.tobytes());self.prog['textured'].value=False;self.floor.render()
   body_palette=identity.copy();body_palette[:len(frame['palette'])]=frame['palette'];self.prog['bones'].write(body_palette.tobytes());self.prog['textured'].value=True;self.tex.use();self.mesh.render()
@@ -91,7 +92,9 @@ const float PI=3.14159265359;vec3 lin(vec3 c){return pow(max(c,vec3(0.)),vec3(2.
 
 def main():
  ap=argparse.ArgumentParser();ap.add_argument('capture');ap.add_argument('glb');ap.add_argument('output');ap.add_argument('--before');ap.add_argument('--before-glb');ap.add_argument('--video',action='store_true');args=ap.parse_args()
- after=Render(args.capture,args.glb);before=Render(args.before,args.before_glb) if args.before else None
+ # Both sides must share the active EGL context. Independent standalone
+ # contexts can alias GL object IDs and accidentally draw the same side twice.
+ after=Render(args.capture,args.glb);before=Render(args.before,args.before_glb,context=after.c) if args.before else None
  font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',20)
  if args.video:
   w=1280 if before else 640;h=720
