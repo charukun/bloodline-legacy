@@ -1,117 +1,106 @@
 Bloodline Legacy 共通開発運用ポリシー v6
 改訂日: 2026-09-10 JST（2026-09-09 UTC）
 Repository: charukun/bloodline-legacy
-適用: Project Sources用・全文置換版
+Project Sources用・全文置換版
 
-1. 正本と適用範囲
+1. 正本・優先順位
 
 仕様の正本はProject Sources、実装の正本はGitHub latest develop。
 develop＝DEV、staging＝STAGING、main＝PRODUCTION。
+本書はv5以前を全文置換する。実装プロンプトv2.0等の旧commit／WRITE禁止・通常Handoff・毎回の全域調査／全検証／再取得／再Build・PRごとのDEV完了待ちは本書へ置き換える。初回搬入・元35ファイル照合等は完了済み履歴とする。
+実装プロンプトのゲーム・技術・品質条件は担当・影響範囲に適用し、効率化を理由に品質目標や保存互換性を変更しない。最新の明示的なユーザー指示を優先し、ツールの権限・利用制約を守る。
 
-本書はv5以前の共通ポリシーを置き換える。開発・実装プロンプトv2.0や旧運用資料に残る「開発担当のGitHub WRITE禁止」「Handoffを通常経路にする」「毎回の全域調査・全品質検証・共有先からの再取得と再Build必須」「PRごとの全体検証・DEV完了待ち」は、本書の責任分担と手順へ置き換える。実装プロンプトの技術・品質条件は、担当範囲と影響範囲に適用する。
-初回Repository作成・branch移行・元35ファイル照合等の完了済み手順は履歴として扱い、通常開発で再実行しない。
-最新の明示的なユーザー指示を優先する。ツールの権限・利用制約を越えない。
-ゲーム仕様、入力、成長・継承、戦闘、保存互換性、Visual・Performanceの品質目標を効率化の名目で変更しない。担当作業をゲーム全体の改善へ無断で拡張しない。
+2. 通常フローと役割
 
-2. 通常フローと責任
-
-作業別WORK → latest develop → 専用branch → 実装 → 必要十分な局所検証
+作業別WORK → latest develop → 専用branch → 実装 → 局所検証
 → GitHubへbranch公開 → Ready for review PR（base=develop）
 → Integration WORKによるレビュー・意味的統合 → develop
 → 全体CI / 必要なRegression → DEV deployment → 必要なDEV Smoke
 → ユーザー実機確認
 
-作業別WORKは「変更箇所に近い局所検証」、Integration WORKは「統合後の全体検証」を担当する。通常の作業別WORKはdevelopへmergeしない。staging / mainへの昇格とProduction Releaseは別の明示的な指示に基づく。
+作業別WORK＝変更箇所に近い局所検証。
+Integration WORK＝統合後の全体検証とdevelopへのmerge。
+通常の作業別WORKはdevelopへmergeしない。staging / mainへの昇格・Production Releaseは別の明示的な指示に基づく。
 
-3. 調査と既存WORKの継続
+3. 依頼開始時の確認と継続
 
-各WORKは新しいユーザー依頼を受けた時点で、Project Sourcesの最新版共通ポリシーを再確認する。初回・改版時は本文を読み、変更のない版は取得済み内容を再利用できる。
-読む範囲は「最新版共通ポリシー＋担当に関係する確定仕様・実装プロンプトの該当節＋latest develop上の関係コード・テスト」。変更対象から呼出元・共有State・入力・保存等の境界へ広げ、依存・仕様矛盾・不具合の根拠が出た場合だけ探索範囲を拡大する。毎回の全Sources・全Repository・全Open PR・旧Handoffの無差別読破を要求しない。Integrationは対象PR群とその依存を横断確認する。
-新規作業はlatest developから開始し、BASE_COMMITを固定する。継続作業は既存branch・成果・検証証拠を維持し、最新developとの差分と関連変更だけを照合する。ポリシー更新や無関係なdevelop更新を理由に作り直し・全面rebase・全検証を繰り返さない。
-確認したポリシー版、関係仕様の出典、基準SHAを一つの作業記録に残す。最新版を取得できなければ、確認済み版と未取得箇所を明示し、成果を保全して独立作業を進める。古い版を最新版と呼ばない。
+各WORKは新しいユーザー依頼を受けた時点で、Project Sourcesの最新版共通ポリシーを再確認する。初回・改版時は本文を読み、版が同じなら取得済み内容を再利用できる。
+調査は「最新版共通ポリシー＋担当の確定仕様・実装プロンプト該当節＋latest developの関係コード・テスト」を起点に、依存・共有状態・仕様矛盾等の根拠が出た場合だけ広げる。全Sources・全Repository・旧Handoffを毎回読破しない。Integrationは対象PR群と依存を横断確認する。
+新規作業はlatest developから開始してBASE_COMMITを固定する。継続作業は既存branch・成果・証拠を維持し、最新developの関連差分を照合する。無関係な更新による作り直し・全面rebase・全検証は不要。
+確認した版・仕様出典・基準SHAを記録する。取得不能なら確認済み版と未取得箇所を明示して独立作業を進め、古い版を最新版と呼ばない。
 
-4. 作業別WORKの局所検証
+4. 作業別WORKの検証
 
-最初に変更の影響とリスクから検証を選び、差分が広がった場合に見直す。下表は選択基準であり、全行の一括実行を要求しない。複数領域にまたがる変更は、該当する検証を重複なく組み合わせる。
+変更の影響とリスクから必要十分な検証を選び、差分が広がれば見直す。下表を一括実行せず、複数領域は該当項目を重複なく組み合わせる。
 
 変更種別 | 原則の検証
 文言・軽微UI | Buildまたは必要な静的確認＋対象箇所の表示・意味・改行確認
 UI / Visual / Animation | Build＋関連Test＋対象画面・通常操作・必要な動きのBrowser Verification
-Game Logic | Build＋関連Unit / Regression Test。表示・入力との接続を変えた場合は対象操作も確認
-Network / Save / Multiplayer | 関連Integration / Compatibility Test。必要なBuild・契約確認を含む
-Performance-sensitive | 対象場面を同条件で変更前後計測＋関連機能・見た目の確認
-CI/CD・依存・Build・asset配布 | 設定・依存・配布物の検証＋影響する実行経路の確認。公開後確認はIntegrationへ引継ぐ
+Game Logic | Build＋関連Unit / Regression Test。表示・入力との接続変更は対象操作も確認
+Network / Save / Multiplayer | 関連Integration / Compatibility Test＋必要なBuild・契約確認
+Performance-sensitive | 同条件の対象場面を変更前後計測＋関連機能・見た目の確認
+CI/CD・依存・Build・配布 | 設定・依存・配布物と影響する実行経路の確認。公開後確認はIntegrationへ引継ぐ
 
-関連テストは既存の信頼できるものを優先する。再発防止や不変条件を確かめる必要がある場合に追加し、単純な文言・装飾変更ごとに実装をなぞるテストを増やさない。テストファイルを絞る際もfixture・生成物・依存準備を省略しない。
-通常の局所検証に、全CI、全Regression、全画面Browser、全場面Performance、DEV deployment確認を一律で含めない。ただし共有基盤を変える等、影響が全体へ及ぶ根拠があれば検証を拡大する。
-PASS / FAIL / UNVERIFIED / N/Aを区別する。N/Aは非該当の理由を示す。ツール・実機不足はUNVERIFIED。Browserは実際の操作と状態変化まで、Animationは動きまで確認する。実機・実GPUと代替環境を区別し、HTTP成功を描画成功、SwiftShaderの値をPixel Fold実機性能と扱わない。
+既存テストを優先し、再発防止・不変条件の確認に必要なものを追加する。軽微変更ごとに実装をなぞるテストを増やさない。fixture・生成物・依存準備は省略しない。
+全CI・全Regression・全画面Browser・全場面Performance・DEV確認を全WORKへ一律要求しない。共有基盤等へ影響が及ぶ根拠があれば検証を拡大する。
+結果はPASS / FAIL / UNVERIFIED / N/Aを区別する。N/Aには非該当理由を付け、環境・実機不足はUNVERIFIEDとする。Browserは実際の操作・状態変化、Animationは動きまで確認する。HTTP成功を描画成功、SwiftShaderの値をPixel Fold実機性能と扱わない。
 
-5. 検証証拠・PR・GitHub WRITE
+5. 証拠・GitHub公開・Ready PR
 
-検証結果は一度記録して参照する。同じ入力・同じ検証範囲の有効な証拠を、WORK交代や転送だけを理由に再作成しない。
-証拠には対象commit（ローカル未commitなら差分識別情報）、コマンド・対象、環境、結果、必要なログ・画像等の所在を付ける。再利用時はコード・依存・設定・fixture・実行環境と検証範囲が成立することを確認する。別SHAでも無関係な差分なら理由を付けて局所証拠を引き継げるが、関連変更・競合修正・環境差・不安定な結果があれば影響部分を再検証する。最終配布物の同一性確認は省略しない。
-
-GitHub公開はterminal git pushだけに限定しない。GitHub Plugin / Connector等の利用可能な認証済みWRITE経路も正規経路とする。push失敗時は原因と権限を確認して有効な別経路へ進む。専用branch・必要な実ファイル・commit・Ready PRの実在と内容が確認できればよい。
-担当実装と必須の局所検証を完了してからReady for review PRを作る。Draftは通常使用せず、例外使用時は担当WORKが完了後にReadyへ変更する。必須の局所検証がFAIL・未実施のまま完成扱いしない。後段の統合検証・ユーザー実機確認待ちは、担当と条件を明記して引き継げる。
+証拠はcommit（未commitなら差分識別情報）・コマンド／対象・環境・結果・ログ等の所在を一度記録して参照する。WORK交代や転送だけで再検証しない。関連コード・依存・設定・fixture・環境の変化、競合修正、不安定な結果は影響範囲を再検証する。別SHAへ局所証拠を引き継ぐ場合は無関係な差分である根拠を示す。
+terminal git pushとGitHub Plugin / Connector等の認証済みWRITEを正規経路とする。push失敗だけで停止せず、有効な別経路で専用branch・commit・実ファイル・PRを公開し、内容を読み戻す。
+担当作業と必須局所検証を完了してからReady for review PRを作る。Draftは通常使用しない。例外使用時は担当WORKが完了後にReadyへ変更する。必須局所検証のFAIL・未実施を完成扱いしない。後段の統合検証・ユーザー実機確認待ちは担当と条件を明記して引き継ぐ。
 
 PR本文または一つの参照記録に以下をまとめる。
 ・目的・結果の挙動、POLICY_VERSION、参照仕様、BASE_BRANCH=develop、BASE_COMMIT
-・主要変更領域（TOUCHED_AREAS）、関連PR・依存順・競合注意、リスクと根拠
-・実行した検証と結果・証拠、省略理由、未検証項目と後段の担当・確認条件
+・主要変更領域（TOUCHED_AREAS）、関連PR・依存順・競合注意、リスク
+・検証結果と証拠、省略理由、未検証項目と次の担当・確認条件
 ・公開branch / head SHA、必要な互換性・復旧上の注意
-変更ファイル一覧はGitHub diffを正とし、同じ一覧・説明・画像を複数文書へ複写しない。実行に必要なassetsを含め、秘密情報・実save・不要な生成物を含めない。変更ゼロや起動トリガーだけの不要PRを作らない。
+ファイル一覧はGitHub diffを正とし、説明・画像を複写しない。必要なassetsを含め、秘密情報・実save・不要な生成物・起動だけの空PRを作らない。
 
 6. Integration WORK：まとめて統合・全体検証
 
-「バッチ」は開始時点で対象を固定したPRのまとまりを指す。低〜中リスクで必要な前提を満たすPRは、各PRの配信完了を待たずに処理する。
+低〜中リスクPRは対象を固定したまとまりで処理し、途中参加PRは次へ回す。
 
-1) Open・Ready・base=developの対象と各head SHA、開始develop SHAを固定する。依存・共有領域・リスクで統合順と中間検証点を決める。途中参加のPRは次のまとまりへ回す。
-2) 各PRの目的・diff・局所検証証拠・確定仕様と、他PR／developとの意味的競合を確認する。同一ファイルだけでなくState、Input、Save、Skill、Combat、Animation、Rendering、UI、Audio等の接続を確認する。
-3) 各merge前に現在のbase/head、依存充足、必須checks、必要な局所・中間検証を確認する。安全に解決できる競合は両方の意図を保って自律修正し、修正範囲を再検証する。仕様から判断不能なプロダクト判断は推測で確定せず、依存部分を保留して独立PRを進める。
-4) 検証対象のhead SHAを指定してPR経由でmergeし、merge SHAと更新後developを読み戻す。次のPRは更新後developとの差分・相互作用を再評価する。API上のmergeが1件ずつでも、全体CI/CD・DEV待ちを1件ごとの必須工程にはしない。head/baseが予期せず変われば影響を再評価する。
-5) 統合可能な対象を処理した後、最終develop SHAを固定し、その版の全体Build・CI・必要なRegressionをまとめて確認する。起動・主要操作・ゲーム進行・戦闘・保存再読込・継承等の既存の中核回帰検証を維持し、変更間の接続に必要な検証を加える。信頼できる選別手段がなければ既存の全体スイートを使用する。CIが同じ検証を実行していればローカルで丸ごと再実行しない。
-6) 必要なBrowser Verification、DEV deployment、公開SHA・manifest / artifact hash・health等のDEV Smokeを確認する。Browserは局所証拠で覆われない統合上の画面・入力・動き・配布差を対象とし、全画面を毎回巡回しない。DEV通常CIのHTTP確認だけでは描画・操作を保証しない。明示的に免除された検証や外部実機待ちは別記し、必要なのに未実施の検証をPASSにしない。
+1) Open・Ready・base=developの対象PR、各head SHA、開始develop SHAを固定する。依存・共有領域・リスクから統合順と中間検証点を決める。
+2) 目的・diff・仕様・局所証拠とPR間の意味的競合を確認する。同一ファイル以外もState、Input、Save、Skill、Combat、Animation、Rendering、UI等の接続を確認する。
+3) merge前に現在のbase/head、依存充足、必須checks、必要な局所・中間検証を確認する。競合は両方の意図を保って修正し、影響部分を再検証する。仕様で判断不能なプロダクト判断は保留し、独立PRを進める。
+4) 対象head SHAを指定してPR経由でmergeし、更新後developを読み戻して次のPRを再評価する。1件ずつのmergeでも全体CI/CD・DEV完了を各PRで待たない。予期しないhead/base更新は再評価する。
+5) 対象処理後の最終develop SHAで、全体Build・CI・必要なRegressionをまとめて確認する。起動・主要操作・進行・戦闘・保存再読込・継承等の中核回帰を維持し、PR間の接続検証を加える。安全な選別手段がなければ既存の全体スイートを使う。同じCI検証をローカルで丸ごと繰り返さない。
+6) 必要なBrowser Verification、DEV deployment、公開SHA・manifest / artifact hash・health等のDEV Smokeを確認する。Browserは局所証拠で覆えない統合上の画面・入力・動き・配布差に絞り、全画面巡回を常設しない。DEV HTTP確認だけでは描画・操作を保証しない。
 
-最終検証の失敗時は新しいまとまりへ進まず、原因を局所化して修正または安全なrevertをPR経由で行い、更新後SHAで必要な検証とDEV確認を完了する。公開後失敗は自動復旧済みとみなさない。データ移行を伴う場合はコードを戻すだけで保存互換性が戻ると仮定しない。
-途中の失敗を消さず、解消・無関係・古いSHAとして失効等の根拠を残す。最終確認中にdevelopが更新された場合は、検証済みSHAと実配布SHAを照合し、未検証版を統合完了と報告しない。
+失敗時は次のまとまりへ進まず、修正または安全なrevertをPR経由で行い、更新後SHAを再検証する。データ移行の復旧も確認し、失敗の解消・失効根拠を残す。
+最終確認中の更新は検証済みSHAと実配布SHAを照合する。必須未検証をPASSにせず、明示的免除・実機待ちは別記する。
 
-7. 高リスク変更で省略しない検証
+7. 高リスクで省略しない検証
 
-以下は該当する変更で追加する検証。必要なものはmerge前の中間検証として実行し、後段へ先送りしない。
+該当する変更では以下を追加し、必要なものはmerge前の中間検証として行う。
 
 領域 | 必須となる確認
-保存形式・移行・アカウント引継ぎ | 旧save読込、新save再読込、移行失敗時の非破壊動作、backup・復旧、認証／所有者境界（該当時）
-Network・Multiplayer・Live Update | 旧新Version混在、接続／再接続、切断・重複・順序の異なるイベント、永続化、更新中の状態整合と失敗時の復帰（対応契約に応じる）
-共有State・時間・入力・戦闘・成長／継承 | 境界値と状態遷移、二重処理・処理抜け・進行不能、通常入力、関係PRを組み合わせた回帰検証
-Renderer・shader・rig・大量assets・hot path | 実際の読込・描画・動き、関連モデル／状態、対象場面の性能・メモリ・初回停止と反復時の劣化
+保存形式・移行・引継ぎ | 旧save読込、新save再読込、途中失敗時の非破壊動作、backup・復旧、認証／所有者境界（該当時）
+Network・Multiplayer・Live Update | 対応する旧新Version混在、再接続、切断・重複・イベント順序、永続化、更新中の整合と復帰
+共有State・時間・入力・戦闘・成長／継承 | 境界値・状態遷移、二重処理・処理抜け・進行不能、通常入力、依存PRを組み合わせた回帰検証
+Renderer・shader・rig・大量assets・hot path | 実際の読込・描画・動き、関連モデル／状態、対象性能・メモリ、初回と反復時の停止・劣化
 CI/CD・依存・配布・cache | Build失敗時の配信禁止、環境・SHA・artifact一致、古い版の上書き防止、関連する配信／復旧経路
 
-大規模変更、強い相互依存、影響範囲不明、再現性の低い失敗は、小さいまとまりへ分割し、必要な中間Build・Regression・Browser・Compatibility確認を置く。テキスト競合ゼロは安全性の証拠にしない。
+大規模・強い相互依存・影響不明・不安定な結果は小分けにして中間検証する。テキスト競合ゼロを安全性の証拠にしない。
 
 8. CIと計算資源
 
-「Integrationが途中runを待たないこと」と「CIの起動回数を減らすこと」を区別する。push/PRごとに起動する既存workflowは、本書を置くだけでは変わらない。
-CIの目標構成は、PR側の変更別検証と、統合後developの全体検証。required checks・branch保護は維持し、効率化のために無効化・成功偽装・無断skipしない。設定変更は担当WORKが別PRで実装・検証する。
-同一変更へのpush/PR二重起動、同じテストの複数workflow内重複、Build内包コマンドの連続実行を整理する。ただし環境・Version埋込み・出力・検証目的の異なるBuildを同一視しない。
-依存キャッシュはlockfile・runtime等で識別し、独立した検証だけを適度に並行実行する。重いBrowser/GPU処理を競合させない。新しい変更や失敗原因がない同条件の反復、全モデル再生成、全動画撮影、資料複写を常設ゲートにしない。
-古いPR検証の取消や最終developへの集約は、必須checks・結果の追跡性・配信中の整合を保てるCI構成でのみ行う。配信とその確認を途中で強制取消しない。DEVの合理化をSTAGING / PRODUCTIONのゲートへ自動適用しない。
+CIはPR側の変更別検証と、最終developの全体検証を基本とする。required checks・branch保護を維持し、無効化・成功偽装で削減しない。設定変更は担当WORKがPRで実装・検証する。途中runを待たない方針だけでは、pushごとのCI起動数は減らない。
+同じ変更へのpush/PR二重起動、複数workflowでの同じテスト、Build内包コマンドの連続実行を整理する。環境・Version埋込み・出力・目的が異なるBuildは区別し、最終配布物の同一性確認を残す。
+依存cacheはlockfile・runtime等で識別する。独立検証は適度に並行化し、重いBrowser/GPU処理を競合させない。根拠のないretry・全モデル再生成・全動画撮影・資料複写を常設しない。
+古いrunの取消・最終developへの集約は必須checks・追跡性・配信整合を保つ構成で行い、skipを検証PASSにしない。進行中の配信と確認は強制取消しない。DEV合理化をSTAGING / PRODUCTIONへ自動適用しない。
 
-9. 自動起動・継続・記録
+9. 継続・Fallback・完了
 
-利用可能なGitHubイベント（opened / reopened / synchronize / ready_for_review等）を優先し、既存のIntegration自動処理を再利用する。イベントは起動の合図であり、PRの現在状態を再取得して判断する。同じheadでも工程が未完了なら再開し、古い記録だけで処理中・完了と推定しない。同じPR/developへの並行WRITEは直列化する。
-一つのまとまりの最終確認後、未処理Ready PRと未完了工程を再取得する。進められるものがあれば次の対象を固定して継続し、ユーザーの状況確認を再開条件にしない。固定したまとまりを無限に拡張せず、入力不変の保留を無限retryしない。
-イベントが使えない場合のみ利用可能な代替監視を使い、起動・再開の実態を明示する。ポリシーの記載だけで自動処理が動いていると報告しない。
-統合記録は一つにまとめ、PR番号・イベント・base/head・レビューと競合修正・merge SHA、最終SHAのCI/DEV証拠、保留・未検証と再開条件を残す。既存の有効な記録先を再利用し、不要な通知・報告用commit・空PRを増やさない。
+既存Integration自動処理と利用可能なGitHubイベントを再利用し、起動時にPRの現在状態を取得する。同じPR/developへのWRITEは直列化する。一まとまり完了後は未処理Ready PR・未完了工程を再確認し、進められれば継続する。ユーザーの催促を再開条件にせず、入力不変の保留を無限retryしない。
+統合記録はPR・base/head・競合修正・merge SHA・最終CI/DEV証拠・保留／再開条件を一つにまとめる。不要な通知・報告commitを増やさず、enabledだけで実行中と報告しない。
+単一Tool失敗・Connector 404だけで作業不能と決めず、成果を保全して有効な認証経路で復旧する。基準未取得はBASE_UNVERIFIEDとして統合前照合を必須にする。
+認証済みGitHub WRITEが使えない場合だけFallback Handoffを使う。変更・assets・WORK_INSTRUCTIONS.mdをZIPに含め、基準SHA・変更／追加／削除・目的・検証・依存を記載し、再展開とchecksumを確認する。Google Drive等または添付で渡し、受領側はlatest developへ差分統合・検証・PR化する。通常PRにZIP・共有先read-back・再Buildを重ねない。
+保護branchへの直接push、古いsnapshotの丸ごと上書き、force push・履歴改変・無断branch削除は禁止。
 
-10. RecoveryとFallback
-
-単一のTool失敗・git push失敗・Connector 404を作業不能やRepository不存在の証拠にしない。変更を保全し、原因に合う利用可能な認証経路で復旧する。同じ失敗の無変更retryを重ねない。latest developを取得できない成果はBASE_UNVERIFIEDとして保持し、統合前照合を必須にする。
-認証済みGitHub WRITE経路が使えない場合のみFallback Handoffを使う。ZIPに必要な変更・新規assetsとWORK_INSTRUCTIONS.mdを含め、BASE_BRANCH / BASE_COMMIT / CHANGED_FILES / NEW_FILES / DELETED_FILES / TOUCHED_AREAS、目的、検証証拠、依存・注意点を記載する。再展開・内容とchecksumを確認し、利用可能な共有経路（Google Drive等）またはチャット添付で渡す。通常PRにZIP・共有先read-back・再Buildを重ねない。
-受領側は取得物と基準を照合し、latest developへの差分統合と必要な検証を経て専用branch・PRへ取り込む。保護branchへの直接push、古いsnapshotによる丸ごと上書き、force push・履歴改変・無断のbranch削除は禁止。
-
-11. 完了と新ルールへの移行
-
-作業別WORKの完了＝担当実装と必須局所検証が完了し、GitHubに専用branchとReady PRが存在すること。統合待ち・実機確認待ちは明記する。
-Integrationの完了＝対象PRのレビュー・統合、最終SHAの全体検証とDEV公開確認、必要な統合検証が完了し、保留・未検証・ユーザー確認事項が記録されていること。merge成功だけで完了にしない。未実施の必須検証が残る場合は「検証待ち」とする。
-既存WORKの再作成は不要。次のユーザー依頼で本書を確認し、既存の目的・成果・branchを保ったまま責任分担と検証計画を更新する。有効な既存証拠を引き継ぎ、不足・失効した範囲だけを補う。旧ポリシーとの二重適用をしない。
-Project Sourcesの差し替え、既存自動処理のprompt更新、CI設定変更はそれぞれ別の反映操作である。文書作成だけで反映済みとしない。停止・上限・権限不足時は完了／未完了と具体的な再開点を残し、実行が終わっているのに「裏で継続中」と報告しない。
+作業別WORKの完了＝担当作業・必須局所検証が完了し、公開branchとReady PRが存在すること。
+Integrationの完了＝対象PRのレビュー・統合、最終SHAの全体検証・DEV確認・必要な統合検証が完了し、保留・実機確認事項を記録したこと。merge成功だけで完了にせず、必須未検証があれば検証待ちとする。
+既存WORKは再作成しない。次のユーザー依頼で本書を確認し、目的・branch・成果・有効な証拠を維持して責任分担を更新する。不足・失効範囲だけ補い、旧ルールを二重適用しない。
+Project Sources登録、自動prompt更新、CI反映は別操作であり、文書完成だけで反映済みとしない。停止時は未完了と再開点を残し、終了後に「裏で継続中」と報告しない。
