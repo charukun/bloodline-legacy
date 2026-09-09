@@ -50,6 +50,41 @@ Workflow event counts are not guaranteed to be one per integration batch. The ea
 - Full regression on final develop, lifetime simulation, Workers durability, environment/SHA/artifact checks and rollout protection remain.
 - DEV deploys the tested artifact and uses HTTP/manifest/HTML-hash verification. STAGING/PRODUCTION retain browser smoke. HTTP does not verify WebGL/input.
 - Environment/Version-embedded deployment Build remains separate; its output is not assumed identical to the local Build.
-- Character functional browser assertions remain. Before/after software-performance comparison remains an explicit `full_review` option, never proof of Pixel Fold FPS.
+- Character functional browser assertions remain. Baseline/head visual, video and software-performance evidence runs on relevant develop pushes or explicit `full_review`; it is never proof of Pixel Fold FPS.
 
 Integration follows the final develop SHA's Build/Test/deployment result and necessary browser/device evidence. A green workflow because an old SHA was skipped is not integration completion.
+
+## Character turnaround
+
+PRs check the actual head SHA. General CI continues checking the PR merge tree and
+owns regression/rig/motion/combat/save/shader tests. Character CI uses a fail-closed
+change plan: runtime/shared/dependency/unknown changes require browser verification;
+authored character assets also require GLB validation. Documentation and isolated
+non-character unit-test changes defer to general CI. Missing diffs require browser
+verification. The plan and exact tested head are uploaded even when not applicable.
+
+`CHARACTER_MODE=gate node tests/character-browser.mjs` needs only `dist/index.html`.
+There is no baseline checkout/build/read, video encoder or performance loop. Native
+onboarding, keyboard/pointer movement, every existing motion/contact sample, rest,
+talk, contact combat, injury, renderer immutability, dispatch boundaries, equipment,
+limb loss, save/reload and mobile checks remain. The production renderer still runs
+for every existing sample; WebGL rasterizer discard suppresses repeated fragment
+shading only. Gameplay, peak attack, equipment and mobile checkpoints restore full
+rasterization and invalidate static shadows before rendering. These retain the
+normal 1000x900 / 393x852 viewport, DPR, quality, shaders and village geometry.
+Failure screenshots are retained. No game source or production setting changes.
+
+Relevant develop pushes and explicit Full Review run the original fully rasterized
+functional paths, complete screenshots/video and before/after steady-state software
+performance samples. Baseline defaults to the push's previous commit or the selected
+commit's parent; a manual `baseline_sha` can choose an earlier integration boundary.
+No fixed historical SHA is assumed. Baseline dependencies use its own lockfile.
+Use Full Review for art acceptance and raster-only changes; the PR gate is functional
+and structural evidence, not a claim of exhaustive visual equivalence or device FPS.
+The full report records measured frame data for human comparison; no new arbitrary
+performance pass threshold is introduced.
+
+Superseded PR/develop Character runs cancel; queued stale develop work is skipped
+with an explicit NOT RUN summary. Deployment's existing revision and rollout guards
+are unchanged. Integration must use the final develop SHA's completed Full Review,
+not a cancelled or skipped prior run.

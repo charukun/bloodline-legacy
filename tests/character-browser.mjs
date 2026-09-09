@@ -10,11 +10,15 @@ import assert from 'node:assert/strict';
 import {fileURLToPath} from 'node:url';
 import {chromium} from '../deploy/node_modules/playwright/index.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const started=Date.now();
 const mode=process.env.CHARACTER_MODE||'all';
-assert(['all','functional','performance','motion'].includes(mode),'Unknown verification mode');
+const gate=mode==='gate';
+const afterOnly=gate||mode==='motion'||process.env.CHARACTER_AFTER_ONLY==='1';
+assert(['all','functional','performance','motion','gate'].includes(mode),'Unknown verification mode');
 const out=path.join(root,'verification/current',mode);
 await fs.mkdir(out,{recursive:true});
-const files={before:await fs.readFile(process.env.CHARACTER_BASELINE),after:await fs.readFile(path.join(root,'dist/index.html'))};
+const files={after:await fs.readFile(path.join(root,'dist/index.html'))};
+if(!afterOnly){assert(process.env.CHARACTER_BASELINE,'Comparison requires an explicit baseline');files.before=await fs.readFile(process.env.CHARACTER_BASELINE);}
 const server=http.createServer((req,res)=>{
   const pathname=new URL(req.url,'http://localhost').pathname;
   if(pathname==='/api/health'){res.writeHead(200,{'Content-Type':'application/json'});return res.end('{"online":false}');}
@@ -24,9 +28,10 @@ const server=http.createServer((req,res)=>{
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const origin='http://127.0.0.1:'+server.address().port;
-const report={mode,base:process.env.CHARACTER_BASE_SHA||'f94513ed65342de1674a716b33c2ebb4a9c523d1',head:process.env.GITHUB_SHA||null,checks:[],versions:{},passed:false,
+const report={mode,base:afterOnly?null:process.env.CHARACTER_BASE_SHA||null,head:process.env.GITHUB_SHA||null,checks:[],versions:{},passed:false,
   limitations:['SwiftShader is software rendering, not Desktop GPU or Pixel Fold performance approval.','Screenshots and videos require visual review; numeric success is not Golden Master approval.']};
-const flush=()=>writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));
+report.rasterization=gate?'Native renderer and every animation sample; fragment shading at gameplay/attack/equipment/mobile checkpoints':'Every rendered frame';
+const flush=()=>{report.elapsedMs=Date.now()-started;writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));};
 const check=(name,ok,details)=>{report.checks.push({name,pass:!!ok,details});flush();assert(ok,name+' '+JSON.stringify(details||''));console.log('PASS '+name);};
 const groundedSlip=rows=>Math.max(0,...rows.slice(1).flatMap((s,i)=>s.feet.map((f,j)=>{
   const previous=rows[i].feet[j];
@@ -58,17 +63,29 @@ async function fixture(page,{close=false}={}){
   // Drain the old, now-closed frame callback before starting a new live loop.
   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
 }
-async function shot(name){await page.evaluate(()=>window.characterDrain?.());await page.screenshot({path:path.join(out,name+'.png')});report.lastScreenshot=name;flush();}
+async function shot(name){
+  if(gate && name!=='failure' && !['after-gameplay','after-attack','after-equipment','after-mobile-gameplay'].includes(name))return;
+  if(gate)await page.evaluate(()=>{const a=AERIN_QA.app;window.characterRasterize=true;a.renderer.staticShadowDirty=true;try{a.renderer.render(a.snapshot,0,{freezeCamera:true});}finally{window.characterRasterize=false;}});
+  await page.evaluate(()=>window.characterDrain?.());await page.screenshot({path:path.join(out,name+'.png')});report.lastScreenshot=name;flush();}
 try{
   browser=await chromium.launch({executablePath:process.env.CHROMIUM_EXECUTABLE||undefined,headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
-  for(const version of mode==='motion'||process.env.CHARACTER_AFTER_ONLY==='1'?['after']:['before','after']){
-    const context=await browser.newContext({viewport:{width:1000,height:900},deviceScaleFactor:1,...(mode==='performance'||process.env.CHARACTER_NO_VIDEO==='1'?{}:{recordVideo:{dir:out,size:{width:1000,height:900}}})});
+  for(const version of afterOnly?['after']:['before','after']){
+    const context=await browser.newContext({viewport:{width:1000,height:900},deviceScaleFactor:1,...(gate||mode==='performance'||process.env.CHARACTER_NO_VIDEO==='1'?{}:{recordVideo:{dir:out,size:{width:1000,height:900}}})});
     page=await context.newPage();page.setDefaultTimeout(120000);
     const record=report.versions[version]={errors:[],consoleErrors:[],states:[],performance:[]};
     page.on('pageerror',e=>record.errors.push(e.message));
     page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('favicon'))record.consoleErrors.push(m.text());});
     await page.goto(origin+'/'+version+'/?qa',{waitUntil:'load'});
     await page.waitForFunction('window.AERIN_QA && AERIN_QA.app.renderer.frame>2');
+    if(gate)await page.evaluate(()=>{
+      // Exercise the unchanged production renderer, shaders, uploads and all
+      // animation samples. Skip repeated software fragment shading, not logic.
+      const r=AERIN_QA.app.renderer,render=r.render;
+      r.render=function(...args){const g=this.gl;
+        if(!window.characterRasterize)g.enable(g.RASTERIZER_DISCARD);
+        try{return render.apply(this,args);}finally{g.disable(g.RASTERIZER_DISCARD);}
+      };
+    });
     record.backend=await page.evaluate(()=>{const r=AERIN_QA.app.renderer,g=r.gl,e=g.getExtension('WEBGL_debug_renderer_info');return {userAgent:navigator.userAgent,gpu:e?g.getParameter(e.UNMASKED_RENDERER_WEBGL):g.getParameter(g.RENDERER),dpr:devicePixelRatio,viewport:[innerWidth,innerHeight]};});
     await page.locator('#begin-life').click();
     const guidePages=await page.locator('.guide-pages i').count();
@@ -102,9 +119,9 @@ try{
     record.stats=await page.evaluate(()=>AERIN_QA.stats());
     check(version+' WebGL has no error',await page.evaluate(()=>AERIN_QA.app.renderer.gl.getError()===0));
     check(version+' comparison has no diorama blur',await page.evaluate(()=>AERIN_QA.app.renderer.diorama.mode==='normal'&&!AERIN_QA.app.renderer.diorama.active));
-    check(version+' target renderer dispatch',(record.stats.characterMaster?.character==='TRAVELER')===(version==='after'));
+    if(version==='after')check(version+' target renderer dispatch',record.stats.characterMaster?.character==='TRAVELER');
     await fixture(page,{close:true});await shot(version+'-close');
-    if(version==='after'){
+    if(version==='after'&&!gate){
       for(const [label,yaw]of [['quarter',1.1],['side',1.82],['back',3.2]]){
         await page.evaluate(yaw=>{const a=AERIN_QA.app;a.renderer.camera.yaw=yaw;a.renderer.render(a.snapshot,0,{freezeCamera:true});},yaw);await shot('after-'+label);
       }
@@ -192,7 +209,7 @@ try{
     // Actual render-loop timestamps, no simulation-clamped dt, no instantaneous FPS averaging.
     // Three steady village runs plus rain/combat. Keep the viewport and workload
     // unchanged; slow software GPU samples extend to obtain at least 12 intervals.
-    for(const scenario of mode==='functional'?[]:['clear-1','clear-2','clear-3','rain','combat']){
+    for(const scenario of (mode==='functional'||gate)?[]:['clear-1','clear-2','clear-3','rain','combat']){
       await fixture(page);
       await page.evaluate(scenario=>{const a=AERIN_QA.app,p=AERIN_QA.player();if(scenario==='rain')a.renderer.weather.setOverride('rain');
         if(scenario==='combat'){const d=a.sim.getRoom(p).actors.find(e=>e.kind==='dummy');p.x=d.x;p.z=d.z+1.3;}
@@ -209,6 +226,7 @@ try{
       flush();check(version+' '+scenario+' rendered frames',dt.length>=12,{frames:dt.length});
       await shot(version+'-perf-'+scenario);
     }
+    check(version+' final WebGL has no error',await page.evaluate(()=>AERIN_QA.app.renderer.gl.getError()===0&&!AERIN_QA.app.renderer.gl.isContextLost()));
     check(version+' no page exception',record.errors.length===0,record.errors);
     check(version+' no game frame exception',await page.evaluate(()=>!AERIN_QA.app.frameError));
     if(page.video())record.video=path.basename(await page.video().path());await context.close();
