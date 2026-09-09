@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const {JSDOM} = require('jsdom');
 const root = path.resolve(__dirname,'..');
-const sourceFiles = ['legacy/dialogue.js','legacy/core.js','skills/engine.js','skills/runtime.js','ui/presentation.js','ui/lineage/theatre.js','ui/lineage.js','legacy/ui.js','legacy/game.js','skills/presentation.js'];
+const sourceFiles = ['legacy/dialogue.js','legacy/core.js','skills/engine.js','skills/runtime.js','legacy/motion.js','ui/presentation.js','ui/lineage/theatre.js','ui/lineage.js','legacy/ui.js','legacy/game.js','skills/presentation.js'];
 const flush = () => new Promise(resolve=>queueMicrotask(resolve));
 function fixture(t, uiSource) {
  const compiler=fs.readFileSync(path.join(root,'tools/skill-catalog.mjs'),'utf8').replaceAll('export ','');

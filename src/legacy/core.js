@@ -1,7 +1,7 @@
 
 /* Shared, renderer-independent simulation. All gameplay decisions stay here. */
 const VERSION = '0.6.0';
-const GAME_TITLE='継ぎ火の谷';
+const GAME_TITLE='血脈の系譜';
 const EQUIP_AGE=7;
 const MAX_ITEMS=2;
 const DASH={speed:1.72,cost:9,start:3};
@@ -378,7 +378,8 @@ class Simulation {
   p.input={x:0,z:0};p.autoFight=null;p.combo=null;p.pendingSkill=null;p.chain=null;p.attackStep=null;p.retreatUntil=0;p.attackBufferedUntil=0;
   p.action='idle';p.actionStarted=this.time;p.actionUntil=this.time;p.cooldown=this.time;p.stun=0;
   // Spawn outside the house's collision hull, even when restoring a v5 opening.
-  const r=this.getRoom(p),dir=p.introDir??p.dir;
+  const r=this.getRoom(p),dir=p.dir;
+  p.introX=p.x;p.introZ=p.z;p.introDir=dir;
   p.x=(p.introX??p.x)+Math.sin(dir)*.82;p.z=(p.introZ??p.z)+Math.cos(dir)*.82;this.bound(p,r);
   p.farewellStage=0;this.motherSay(p,FAREWELL_LINES[0],4.4);
   this.emit('released',{player:p.id,room:p.room,x:p.x,z:p.z});return true;
@@ -530,7 +531,6 @@ class Simulation {
   if(cmd.type==='move'){
    const x=+cmd.x,z=+cmd.z;if(!Number.isFinite(x)||!Number.isFinite(z))return false;
    this.stopDash(p);const l=Math.hypot(x,z);p.lastInput=this.time;
-   if(p.prologue){p.input={x:0,z:0};return true;}
    p.input={x:x/Math.max(1,l),z:z/Math.max(1,l)};
    if(l>.1){this.stopActivity(p);this.wake(p);}return true;
   }
@@ -591,18 +591,33 @@ class Simulation {
   return base*injuryModifiers(p).move*(p.age<15?.8:1);
  }
  collisionRadius(a){return a.kind==='player'?.42:a.kind==='dummy'?.40:a.kind==='boss'?1.35:a.elite?1.05:['maw','stag'].includes(a.kind)?.65:.44;}
- moveAttackStep(p,r,dx,dz){
-  // Small swept substeps stop at scenery and living bodies, rather than teleporting through them.
+ moveAttackStep(p,r,dx,dz,slide=false){
+  // Small swept substeps retain the existing scenery and body collision hulls.
   const steps=Math.max(1,Math.ceil(Math.hypot(dx,dz)/.045)),sx=dx/steps,sz=dz/steps;
   const bodies=[...r.actors,...this.players.values()].filter(a=>a!==p&&a.alive&&(a.kind!=='player'||a.room===r.id));
+  const sceneryBlocked=q=>{const bounded={...q};this.bound(bounded,r,this.collisionRadius(p));return Math.hypot(bounded.x-q.x,bounded.z-q.z)>1e-6;};
+  const bodyBlocked=q=>bodies.some(a=>{const before=dist(a,p),after=dist(a,q),radius=this.collisionRadius(p)+this.collisionRadius(a);return after<radius&&after<before-.000001;});
   let travelled=0;
   for(let i=0;i<steps;i++){
-   const q={x:p.x+sx,z:p.z+sz},bounded={...q};this.bound(bounded,r);
-   if(Math.hypot(bounded.x-q.x,bounded.z-q.z)>.000001)break;
-   if(bodies.some(a=>{const before=dist(a,p),after=dist(a,q),radius=this.collisionRadius(p)+this.collisionRadius(a);return after<radius&&after<before-.000001;}))break;
-   p.x=q.x;p.z=q.z;travelled+=Math.hypot(sx,sz);
+   let q={x:p.x+sx,z:p.z+sz};
+   if(sceneryBlocked(q)){
+    if(!slide)break;
+    // Only locomotion slides; attack lunge and retreat keep their stop-on-contact behavior.
+    const axes=Math.abs(sx)>Math.abs(sz)?[[sx,0],[0,sz]]:[[0,sz],[sx,0]];
+    q=axes.filter(([x,z])=>Math.hypot(x,z)>1e-8).map(([x,z])=>({x:p.x+x,z:p.z+z})).find(a=>!sceneryBlocked(a)&&!bodyBlocked(a));
+    if(!q)break;
+   }else if(bodyBlocked(q))break;
+   travelled+=Math.hypot(q.x-p.x,q.z-p.z);p.x=q.x;p.z=q.z;
   }
   return travelled;
+ }
+ moveWalk(p,r,dx,dz){return this.moveAttackStep(p,r,dx,dz,true);}
+ tickCarriedMove(p,r,dt){
+  if(this.time-p.lastInput>1.5)p.input={x:0,z:0};
+  const l=Math.hypot(p.input.x,p.input.z),speed=3.8*ACTION_TUNING.move;
+  const moved=l>.001?this.moveWalk(p,r,p.input.x*speed*dt,p.input.z*speed*dt):0;
+  if(l>.1)p.dir=Math.atan2(p.input.x,p.input.z);
+  p.action=moved>1e-6?'run':'idle';p.zone=this.getArea(p);this.bound(p,r);
  }
  tickAttackStep(p){
   const a=p.attackStep;if(!a||!p.alive||!p.pendingSkill||p.stun>this.time)return;if(hasStatus(p,'root',this.time)){p.attackStep=null;return;}
@@ -613,8 +628,13 @@ class Simulation {
   a.moved+=moved;if(moved<amount-.00001)a.blocked=true;
   if(!a.sounded&&moved>.001){a.sounded=true;this.emit('step',{player:p.id,room:p.room,x:p.x,z:p.z,kind:'lunge'});}
  }
- reactToHit(target,source,part,severity='light'){
-  const duration=severity==='lost'?.95:severity==='heavy'?.72:.48;
+ reactToHit(target,source,part,severity='light',strength=null,blocked=false){
+  const duration=blocked?.28:severity==='lost'?.95:severity==='heavy'?.72:.48;
+  // Visual metadata only; repeated wound resolution for one contact shares an ID.
+  const fresh=target.hitMotionAt!==this.time;
+  if(fresh)target.hitMotionId=(target.hitMotionId||0)+1;
+  target.hitMotionAt=this.time;target.hitGuard=blocked;
+  if(strength!==null||fresh)target.hitStrength=strength??(severity==='lost'?1.15:severity==='heavy'?1:.48);
   target.hitPart=part;target.hitSeverity=severity;target.hitReactAt=this.time;target.hitReactUntil=this.time+duration;
   target.hitDir=source?Math.atan2(target.x-source.x,target.z-source.z):(target.dir||0)+Math.PI;
  }
@@ -688,7 +708,7 @@ class Simulation {
    if(attacking&&!sk.ranged&&!sk.magic&&!sk.breakPower){this.resolveClash(p,e,r);break;}
    const facing=Math.abs(angleDiff(e.dir,Math.atan2(p.x-e.x,p.z-e.z)))<1.4;
    if(e.guard&&e.stun<=this.time&&facing&&!sk.magic&&!(sk.ranged&&sk.power>=3)){
-    e.counterOpportunity=this.time+1;e.action='guard';this.emit('blocked',{room:r.id,x:e.x,z:e.z});continue;
+    e.counterOpportunity=this.time+1;e.action='guard';this.reactToHit(e,p,'leftArm','light',.32,true);this.emit('blocked',{room:r.id,x:e.x,z:e.z});continue;
    }
    if(e.kind==='boss'&&!(e.exposedUntil>this.time)&&!sk.magic){this.emit('blocked',{room:r.id,x:e.x,z:e.z});continue;}
    const part=sk.targets[Math.floor(this.rng()*sk.targets.length)];this.damageActor(e,p,part,(sk.power+(e.exposedUntil>this.time?.5:0))*(hasStatus(p,'weak',this.time)?.65:1),r);if(e.alive&&sk.status&&sk.power>0)this.applyStatus(e,sk.status.id,sk.status.duration,p,r);if(e.alive&&sk.knockback&&e.kind!=='boss')this.moveAttackStep(e,r,Math.sin(p.dir)*sk.knockback,Math.cos(p.dir)*sk.knockback);SkillSystem.contact(this,p,e,sk);
@@ -699,7 +719,7 @@ class Simulation {
   if(!e.alive||power<=0)return;if(e.wounds[part]?.severity==='lost')part='torso';
   e.hp??=e.hpMax??70;e.hpMax??=e.hp; e.hp-=Math.max(3,power*9);
   const exposed=e.exposedUntil>this.time,committed=!!e.telegraph,prev=e.wounds[part]?.severity,injured=Object.keys(e.wounds).length;
-  e.aggro=true;e.sleepUntil=0;if(e.statuses)delete e.statuses.sleep;this.reactToHit(e,source,part,power>=2?'heavy':'light');e.hitUntil=this.time+.1;
+  e.aggro=true;e.sleepUntil=0;if(e.statuses)delete e.statuses.sleep;this.reactToHit(e,source,part,power>=2?'heavy':'light',clamp(.25+power*.30,.25,1.25));e.hitUntil=this.time+.1;
   this.impact(source,e,part,power>=2);this.emit('hit',{room:r.id,target:e.id,source:source?.id,x:e.x,z:e.z,part,weapon:source?.weapon,skill:source?.currentSkill});
   if(e.hp<=0&&e.kind!=='boss'){this.killActor(e,source,r);return;}
   if(e.kind==='boss'){
@@ -731,13 +751,13 @@ class Simulation {
     const weights=p.phaseWeights[p.combo?.band??0],sum=Object.values(weights).reduce((a,b)=>a+b,0)||1,focus=(weights[4013]||0)/sum;
     const chance=p.counterUntil>this.time?clamp(.18+focus*.16+(p.skills.includes(4011)?.05:0),0,.40):.12;
     if(!tg.unblockable&&this.rng()<chance){e.stun=this.time+1.8;e.exposedUntil=this.time+2.5;e.telegraph=null;p.parries++;p.counterUntil=0;this.emit('parry',{player:p.id,room:p.room,x:e.x,z:e.z});return;}
-    if(!tg.unblockable){this.emit('guarded',{player:p.id,room:p.room,x:p.x,z:p.z});return;}
+    if(!tg.unblockable){this.reactToHit(p,e,'leftArm','light',.32,true);this.emit('guarded',{player:p.id,room:p.room,x:p.x,z:p.z});return;}
    }
    p.guard=false;p.guardPending=false;
   }
   if(p.wardUntil>this.time&&p.wardCharges>0){p.wardCharges--;this.emit('guarded',{player:p.id,room:p.room,x:p.x,z:p.z});return;}
   if(hasStatus(e,'blind',this.time)&&this.rng()<.35)return;
-  if(p.shield&&facing&&p.stamina>=5&&this.rng()<.38){this.spend(p,5,.08);p.guardUntil=this.time+.55;this.emit('guarded',{player:p.id,room:p.room,x:p.x,z:p.z});return;}
+  if(p.shield&&facing&&p.stamina>=5&&this.rng()<.38){this.spend(p,5,.08);p.guardUntil=this.time+.55;this.reactToHit(p,e,'leftArm','light',.32,true);this.emit('guarded',{player:p.id,room:p.room,x:p.x,z:p.z});return;}
   const part=tg.part||BODY_PARTS[Math.floor(this.rng()*BODY_PARTS.length)],old=p.wounds[part]?.severity;
   let severity=e.elite||e.kind==='boss'||tg.unblockable?'heavy':'light';
   if(old==='light')severity='heavy';if(old==='heavy')severity=['head','torso'].includes(part)?'fatal':e.elite||e.kind==='boss'?'lost':'heavy';
@@ -777,13 +797,18 @@ class Simulation {
   }
   SkillSystem.sample(this,p);
  }
- bound(p,r){
+ bound(p,r,bodyRadius=this.collisionRadius(p)){
   if(r.kind==='village'){
    p.x=clamp(p.x,-35,35);p.z=clamp(p.z,-46,29.5);
    if(p.z<-27&&p.z>-30&&Math.abs(p.x)>4.8)p.z=-27;
    if(p.z>23&&Math.abs(p.x)>4)p.z=23;
    for(const h of r.map.houses){const dx=p.x-h.x,dz=p.z-h.z;if(Math.abs(dx)<2&&Math.abs(dz)<1.8){if(Math.abs(dx)/2>Math.abs(dz)/1.8)p.x=h.x+Math.sign(dx||1)*2;else p.z=h.z+Math.sign(dz||1)*1.8;}}
    for(const s of r.map.schools.filter(s=>s.id!=='dance')){const dx=p.x-s.x,dz=p.z-(s.z-2);if(Math.abs(dx)<2.5&&Math.abs(dz)<1.5){if(Math.abs(dx)/2.5>Math.abs(dz)/1.5)p.x=s.x+Math.sign(dx||1)*2.5;else p.z=s.z-2+Math.sign(dz||1)*1.5;}}
+   // The square is walkable, but its stone well and posts occupy a 1.30m radius.
+   // Use the same bound for walking, dash, attack steps and restored positions.
+   const well=r.map.schools.find(s=>s.id==='dance');
+   if(well){const dx=p.x-well.x,dz=p.z-well.z,d=Math.hypot(dx,dz),radius=1.30+bodyRadius;
+    if(d<radius){p.x=well.x+(d>1e-8?dx/d:0)*radius;p.z=well.z+(d>1e-8?dz/d:1)*radius;}}
   }else{p.x=clamp(p.x,-13,13);p.z=clamp(p.z,-(r.stage*44+43),9);}
  }
  tick(dt){
@@ -794,7 +819,7 @@ class Simulation {
    // Lifetime is checked before rescue, including simultaneous arrival/death.
    if(p.age+p.ageFraction>=p.lifespan){this.die(p,'寿命');continue;}
    if(p.rescueAt&&this.time>=p.rescueAt){this.returnHome(p);r=this.getRoom(p);}
-   this.tickRecovery(p,dt);this.tickExploration(p,dt);if(this.tickHitStop(p,dt)){this.bound(p,r);continue;}if(p.prologue){p.input={x:0,z:0};continue;}this.tickAutoCombat(p,r,dt);this.tickChain(p);
+   this.tickRecovery(p,dt);this.tickExploration(p,dt);if(this.tickHitStop(p,dt)){this.bound(p,r);continue;}if(p.prologue){this.tickCarriedMove(p,r,dt);continue;}this.tickAutoCombat(p,r,dt);this.tickChain(p);
    this.tickAttackStep(p);
    if(p.pendingSkill&&this.time>=p.pendingSkill.at)this.releaseSkill(p);
    if(p.combo&&!p.pendingSkill&&p.combo.awaitUntil&&this.time>=p.actionUntil){
@@ -815,7 +840,7 @@ class Simulation {
     let speed=(p.age<4?3.8:p.age<15?4.5:5.15)*ACTION_TUNING.move*(p.dash?DASH.speed:1)*(1+effectsOf(p,'walk'))*(p.age>65?1-(p.age-65)*.004:1)*mods.move*(hasStatus(p,'slow',this.time)?.5:1)*(hasStatus(p,'root',this.time)||p.seated?0:1)*(p.guard?.42:1)*(p.pendingSkill?ACTION_TUNING.moveCharge:p.combo?ACTION_TUNING.moveCombo:p.cooldown>this.time?ACTION_TUNING.moveRecovery:1);
     if(p.retreatUntil>this.time&&!hasStatus(p,'root',this.time)){this.moveAttackStep(p,r,-Math.sin(p.dir)*p.retreatSpeed*dt*mods.move,-Math.cos(p.dir)*p.retreatSpeed*dt*mods.move);}
     else if(p.attackStep&&p.combo){this.moveAttackStep(p,r,p.input.x*speed*dt,p.input.z*speed*dt);}
-    else if(l>.001&&speed>0){const moved=this.moveAttackStep(p,r,p.input.x*speed*dt,p.input.z*speed*dt);if(p.dash){p.dash.blocked=moved<.002?(p.dash.blocked||0)+dt:0;if(p.dash.blocked>.18){this.stopDash(p);p.input={x:0,z:0};}}}
+    else if(l>.001&&speed>0){const moved=this.moveWalk(p,r,p.input.x*speed*dt,p.input.z*speed*dt);if(p.dash){p.dash.blocked=moved<.002?(p.dash.blocked||0)+dt:0;if(p.dash.blocked>.18){this.stopDash(p);p.input={x:0,z:0};}}}
     if(p.guard){const e=r.actors.filter(e=>e.alive&&(enemiesOnly(e)||e.kind==='dummy')&&(!e.neutral||e.aggro)&&dist(e,p)<7).sort((a,b)=>dist(a,p)-dist(b,p))[0];if(e)p.dir=Math.atan2(e.x-p.x,e.z-p.z);}
     else if(l>.1&&!p.pendingSkill&&!p.combo)p.dir=Math.atan2(p.input.x,p.input.z);
     if(p.actionUntil<=this.time&&!p.pendingSkill)p.action=p.seated?'sit':p.activity?(ACTIVITY_DEFS[this.getArea(p)]?.motion||p.activity):p.guard?(l>.1?'guardWalk':'guard'):l>.1?(p.dash?'dash':'run'):'idle';
@@ -916,5 +941,4 @@ class Simulation {
  exportState(){const data={schema:3,version:VERSION,seed:this.seed,rngState:this.rng.getState(),mode:this.mode,time:this.time,seq:this.seq,eid:this.eid,roomSeq:this.roomSeq,rooms:[...this.rooms],players:[...this.players].map(([id,p])=>[id,{...p,speech:'',speechUntil:0}]),legacies:this.legacies,abandoned:this.abandoned};return JSON.parse(JSON.stringify(data));}
  static restore(data){if(data?.schema!==3||!Array.isArray(data.players)||!Array.isArray(data.rooms)||data.players.length>200)throw Error('この改修より前の進行中データは別保管されています。');const s=new Simulation({seed:data.seed,mode:data.mode});s.time=+data.time||0;s.seq=+data.seq||0;s.eid=+data.eid||0;s.roomSeq=+data.roomSeq||1;s.rooms=new Map(data.rooms);s.players=new Map(data.players);s.legacies=data.legacies||{};s.abandoned=data.abandoned||[];if(Number.isInteger(data.rngState))s.rng.setState(data.rngState);for(const p of s.players.values()){if(!s.rooms.has(p.room))throw Error('村の記録がありません。');p.attackBufferedUntil=0;p.attackStep??=null;p.hitReactAt??=0;p.hitReactUntil??=0;p.hitDir??=0;p.hitSeverity??=null;p.input={x:0,z:0};p.guard=false;p.guardPending=false;p.speech='';p.speechUntil=0;s.preparePlayer(p);p.dash=null;p.autoFight=null;p.chain=null;p.pendingSkill=null;p.combo=null;p.attackStep=null;p.action=p.seated?'sit':'idle';SkillSystem.restore(s,p);}for(const r of s.rooms.values()){if(r.kind==='village'){r.map=makeVillage(r.seed);const spot=villagePracticePosition(r.map);for(const a of r.actors)if(a.kind==='dummy'){a.x=a.homeX=spot.x;a.z=a.homeZ=spot.z;}}r.actors=r.actors.filter(a=>a.kind!=='villager');for(const a of r.actors){if(a.kind==='archer')a.kind='soldier';if(a.kind==='mage')a.kind='goblin';a.statuses??={};a.hp??=a.kind==='guard'?130:a.elite?120:70;a.hpMax??=a.hp;a.npcResolveMax??=a.kind==='guard'?18:14;if(data.version!==VERSION)a.npcResolve=a.npcResolveMax;}}for(const l of Object.values(s.legacies))l.archive=l.archive.filter(id=>skillById(id));return s;}
 }
-
 

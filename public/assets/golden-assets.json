@@ -1,15 +1,16 @@
 {
-  "version": 1,
+  "version": 2,
   "district": "Wind-waiting square and central street",
   "source": "tools/author_golden.py and src/world/golden-slice.js",
   "license": "Original procedural art; user may use, modify and redistribute with the game. No third-party pixels or meshes.",
   "atlas": {
     "file": "golden-surfaces.png",
-    "sha256": "6e9053a6a5465adcfbac2dd4affee583f877f31dacc0c05871bced41a0e740f8",
+    "sha256": "98cf43d4e2a7d19b0f58015b5c8216551c891d397bdd26208bbbb2341f697d78",
     "size": [
       512,
       512
     ],
+    "channels": "R pigment, GB signed relief slope, A roughness",
     "tiles": [
       "flagstone",
       "masonry",

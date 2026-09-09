@@ -1,0 +1,146 @@
+[
+  {
+    "seconds": 240,
+    "mode": "craft",
+    "before": {
+      "active": 4.927083333333333,
+      "passive": 0,
+      "cross": 0,
+      "same": 0.27906976744186046,
+      "sets": 40
+    },
+    "after": {
+      "active": 1.5208333333333333,
+      "passive": 0,
+      "cross": 0,
+      "same": 0.06164383561643835,
+      "sets": 32
+    }
+  },
+  {
+    "seconds": 240,
+    "mode": "combat",
+    "before": {
+      "active": 4.927083333333333,
+      "passive": 0,
+      "cross": 0,
+      "same": 0.34460887949260044,
+      "sets": 29
+    },
+    "after": {
+      "active": 1.5208333333333333,
+      "passive": 0,
+      "cross": 0,
+      "same": 0.0958904109589041,
+      "sets": 29
+    }
+  },
+  {
+    "seconds": 240,
+    "mode": "cross",
+    "before": {
+      "active": 4.447916666666667,
+      "passive": 0.8541666666666666,
+      "cross": 0.35362997658079626,
+      "same": 0.1686182669789227,
+      "sets": 88
+    },
+    "after": {
+      "active": 1.6041666666666667,
+      "passive": 0.8020833333333334,
+      "cross": 0.35714285714285715,
+      "same": 0.025974025974025976,
+      "sets": 55
+    }
+  },
+  {
+    "seconds": 240,
+    "mode": "mixed",
+    "before": {
+      "active": 4.114583333333333,
+      "passive": 1.9791666666666667,
+      "cross": 0.28607594936708863,
+      "same": 0.11392405063291139,
+      "sets": 96
+    },
+    "after": {
+      "active": 1.4791666666666667,
+      "passive": 1.8645833333333333,
+      "cross": 0.39436619718309857,
+      "same": 0.014084507042253521,
+      "sets": 57
+    }
+  },
+  {
+    "seconds": 1200,
+    "mode": "craft",
+    "before": {
+      "active": 9,
+      "passive": 0,
+      "cross": 0,
+      "same": 0.3449074074074074,
+      "sets": 1
+    },
+    "after": {
+      "active": 6.510416666666667,
+      "passive": 0,
+      "cross": 0,
+      "same": 0.1104,
+      "sets": 40
+    }
+  },
+  {
+    "seconds": 1200,
+    "mode": "combat",
+    "before": {
+      "active": 9,
+      "passive": 0,
+      "cross": 0,
+      "same": 0.36574074074074076,
+      "sets": 1
+    },
+    "after": {
+      "active": 6.510416666666667,
+      "passive": 0,
+      "cross": 0,
+      "same": 0.1536,
+      "sets": 37
+    }
+  },
+  {
+    "seconds": 1200,
+    "mode": "cross",
+    "before": {
+      "active": 15,
+      "passive": 1,
+      "cross": 0.2,
+      "same": 0.19791666666666666,
+      "sets": 1
+    },
+    "after": {
+      "active": 6.708333333333333,
+      "passive": 1,
+      "cross": 0.3385093167701863,
+      "same": 0.059006211180124224,
+      "sets": 94
+    }
+  },
+  {
+    "seconds": 1200,
+    "mode": "mixed",
+    "before": {
+      "active": 22.46875,
+      "passive": 3.9895833333333335,
+      "cross": 0.26471951784886416,
+      "same": 0.13676402410755678,
+      "sets": 38
+    },
+    "after": {
+      "active": 6.489583333333333,
+      "passive": 3.90625,
+      "cross": 0.39486356340288925,
+      "same": 0.04333868378812199,
+      "sets": 96
+    }
+  }
+]
