@@ -133,7 +133,12 @@ test('a different chained skill starts from the last pose and reaches its own re
  const a=artPose({...attack(60002,2.8),weapon:2,combo:{total:2}},3.8,state);
  const recovery={...p,action:'recover',actionStarted:3.8,actionUntil:4.6};
  assert(delta(a,artPose(recovery,3.8,state))<1e-7,'recovery snapped to guard');
- assert(Math.abs(artPose(recovery,4.6-1e-7,state).rightArm)<.0001,'recovery failed to settle');
+ // A live combo settles into the breathing combat stance, not neutral arms.
+ // Compare at the same renderer clock so breathing cannot mask a release pop.
+ const end=4.6-1e-7,idleState={...state};
+ const settled=artPose(recovery,end,state),idle=artPose({...recovery,action:'idle'},end,idleState);
+ assert(delta(settled,idle)<.0001,'recovery failed to settle into the combat stance');
+ assert(settled.rightArm<-.5,'a live combo dropped its guard');
 });
 
 test('two-handed weapon handles meet the actual supporting palm, without stretching either rig',()=>{
