@@ -119,6 +119,8 @@ class AudioEngine {
    [62,57,50].forEach((n,i)=>tone(n,i*.23,1.4,.17,'triangle'));
   }else if(['depart','victory','returned'].includes(type)){
    [62,69,74,78].forEach((n,i)=>tone(n,i*.20,1,.16,'triangle'));
+  }else if(type==='breath'){
+   noise(.20,.10,650,.5);noise(.32,.13,480,.45,.28);
   }else if(type==='rescue'){
    tone(86,0,.42,.18);tone(81,.46,.65,.15);
   }else if(type==='skill'&&ev.id>=4030&&ev.id<=4035){

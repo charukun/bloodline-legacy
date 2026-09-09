@@ -89,3 +89,13 @@
 .world-speed-settings .segments{flex-wrap:wrap}
 .world-speed-settings button{min-width:44px;min-height:44px}
 .world-speed-settings p{margin:8px 0 0;line-height:1.7;opacity:.8}
+
+/* Warning stays on the existing vial, never covers the fight or adds a modal. */
+.stamina-orb[data-fatigue="1"] #water stop{stop-color:#c89a42}
+.stamina-orb[data-fatigue="2"] #water stop{stop-color:#bd603f}
+.stamina-orb[data-fatigue="1"] #orb-wave,.stamina-orb[data-fatigue="2"] #orb-wave{stroke:#fff0b9;stroke-width:3}
+.stamina-orb[data-fatigue="1"]{animation:stamina-breath 1.6s ease-in-out infinite}
+.stamina-orb[data-fatigue="2"]{animation:stamina-breath .85s ease-in-out infinite}
+@keyframes stamina-breath{0%,100%{filter:drop-shadow(0 0 2px #c98c43)}50%{filter:drop-shadow(0 0 6px #efb66a);opacity:.65}}
+.breath-callout{font-size:11px;color:#f7e2be;text-shadow:0 1px 3px #342a20,0 0 5px #342a20;pointer-events:none;white-space:nowrap}
+@media(prefers-reduced-motion:reduce){.stamina-orb[data-fatigue="1"],.stamina-orb[data-fatigue="2"]{animation:none;filter:drop-shadow(0 0 4px #e4a666)}}

@@ -59,3 +59,5 @@ const GUARD_LINES = {
 
 
 const RESCUE_LINES={approach:'そこで待て。今、助けに行く！',lift:'つかまっていろ。村まで運ぶぞ。',arrival:'ここなら大丈夫だ。ゆっくり息を整えろ。'};
+
+const MEDIC_LINES={approach:'大丈夫、いま助けに行きます！',lift:'もう一人にしません。治療所まで運びますね。',arrival:'ここは安全です。ゆっくり息をしてください。'};

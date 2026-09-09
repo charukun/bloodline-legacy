@@ -84,3 +84,19 @@ class UINoticeQueue {
   return prefix + parts.slice(0,2).join('・') + (parts.length > 2 ? ` ほか${parts.length-2}件` : '');
  }
 }
+
+// Presentation-only warnings use real time so debug world speed cannot spam breathing.
+class UIStaminaFeedback {
+ constructor(){this.level=0;this.nextBreath=0;this.breathUntil=0;this.player=null;}
+ sample(p,now){
+  if(this.player!==p.id){this.player=p.id;this.level=0;this.nextBreath=0;}
+  const fill=p.stamina/staminaMaximum(p),cap=p.staminaCap/staminaMaximum(p);
+  let level=!canAct(p)||p.prologue||p.seated?0:fill<.16?2:fill<.32||cap<.40?1:0;
+  if(level<this.level&&!p.seated&&canAct(p)&&!p.prologue){if(this.level===2&&fill<.24)level=2;else if(fill<.42||cap<.48)level=1;}
+  const rising=level>this.level;this.level=level;
+  const sound=level>0&&(rising||now>=this.nextBreath);
+  if(sound){this.nextBreath=now+(level===2?8:16);this.breathUntil=now+1.7;}
+  if(!level)this.breathUntil=0;
+  return {level,sound,breath:level&&now<this.breathUntil};
+ }
+}

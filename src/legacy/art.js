@@ -137,6 +137,23 @@ class ArtDirector{
   this.pot(-2.6,.25,.82);this.pot(2.4,.65,.67);
   this.B(-2.9,.41,-1.6,1.2,.14,.56,'#c1ac81');for(const side of [-1,1])this.B(-2.9+side*.45,.23,-1.6,.12,.44,.42,'#b39f78');
  }
+ infirmary(c){
+  this.with(rModel(c.x,0,c.z),()=>{
+   const timber='#917450',linen='#e7dcc0',green='#789381';
+   this.B(0,.11,0,6.2,.08,5.5,'#d2c2a0',0,0,0,9);
+   this.B(0,.15,1.9,5.5,.055,1.2,'#e1d0ad',0,0,0,9);
+   for(const x of [-2.7,2.7]){this.C(x,1.57,-1.7,.09,3.1,.09,timber);this.C(x,1.23,-.5,.07,2.4,.07,timber);}
+   this.B(0,2.82,-1.45,5.7,.12,1.6,linen,0,0,.18);
+   this.line([-2.8,2.66,-.65],[2.8,2.66,-.65],.10,timber);
+   for(const x of [-2.2,-1.1,0,1.1,2.2])this.B(x,2.56,-.61,.25,.32,.05,green);
+   this.B(0,.54,-2,1.8,.75,.62,timber);this.B(0,.95,-2,2,.12,.78,'#b59a70');
+   for(const x of [-.65,0,.65]){this.C(x,1.14,-2,.14,.28,.14,x?'#7b947e':'#bfad7e');this.C(x,1.32,-2,.09,.08,.09,'#e3d5b3');}
+   for(const x of [-1,1]){this.B(x,.19,.1,1.5,.12,2.5,timber);this.B(x,.29,.1,1.35,.15,2.35,linen);this.B(x,.41,-.72,1.08,.19,.44,'#f0e8d1');this.B(x,.39,.54,1.37,.05,1.05,green);}
+   this.C(-2.55,.43,.85,.28,.57,.28,timber);this.C(-2.55,.75,.85,.29,.09,.29,'#d3bf96');
+   this.B(2.6,1.92,-1.2,.74,.85,.09,linen);this.p('leaf',2.6,1.96,-1.13,.21,.31,.035,green,0,-.4);
+  });
+  this.r.labels.push({x:c.x,z:c.z-1.5,y:3.5,text:'治療所',id:'clinic'});
+ }
  village(map){
   this.r.traversalMap=map;
   this.target=this.r.static;this.root=rModel();const rng=random(map.seed);this.r.groundFX.clear();this.r.labels=[];
@@ -146,11 +163,12 @@ class ArtDirector{
   const path=(x,z,xx,zz,w)=>{const len=Math.hypot(xx-x,zz-z),angle=Math.atan2(xx-x,zz-z);this.B((x+xx)/2,.13,(z+zz)/2,w,.10,len+.8,'#e8d9b7',angle,0,0,9);for(let i=0;i<len/.68;i++){const u=i/(len/.68);this.B(x+(xx-x)*u+(rng()-.5)*w*.58,.205,z+(zz-z)*u+(rng()-.5)*.2,.45+rng()*.35,.10,.34+rng()*.25,'#efdfbe',rng()*2,0,0,9);}};
   path(0,-43,0,26,3.8);path(-30,-19,31,-19,2.5);path(-29,7,30,7,2.4);path(-17,-22,-17,18,2.3);path(17,-22,17,18,2.3);
   for(const s of map.schools){path(0,s.z+3.6,s.x,s.z+3.6,2.7);this.p('disk',s.x,.14,s.z+1,4.4,1,4.1,'#e7d6b5',0,0,0,9);if(s.id==='church')this.chapel(s.x,s.z-2);else if(s.id==='forge')this.forge(s.x,s.z-2);else if(s.id==='sword')this.dojo(s.x,s.z-2);else if(s.id==='armory')this.armory(s.x,s.z-2);else if(s.id==='magic')this.library(s.x,s.z-2);else if(s.id==='dance')this.garden(s.x,s.z);else this.cottage(s.x,s.z-2,1.06,s.id==='magic'?1:0,0);this.r.labels.push({x:s.x,z:s.z,y:s.id==='church'?6:4.7,text:s.short,id:s.id});}
+  if(map.clinic)this.infirmary(map.clinic);
   for(const h of map.houses)this.cottage(h.x,h.z,.69*h.scale,h.id%4,h.rotation);
   for(let i=0;i<50;i++){let a=i/50*TAU,x=Math.sin(a)*38,z=Math.cos(a)*38-7;if(z>22&&Math.abs(x)<9)continue;this.S(x,-.68,z,1.7+rng(),1.5,1.4+rng(),'#c4bba0',a,0,0,9);if(i%3===0)this.tree(x*.9,z*.96,.85+rng()*.15,'#aab995',i+13);}
-  for(let i=0;i<48;i++){const x=(rng()-.5)*72,z=(rng()-.5)*64-6;if(terrainFootprint(map,x,z,1.5)||Math.abs(x)<5||Math.abs(z-7)<3||Math.abs(z+19)<3||map.schools.some(s=>Math.hypot(x-s.x,z-s.z)<7)||map.houses.some(h=>Math.hypot(x-h.x,z-h.z)<4))continue;this.tree(x,z,.60+rng()*.4,'#b2c0a0',i+61);}
+  for(let i=0;i<48;i++){const x=(rng()-.5)*72,z=(rng()-.5)*64-6;if(map.clinic&&dist({x,z},map.clinic)<5||terrainFootprint(map,x,z,1.5)||Math.abs(x)<5||Math.abs(z-7)<3||Math.abs(z+19)<3||map.schools.some(s=>Math.hypot(x-s.x,z-s.z)<7)||map.houses.some(h=>Math.hypot(x-h.x,z-h.z)<4))continue;this.tree(x,z,.60+rng()*.4,'#b2c0a0',i+61);}
   // Sparse grouped flowers, not a uniform noisy carpet.
-  for(let i=0;i<180;i++){const x=(rng()-.5)*71,z=(rng()-.5)*62-4;if(terrainFootprint(map,x,z,.9)||Math.abs(x)<3||Math.abs(z-7)<2||Math.abs(z+19)<2||map.houses.some(h=>Math.abs(x-h.x)<2.1&&Math.abs(z-h.z)<2.2)||map.schools.some(s=>Math.hypot(x-s.x,z-s.z)<4.9))continue;for(let k=0;k<3;k++)this.flower(x+rng()*.7,z+rng()*.7,k?'#f7edce':'#dcc4a3',.45+rng()*.3);this.tuft(x+.5,.08,z,1.1);}
+  for(let i=0;i<180;i++){const x=(rng()-.5)*71,z=(rng()-.5)*62-4;if(map.clinic&&dist({x,z},map.clinic)<4||terrainFootprint(map,x,z,.9)||Math.abs(x)<3||Math.abs(z-7)<2||Math.abs(z+19)<2||map.houses.some(h=>Math.abs(x-h.x)<2.1&&Math.abs(z-h.z)<2.2)||map.schools.some(s=>Math.hypot(x-s.x,z-s.z)<4.9))continue;for(let k=0;k<3;k++)this.flower(x+rng()*.7,z+rng()*.7,k?'#f7edce':'#dcc4a3',.45+rng()*.3);this.tuft(x+.5,.08,z,1.1);}
   // Small gardens, loose stonework and workshop clutter give each frontage a role.
   for(const s of map.schools){if(s.id==='dance')continue;for(const side of [-1,1]){this.herbBed(s.x+side*3.75,s.z+1,1.55);for(let i=0;i<5;i++)this.flower(s.x+side*(3.15+i*.26),s.z+3.9+Math.sin(i)*.33,i%2?'#f8eacc':'#d6c5b6',.66);}this.stoneWall(s.x+3.8,s.z-3.9,3.2);}
   const forge=map.schools.find(s=>s.id==='forge');this.cart(forge.x-3.1,forge.z+3.3);this.barrel(forge.x+3.2,forge.z+1.9,.9);this.barrel(forge.x+3.8,forge.z+2.4,.66);
@@ -191,8 +209,8 @@ class ArtDirector{
   p=carriedVisualPose(p);
   if(p.rescueTarget||incapacitated(p)||p.traversal)p={...p,weapon:-1,shield:false};
   if(p.kind&&!['player','guard','parent','portrait'].includes(p.kind)){this.monster(p,t);return;}
-  if(p.kind==='guard')p={...p,age:28,weapon:0,armor:2,shield:true,race:0,hair:2,appearanceSeed:14};
-  if(p.rescueTarget)p={...p,weapon:-1,shield:false};
+  if(p.kind==='guard')p=p.role==='medic'?{...p,kind:'parent',age:28,weapon:-1,armor:0,shield:false,race:0,hair:p.id.endsWith(':1')?2:4,appearanceSeed:28}:{...p,age:28,weapon:0,armor:2,shield:true,race:0,hair:2,appearanceSeed:14};
+  if(p.rescueTarget||incapacitated(p))p={...p,weapon:-1,shield:false};
   const r=this.r,oldTarget=this.target;this.target=r.dynamic;this.root=rModel();
   if(p.kind==='player'&&p.prologue){const lower=clamp((t-(p.releaseAt-1.45))/1.45,0,1),ease=lower*lower*(3-2*lower);this.doll({...p,id:p.id+'parent',kind:'parent',prologue:false,age:34,gender:1,weapon:-1,skin:0,action:'carry',carryWalking:p.action==='run',wounds:{},baseY:-.34*ease},t,false);this.doll({...p,kind:'portrait',prologue:false,age:1,scaleOverride:.34+ease*.30,baseY:1.20*(1-ease)+.18*ease,x:p.x+Math.sin(p.dir)*(.32+ease*.24),z:p.z+Math.cos(p.dir)*(.32+ease*.24),dir:p.dir+.2,action:'idle',weapon:-1},t,false);this.target=oldTarget;return;}
   const race=(p.race||0)%4,stage=appearanceStage(p),seed=p.appearanceSeed||4,age=p.age??25,child=age<10;
@@ -204,7 +222,7 @@ class ArtDirector{
   const groundedMotion=p.alive!==false&&!incapacitated(p)&&!p.traversal&&!run&&!p.seated&&!p.activity&&(pose.skillMotion||reaction.amount>0||this.skillFeet?.has(p.id));
   if(p.kind==='guard'){const q=p.telegraph;if(q){const u=clamp((t-q.started)/Math.max(.01,q.at-q.started),0,1);pose.active=true;pose.rightArm=u<.65?-.55-u/.65*1.85:-2.4+((u-.65)/.35)**2*(3-2*(u-.65)/.35)*1.45;pose.leftArm=-1.0;pose.rightLeg=-.14;pose.leftLeg=.1;}else if(p.action==='attack'&&p.actionUntil>t){const u=clamp((t-p.actionStarted)/Math.max(.01,p.actionUntil-p.actionStarted),0,1);pose.active=true;pose.rightArm=-.95+u*1.2;pose.leftArm=-1.0;}}
   const dying=fall*fall*(3-2*fall),baseY=(p.baseY??.18)+(p.supportHeight||0)+(p.verticalOffset||0)+(pose.skillMotion?0:run?Math.abs(walk)*.055:Math.sin(t*1.8+seed)*.015)+pose.y+ail.y-reaction.drop;
-  const facing=(p.dir||0)+pose.yaw,guard=p.kind==='guard'||p.guard||p.guardUntil>t;
+  const facing=(p.dir||0)+pose.yaw,guard=!incapacitated(p)&&(p.kind==='guard'||p.guard||p.guardUntil>t);
   this.root=rModel(p.x+reaction.x+scale*(Math.cos(p.dir||0)*(pose.weightX||0)+Math.sin(p.dir||0)*(pose.weightZ||0)),baseY,p.z+reaction.z+scale*(-Math.sin(p.dir||0)*(pose.weightX||0)+Math.cos(p.dir||0)*(pose.weightZ||0)),scale*width,scale,scale,facing,pose.roll+reaction.roll+ail.roll,dying*1.48+pose.pitch+reaction.pitch+ail.pitch+(age>65?.055:0));
   const palette=[['#e5d5b4','#8f9f80'],['#d9debf','#849b85'],['#e3cdb0','#b39771'],['#e9ceb1','#bd9473']][race];
   const cloth=p.kind==='guard'?'#8ca2a1':p.kind==='parent'?'#b6b49b':p.armor===2?'#9ca9a4':p.armor===1?'#b09e7d':palette[0],pants=p.kind==='guard'?'#6f8583':palette[1],skin=p.kind==='guard'?'#e2be9f':RACES[race].tone;
@@ -222,6 +240,7 @@ class ArtDirector{
   for(let i=0;i<3;i++)this.S(.055,1.68-i*.12,.261,.023,.023,.019,'#c6ad77',0,0,0,10);
   this.B(.37,1.17,.09,.26,.29,.24,'#b69a70',0,0,.10,8);this.B(.38,1.26,.18,.25,.14,.09,'#c7ac80',0,0,.10,8);
   if(p.armor>0){this.B(0,1.56,.22,.66,.59,.12,p.armor===2?'#bcc4b7':'#9b8868',0,0,0,p.armor===2?10:8);for(const side of [-1,1]){this.B(side*.23,1.52,.3,.06,.54,.07,'#d9c5a0',0,side*.14,0,8);this.S(side*.33,1.45,.285,.029,.029,.025,'#eee0b9',0,0,0,10);}}
+  if(p.role==='medic'){this.B(0,1.43,.32,.57,.70,.045,'#ece3ca');this.B(-.35,1.24,.30,.34,.44,.20,'#526f61');this.B(-.35,1.26,.41,.17,.25,.025,'#ecdfba');this.p('leaf',0,1.64,.37,.10,.19,.035,'#678c75',0,-.4);}
   this.root=bodyRoot;
   // Two-piece articulated legs, with rounded soft boots.
   for(const side of [-1,1]){const key=side===1?'rightLeg':'leftLeg';if(loss(key))continue;if(groundedMotion&&this.skillLeg){this.skillLeg(p,pose,t,side,scale,pants);continue;}let rx=(run?walk*side*.55:0)+(pose.active?pose[key]:0)+reaction[key],knee=(pose.active?pose[side===1?'rightKnee':'leftKnee']:run?Math.max(0,-walk*side)*.55:0)+reaction[side===1?'rightKnee':'leftKnee']+ail.knee;
@@ -248,7 +267,7 @@ class ArtDirector{
    this.root=elbow;this.S(0,-.07,.01,.125,.22,.14,cloth);this.B(0,-.18,.015,.25,.10,.26,'#d9c7a4',0,0,0,0);
    this.root=hand;this.S(0,0,0,.12,.14,.125,skin);
    if(side===1&&p.weapon>=0&&age>=7)this.with(rModel(0,-.035,.03,1,1,1,0,-.06,Math.PI-.12),()=>this.weapon(p.weapon,.84));
-   if(side===-1&&(p.shield||p.kind==='guard'&&!p.rescueTarget)&&age>=7)this.shield(-.08,.09,.19,.94);
+   if(side===-1&&(p.shield||p.kind==='guard'&&!p.rescueTarget&&!incapacitated(p))&&age>=7)this.shield(-.08,.09,.19,.94);
   }
   this.root=upperRoot;
   // Head is a smooth sculpted mesh. Facial features are actual geometry at close range.

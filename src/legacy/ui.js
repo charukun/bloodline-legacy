@@ -50,7 +50,7 @@ class UI {
  }
  showClan(){this.talkFan.cancel();SkillPresentation.clear(this);this.closeModal();this.notices=new UINoticeQueue();this.paintNotices();this.worldNodes.clear();this.hud.classList.add('hidden');document.getElementById('world-labels').innerHTML='';this.clan.classList.remove('hidden');this.renderClan();}
  renderClan(){this.lineageView.renderClan();}
- showGame(){this.talkFan.cancel();this.lineageView.showGame();this.damageFeedback=new UIDamageFeedback();this.facilityGroups=new Map();this.lastContext=null;this.hudPortrait='';this.lastWounds=null;this.lastMother=null;this.lastGifts=null;this.pickupKey=null;this.mapSignature=null;this.worldNodes.clear();document.getElementById('world-labels').replaceChildren();this.clan.classList.add('hidden');this.hud.classList.remove('hidden');this.hud.innerHTML=`<section class="player-vitals" aria-label="旅人の状態"><div class="player-mark">${hudIdentityFrame()}<div class="portrait-frame" id="hud-portrait">${icon('leaf')}</div><div class="player-info"><strong id="player-name"></strong><div class="life-line"><span id="age"></span><span id="condition"></span></div></div><div class="orb-wrap">${orb()}</div></div><button class="wound-mark" id="wound-mark" aria-label="傷のある部位"></button></section><div class="place-mark"><div class="day-line">${icon('sun')}<span id="day"></span></div><span id="place"></span></div><button class="mini-map" id="mini-map" aria-label="地図"><canvas id="map-preview" width="200" height="200"></canvas><i>${icon('map')}</i></button><nav class="hud-bottom" aria-label="旅のメニュー"><button data-menu="skills" class="hud-button" aria-controls="game-panel" aria-expanded="false">${icon('leaf')}${label('意識')}</button><button data-menu="body" class="hud-button" aria-controls="game-panel" aria-expanded="false">${icon('bag')}${label('身支度')}</button></nav><button id="hud-settings" data-menu="settings" class="settings-gear" aria-label="設定" title="設定" aria-controls="game-panel" aria-expanded="false">${icon('gear')}</button><div id="context" class="context"></div><div id="facility-actions"></div><button class="talk-button" id="talk-button" aria-label="話す">${icon('talk')}<span>話す</span></button><div id="mother-dialogue"></div><div id="world-pickup"></div>`;
+ showGame(){this.talkFan.cancel();this.lineageView.showGame();this.damageFeedback=new UIDamageFeedback();this.staminaFeedback=new UIStaminaFeedback();this.facilityGroups=new Map();this.lastContext=null;this.hudPortrait='';this.lastWounds=null;this.lastMother=null;this.lastGifts=null;this.pickupKey=null;this.mapSignature=null;this.worldNodes.clear();document.getElementById('world-labels').replaceChildren();this.clan.classList.add('hidden');this.hud.classList.remove('hidden');this.hud.innerHTML=`<section class="player-vitals" aria-label="旅人の状態"><div class="player-mark">${hudIdentityFrame()}<div class="portrait-frame" id="hud-portrait">${icon('leaf')}</div><div class="player-info"><strong id="player-name"></strong><div class="life-line"><span id="age"></span><span id="condition"></span></div></div><div class="orb-wrap">${orb()}</div></div><button class="wound-mark" id="wound-mark" aria-label="傷のある部位"></button></section><div class="place-mark"><div class="day-line">${icon('sun')}<span id="day"></span></div><span id="place"></span></div><button class="mini-map" id="mini-map" aria-label="地図"><canvas id="map-preview" width="200" height="200"></canvas><i>${icon('map')}</i></button><nav class="hud-bottom" aria-label="旅のメニュー"><button data-menu="skills" class="hud-button" aria-controls="game-panel" aria-expanded="false">${icon('leaf')}${label('意識')}</button><button data-menu="body" class="hud-button" aria-controls="game-panel" aria-expanded="false">${icon('bag')}${label('身支度')}</button></nav><button id="hud-settings" data-menu="settings" class="settings-gear" aria-label="設定" title="設定" aria-controls="game-panel" aria-expanded="false">${icon('gear')}</button><div id="context" class="context"></div><div id="facility-actions"></div><button class="talk-button" id="talk-button" aria-label="話す">${icon('talk')}<span>話す</span></button><div id="mother-dialogue"></div><div id="world-pickup"></div>`;
   this.hudDock=this.hud.querySelector('.hud-bottom');this.hudSettings=this.hud.querySelector('#hud-settings');this.hud.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>this.toggleMenu(b.dataset.menu,b));this.talkFan.bind(document.getElementById('talk-button'));document.getElementById('mini-map').onclick=()=>this.map();document.getElementById('wound-mark').onclick=()=>this.wounds();this.deathShown='';
  }
  blocksWorldInput(){return !!this.talkFan.menu||!!this.talkFan.pointer||!!this.modal&&this.modal!=='skills';}
@@ -295,7 +295,8 @@ class UI {
   UIValue.text(document.getElementById('player-name'),p.name);UIValue.attr(document.getElementById('player-name'),'title',p.name);UIValue.text(document.getElementById('age'),Math.floor(p.age)+'歳');
   const state=uiCondition(p,t),condition=document.getElementById('condition');UIValue.text(condition,state.text);UIValue.attr(condition,'data-tone',state.tone);
   const q=document.querySelector('.stamina-orb');UIValue.attr(q,'aria-label',fill<.15?'息が切れそう':fill<.5?'息が浅くなってきた':'息に余裕がある');
-  const orbClass='stamina-orb'+(fill<.18?' tired':'')+(p.seated?' recovering':'');UIValue.attr(q,'class',orbClass);
+  const fatigue=(this.staminaFeedback??=new UIStaminaFeedback()).sample(p,performance.now()/1000);UIValue.attr(q,'data-fatigue',fatigue.level);if(fatigue.sound&&!this.modal)this.g.audio.fx?.({type:'breath',player:p.id,x:p.x,z:p.z});
+  const orbClass='stamina-orb'+(fatigue.level?' tired':'')+(p.seated?' recovering':'');UIValue.attr(q,'class',orbClass);
   const y=(75-Math.round(fill*200)/200*62).toFixed(2),ceiling=(75-Math.round(cap*200)/200*62).toFixed(2);
   UIValue.attr(document.getElementById('orb-water'),'d',`M10 ${y}Q24 ${+y-2} 36 ${y}T62 ${y}V81H10Z`);UIValue.attr(document.getElementById('orb-wave'),'d',`M12 ${y}Q24 ${+y-2} 36 ${y}T60 ${y}`);UIValue.attr(document.getElementById('orb-cap'),'d',`M10 8H62V${ceiling}H10Z`);
   UIValue.text(document.getElementById('place'),s.room.kind==='front'?'最前線':p.z<-28?'村の外れ':s.room.name);UIValue.text(document.getElementById('day'),'春の月 '+(Math.floor(t/120)%28+1)+'日');
@@ -323,8 +324,9 @@ class UI {
    if(this.g.nearRack())options.push({id:'rack',name:'武具棚',glyph:'sword',facility:'armory'});
    if(school&&p.age>=4){const a=ACTIVITY_DEFS[school.id];if(a)options.push({id:'activity',value:a.id,name:p.activity===a.id?'やめる':a.label,glyph:p.activity===a.id?'close':a.id==='pray'?'sun':a.id==='observe'?'eye':a.id==='play'?'leaf':'book',facility:school.id});}
    if(dummy&&!p.activity)options.push({id:'practice',value:dummy.id,name:p.autoFight===dummy.id?'稽古をやめる':'人形と稽古',glyph:'sword',anchor:{id:'practice:'+dummy.id,kind:'actor',target:dummy.id,height:2.95}});
-   const casualty=s.players.find(q=>q.id!==p.id&&q.alive&&q.lifeState==='downed'&&!q.carrierId&&Math.hypot(q.x-p.x,q.z-p.z)<=LIFE_RULES.rescueRange);
-   if(casualty)options.push({id:'rescue',value:casualty.id,name:casualty.name+'を救助',glyph:'hand',anchor:{id:'rescue:'+casualty.id,kind:'player',target:casualty.id,height:1.15}});
+   if(atClinic(p,s.room.kind==='village'?{kind:'village',map:s.map}:null))options.push({id:'treatment',name:p.seated?'立ち上がる':'手当てを受ける',glyph:p.seated?'close':'hand',facility:'clinic'});
+   const casualty=[...s.players,...s.actors.filter(a=>a.kind==='guard')].find(q=>q.id!==p.id&&q.alive&&q.lifeState==='downed'&&!q.carrierId&&Math.hypot(q.x-p.x,q.z-p.z)<=LIFE_RULES.rescueRange);
+   if(casualty)options.push({id:'rescue',value:casualty.id,name:casualty.name+'を救助',glyph:'hand',anchor:{id:'rescue:'+casualty.id,kind:casualty.kind==='player'?'player':'actor',target:casualty.id,height:1.15}});
    if(s.room.kind==='village'&&p.z>22)options.push({id:'boat',name:p.queued?'乗船をやめる':'舟に乗る',glyph:'boat'});
    if(s.room.kind==='front')options.push({id:'return',name:'帰り舟を呼ぶ',glyph:'boat'});
   }
@@ -340,16 +342,17 @@ class UI {
  contextAvailable(o,s){
   const p=s?.player;if(this.g.screen!=='game'||!canAct(p)||p.rescueTarget||p.traversal||p.prologue||this.modal)return false;
   if(o.id==='rack')return this.g.nearRack();
+  if(o.id==='treatment')return atClinic(p,{kind:s.room.kind,map:s.map});
   if(o.id==='activity'){const a=s.room.kind==='village'&&s.map.schools.find(a=>a.id===o.facility);return !!a&&p.age>=4&&Math.hypot(p.x-a.x,p.z-a.z)<a.r;}
   if(o.id==='boat')return s.room.kind==='village'&&p.z>22;
   if(o.id==='practice'){const a=s.actors.find(a=>a.id===o.value);return !!a&&a.kind==='dummy'&&a.alive&&!p.activity&&Math.hypot(p.x-a.x,p.z-a.z)<4;}
-  if(o.id==='rescue'){const a=s.players.find(a=>a.id===o.value);return !!a&&a.id!==p.id&&a.alive&&a.lifeState==='downed'&&!a.carrierId&&Math.hypot(p.x-a.x,p.z-a.z)<=LIFE_RULES.rescueRange;}
+  if(o.id==='rescue'){const a=[...s.players,...s.actors.filter(a=>a.kind==='guard')].find(a=>a.id===o.value);return !!a&&a.id!==p.id&&a.alive&&a.lifeState==='downed'&&!a.carrierId&&Math.hypot(p.x-a.x,p.z-a.z)<=LIFE_RULES.rescueRange;}
   return o.id==='return'&&s.room.kind==='front';
  }
  activateContext(id,value){
   const option=[...this.facilityGroups.values()].flatMap(e=>e.items).find(o=>o.id===id&&String(o.value||'')===value);
   if(!this.contextAvailable(option||{id,value},this.g.snapshot))return;
-  if(id==='rack'){this.rack();return;}this.g.stopInput();if(id==='activity')this.g.command({type:'activity',activity:value});if(id==='boat')this.g.command({type:'board'});if(id==='return')this.g.command({type:'return'});if(id==='rescue')this.g.command({type:'rescue',target:value});
+  if(id==='rack'){this.rack();return;}this.g.stopInput();if(id==='treatment')this.g.command({type:'treatment'});if(id==='activity')this.g.command({type:'activity',activity:value});if(id==='boat')this.g.command({type:'board'});if(id==='return')this.g.command({type:'return'});if(id==='rescue')this.g.command({type:'rescue',target:value});
   if(id==='practice'){const target=this.g.snapshot.actors.find(a=>a.id===value);if(this.g.snapshot.player.autoFight===target.id){this.g.command({type:'sit',active:true});return;}this.g.command({type:'move',x:0,z:0});this.g.walkTarget={x:target.x,z:target.z,until:performance.now()+7000};}
  }
  syncFacilityActions(options){
@@ -429,6 +432,7 @@ class UI {
   if(target&&Math.hypot(target.x-p.x,target.z-p.z)<15)add('target','target-label',target,target.elite?4.3:head(target),'',`<span>${ESC(target.name||'交戦中')}</span>`,10);
   const statuses=uiActiveStatuses(p,t);if(statuses)add('status','status-caption',p,head(p),statuses,'',-91);
   const pain=this.damageFeedback?.bark;
+  if(!(pain&&t<pain.until)&&this.staminaFeedback?.level&&now/1000<this.staminaFeedback.breathUntil&&!(p.speech&&p.speechUntil>t)&&!this.modal)add('breath:'+p.id,'breath-callout',p,head(p),'はぁ、はぁ…','',p.combo?-66:-22);
   if(pain&&t<pain.until)add('pain:'+p.id,'pain-callout'+(pain.level>1?' strong':''),p,head(p),pain.text,'',p.combo?-66:-22);
   for(const a of [...s.players,...s.actors])if(a.alive&&a.speechUntil>t&&a.speech&&Math.hypot(a.x-p.x,a.z-p.z)<13)labels.push({key:'speech:'+a.id,cls:'speech-bubble',a,h:head(a),text:a.speech});
   // Presentation time keeps the rise smooth between simulation/network ticks.
