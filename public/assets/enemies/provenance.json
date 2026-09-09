@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "assets": [
+    {
+      "assetName": "KayKit Character Pack: Skeletons 1.0 — Skeleton_Warrior.glb",
+      "author": "Kay Lousberg",
+      "distributor": "KayKit-Game-Assets (author-maintained GitHub repository)",
+      "sourceURL": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0/blob/15b62b9bad122f72926c10fb14d622c73819fa54/addons/kaykit_character_pack_skeletons/Characters/gltf/Skeleton_Warrior.glb",
+      "packURL": "https://kaylousberg.itch.io/kaykit-skeletons",
+      "sourceCommit": "15b62b9bad122f72926c10fb14d622c73819fa54",
+      "sourceSHA256": "178b6fda810b814c250d8a2010c24dfd9b458b9006dd323353e620b7ff118bbe",
+      "license": "CC0-1.0",
+      "licenseURL": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "licenseEvidenceURL": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0/blob/15b62b9bad122f72926c10fb14d622c73819fa54/LICENSE.txt",
+      "licenseEvidenceFiles": [
+        "KayKit-LICENSE.txt",
+        "CC0-1.0.txt"
+      ],
+      "commercialUse": "Permitted",
+      "modification": "Permitted",
+      "gameEmbedding": "Permitted, including embedded standalone HTML",
+      "redistribution": "Permitted, including modified/source assets in the game repository; CC0 trademark/patent and no-endorsement limitations remain",
+      "attribution": "Not required; author credited voluntarily in this record",
+      "acquiredAt": "2026-09-09",
+      "runtimeFile": "public/assets/enemies/sentinel.glb",
+      "gameUse": [
+        "soldier family: soldier, grave-warden, cinder-knight, rime-guard, oath-breaker",
+        "elite family: elite, thorn-reaver, bell-executioner, stone-colossus, veil-duelist"
+      ],
+      "changes": [
+        "Stock helmet removed; original faction sallet, antler crown, shields, sword, axe and mantle added in game",
+        "23 deform/socket bones, 8 selected animation clips",
+        "10 primitives reduced to one indexed skin",
+        "Source color atlas baked into linear vertex colors; no image texture dependency",
+        "Warm bone, weathered iron, teal/red cloth and deterministic per-actor tint",
+        "Existing attack deadlines mapped to the authored 0.61-second chop contact",
+        "Lost-right-arm response uses the mirrored source Punch_A clip, with the surviving left-hand strike at source time 0.50",
+        "Eight additional named forms share the same audited skin; original armor, ice mace, flail, slab hammer, veil, masks and shields with proportion and swing adjustments"
+      ],
+      "runtimeSHA256": "1a9b29e11320723614eae1589a1dc3908b8852ad837d918436cd9687d15466f2"
+    }
+  ],
+  "originalArt": [
+    "src/enemies/equipment.js: equipment, scars and faction emblem authored for Bloodline Legacy",
+    "src/enemies/bestiary.js: 4 shared sculpted meshes; 23 procedural creature forms (21 hostile, 2 neutral); 8 original skeletal equipment sets. No external pixels, models or animations added."
+  ],
+  "referencesNotRedistributed": [
+    "Project Visual References A–D"
+  ]
+}

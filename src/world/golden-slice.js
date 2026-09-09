@@ -58,7 +58,7 @@ function installGoldenGeometry(){
  RG_CACHE.set('golden:blossom',{positions:new Float32Array(fp),normals:new Float32Array(fn),count:fp.length/3,radius:.23});
 }
 class GoldenArt extends VillageArt{
- constructor(r){super(r);installGoldenGeometry();this.goldenActive=false;}
+ constructor(r){super(r);installGoldenGeometry();PlazaCraft.paving();this.goldenActive=false;}
  local(x=0,y=0,z=0){const m=rMultiply(this.root,rModel(x,y,z));return this.goldenActive&&this.target===this.r.static&&inGoldenDistrict(m[12],m[14]);}
  g(type,x,y,z,sx,sy,sz,c,ry=0,rz=0,rx=0,surf=21){ArtDirector.prototype.p.call(this,type,x,y,z,sx,sy,sz,c,ry,rz,rx,surf);}
  p(type,x,y,z,sx,sy,sz,c,ry=0,rz=0,rx=0,surf=0,alpha=1){
@@ -107,6 +107,13 @@ class GoldenArt extends VillageArt{
   this.g('beadlow',x,.545*s,z,.045*s,.018*s,.045*s,'#c3a451',0,0,0,0);
  }
  cottage(x,z,scale=1,variant=0,yaw=0){
+  if(this.local(x,0,z)&&this.craftHouse&&x===this.craftHouse.x&&z===this.craftHouse.z-2){
+   this.with(rModel(x,.08,z,scale,scale,scale,yaw),()=>{
+    this.g('craft:cottage',0,0,0,1,1,1,'#ffffff',0,0,0,28);
+    this.lantern(-.97,2.02,1.99);this.pot(-1.39,2.11,.84);
+    for(const side of [-1,1]){this.g('box',side*2.49,.26,.12,.46,.28,1.66,'#9a8560',0,0,0,22);for(let j=0;j<4;j++)this.flower(side*2.49,-.49+j*.41,j%2?'#e8dcb6':'#adb19a',.67);}
+   });this.r.blob(x,z,3.5*scale,2.7*scale,.3,this.r.groundFX);return;
+  }
   super.cottage(x,z,scale,variant,yaw);if(!this.local(x,0,z))return;
   this.with(rModel(x,.08,z,scale,scale,scale,yaw),()=>{
    for(const side of [-1,1])for(let j=0;j<6;j++)this.g('golden:stone',side*2.34,.39+j*.43,1.86,j%2?.38:.56,.38,.22,j%3?'#aca28b':'#8e9184');
@@ -125,20 +132,8 @@ class GoldenArt extends VillageArt{
  garden(x,z){
   if(!this.local(x,0,z))return super.garden(x,z);
   this.with(rModel(x,0,z),()=>{
-   // Open annulus: every voussoir has an inner face, with water below the rim.
-   for(let row=0;row<3;row++)for(let j=0;j<16;j++){const a=(j+row%2*.5)/16*TAU;
-    this.g('golden:stone',Math.sin(a)*.94,.26+row*.25,Math.cos(a)*.94,.37,.24,.26,j%3?'#999b89':'#b1aa93',a);
-   }
-   for(let j=0;j<16;j++){const a=j/16*TAU;this.g('golden:stone',Math.sin(a)*.95,1.0,Math.cos(a)*.95,.40,.17,.35,j%3?'#b6b29c':'#969c91',a);}
-   this.g('cylinder',0,.19,0,.79,.02,.79,'#426065',0,0,0,1);
-   for(const side of [-1,1])this.g('box',side*1.2,1.70,0,.17,2.9,.21,'#88704f',0,0,0,22);
-   this.roof(3.0,2.4,2.96,.83,'#878493');
-   this.g('cylinder',0,2.15,0,.085,2.7,.085,'#7d6243',0,0,Math.PI/2,22);
-   for(let i=0;i<7;i++)this.g('torus',-.10+i*.032,2.15,0,.10,.10,.06,'#b9a17a',Math.PI/2,0,0,22);
-   this.line([0,2.12,0],[0,.60,0],.016,'#b6a27c',22);
-   this.g('cylinder',.28,.51,.24,.19,.33,.19,'#917452',0,0,0,22);
-   this.g('torus',.28,.70,.24,.19,.19,.12,'#575e5a',0,0,Math.PI/2,10);
-   this.g('torus',.28,.85,.24,.17,.19,.07,'#62655b',0,0,0,10);
+   this.g('craft:well',0,0,0,1,1,1,'#ffffff',0,0,0,28);
+   this.g('cylinder',0,.19,0,.71,.02,.71,'#426065',0,0,0,1);
    this.lantern(-1.20,2.08,.28);
   });
  }
@@ -158,7 +153,7 @@ class GoldenArt extends VillageArt{
   });this.r.blob(x,z,1.4*scale,1.4*scale,.34,this.r.groundFX);
  }
  village(map){
-  this.goldenActive=true;super.village(map);this.target=this.r.static;this.root=rModel();
+  this.craftHouse=map.schools.find(s=>s.id==='hunter');this.goldenActive=true;super.village(map);this.target=this.r.static;this.root=rModel();
   const well=map.schools.find(s=>s.id==='dance'),rng=random(map.seed+8301),stone=['#a29a85','#b3a68e','#beb095','#a69e89','#c0b39b'];
   // Connected, irregular coursed paving. Low relief stays below the existing foot plane.
   const paved=(x,z)=>inGoldenDistrict(x,z)&&((Math.abs(x)<2.35&&z<20)||(x*x/42+(z-well.z)**2/31<1)||(Math.abs(z-7)<1.45&&Math.abs(x)<15)||map.schools.some(s=>s.id!=='dance'&&Math.abs(z-(s.z+3.6))<1.40&&x>=Math.min(0,s.x)-.5&&x<=Math.max(0,s.x)+.5));
@@ -173,9 +168,9 @@ class GoldenArt extends VillageArt{
      const wear=Math.sin(cx*1.7+cz*.43)+Math.cos(cz*1.23-cx*.32);
      const inset=edge?.12:.055;
      // Earth showing between worn, uneven courses breaks up the tiled carpet.
-     // Authoring stays seed-stable; no additional material or render pass.
+     // Shared UV material in one instanced batch; the layout stays seed-stable.
      if(wear<1.58||Math.hypot(cx-well.x,cz-well.z)<1.8)
-      this.g('golden:stone',cx,.148+(rng()-.5)*.009,cz,width-inset,.053,depth-inset*.8,stone[Math.floor(rng()*stone.length)],(rng()-.5)*(edge?.14:.07),0,0,20);
+      this.g('craft:paving',cx,.148+(rng()-.5)*.009,cz,width-inset,.053,depth-inset*.8,['#fff5dc','#fff9e8','#eadfc7','#f8efd9'][Math.floor(rng()*4)],(rng()-.5)*(edge?.14:.07),0,0,29);
      if(rng()<.035&&Math.abs(cx)>2.8)this.g('golden:spray',cx+width*.40,.14,cz,.22,.10,.30,'#6b8050',rng()*6,0,0,13);
     }x+=width;
    }z+=depth;
