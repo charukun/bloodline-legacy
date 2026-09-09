@@ -5,6 +5,8 @@ import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {buildInfo} from './build-info.mjs';
 import {environments} from './config.mjs';
+import {liveBuild} from '../tools/archive-simulation.mjs';
+import {LiveContract} from '../src/live/contract.mjs';
 export const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const sha256 = data => createHash('sha256').update(data).digest('hex');
 
@@ -30,7 +32,8 @@ export async function build(environment, commit, projectRoot = root) {
   // The root build embeds the same identity; deploy the tested HTML without rewriting it.
   const bytes = Buffer.from(html);
   await fs.writeFile(path.join(out, 'index.html'), bytes);
-  const version = {application:'Bloodline Legacy', ...info, mode, htmlSha256:sha256(bytes), htmlBytes:bytes.length};
+  const live=mode==='game'?{...LiveContract,...await liveBuild(projectRoot)}:null;
+  const version = {application:'Bloodline Legacy', ...info, mode, live, htmlSha256:sha256(bytes), htmlBytes:bytes.length};
   await fs.writeFile(path.join(out, 'version.json'), JSON.stringify(version, null, 2)+'\n');
   const noindex = environment !== 'production' || mode === 'holding';
   await fs.writeFile(path.join(out, '_headers'), '/*\n  Cache-Control: no-cache\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n'+(noindex ? '  X-Robots-Tag: noindex, nofollow\n' : ''));

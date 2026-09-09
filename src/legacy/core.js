@@ -62,7 +62,8 @@ const EFFECT_NAMES = ['貫通','押し返し','早業','武装崩し','受け流
 const BODY_PARTS = ['head','torso','rightArm','leftArm','rightLeg','leftLeg'];
 const BODY_NAMES = {head:'頭部',torso:'胴体',rightArm:'右腕',leftArm:'左腕',rightLeg:'右脚',leftLeg:'左脚'};
 const WOUND_NAMES = {light:'軽傷',heavy:'重傷',lost:'欠損'};
-const STAMINA = Object.freeze({max:100,minCap:22,regen:19,capRegen:1.1,delay:.38,capDelay:3.2});
+const STAMINA = Object.freeze({max:100,minCap:22,regen:14,capRegen:.2,delay:.55,capDelay:6,fatiguePerCost:.18,seatedRegen:32,seatedCapRegen:8});
+const REST_HEALING = Object.freeze({quiet:12,healthRegen:3.6,woundRate:4});
 const PASSIVES = [
  {id:3072,name:'炉辺の呼吸',school:'village',deed:'村で落ち着いて過ごす',need:35,effect:'regen',value:3,desc:'スタミナの自然回復を小さく高める。'},
  {id:3073,name:'剣士の手ほどき',school:'sword',deed:'剣術学校で訓練する',need:10,effect:'attackCost',value:.2,desc:'通常攻撃のスタミナ消費を小さく軽減する。'},
@@ -133,8 +134,9 @@ function makeVillage(seed=1) {
 }
 function supportHeight(map,x,z){return (map?.traversables||[]).reduce((y,o)=>o.kind==='step'&&Math.abs(x-o.x)<=o.width/2&&Math.abs(z-o.z)<=o.depth/2?Math.max(y,o.height):y,0);}
 const TRAVERSAL_RULES=Object.freeze({maxVault:1.25,maxStep:.95,radius:.42,cooldown:.16});
-// Open forecourt: inside the dojo activity area and the village shore boundary.
-function villagePracticePosition(map){const dojo=map.schools.find(s=>s.id==='sword');return {x:dojo.x,z:dojo.z+3};}
+// Inner forecourt: clear of the reading stand and inside the existing
+// dojo activity area and village shore boundary in either mirrored layout.
+function villagePracticePosition(map){const dojo=map.schools.find(s=>s.id==='sword');return {x:dojo.x-(Math.sign(dojo.x)||1)*1.75,z:dojo.z+3};}
 const ZONES = [
  {name:'白樺の渡り',sub:'THE BIRCH MARCH',ground:'#6c8970',tree:'#75946e'},
  {name:'霧鳴りの峡谷',sub:'THE HOLLOW WIND',ground:'#657f7d',tree:'#799b98'},
@@ -374,7 +376,7 @@ class Simulation {
   if(!e.wounds[part])e.wounds[part]={severity:power>=2?'heavy':'light'};
  }
  cancelAction(p){
-  this.stopTraversal(p);this.stopDash(p);this.stopActivity(p);p.input={x:0,z:0};p.autoFight=null;p.chain=null;p.combo=null;p.pendingSkill=null;p.attackStep=null;p.telegraph=null;p.guard=false;p.guardPending=false;p.seated=false;p.queued=false;p.retreatUntil=0;p.exitPending=0;p.attackBufferedUntil=0;p.engagement=null;SkillSystem.reset(p);
+  this.stopTraversal(p);this.stopDash(p);this.stopActivity(p);p.input={x:0,z:0};p.autoFight=null;p.chain=null;p.combo=null;p.pendingSkill=null;p.attackStep=null;p.telegraph=null;p.guard=false;p.guardPending=false;p.seated=false;p.queued=false;p.retreatUntil=0;p.exitPending=0;p.attackBufferedUntil=0;p.engagement=null;p.hitRecoil=null;SkillSystem.reset(p);
  }
  safeGround(p,r=this.getRoom(p)){
   return r?.kind==='village'?p.z>=-25.5&&p.z<=22:r?.kind==='front'&&p.z>=2&&p.z<=8&&Math.abs(p.x)<=5;
@@ -708,7 +710,8 @@ class Simulation {
  tryInsight(p,trigger){if(p.age>=4)this.progressDeed(p,trigger,1);}
  spend(p,cost,fatigue=0){
   if(!Number.isFinite(cost)||cost<0||p.stamina+.0001<cost)return false;
-  p.staminaCap=Math.max(STAMINA.minCap,p.staminaCap-Math.max(0,fatigue));p.stamina=Math.min(p.staminaCap,p.stamina-cost);p.lastExertion=this.time;
+  // Tie fatigue to actual exertion, including per-frame running and cost discounts.
+  p.staminaCap=Math.max(STAMINA.minCap,p.staminaCap-Math.max(0,fatigue,cost*STAMINA.fatiguePerCost));p.stamina=Math.min(p.staminaCap,p.stamina-cost);p.lastExertion=this.time;
   if(p.age>=4&&(p.autoFight||this.getRoom(p)?.actors.some(e=>e.alive&&dist(e,p)<4&&e.kind==='dummy'))){p.enduranceXP=(p.enduranceXP||0)+cost*.32;}
   return true;
  }
@@ -808,12 +811,20 @@ class Simulation {
   return base*injuryModifiers(p).move*(p.age<15?.8:1);
  }
  collisionRadius(a){return a.kind==='player'?.42:a.kind==='dummy'?.40:a.kind==='boss'?1.35:a.elite?1.05:['maw','stag'].includes(a.kind)?.65:.44;}
+ contactSpacing(a,b){
+  const combatPair=(a.kind==='player'&&b.kind!=='player'&&enemiesOnly(b))||(b.kind==='player'&&a.kind!=='player'&&enemiesOnly(a));
+  return this.collisionRadius(a)+this.collisionRadius(b)+(combatPair?.18:0);
+ }
  moveAttackStep(p,r,dx,dz,slide=false){
   // Small swept substeps retain the existing scenery and body collision hulls.
   const steps=Math.max(1,Math.ceil(Math.hypot(dx,dz)/.045)),sx=dx/steps,sz=dz/steps;
-  const bodies=[...r.actors,...this.players.values()].filter(a=>a!==p&&a.alive&&!a.carrierId&&a.id!==p.rescueTarget&&(a.kind!=='player'||a.room===r.id));
-  const sceneryBlocked=q=>{const bounded={...q};this.bound(bounded,r,this.collisionRadius(p));return Math.hypot(bounded.x-q.x,bounded.z-q.z)>1e-6;};
-  const bodyBlocked=q=>bodies.some(a=>{const before=dist(a,p),after=dist(a,q),radius=this.collisionRadius(p)+this.collisionRadius(a);return after<radius&&after<before-.000001;});
+  // Cull against the entire short sweep once, then use squared distances.
+  // Enemy approach shares this path; do not scan the room at every substep.
+  const bodies=[],addBody=a=>{if(a===p||!a.alive||a.carrierId||a.id===p.rescueTarget||(a.kind==='player'&&a.room!==r.id))return;const radius=this.contactSpacing(p,a);if(Math.abs(a.x-p.x)<=radius+Math.abs(dx)&&Math.abs(a.z-p.z)<=radius+Math.abs(dz))bodies.push({a,radius2:radius*radius});};
+  for(const a of r.actors)addBody(a);for(const a of this.players.values())addBody(a);
+  const bounded={x:0,z:0,supportHeight:p.supportHeight||0},bodyRadius=this.collisionRadius(p);
+  const sceneryBlocked=q=>{bounded.x=q.x;bounded.z=q.z;this.bound(bounded,r,bodyRadius);return Math.hypot(bounded.x-q.x,bounded.z-q.z)>1e-6;};
+  const bodyBlocked=q=>bodies.some(({a,radius2})=>{const after=(a.x-q.x)**2+(a.z-q.z)**2;return after<radius2&&after<(a.x-p.x)**2+(a.z-p.z)**2-1e-7;});
   let travelled=0;
   for(let i=0;i<steps;i++){
    let q={x:p.x+sx,z:p.z+sz,supportHeight:p.supportHeight||0};
@@ -847,13 +858,36 @@ class Simulation {
  }
  reactToHit(target,source,part,severity='light',strength=null,blocked=false){
   const duration=blocked?.28:severity==='lost'?.95:severity==='heavy'?.72:.48;
-  // Visual metadata only; repeated wound resolution for one contact shares an ID.
+  // Reaction metadata; repeated wound resolution for one contact shares an ID.
   const fresh=target.hitMotionAt!==this.time;
   if(fresh)target.hitMotionId=(target.hitMotionId||0)+1;
   target.hitMotionAt=this.time;target.hitGuard=blocked;
   if(strength!==null||fresh)target.hitStrength=strength??(severity==='lost'?1.15:severity==='heavy'?1:.48);
   target.hitPart=part;target.hitSeverity=severity;target.hitReactAt=this.time;target.hitReactUntil=this.time+duration;
   target.hitDir=source?Math.atan2(target.x-source.x,target.z-source.z):(target.dir||0)+Math.PI;
+  // A bounded, authoritative catch step. Repeated contacts replace the remaining
+  // travel, never accumulate an impulse or extend the combat action clocks.
+  if(fresh&&target.kind==='player'){
+   target.hitRecoil=null;
+   if(source&&canAct(target)&&!target.prologue&&!target.traversal&&!hasStatus(target,'root',this.time)){
+    const length=blocked?.025:clamp(.08+(target.hitStrength-.6)*.40,.035,.24);
+    target.hitRecoil={id:target.hitMotionId,room:target.room,dir:target.hitDir,length,age:0,duration:.20,progress:0,x:0,z:0,lastX:target.x,lastZ:target.z};
+   }
+  }
+ }
+ tickHitRecoil(p,r,dt){
+  const a=p.hitRecoil;if(!a)return;
+  if(!canAct(p)||p.prologue||p.traversal||p.seated||p.activity||p.rescueTarget||a.room!==r.id||a.id!==p.hitMotionId||hasStatus(p,'root',this.time)||Math.hypot(p.x-a.lastX,p.z-a.lastZ)>1.5){p.hitRecoil=null;return;}
+  if(a.age<a.duration){
+   a.age=Math.min(a.duration,a.age+dt);const u=a.age/a.duration,progress=1-(1-u)**3,amount=(progress-a.progress)*a.length;a.progress=progress;
+   const x=p.x,z=p.z,moved=this.moveAttackStep(p,r,Math.sin(a.dir)*amount,Math.cos(a.dir)*amount);
+   a.x+=p.x-x;a.z+=p.z-z;
+   if(moved<amount-1e-6)a.age=a.duration;
+   p.supportHeight=supportHeight(r.map,p.x,p.z);
+  }
+  a.lastX=p.x;a.lastZ=p.z;
+  // Retain the completed displacement through recovery for the planted feet.
+  if(this.time>p.hitReactUntil+.25)p.hitRecoil=null;
  }
  beginComboStrike(p,forcedId=null){
   let sk=forcedId===null?this.chooseSkill(p,p.combo.band):skillById(forcedId);if(sk&&(skillPhase(sk)!==p.combo.band||!p.skills.includes(sk.id)||skillRestriction(p,sk)))return false;if(!sk){this.notice(p,PHASES[p.combo.band]+'の技が出せない');return false;}
@@ -1002,12 +1036,24 @@ inflictWound(p,part,severity,source=null,strength=null){
   this.reactToHit(p,source,part,severity,strength);this.impact(source,p,part,severity!=='light');p.attackStep=null;p.retreatUntil=0;p.hitUntil=this.time+.48;p.stun=this.time+(severity==='lost'?1.35:severity==='heavy'?.85:.50);p.action=severity==='lost'?'break':'hit';p.actionStarted=this.time;p.actionUntil=p.stun;p.pendingSkill=null;p.combo=null;p.comboQueued=false;p.cooldown=Math.max(p.cooldown,p.stun+.35);p.guard=false;p.guardPending=false;
   report(severity);return true;
  }
+ tickRestHealing(p,dt){
+  if(!p.seated||!canAct(p)||p.prologue||p.rescueTarget||p.traversal||this.time-(p.sitSince||0)<=.35||p.stun>this.time||hasStatus(p,'sleep',this.time)||this.time-(p.lastHurtAt??-100)<=REST_HEALING.quiet)return;
+  p.health=Math.min(100,(p.health??100)+dt*REST_HEALING.healthRegen);
+  // Advance only the existing injury deadline; age, lifespan and lost limbs are unchanged.
+  const bonus=dt/this.yearSeconds*(REST_HEALING.woundRate-1);
+  for(const w of Object.values(p.wounds))if((w.severity==='light'||w.severity==='heavy')&&Number.isFinite(w.healsAt))w.healsAt-=bonus;
+ }
  tickRecovery(p,dt){
   const mods=injuryModifiers(p),max=Math.max(STAMINA.minCap,staminaMaximum(p)-(100-mods.cap)-(p.permanentFatigue||0));p.staminaMax=staminaMaximum(p);
-  if(p.seated&&this.time-(p.sitSince||0)>.35&&p.stun<=this.time&&!hasStatus(p,'sleep',this.time)){p.staminaCap=Math.min(max,p.staminaCap+dt*17);p.stamina=Math.min(p.staminaCap,p.stamina+dt*32);}
+  const resting=p.seated&&this.time-(p.sitSince||0)>.35&&p.stun<=this.time&&!hasStatus(p,'sleep',this.time);
+  if(resting){p.staminaCap=Math.min(max,p.staminaCap+dt*(STAMINA.seatedCapRegen+effectsOf(p,'capRegen')));p.stamina=Math.min(p.staminaCap,p.stamina+dt*(STAMINA.seatedRegen+effectsOf(p,'regen')));}
   if(!p.autoFight&&!p.seated&&this.time-(p.lastHurtAt??-100)>12&&this.getRoom(p)?.kind==='village'&&p.z>-27)p.health=Math.min(100,(p.health??100)+dt*1.8);
-  if(!p.dash&&this.time-p.lastExertion>STAMINA.delay&&!p.pendingSkill&&p.stun<=this.time)p.stamina=Math.min(p.staminaCap,p.stamina+dt*(STAMINA.regen+effectsOf(p,'regen'))*(p.guard?.28:p.combo?.45:1));
-  if(this.time-p.lastSkillAt>STAMINA.capDelay&&!p.pendingSkill&&this.time-p.lastExertion>1.4)p.staminaCap=Math.min(max,p.staminaCap+dt*(STAMINA.capRegen+effectsOf(p,'capRegen'))*(p.guard?.35:1));
+  this.tickRestHealing(p,dt);
+  // Seated and ordinary recovery are exclusive, so sitting cannot double-dip.
+  if(!p.seated){
+   if(!p.dash&&this.time-p.lastExertion>STAMINA.delay&&!p.pendingSkill&&p.stun<=this.time)p.stamina=Math.min(p.staminaCap,p.stamina+dt*(STAMINA.regen+effectsOf(p,'regen'))*(p.guard?.28:(p.autoFight||p.combo||p.cooldown>this.time)?.45:1));
+   if(this.time-p.lastSkillAt>STAMINA.capDelay&&!p.pendingSkill&&this.time-p.lastExertion>1.4)p.staminaCap=Math.min(max,p.staminaCap+dt*(STAMINA.capRegen+effectsOf(p,'capRegen'))*(p.guard?.35:1));
+  }
   p.staminaCap=Math.min(p.staminaCap,max);p.stamina=clamp(p.stamina,0,p.staminaCap);
   const age=p.age+p.ageFraction;for(const [part,w] of Object.entries(p.wounds))if(w.severity!=='lost'&&age>=w.healsAt){delete p.wounds[part];this.emit('healed',{player:p.id,room:p.room,part,x:p.x,z:p.z});}
  }
@@ -1054,7 +1100,7 @@ inflictWound(p,part,severity,source=null,strength=null){
    if(p.age+p.ageFraction>=p.lifespan){this.die(p,'寿命');continue;}
    if(p.rescueAt&&this.time>=p.rescueAt){this.returnHome(p);r=this.getRoom(p);}
    if(this.tickLifeState(p,r,dt))continue;if(this.tickTraversal(p,r))continue;
-   this.tickRecovery(p,dt);this.tickExploration(p,dt);if(this.tickHitStop(p,dt)){this.bound(p,r);continue;}if(p.prologue){this.tickCarriedMove(p,r,dt);continue;}this.tickAutoCombat(p,r,dt);this.tickChain(p);
+   this.tickRecovery(p,dt);this.tickExploration(p,dt);if(this.tickHitStop(p,dt)){this.bound(p,r);continue;}if(p.prologue){this.tickCarriedMove(p,r,dt);continue;}this.tickHitRecoil(p,r,dt);this.tickAutoCombat(p,r,dt);this.tickChain(p);
    this.tickAttackStep(p);
    if(p.pendingSkill&&this.time>=p.pendingSkill.at)this.releaseSkill(p);
    if(p.combo&&!p.pendingSkill&&p.combo.awaitUntil&&this.time>=p.actionUntil){
@@ -1153,12 +1199,14 @@ inflictWound(p,part,severity,source=null,strength=null){
   const distance=dist(e,target),injury=injuryModifiers(e),vulnerable=target.cooldown>this.time||target.action==='recover'||Math.abs(angleDiff(target.dir,Math.atan2(e.x-target.x,e.z-target.z)))>1.9;
   if(e.smart&&distance<reach+1&&distance>reach*.7&&this.time>e.cooldown&&!vulnerable&&e.counterOpportunity<this.time){e.guard=e.wounds.leftArm?.severity!=='lost';e.action='guard';return;}
   if(e.smart&&e.counterOpportunity===undefined)e.counterOpportunity=0;
-  if(distance>reach*.82){const speed=(e.kind==='guard'?2.8:e.kind==='boss'?2.6:3.1)*injury.move*(hasStatus(e,'slow',this.time)?.5:1)*(hasStatus(e,'root',this.time)?0:1);if(e.luredBy)this.moveAttackStep(e,r,Math.sin(e.dir)*speed*dt,Math.cos(e.dir)*speed*dt,true);else{e.x+=Math.sin(e.dir)*speed*dt;e.z+=Math.cos(e.dir)*speed*dt;}e.action='run';e.guard=false;if(r.kind==='village')e.z=Math.min(-29.6,e.z);}
+  if(distance>reach*.82){const speed=(e.kind==='guard'?2.8:e.kind==='boss'?2.6:3.1)*injury.move*(hasStatus(e,'slow',this.time)?.5:1)*(hasStatus(e,'root',this.time)?0:1);this.moveAttackStep(e,r,Math.sin(e.dir)*speed*dt,Math.cos(e.dir)*speed*dt,true);e.action='run';e.guard=false;if(r.kind==='village')e.z=Math.min(-29.6,e.z);}
   else if(this.time>=e.cooldown){e.attackCount++;const unblockable=(e.kind==='boss'&&e.attackCount%3===0)||(e.elite&&e.attackCount%4===0),duration=e.elite?1.55:e.smart&&vulnerable?1.05:1.35;e.guard=false;e.telegraph={target:target.id,at:this.time+duration,started:this.time,dir:e.dir,reach,arc:ranged?.65:unblockable?2.5:1.7,unblockable,ranged,part:e.elite&&e.attackCount%2===0?'rightArm':undefined};e.action='windup';}
   else e.action='idle';
  }
  separateActors(r,dt){const list=r.actors.filter(e=>e.alive&&!e.rescueTarget&&!e.rescueReturn&&!(e.hitstopUntil>this.time)&&!['villager','dummy'].includes(e.kind));for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++){const a=list[i],b=list[j],d=dist(a,b),min=a.elite||b.elite?1.8:1.4;if(d<min){const angle=d<.001?(i+j)*2.4:Math.atan2(b.x-a.x,b.z-a.z),v=(min-d)*Math.min(.5,dt*5);a.x-=Math.sin(angle)*v;a.z-=Math.cos(angle)*v;b.x+=Math.sin(angle)*v;b.z+=Math.cos(angle)*v;}}
   if(r.kind==='village')for(const e of list){const rescuing=e.kind==='guard'&&[...this.players.values()].some(p=>p.rescueClaim?.id===e.id&&p.rescueClaim.until>this.time);if(rescuing){this.bound(e,r);continue;}e.x=clamp(e.x,-25,25);e.z=clamp(e.z,-45,-29.6);if(e.kind==='guard')e.x=clamp(e.x,e.homeX-2.2,e.homeX+2.2);}
+  const players=[...this.players.values()].filter(p=>p.room===r.id&&canAct(p)&&!p.prologue&&!p.traversal);
+  for(const e of list)for(const p of players){const d=dist(e,p),gap=this.contactSpacing(e,p)-d;if(gap<=0)continue;const dir=d>1e-6?Math.atan2(e.x-p.x,e.z-p.z):(p.dir||0)+Math.PI,step=Math.min(gap,dt*2.4);this.moveAttackStep(e,r,Math.sin(dir)*step,Math.cos(dir)*step);}
  }
  bank(p,witness=null){
   if(p.alive||p.recorded||p.legacyChoice?.state==='pending')return false;
@@ -1184,6 +1232,23 @@ inflictWound(p,part,severity,source=null,strength=null){
   this.emit('death',{player:p.id,room:p.room,cause,age:p.age,kills:p.recorded?p.kills:0,skills:p.bankedSkills,x:p.x,z:p.z});
  }
  snapshot(id,after=0){const p=this.players.get(id);if(!p)return null;const r=this.getRoom(p);return {version:VERSION,t:this.time,seq:this.seq,mode:this.mode,player:p,room:{id:r.id,kind:r.kind,seed:r.seed,code:r.code,name:r.name,stage:r.stage,kills:r.kills,quota:r.quota,cleared:r.cleared,clans:r.clans,bossDefeated:r.bossDefeated,partySize:r.partySize,fields:r.fields||[],items:r.items||[],abandoned:r.abandoned},actors:r.actors,players:[...this.players.values()].filter(q=>q.room===r.id),boatIn:this.boatInterval-this.time%this.boatInterval,yearSeconds:this.yearSeconds,legacy:this.legacy(p.owner),events:this.events.filter(e=>e.seq>after&&(e.room===r.id||e.player===id))};}
- exportState(){const data={schema:3,version:VERSION,seed:this.seed,rngState:this.rng.getState(),mode:this.mode,time:this.time,seq:this.seq,eid:this.eid,roomSeq:this.roomSeq,rooms:[...this.rooms],players:[...this.players].map(([id,p])=>[id,{...p,speech:'',speechUntil:0}]),legacies:this.legacies,abandoned:this.abandoned};return JSON.parse(JSON.stringify(data));}
- static restore(data){if(data?.schema!==3||!Array.isArray(data.players)||!Array.isArray(data.rooms)||data.players.length>200)throw Error('この改修より前の進行中データは別保管されています。');const s=new Simulation({seed:data.seed,mode:data.mode});s.time=+data.time||0;s.seq=+data.seq||0;s.eid=+data.eid||0;s.roomSeq=+data.roomSeq||1;s.rooms=new Map(data.rooms);s.players=new Map(data.players);s.legacies=data.legacies||{};s.abandoned=data.abandoned||[];if(Number.isInteger(data.rngState))s.rng.setState(data.rngState);for(const p of s.players.values()){if(!s.rooms.has(p.room))throw Error('村の記録がありません。');p.attackBufferedUntil=0;p.attackStep??=null;p.hitReactAt??=0;p.hitReactUntil??=0;p.hitDir??=0;p.hitSeverity??=null;p.input={x:0,z:0};p.guard=false;p.guardPending=false;p.speech='';p.speechUntil=0;p.phaseLimitVersion=0;s.preparePlayer(p);p.dash=null;p.autoFight=null;p.chain=null;p.pendingSkill=null;p.combo=null;p.attackStep=null;s.stopTraversal(p);p.action=incapacitated(p)?p.lifeState:p.alive?(p.seated?'sit':'idle'):'fall';SkillSystem.restore(s,p);}for(const r of s.rooms.values()){if(r.kind==='village'){r.map=makeVillage(r.seed);const spot=villagePracticePosition(r.map);for(const a of r.actors)if(a.kind==='dummy'){a.x=a.homeX=spot.x;a.z=a.homeZ=spot.z;}}r.actors=r.actors.filter(a=>a.kind!=='villager');for(const a of r.actors){if(a.kind==='archer')a.kind='soldier';if(a.kind==='mage')a.kind='goblin';a.statuses??={};a.hp??=a.kind==='guard'?130:a.elite?120:70;a.hpMax??=a.hp;a.npcResolveMax??=a.kind==='guard'?18:14;if(data.version!==VERSION)a.npcResolve=a.npcResolveMax;}}for(const l of Object.values(s.legacies))l.archive=l.archive.filter(id=>skillById(id));return s;}
+ exportState({live=false}={}){const data={schema:4,version:VERSION,seed:this.seed,rngState:this.rng.getState(),mode:this.mode,time:this.time,seq:this.seq,eid:this.eid,roomSeq:this.roomSeq,rooms:[...this.rooms],players:[...this.players].map(([id,p])=>[id,live?p:{...p,speech:'',speechUntil:0}]),legacies:this.legacies,abandoned:this.abandoned};return JSON.parse(JSON.stringify(data));}
+ static migrateSave(input){
+  const data=JSON.parse(JSON.stringify(input));
+  if(!data||![3,4].includes(data.schema))throw Error('この記録には対応する新しい版が必要です。');
+  if(!Array.isArray(data.players)||!Array.isArray(data.rooms)||data.players.length>200||!data.legacies||typeof data.legacies!=='object')throw Error('記録の形式を確認できません。');
+  const rooms=new Set();for(const entry of data.rooms){if(!Array.isArray(entry)||entry.length!==2||typeof entry[0]!=='string'||!entry[1]||!Array.isArray(entry[1].actors)||rooms.has(entry[0]))throw Error('村の記録が不正です。');rooms.add(entry[0]);}
+  const ids=new Set();for(const entry of data.players){const [id,p]=Array.isArray(entry)?entry:[];if(typeof id!=='string'||!p||id!==p.id||ids.has(id)||!rooms.has(p.room)||!Number.isFinite(p.x)||!Number.isFinite(p.z)||!Number.isFinite(p.age)||!Array.isArray(p.skills)||!Array.isArray(p.inventory))throw Error('旅人の記録が不正です。');ids.add(id);}
+  if(!Number.isFinite(data.time)||data.time<0||!Number.isSafeInteger(data.seq)||data.seq<0)throw Error('記録の時刻が不正です。');
+  // Schema 4 formalizes validated state; gameplay fields and schema-3 values are retained.
+  data.schema=4;return data;
+ }
+ static restoreLive(input){
+  const d=this.migrateSave(input),s=new Simulation({seed:d.seed,mode:d.mode});
+  for(const key of ['time','seq','eid','roomSeq','legacies','abandoned'])s[key]=d[key];
+  s.rooms=new Map(d.rooms);s.players=new Map(d.players);s.rng.setState(d.rngState);s.events=[];
+  for(const r of s.rooms.values())if(r.kind==='village')r.map=makeVillage(r.seed);
+  return s;
+ }
+ static restore(data){data=this.migrateSave(data);if(data?.schema!==4||!Array.isArray(data.players)||!Array.isArray(data.rooms)||data.players.length>200)throw Error('この改修より前の進行中データは別保管されています。');const s=new Simulation({seed:data.seed,mode:data.mode});s.time=+data.time||0;s.seq=+data.seq||0;s.eid=+data.eid||0;s.roomSeq=+data.roomSeq||1;s.rooms=new Map(data.rooms);s.players=new Map(data.players);s.legacies=data.legacies||{};s.abandoned=data.abandoned||[];if(Number.isInteger(data.rngState))s.rng.setState(data.rngState);for(const p of s.players.values()){if(!s.rooms.has(p.room))throw Error('村の記録がありません。');p.attackBufferedUntil=0;p.attackStep??=null;p.hitReactAt??=0;p.hitReactUntil??=0;p.hitDir??=0;p.hitSeverity??=null;p.input={x:0,z:0};p.guard=false;p.guardPending=false;p.speech='';p.speechUntil=0;p.phaseLimitVersion=0;s.preparePlayer(p);p.dash=null;p.autoFight=null;p.chain=null;p.pendingSkill=null;p.combo=null;p.attackStep=null;delete p.hitRecoil;s.stopTraversal(p);p.action=incapacitated(p)?p.lifeState:p.alive?(p.seated?'sit':'idle'):'fall';SkillSystem.restore(s,p);}for(const r of s.rooms.values()){if(r.kind==='village'){r.map=makeVillage(r.seed);const spot=villagePracticePosition(r.map);for(const a of r.actors)if(a.kind==='dummy'){a.x=a.homeX=spot.x;a.z=a.homeZ=spot.z;}}r.actors=r.actors.filter(a=>a.kind!=='villager');for(const a of r.actors){if(a.kind==='archer')a.kind='soldier';if(a.kind==='mage')a.kind='goblin';a.statuses??={};a.hp??=a.kind==='guard'?130:a.elite?120:70;a.hpMax??=a.hp;a.npcResolveMax??=a.kind==='guard'?18:14;if(data.version!==VERSION)a.npcResolve=a.npcResolveMax;}}for(const l of Object.values(s.legacies))l.archive=l.archive.filter(id=>skillById(id));return s;}
 }

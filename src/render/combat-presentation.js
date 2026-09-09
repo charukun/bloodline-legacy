@@ -31,7 +31,10 @@ class CombatPresentation{
   const r=this.r,cm=r.characterMaster,part=e.part||'torso';
   if(cm?.owner?.id===target?.id&&cm.lastFrame===r.frame){
    const bone=({head:'head',torso:'chest',rightArm:'elbow.R',leftArm:'elbow.L',rightLeg:'shin.R',leftLeg:'shin.L'})[part];
-   const m=cm.transforms[CM01.asset.names.indexOf(bone)];
+   const names=cm.asset?.names||CM01.asset.names;
+   const alias=({chest:'torso','shin.R':'knee.R','shin.L':'knee.L'})[bone];
+   const index=names.includes(bone)?names.indexOf(bone):names.indexOf(alias);
+   const m=cm.transforms[index];
    if(m)return [m[12]-Math.sin(dir)*.12,m[13],m[14]-Math.cos(dir)*.12];
   }
   const sentinel=r.enemySentinels?.records.get(target?.id);

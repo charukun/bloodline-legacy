@@ -4,14 +4,16 @@
 const RVERT=`#version 300 es
 precision highp float;
 layout(location=0) in vec3 pos;layout(location=1) in vec3 nor;
+layout(location=9) in vec3 craft;
 layout(location=2) in mat4 model;layout(location=6) in vec4 ink;layout(location=7) in float surface;
 uniform mat4 vp;uniform mat4 lightVP;uniform float time;uniform float wind;
 out vec3 vWorld;out vec3 vNormal;out vec4 vInk;out float vSurface;out vec4 vShadow;out vec3 vLocal;
-void main(){vec4 w=model*vec4(pos,1.);if(surface>12.5&&surface<13.5){float bend=max(0.,pos.y+.35);w.x+=sin(time*1.8+w.z*.72+model[3].x)*.042*bend*wind;w.z+=cos(time*1.1+w.x*.43)*.028*bend*wind;}vWorld=w.xyz;vNormal=normalize(mat3(model)*(nor/max(vec3(.00001),vec3(dot(model[0].xyz,model[0].xyz),dot(model[1].xyz,model[1].xyz),dot(model[2].xyz,model[2].xyz)))));vInk=ink;vSurface=surface;vShadow=lightVP*w;vLocal=pos;if(surface>23.5&&surface<25.5){vLocal=nor;vNormal=vec3(0.,1.,0.);}if(surface>=27.&&surface<27.5)vNormal=nor;gl_Position=vp*w;}`;
+void main(){vec4 w=model*vec4(pos,1.);if(surface>12.5&&surface<13.5){float bend=max(0.,pos.y+.35);w.x+=sin(time*1.8+w.z*.72+model[3].x)*.042*bend*wind;w.z+=cos(time*1.1+w.x*.43)*.028*bend*wind;}vWorld=w.xyz;vNormal=normalize(mat3(model)*(nor/max(vec3(.00001),vec3(dot(model[0].xyz,model[0].xyz),dot(model[1].xyz,model[1].xyz),dot(model[2].xyz,model[2].xyz)))));vInk=ink;vSurface=surface;vShadow=lightVP*w;vLocal=surface>=28.&&surface<29.5?craft:pos;if(surface>23.5&&surface<25.5){vLocal=nor;vNormal=vec3(0.,1.,0.);}if(surface>=27.&&surface<27.5)vNormal=nor;gl_Position=vp*w;}`;
 const RFRAG=`#version 300 es
 precision highp float;
 in vec3 vWorld;in vec3 vNormal;in vec4 vInk;in float vSurface;in vec4 vShadow;in vec3 vLocal;
 uniform sampler2D shadowTex;uniform sampler2D dynamicShadow;uniform sampler2D materialAtlas;uniform sampler2D detailAtlas;uniform sampler2D terrainMap;uniform sampler2D goldenAtlas;
+uniform sampler2D craftColor;uniform sampler2D craftDetail;
 uniform vec3 eye;uniform float time;uniform bool shadows;uniform vec2 focus;
 uniform vec3 skyColor;uniform vec3 groundColor;uniform vec3 sunColor;uniform vec3 fogColor;
 uniform float sunStrength;uniform float skyStrength;uniform float wetness;uniform float fogDensity;
@@ -72,7 +74,7 @@ vec3 effectTint(float palette,float phase){
 float shadowValue(sampler2D map,vec3 p,float bias){vec2 t=1./vec2(textureSize(map,0));float s=0.;for(int i=0;i<4;i++){vec2 o=vec2((i&1)==0?-.9:.9,(i&2)==0?-.9:.9);s+=step(texture(map,p.xy+o*t*1.35).r,p.z-bias);}return s*.25;}
 vec3 brdf(vec3 base,vec3 N,vec3 V,vec3 L,float rough,float metal,vec3 radiance){vec3 H=normalize(V+L);float nl=max(dot(N,L),0.),nv=max(dot(N,V),.08),nh=max(dot(N,H),0.),vh=max(dot(V,H),0.);float a=rough*rough,a2=a*a;float d=a2/(PI*pow(nh*nh*(a2-1.)+1.,2.)+.0001);float k=pow(rough+1.,2.)*.125;float g=(nv/(nv*(1.-k)+k))*(nl/(nl*(1.-k)+k));vec3 f0=mix(vec3(.035),base,metal);vec3 F=f0+(1.-f0)*pow(1.-vh,5.);return ((1.-F)*(1.-metal)*base/PI+d*g*F/max(.1,4.*nv*max(nl,.01)))*radiance*nl;}
 vec3 localLight(vec3 p,vec3 intensity,vec3 base,vec3 N,vec3 V,float rough,float metal){if(!any(greaterThan(intensity,vec3(0.))))return vec3(0.);vec3 delta=p-vWorld;float d=length(delta);if(d>=7.5)return vec3(0.);float atten=pow(max(0.,1.-d/7.5),2.)/(1.+d*d*.12);return brdf(base,N,V,delta/max(.01,d),rough,metal,intensity*atten);}
-void main(){vec3 N=normalize(vNormal),L=normalize(vec3(-.48,.85,.42)),V=normalize(eye-vWorld);float authored=vSurface;bool golden=authored>=19.5&&authored<23.5;float surf=golden?(authored<21.5?9.:authored<22.5?8.:18.):authored,alpha=vInk.a;vec3 pigment=vInk.rgb;
+void main(){vec3 N=normalize(vNormal),L=normalize(vec3(-.48,.85,.42)),V=normalize(eye-vWorld);float authored=vSurface;bool crafted=authored>=28.&&authored<29.5;bool paved=authored>=29.&&authored<29.5;bool golden=authored>=19.5&&authored<23.5;float surf=crafted?9.:golden?(authored<21.5?9.:authored<22.5?8.:18.):authored,alpha=vInk.a;vec3 pigment=vInk.rgb;
  // Continuous silk surface. UV/erosion travel with the strike, so hitstop also
  // freezes the material. Only material 24 uses this path; no world texture lookup.
  if(authored>23.5&&authored<24.5){
@@ -127,14 +129,21 @@ void main(){vec3 N=normalize(vNormal),L=normalize(vec3(-.48,.85,.42)),V=normaliz
  else if(surf>17.5&&surf<18.5){slot=10.;rough=.81;tile=2.;}
  else if(surf>18.5&&surf<19.5){slot=11.;rough=.73;}
  vec3 an=abs(N);vec2 uv=an.y>an.x&&an.y>an.z?vWorld.xz:an.z>an.x?vWorld.xy:vWorld.zy;
- uv=fract(uv*tile);vec2 auv=(vec2(mod(slot,4.),floor(slot/4.))+(.025+uv*.95))*.25;vec4 tex=golden?vec4(.59,.59,.59,.9):texture(materialAtlas,auv);vec4 norm=golden?vec4(.5,.5,1.,1.):texture(detailAtlas,auv);pigment*=mix(.72,1.18,tex.r);rough=clamp(rough*mix(.80,1.1,tex.a),.12,1.);ao=mix(.78,1.,norm.a);
+ uv=fract(uv*tile);vec2 auv=(vec2(mod(slot,4.),floor(slot/4.))+(.025+uv*.95))*.25;vec4 tex=(golden||crafted)?vec4(.59,.59,.59,.9):texture(materialAtlas,auv);vec4 norm=(golden||crafted)?vec4(.5,.5,1.,1.):texture(detailAtlas,auv);pigment*=mix(.72,1.18,tex.r);rough=clamp(rough*mix(.80,1.1,tex.a),.12,1.);ao=mix(.78,1.,norm.a);
  if(golden){float k=floor(authored-20.+.5);vec2 plane=an.y>an.x&&an.y>an.z?vWorld.xz:an.z>an.x?vWorld.xy:vWorld.zy;
   vec2 guv=fract(plane*(k==1.?vec2(.48,.54):k==2.?vec2(.63,.35):vec2(.75)));
   vec4 authoredTex=texture(goldenAtlas,(vec2(mod(k,2.),floor(k/2.))*256.+8.+guv*239.)/512.);
   pigment*=mix(.66,1.34,authoredTex.r);rough=authoredTex.a;norm.xy=authoredTex.gb;
   if(k<1.5&&vWorld.y<.65){float damp=1.-smoothstep(.12,.65,vWorld.y);pigment=mix(pigment,pigment*vec3(.79,.86,.71),damp*.32);if(terrainEnabled>.5)ao*=texture(terrainMap,(vWorld.xz+vec2(48.,55.))/96.).g;}
  }
- vec2 bump=(norm.xy*2.-1.)*(golden?1.:skin?.035:foliage?.04:.19);if(an.y>an.x&&an.y>an.z)N=normalize(N+vec3(bump.x,0.,bump.y));else if(an.z>an.x)N=normalize(N+vec3(bump.x,bump.y,0.));else N=normalize(N+vec3(0.,bump.y,bump.x));
+ if(crafted){vec4 c=texture(craftColor,vLocal.xy);pigment=vInk.rgb*c.rgb;rough=c.a;metal=0.;ao=vLocal.z;
+  // Paving reads one color/roughness sample; bevel geometry supplies its normals.
+  if(!paved){vec4 d=texture(craftDetail,vLocal.xy);metal=d.b;
+  vec3 dp1=dFdx(vWorld),dp2=dFdy(vWorld);vec2 du1=dFdx(vLocal.xy),du2=dFdy(vLocal.xy);float det=du1.x*du2.y-du1.y*du2.x;
+  if(abs(det)>1e-10){vec3 T=(dp1*du2.y-dp2*du1.y)/det,B=(dp2*du1.x-dp1*du2.x)/det;T-=N*dot(N,T);B-=N*dot(N,B);if(dot(T,T)>1e-10&&dot(B,B)>1e-10){vec2 r=(d.rg*2.-1.)*.42;N=normalize(normalize(T)*r.x+normalize(B)*r.y+N*sqrt(max(.01,1.-dot(r,r))));}}
+  }
+ }
+ vec2 bump=(norm.xy*2.-1.)*(crafted?0.:1.)*(golden?1.:skin?.035:foliage?.04:.19);if(an.y>an.x&&an.y>an.z)N=normalize(N+vec3(bump.x,0.,bump.y));else if(an.z>an.x)N=normalize(N+vec3(bump.x,bump.y,0.));else N=normalize(N+vec3(0.,bump.y,bump.x));
  if(surf>11.5&&surf<12.5){if(terrainEnabled>.5){vec4 ground=texture(terrainMap,(vWorld.xz+vec2(48.,55.))/96.);float grit=tex.r;vec3 grass=mix(vec3(.33,.40,.22),vec3(.49,.53,.32),ground.b);vec3 soil=mix(vec3(.51,.40,.29),vec3(.71,.61,.44),ground.b);pigment=mix(grass,soil,ground.r)*(.90+grit*.13);ao*=ground.g;rough=.94;}else pigment*=.80;}
  if(water){float wave=sin(vWorld.x*2.3+time*.75)*cos(vWorld.z*1.8-time*.48);N=normalize(N+vec3(sin(vWorld.z*3.+time)*.13,0.,cos(vWorld.x*2.+time)*.1));pigment=mix(vec3(.14,.30,.33),vec3(.32,.49,.47),wave*.5+.5);rough=.19;}
  bool canWet=surf>7.5&&!skin&&!foliage;float w=canWet?wetness*clamp(N.y*.65+.4,.1,1.):0.;rough=mix(rough,max(.19,rough*.34),w);pigment*=1.-w*.21;

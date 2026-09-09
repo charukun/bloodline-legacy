@@ -55,12 +55,15 @@
 .gear-grid button{position:relative;padding-right:22px}.gear-grid .selection-seal{position:absolute;right:4px;top:4px}
 .progress-float{left:0;top:0;will-change:transform,opacity;pointer-events:none}
 
-/* Project existing facility actions above their entrance. */
+/* Facility use follows the player's feet; actor actions sit above the target. */
 #facility-actions{position:absolute;inset:0;pointer-events:none}
 .facility-context{position:absolute;left:0;top:0;display:flex;flex-direction:column;align-items:stretch;gap:4px;width:max-content;max-width:min(220px,70vw);will-change:transform;pointer-events:none}
 .facility-context button{display:flex;align-items:center;gap:5px;min-height:44px;min-width:44px;max-width:100%;padding:6px 10px;pointer-events:auto;font-size:11px;line-height:1.35;border-radius:7px;background:#4b573def;box-shadow:0 2px 6px #29331f55;white-space:normal}
 .facility-context button span{overflow-wrap:anywhere;text-align:left}.facility-context .icon{width:17px;height:17px;flex-shrink:0}.facility-context small{display:block;font-size:10px}
-.facility-context::after{content:"";position:absolute;left:calc(50% - 5px);bottom:-6px;border:5px solid transparent;border-top-color:#4b573def;border-bottom:0}
+.facility-context::after{content:"";position:absolute;left:calc(var(--anchor-x,50%) - 5px);bottom:-6px;border:5px solid transparent;border-top-color:#4b573def;border-bottom:0}
+.facility-context button[hidden]{display:none}
+.foot-context{flex-direction:row;flex-wrap:wrap;justify-content:center;max-width:min(320px,calc(100vw - 16px))}
+.foot-context::after{bottom:auto;top:-6px;border-top:0;border-bottom:5px solid #4b573def}
 /* Localized contact readability: a single decaying highlight, no looping flash. */
 .wound-mark [data-impact]{stroke:#fff2cb;stroke-width:calc(1.15px + var(--hit-pulse,0)*2.6px);filter:brightness(calc(1 + var(--hit-pulse,0)*1.2))}
 .wound-mark [data-impact="injury"]{stroke:#ffdf9f;stroke-width:calc(1.15px + var(--hit-pulse,0)*3.8px)}
@@ -79,3 +82,10 @@
 .village-coordinate{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #c9ba8838;flex-wrap:wrap}
 .village-coordinate strong{font-size:15px;letter-spacing:.09em;font-weight:500;color:#efddb3;user-select:text;overflow-wrap:anywhere}
 .settings-network .room-code{width:100%;min-width:0;min-height:44px;font-size:12px}
+
+.world-speed-settings{border-block:1px solid #b9a77950;padding:12px 0;margin:8px 0;font-size:12px}
+.world-speed-settings summary{cursor:pointer;padding:8px 0;min-height:36px}
+.world-speed-settings .setting-row{flex-wrap:wrap;gap:8px;margin:6px 0}
+.world-speed-settings .segments{flex-wrap:wrap}
+.world-speed-settings button{min-width:44px;min-height:44px}
+.world-speed-settings p{margin:8px 0 0;line-height:1.7;opacity:.8}

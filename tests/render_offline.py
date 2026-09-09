@@ -23,13 +23,13 @@ def desktop_glsl(source):
 
 
 class OfflineScene:
-    def __init__(self, scene_dir, asset_dir):
+    def __init__(self, scene_dir, asset_dir, context=None):
         self.directory = Path(scene_dir)
         self.data = json.loads((self.directory / 'scene.json').read_text())
         args = {'backend': 'egl'}
         if os.getenv('GOLDEN_EGL_LIBRARY'):
             args['libegl'] = os.environ['GOLDEN_EGL_LIBRARY']
-        self.ctx = ctx = moderngl.create_standalone_context(**args)
+        self.ctx = ctx = context if context is not None else moderngl.create_standalone_context(**args)
         d = self.data
         self.size = (d['options']['width'], d['options']['height'])
         shaders = d['shaders']
@@ -50,6 +50,9 @@ class OfflineScene:
             self.textures[name] = self.image_texture(Path(asset_dir) / file)
         if (Path(asset_dir) / 'golden-surfaces.png').exists():
             self.textures['goldenAtlas'] = self.image_texture(Path(asset_dir) / 'golden-surfaces.png')
+        if (Path(asset_dir) / 'plaza-craft-color.png').exists():
+            self.textures['craftColor'] = self.image_texture(Path(asset_dir) / 'plaza-craft-color.png')
+            self.textures['craftDetail'] = self.image_texture(Path(asset_dir) / 'plaza-craft-detail.png')
         self.textures['terrainMap'] = self.image_texture(self.directory / 'terrain.png')
         self.static_depth = self.depth_texture((1536, 1536))
         self.dynamic_depth = self.depth_texture((1024, 1024))
@@ -76,7 +79,10 @@ class OfflineScene:
                 instances = ctx.buffer(np.array(batch['rows'], np.float32).tobytes())
                 vf, va = ('3f 3f', ['pos', 'nor']) if 'nor' in program else ('3f 12x', ['pos'])
                 fmt, attrs = ('16f 4f 1f /i', ['model', 'ink', 'surface']) if 'ink' in program else ('16f 16x 1f /i', ['model', 'surface'])
-                vao = ctx.vertex_array(program, [(vbo, vf, *va), (instances, fmt, *attrs)])
+                content=[(vbo, vf, *va), (instances, fmt, *attrs)]
+                if 'craft' in program:
+                    cb=ctx.buffer(np.array(g.get('craft') or [0]*(g['count']*3),np.float32).tobytes()); self.resources.append(cb); content.append((cb,'3f','craft'))
+                vao = ctx.vertex_array(program, content)
                 self.resources.extend([vbo, instances, vao])
                 self.vaos[name].append((vao, batch['count'], batch['instances']))
         self.render(static_shadow=True)

@@ -20,7 +20,7 @@ test('first-play buttons pass through original onboarding and start exactly one 
  assert.equal(g.screen,'game');assert.equal(sim.players.size,1);const next=g.snapshot.player;
  assert.equal(next.name,'灯');assert.equal(next.age,0);assert.equal(next.gen,1);assert.equal(next.race,3);assert.deepEqual(Array.from(next.inherit),[]);
  assert.equal(root.childNodes.length,0,'clan decoder/listeners are disposed at game entry');assert.equal(ui.modal,null);
- const saved=JSON.parse(x.w.localStorage.getItem('aerin.tactics.v3.world.normal'));const restored=x.api.Simulation.restore(saved);assert.equal(restored.players.get(next.id).name,'灯');
+ const saved=JSON.parse(x.w.localStorage.getItem('aerin.tactics.v3.world4.normal'));const restored=x.api.Simulation.restore(saved);assert.equal(restored.players.get(next.id).name,'灯');
 });
 test('archive selection starts generation 1001 with one experience, without granting a learned skill',async t=>{
  const x=ready(t,true),{g,sim,ui}=x,legacy=sim.legacy(g.profile.owner);legacy.generation=1001;legacy.archive=[4001,4002];legacy.records=[{id:'old',gen:4,name:'先人',skills:[4001],appearance:{race:0}}];ui.renderClan();
@@ -94,19 +94,33 @@ test('clear cancellation preserves the save; confirmation clears only this famil
  assert.equal(x.g.getLegacy().generation,1);assert.equal(x.g.getLegacy().records.length,0);assert.deepEqual(Array.from(x.g.profile.inherit),[]);assert.equal(x.root.querySelector('#prologue-controls').hidden,false);
  for(const [key,val] of Object.entries(settings))assert.equal(x.g.profile[key],val);
  const keys=Object.keys(x.w.localStorage),backup=keys.find(k=>k.includes('backup.lineage.'));assert.ok(backup);assert.equal(JSON.parse(x.w.localStorage.getItem(backup)).world.players.length,2);
- const saved=JSON.parse(x.w.localStorage.getItem('aerin.tactics.v3.world.normal')),restored=x.api.Simulation.restore(saved);assert.equal(restored.players.has(x.p.id),false);assert.equal(restored.legacy(x.g.profile.owner).generation,1);
+ const saved=JSON.parse(x.w.localStorage.getItem('aerin.tactics.v3.world4.normal')),restored=x.api.Simulation.restore(saved);assert.equal(restored.players.has(x.p.id),false);assert.equal(restored.legacy(x.g.profile.owner).generation,1);
  x.root.querySelector('#begin-life').click();await settle();assert.equal(x.g.snapshot.player.gen,1);assert.equal(x.g.snapshot.player.age,0);assert.deepEqual(Array.from(x.g.snapshot.player.inherit),[]);
 });
 test('clear aborts on backup failure and rolls back a partial save without touching the live world',t=>{
  const x=ready(t),before=JSON.stringify(x.sim.exportState()),store=x.w.Storage.prototype,write=store.setItem;
- x.g.saveWorld();const original=x.w.localStorage.getItem('aerin.tactics.v3.world.normal');
+ x.g.saveWorld();const original=x.w.localStorage.getItem('aerin.tactics.v3.world4.normal');
  let failOn='backup';store.setItem=function(key,value){if(failOn==='backup'&&key.includes('backup.lineage.'))throw Error('quota');if(failOn==='profile'&&key.endsWith('.profile')){failOn='none';throw Error('quota');}return write.call(this,key,value);};
  t.after(()=>store.setItem=write);
  confirmClear(x).click();assert.equal(JSON.stringify(x.sim.exportState()),before);assert.equal(x.root.querySelector('#clear-error').hidden,false);assert.equal(x.root.querySelector('#confirm-clear').disabled,false);
- failOn='profile';x.root.querySelector('#confirm-clear').click();assert.equal(JSON.stringify(x.sim.exportState()),before);assert.equal(x.w.localStorage.getItem('aerin.tactics.v3.world.normal'),original);assert.equal(x.root.querySelector('#prologue-controls').hidden,true);
+ failOn='profile';x.root.querySelector('#confirm-clear').click();assert.equal(JSON.stringify(x.sim.exportState()),before);assert.equal(x.w.localStorage.getItem('aerin.tactics.v3.world4.normal'),original);assert.equal(x.root.querySelector('#prologue-controls').hidden,true);
 });
 test('online or active gameplay cannot clear server state or remove local storage tokens',t=>{
  const x=ready(t);x.g.profile.online=true;x.ui.renderClan();x.root=x.ui.lineageView.home.scope;x.w.localStorage.setItem('aerin.tactics.v3.online.token.normal','"existing-token"');
  x.root.querySelector('#settings').click();assert.equal(x.root.querySelector('#clear-lineage').disabled,true);assert.throws(()=>x.ui.lineageView.clear(),/サーバー/);assert.match(x.w.localStorage.getItem('aerin.tactics.v3.online.token.normal'),/existing-token/);
  x.g.profile.online=false;x.g.screen='game';assert.throws(()=>x.ui.lineageView.clear(),/一族へ戻る/);assert.equal(x.sim.players.has(x.p.id),true);
+});
+test('authenticated online snapshot is current even when local and server owners differ',t=>{
+ const {g,ui,p}=ready(t);g.profile.online=true;g.online=true;g.snapshot.player={...g.snapshot.player,owner:'server-owner',alive:false,legacyChoice:{state:'pending'}};
+ assert.notEqual(g.snapshot.player.owner,g.profile.owner);assert.equal(ui.lineageView.current().id,p.id);assert.equal(g.profile.owner,p.owner);
+});
+test('clear updates the bundled profile and save cursor and rejects a stale tab',t=>{
+ const x=ready(t);x.g.profile.mode='normal';x.g.saveWorld();const key='aerin.tactics.v3.world4.normal',latest=x.w.localStorage.getItem(key);
+ x.ui.lineageView.clear();assert.equal(x.g.saveBaseRaw,x.w.localStorage.getItem(key));assert.equal(x.g.saveWorld(),true);x.g.loadMode();assert.equal(x.g.sim.players.has(x.p.id),false);
+ const newer=JSON.stringify({...JSON.parse(latest),time:999});x.w.localStorage.setItem(key,newer);
+ assert.throws(()=>x.ui.lineageView.clear());assert.equal(x.w.localStorage.getItem(key),newer);assert.equal(x.g.blockSave,true);
+});
+test('explicit lineage clear removes this familys pending bequest but preserves another familys choice',t=>{
+ const x=ready(t),other=x.sim.addPlayer('other-pending',{owner:'other-family'});x.p.skills=[4000];other.skills=[4000];x.sim.die(x.p,'老衰');x.sim.die(other,'老衰');
+ x.ui.lineageView.clear();assert.equal(x.g.sim.players.has(x.p.id),false);assert.equal(x.g.sim.players.get(other.id).legacyChoice.state,'pending');assert.equal(x.g.getLegacy().records.length,0);assert.equal(x.g.canResume(),false);
 });

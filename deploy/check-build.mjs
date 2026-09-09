@@ -5,6 +5,8 @@ import assert from 'node:assert/strict';
 import {root, sha256} from './build.mjs';
 import {buildInfo} from './build-info.mjs';
 import {environments} from './config.mjs';
+import {liveBuild} from '../tools/archive-simulation.mjs';
+import {LiveContract} from '../src/live/contract.mjs';
 const environment = process.argv[2];
 assert(environments[environment], 'Unknown environment');
 const out = path.join(root, 'deploy/out', environment);
@@ -17,6 +19,9 @@ assert(html.length < 25*1024*1024, 'Cloudflare per-asset size limit');
 if (manifest.mode === 'game') {
   assert.deepEqual(html, await fs.readFile(path.join(root, 'dist/index.html')), 'Game bytes changed');
   const text = html.toString();
+  const live=JSON.parse(text.match(/const LIVE_BUILD=Object\.freeze\(([^\n]+)\);/)?.[1] || 'null');
+  assert.deepEqual(live,manifest.live,'Client and server compatibility differ');
+  assert.deepEqual(live,{...LiveContract,...await liveBuild(root)},'Rules archive and artifact differ');
   const embedded=JSON.parse(text.match(/const BUILD_INFO=Object\.freeze\(([^\n]+)\);/)?.[1] || 'null');
   assert.deepEqual(embedded,buildInfo(manifest.baseVersion,environment,manifest.commit),'Screen and deployment identity differ');
   const scripts = [...text.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
@@ -25,7 +30,8 @@ if (manifest.mode === 'game') {
   const assets = JSON.parse(text.match(/const VISUAL_ASSETS=(\{[^\n]+\});/)?.[1] || 'null');
   assert(assets, 'Embedded assets missing');
   assert.deepEqual(Object.keys(assets).sort(), ['village-kit.glb','material-atlas.png',
-    'detail-atlas.png','parchment.png','cloth-panel.png','golden-surfaces.png','character/young-human-male-cm01.glb','enemies/sentinel.glb'].sort(),
+    'detail-atlas.png','parchment.png','cloth-panel.png','golden-surfaces.png','character/young-human-male-cm01.glb',
+    'enemies/sentinel.glb','plaza-craft.glb','plaza-craft-color.png','plaza-craft-detail.png'].sort(),
     'Embedded asset contract changed');
   for (const [name, data] of Object.entries(assets)) assert.deepEqual(Buffer.from(data,'base64'), await fs.readFile(path.join(root,'public/assets',name)), name);
   const glb = Buffer.from(assets['village-kit.glb'],'base64');

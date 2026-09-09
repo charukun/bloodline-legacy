@@ -46,12 +46,12 @@ const CM01 = (()=>{
    else offset[node]=V.lerp(keys[lo],keys[b],mix);
   }
  }
- function selectClip(p,t,st,phase,moving,run,reaction){
-  if(incapacitated(p)||p.traversal||p.rescueTarget||!asset.clips?.size||p.weapon!==0||!p.alive||p.seated||p.activity||p.guard||p.guardUntil>t||reaction.amount>.02||Object.keys(p.statuses||{}).length||Object.values(p.wounds||{}).some(w=>w.severity==='lost')||['carry','wave','sleep','sit','interact'].includes(p.action)){st.clipCut=null;return null;}
+ function selectClip(p,t,st,phase,moving,run,reaction,clips=asset?.clips){
+  if(incapacitated(p)||p.traversal||p.rescueTarget||!clips?.size||p.weapon!==0||!p.alive||p.seated||p.activity||p.guard||p.guardUntil>t||reaction.amount>.02||Object.keys(p.statuses||{}).length||Object.values(p.wounds||{}).some(w=>w.severity==='lost')||['carry','wave','sleep','sit','interact'].includes(p.action)){st.clipCut=null;return null;}
   const clock=SkillMotion.clock(p,t);
   if(clock){
    if(clock.shape!=='slash'||clock.hits!==1){st.clipCut=null;return null;}
-   const name=['diagonal','horizontal','chop'][Math.max(0,(p.combo?.total||1)-1)%3],clip=asset.clips.get(name);if(!clip)return null;
+   const name=['diagonal','horizontal','chop'][Math.max(0,(p.combo?.total||1)-1)%3],clip=clips.get(name);if(!clip)return null;
    st.clipCut=name;
    // A Hermite time warp keeps a fast, continuous strike through the fixed .43 hit.
    const hermite=(a,b,ma,mb,u)=>{const u2=u*u,u3=u2*u;return (2*u3-3*u2+1)*a+(u3-2*u2+u)*ma+(-2*u3+3*u2)*b+(u3-u2)*mb;};
@@ -59,9 +59,9 @@ const CM01 = (()=>{
    const u=clock.stage==='charge'?clip.release*smooth(clock.u):clock.beat<.43?hermite(clip.release,clip.contact,0,velocity*.43,clock.beat/.43):hermite(clip.contact,clip.follow,velocity*.57,0,(clock.beat-.43)/.57);
    return {name,clip,u,stage:clock.stage,entry:clock.stage==='charge'?smooth(clock.u/.3):1};
   }
-  if(p.action==='recover'){if(!st.clipCut)return null;const clip=asset.clips.get(st.clipCut),u=smooth((t-p.actionStarted)/Math.max(.001,p.actionUntil-p.actionStarted));return {name:st.clipCut,clip,u:clip.follow+(1-clip.follow)*u,stage:'recover',entry:1};}
+  if(p.action==='recover'){if(!st.clipCut)return null;const clip=clips.get(st.clipCut),u=smooth((t-p.actionStarted)/Math.max(.001,p.actionUntil-p.actionStarted));return {name:st.clipCut,clip,u:clip.follow+(1-clip.follow)*u,stage:'recover',entry:1};}
   if(!['idle','run','guardWalk','dash','recover'].includes(p.action)){st.clipCut=null;return null;}
-  const name=moving?(run?'run':'walk'):'ready',clip=asset.clips.get(name);if(!clip)return null;
+  const name=moving?(run?'run':'walk'):'ready',clip=clips.get(name);if(!clip)return null;
   return {name,clip,u:moving?((phase/TAU)%1+1)%1:(t/clip.duration)%1,stage:name,entry:1};
  }
  async function load(base64){const bytes=Uint8Array.from(atob(base64),c=>c.charCodeAt(0)),dv=new DataView(bytes.buffer);
@@ -89,7 +89,7 @@ const CM01 = (()=>{
  const FS=RFRAG.slice(0,RFRAG.indexOf('void main()'))+regionHeader+`
  uniform sampler2D cmBase;uniform sampler2D cmOrm;uniform sampler2D cmNormal;uniform vec3 cmHairTint;uniform float cmSilhouette;
  void main(){if(hidden())discard;vec2 uv=vUv;if(vRegion==10&&cmArmor<1.5)uv+=vec2(-.75,0.);vec3 pigment=texture(cmBase,uv).rgb*vInk.rgb;if(abs(vSurface-1.)<.1)pigment*=cmHairTint;
- vec3 packed=texture(cmOrm,uv).rgb;float rough=clamp(packed.g,.18,1.),metal=packed.b,ao=packed.r;vec3 N=normalize(vNormal),V=normalize(eye-vWorld),L=normalize(vec3(-.48,.85,.42));
+ vec3 ormSample=texture(cmOrm,uv).rgb;float rough=clamp(ormSample.g,.18,1.),metal=ormSample.b,ao=ormSample.r;vec3 N=normalize(vNormal),V=normalize(eye-vWorld),L=normalize(vec3(-.48,.85,.42));
  vec3 dp1=dFdx(vWorld),dp2=dFdy(vWorld);vec2 duv1=dFdx(uv),duv2=dFdy(uv);vec3 T=cross(dp2,N)*duv1.x+cross(N,dp1)*duv2.x;vec3 B=cross(dp2,N)*duv1.y+cross(N,dp1)*duv2.y;
  float denom=max(dot(T,T),dot(B,B));if(denom>1e-10){float inv=inversesqrt(denom);vec3 n=texture(cmNormal,uv).rgb*2.-1.;N=normalize(mat3(T*inv,B*inv,N)*normalize(vec3(n.xy*.30,n.z)));}
  bool skin=abs(vSurface)<.1;float wet=skin?0.:wetness*clamp(N.y*.65+.4,.1,1.);rough=mix(rough,max(.22,rough*.5),wet);pigment*=1.-wet*.12;
@@ -256,7 +256,7 @@ const CM01 = (()=>{
   }
   dispose(){const gl=this.r.gl;for(const l of this.lods){gl.deleteVertexArray(l.vao);l.buffers.forEach(b=>gl.deleteBuffer(b));}this.textures.forEach(t=>gl.deleteTexture(t));gl.deleteTexture(this.boneTex);gl.deleteProgram(this.program);gl.deleteProgram(this.depth);}
  }
- return {load,Character,get asset(){return asset;},eligible};
+ return {load,Character,get asset(){return asset;},eligible,selectClip};
 })();
 const CM01_PREVIOUS_LOAD=AssetBank.load.bind(AssetBank);
 AssetBank.load=async function(){await CM01_PREVIOUS_LOAD();await CM01.load(VISUAL_ASSETS['character/young-human-male-cm01.glb']);};

@@ -1,6 +1,6 @@
 /* Presentation only. Force travels from the contact to the trunk, then the
  * pelvis/support foot. All curves finish within the existing reaction clock. */
-function hitPose(p,t,stance={}){
+function hitPose(p,t,stance={},profile=null){
  const active=p.hitReactUntil>t&&Number.isFinite(p.hitReactAt)&&t>=p.hitReactAt;
  // A completed reaction must not restart from actionStarted during residual stun.
  const legacy=!p.hitSeverity&&['hit','break','stagger'].includes(p.action)&&p.actionUntil>t;
@@ -35,6 +35,16 @@ function hitPose(p,t,stance={}){
  }
  for(const s of [-1,1]){const key=s===1?'rightFoot':'leftFoot',moves=s===stepSide;o[key+'X']=moves?o.stepX:0;o[key+'Z']=moves?o.stepZ:0;o[key+'Lift']=moves?o.stepLift:0;}
  if(blocked){o.leftArm=contact*.30;o.leftArmZ=side*contact*.10;o.rightArm=-balance*.12;}
+ if(profile){
+  o.drop*=profile.vertical;o.torso*=profile.torso;o.torsoRoll*=profile.lateral;
+  o.head*=profile.head;o.headRoll*=profile.head;
+  if(!blocked)for(const s of [-1,1]){
+   const arm=s===1?'rightArm':'leftArm';
+   o[arm]-=body*(part===arm?.18:.45);o[arm+'Z']-=s*balance*.14;
+  }
+  // Large heads and short legs need rotation limits, not larger root travel.
+  o.pitch=clamp(o.pitch,-.12,.12);o.roll=clamp(o.roll,-.12,.12);
+ }
  return o;
 }
 
@@ -42,7 +52,7 @@ function hitPose(p,t,stance={}){
  * State lives on the renderer, is bounded and is never serialized into a save. */
 class DamageMotion{
  constructor(){this.actors=new Map();}
- sample(p,t,feet){
+ sample(p,t,feet,profile){
   const key=p.hitMotionId??p.lastImpactAt??p.hitReactAt;
   let s=this.actors.get(p.id);
   if(s&&(t<s.t||t-s.t>.4||s.room!==p.room||Math.hypot(p.x-s.x,p.z-s.z)>1.5||p.alive===false)){this.actors.delete(p.id);s=null;}
@@ -52,7 +62,7 @@ class DamageMotion{
    s.stance={turn:clamp((art.yaw||0)+(art.torsoYaw||0),-.9,.9),lean:clamp((art.pitch||0)+(art.torso||0),-.6,.6),stepSide:Math.max(right,left)>.015?(right>left?1:-1):Math.abs(art.weightX||0)>.06?-Math.sign(art.weightX):0};
    s.from=s.pose?.amount>0?s.pose:null;s.fromVelocity=s.velocity;s.elapsed=0;s.key=key;s.clock=t-(p.hitReactAt||0);
   }
-  const pose=hitPose(p,t,s.stance),clock=t-(p.hitReactAt||0),delta=Math.max(0,clock-(s.clock??clock));
+  const pose=hitPose(p,t,s.stance,profile),clock=t-(p.hitReactAt||0),delta=Math.max(0,clock-(s.clock??clock));
   if(s.from){
    // hitReactAt advances with hitstop, so reaction age is the frozen clock.
    s.elapsed+=delta;const mix=clamp(s.elapsed/.09,0,1),w=mix*mix*(3-2*mix);
@@ -70,7 +80,7 @@ class DamageMotion{
   return pose;
  }
 }
-function damagePose(renderer,p,t,feet){renderer.damageMotion??=new DamageMotion();return renderer.damageMotion.sample(p,t,feet);}
+function damagePose(renderer,p,t,feet,profile){renderer.damageMotion??=new DamageMotion();return renderer.damageMotion.sample(p,t,feet,profile);}
 
 /* Commit contact-relative offsets to the real floor anchor. On a new hit the
  * already blended offset is subtracted, preventing double recoil / teleports. */
@@ -84,8 +94,11 @@ function damageFoot(p,reaction,side,foot,scale=1){
  }
  const cs=Math.cos(foot.damageFacing),sn=Math.sin(foot.damageFacing),dx=x-foot.damageZero[0],dz=z-foot.damageZero[1];
  foot.anchor=[foot.damageFrom[0]+cs*dx+sn*dz,foot.damageFrom[1]-sn*dx+cs*dz];
+ const recoil=p.hitRecoil?.id===key?p.hitRecoil:null,catching=side===reaction.stepSide;
+ if(recoil&&catching){foot.anchor[0]+=recoil.x;foot.anchor[1]+=recoil.z;}
  const landing=clamp((reaction.phase-foot.damagePhase)/.18,0,1);
  foot.lift=Math.max((reaction[name+'Lift']||0)*scale,foot.damageLift*(1-landing*landing*(3-2*landing)));foot.swing=foot.lift>1e-6;foot.step=null;foot.settle=null;foot.damageSettled=true;
+ if(recoil&&catching){foot.lift=Math.max(foot.lift,Math.sin(Math.PI*clamp(recoil.age/recoil.duration,0,1))*.075*scale);foot.swing=foot.lift>1e-6;}
  return true;
 }
 
