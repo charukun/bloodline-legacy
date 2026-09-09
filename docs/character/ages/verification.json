@@ -1,0 +1,24 @@
+{
+  "base": "957362cc74bcb6a9d8d03791dfb3dcf74f37e111",
+  "branch": "work/character-age-continuity-20260909",
+  "build": "PASS",
+  "deploymentIntegrity": "PASS",
+  "unitRegression": {
+    "passed": 453,
+    "failed": 0
+  },
+  "shaderProgramsCompiled": 12,
+  "testCorrections": [
+    "Native movement assertion uses traveled distance because world x sign depends on gameplay camera yaw.",
+    "Turnaround capture rotates the fixture character under the same clear camera, avoiding a house roof that occluded the original side view."
+  ],
+  "runtimeSha256": {
+    "src/character/traveler-model.js": "c37b54fcd244af04cbbc249c8f458f2786d8725c6f3d9538c8dabe28a4787c85",
+    "src/character/traveler-runtime.js": "11e57990c41c3492c3e61ae503f86e883bed8823317a26959c99c19d4160130e",
+    "src/character/traveler-age.js": "6f70e783b14165f0c53dac4f9b4b531cc399ee8b7e1f9b3834f522213dcd39a8"
+  },
+  "notVerified": [
+    "Native Pixel Fold performance",
+    "Every individual skill animation and age/equipment combination"
+  ]
+}
