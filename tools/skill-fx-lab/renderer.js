@@ -37,10 +37,10 @@ const SkillFxStage=(()=>{
    if(p.kind==='field'){
     ctx.save();ctx.globalCompositeOperation=p.mode===5?'source-over':'lighter';
     for(const strip of p.strips){
-     const q=strip.map(s=>({a:project(s.a),b:project(s.b)}));
+     const pad=p.mode===5?0:(p.mist??.85)*.9,q=strip.map(s=>({a:project(s.a.map((v,i)=>v+(v-s.b[i])*pad*.5)),b:project(s.b.map((v,i)=>v+(v-s.a[i])*pad*.5))}));
      for(let j=0;j<q.length-1;j++){
       const a=q[j],b=q[j+1],g=ctx.createLinearGradient((a.a[0]+b.a[0])/2,(a.a[1]+b.a[1])/2,(a.b[0]+b.b[0])/2,(a.b[1]+b.b[1])/2);
-      for(let k=0;k<=16;k++){const alpha=SkillArcane.mask(p.mode,(j+.5)/(q.length-1),k/16,p.age,p.clock,p.flutter),rgb=p.mode===5?'8,14,22':mono?'235,235,235':p.color.slice(1).match(/../g).map(x=>parseInt(x,16)).join(',');g.addColorStop(k/16,`rgba(${rgb},${alpha})`);}
+      for(let k=0;k<=16;k++){const alpha=SkillArcane.mask(p.mode,(j+.5)/(q.length-1),k/16,p.age,p.clock,p.flutter,p.mist),rgb=p.mode===5?'8,14,22':mono?'235,235,235':p.color.slice(1).match(/../g).map(x=>parseInt(x,16)).join(',');g.addColorStop(k/16,`rgba(${rgb},${alpha})`);}
       ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(...a.a);ctx.lineTo(...a.b);ctx.lineTo(...b.b);ctx.lineTo(...b.a);ctx.closePath();ctx.fill();
      }
     }ctx.restore();
@@ -48,12 +48,12 @@ const SkillFxStage=(()=>{
     ctx.save();ctx.globalCompositeOperation='lighter';
     for(const q of p.points){const a=project(q.p),r=q.size*scale;ctx.globalAlpha=p.alpha*q.alpha;
      const g=ctx.createRadialGradient(...a,0,...a,r);g.addColorStop(0,'#ffffff');g.addColorStop(.18,mono?'#e8e8e8':p.color);g.addColorStop(1,p.color+'00');ctx.fillStyle=g;ctx.fillRect(a[0]-r,a[1]-r,r*2,r*2);
-     if(q.size>.08){ctx.strokeStyle=mono?'#ffffffaa':'#cbeaffaa';ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(a[0]-r*.8,a[1]);ctx.lineTo(a[0]+r*.8,a[1]);ctx.moveTo(a[0],a[1]-r*.8);ctx.lineTo(a[0],a[1]+r*.8);ctx.stroke();}
+     if(q.size>.08&&(p.mist??.85)<.35){ctx.strokeStyle=mono?'#ffffffaa':'#cbeaffaa';ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(a[0]-r*.8,a[1]);ctx.lineTo(a[0]+r*.8,a[1]);ctx.moveTo(a[0],a[1]-r*.8);ctx.lineTo(a[0],a[1]+r*.8);ctx.stroke();}
     }ctx.restore();
    }else if(p.kind==='ribbon'){
     // Continuous translucent bands: the same UV mask as the game shader,
     // approximated with gradients for an offline Canvas inspection surface.
-    const bands=quality==='low'?18:32,sections=p.sections.map(s=>({a:project(s.a),b:project(s.b)}));
+    const bands=quality==='low'?18:32,pad=(p.material?.mist??0)*.9,sections=p.sections.map(s=>({a:project(s.a.map((v,i)=>v+(v-s.b[i])*pad*.5)),b:project(s.b.map((v,i)=>v+(v-s.a[i])*pad*.5))}));
     const at=(s,v)=>[mix(s.a[0],s.b[0],v),mix(s.a[1],s.b[1],v)];
     const start=at(sections[0],.5),end=at(sections.at(-1),.5);
     for(let band=0;band<bands;band++){
@@ -68,14 +68,17 @@ const SkillFxStage=(()=>{
      ctx.closePath();ctx.fill();
     }
     // Preserve subpixel leading-edge coverage as the WebGL fwidth path does.
-    const edge=ctx.createLinearGradient(...start,...end);
+    if((p.material?.mist??0)<.5){const edge=ctx.createLinearGradient(...start,...end);
     for(let j=0;j<=32;j++){const u=j/32,alpha=SkillSilk.mask(u,.16,p.age,p.material).alpha;edge.addColorStop(u,`rgba(${mono?'250,250,250':p.color.slice(1).match(/../g).map(x=>parseInt(x,16)).join(',')},${alpha*.85})`);}
     ctx.strokeStyle=edge;ctx.lineWidth=quality==='low'?.85:1.15;ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(...at(sections[0],.16));
-    for(let j=1;j<sections.length;j++)ctx.lineTo(...at(sections[j],.16));ctx.stroke();
+    for(let j=1;j<sections.length;j++)ctx.lineTo(...at(sections[j],.16));ctx.stroke();}
    }else if(p.kind==='line'){
+    if(p.mist){const a=project(p.a),b=project(p.b),dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy)||1,w=Math.max(.6,p.width*scale)*(1+p.mist);ctx.save();ctx.translate((a[0]+b[0])*.5,(a[1]+b[1])*.5);ctx.rotate(Math.atan2(dy,dx));ctx.scale(len*.5,w);const g=ctx.createRadialGradient(0,0,0,0,0,1),rgb=p.color.slice(1).match(/../g).map(v=>parseInt(v,16)),tone=mono?Array(3).fill(Math.round(rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722)):rgb;g.addColorStop(0,`rgba(${tone},.78)`);g.addColorStop(.45,`rgba(${tone},.4)`);g.addColorStop(1,`rgba(${tone},0)`);ctx.fillStyle=g;ctx.fillRect(-1,-1,2,2);ctx.restore();continue;}
+
     const a=project(p.a),b=project(p.b),dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy)||1,w=Math.max(.55,p.width*scale),nx=-dy/len*w,ny=dx/len*w;
     ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(mix(a[0],b[0],.35)+nx,mix(a[1],b[1],.35)+ny);ctx.lineTo(...b);ctx.lineTo(mix(a[0],b[0],.65)-nx,mix(a[1],b[1],.65)-ny);ctx.closePath();ctx.fill();
    }else{
+    if(p.mist){const a=project(p.p),r=Math.max(...p.size)*scale*(1+p.mist*.45),g=ctx.createRadialGradient(...a,0,...a,r);g.addColorStop(0,mono?'#cccccc':p.color);g.addColorStop(1,p.color+'00');ctx.fillStyle=g;ctx.fillRect(a[0]-r,a[1]-r,r*2,r*2);continue;}
     const a=project(p.p),sx=p.size[0]*scale,sy=p.size[1]*scale;ctx.save();ctx.translate(...a);ctx.rotate(p.turn);ctx.beginPath();ctx.moveTo(-sx,0);ctx.lineTo(-sx*.1,-sy);ctx.lineTo(sx,sy*.2);ctx.lineTo(sx*.3,sy*.7);ctx.closePath();ctx.fill();ctx.strokeStyle=mono?'#c4c4c4':'#ead8ba';ctx.lineWidth=.5;ctx.stroke();ctx.restore();
    }
   }

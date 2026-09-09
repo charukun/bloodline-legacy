@@ -14,7 +14,7 @@
     <button id="step" class="small" aria-label="1コマ進める">+1f</button>
     <label class="speed"><span class="sr-only">再生速度</span><select id="speed"><option value=".25">0.25×</option><option value=".5">0.5×</option><option value="1" selected>1×</option></select></label>
    </div>
-   <div class="view-options"><label><input type="checkbox" id="loop" checked> 繰り返す</label><label><input type="checkbox" id="surface-compare" checked> 基準と比較</label><select id="baseline" aria-label="比較する基準"><option value="thin">揺れなし・薄め</option><option value="legacy">初期の斬面</option></select><label><input type="checkbox" id="mono"> 白黒で比較</label><label><input type="checkbox" id="sound"> 音を聴く</label></div>
+   <div class="view-options"><label><input type="checkbox" id="loop" checked> 繰り返す</label><label><input type="checkbox" id="surface-compare" checked> 基準と比較</label><select id="baseline" aria-label="比較する基準"><option value="mist" selected>霧なし / いまの輪郭</option><option value="thin">揺れなし・薄め</option><option value="legacy">初期の斬面</option></select><label><input type="checkbox" id="mono"> 白黒で比較</label><label><input type="checkbox" id="sound"> 音を聴く</label></div>
    <div class="caption"><span class="caption-mark">↗</span><p id="description"></p></div>
    <div class="compare-row"><button id="pin">いまの構成をAに記録</button><button id="compare" disabled aria-pressed="false">A / B を並べる</button><span id="pin-label">組み替え前を残して比較</span></div>
   </section>
@@ -34,10 +34,11 @@
     <label><input type="checkbox" id="vary-cast" checked> 発動ごとに表情を変える</label>
     <button id="next-cast" class="small">次の発動を試す ↻</button><p id="cast-label"></p>
    </fieldset>
-   <fieldset class="silk-controls" id="silk-controls"><legend>厚みと揺らめき</legend>
+   <fieldset class="silk-controls" id="silk-controls"><legend>輪郭・厚み・揺らめき</legend>
+    <label for="mist">霧状の輪郭 <output id="mist-value">85%</output></label><input id="mist" type="range" min="0" max="1" step=".05" value=".85">
     <label for="thickness">厚み <output id="thickness-value" for="thickness">2.2×</output></label><input id="thickness" type="range" min=".5" max="3" step=".1" value="2.2">
     <label for="flutter">揺らめきの強さ <output id="flutter-value" for="flutter">65%</output></label><input id="flutter" type="range" min="0" max="1" step=".05" value=".65">
-    <button id="reseed" class="small">揺れ方を変える ↻</button><p>0%で揺れを止められます。発動中は連続した揺らめきになり、コマ送りでも再現できます。</p>
+    <button id="reseed" class="small">揺れ方を変える ↻</button><p>「霧状の輪郭」0%で元の縁、100%で煙のような縁になります。揺らめき0%で揺れを止められます。発動中は連続した揺らめきになり、コマ送りでも再現できます。</p>
    </fieldset>
    <fieldset class="silk-controls" id="layer-controls"><legend>重ねる演出</legend><label><input type="checkbox" id="layer-sigil" checked> 魔法陣</label><label><input type="checkbox" id="layer-body" checked> 光の本体</label><label><input type="checkbox" id="layer-motes" checked> 光の粒</label></fieldset>
    <p class="field-note">形・動きが技の特徴。配色・厚み・余韻で表情を調整できます。</p>

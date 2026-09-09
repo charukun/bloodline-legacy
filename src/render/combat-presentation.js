@@ -40,15 +40,15 @@ class CombatPresentation{
   return [x+Math.cos(facing)*local-Math.sin(dir)*.18*scale+(q?.x||0),(target?.baseY??SkillMotion.groundAt(r,x,z))+height*scale-(q?.drop||0),z-Math.sin(facing)*local-Math.cos(dir)*.18*scale+(q?.z||0)];
  }
  // All needles share one four-triangle mesh; length is the local Y axis.
- needle(from,to,width,color,alpha){
+ needle(from,to,width,color,alpha,mist=0){
   const r=this.r,d=to.map((v,i)=>v-from[i]),len=Math.hypot(...d);if(len<.001||alpha<.015)return;
   if(!RG_CACHE.has('skillfx:needle')){
    const P=[0,-.5,0, 1,0,0, 0,.5,0, 0,-.5,0, 0,.5,0, -1,0,0,
     0,-.5,0, 0,0,1, 0,.5,0, 0,-.5,0, 0,.5,0, 0,0,-1];
    RG_CACHE.set('skillfx:needle',{positions:new Float32Array(P),normals:new Float32Array(P.map((_,i)=>i%3===1?1:0)),count:12,radius:1});
   }
-  r.add('skillfx:needle',...from.map((v,i)=>(v+to[i])*.5),width,len,width,color,
-   Math.atan2(d[0],d[2]),0,Math.atan2(Math.hypot(d[0],d[2]),d[1]),4,alpha,r.fxBatches);
+  r.add('skillfx:needle',...from.map((v,i)=>(v+to[i])*.5),width*(1+mist),len,width*(1+mist),color,
+   Math.atan2(d[0],d[2]),0,Math.atan2(Math.hypot(d[0],d[2]),d[1]),mist?26+mist*.49:4,alpha,r.fxBatches);
  }
  cut(a,skill,beat,duration,full){
   const r=this.r,shape=SkillMotion.shape(skill),age=(beat-.43)*duration;
@@ -109,8 +109,8 @@ class CombatPresentation{
     RG_CACHE.set(key,g);this.r.add(key,...g.center,1,1,1,SkillSilk.ink(p),0,0,0,SkillSilk.surface,p.alpha,this.r.fxBatches);continue;
    }
    this.compositionBudget--;
-   if(p.kind==='line')this.needle(point(p.a),point(p.b),p.width,p.color,p.alpha);
-   else this.r.add('rbox',...point(p.p),...p.size,p.color,p.turn,p.turn*.7,0,4,p.alpha,this.r.fxBatches);
+   if(p.kind==='line')this.needle(point(p.a),point(p.b),p.width,p.color,p.alpha,p.mist??0);
+   else this.r.add('rbox',...point(p.p),...p.size.map(x=>x*(1+(p.mist??0)*.45)),p.color,p.turn,p.turn*.7,0,p.mist?27+p.mist*.49:4,p.alpha,this.r.fxBatches);
   }
  }
  clearSilk(){

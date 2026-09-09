@@ -16,12 +16,13 @@
  function announce(s){$('notice').textContent=s;}
  function update(){
   for(const key of controls)$(key).value=recipe[key];
-  for(const key of ['flutter','thickness','afterglow','variation'])$(key).value=recipe[key];
+  for(const key of ['flutter','thickness','afterglow','variation','mist'])$(key).value=recipe[key];
   $('flutter-value').textContent=Math.round(recipe.flutter*100)+'%';$('thickness-value').textContent=recipe.thickness.toFixed(1)+'×';
+  $('mist-value').textContent=Math.round(recipe.mist*100)+'%';
   $('palette').value=recipe.palette;$('afterglow-value').textContent=recipe.afterglow.toFixed(2)+'×';$('variation-value').textContent=Math.round(recipe.variation*100)+'%';
   previewRecipe=$('vary-cast').checked?SkillEffects.forCast(recipe,castIndex):recipe;previewPinned=pinned&&($('vary-cast').checked?SkillEffects.forCast(pinned,castIndex):pinned);
   $('cast-label').textContent='発動 '+(castIndex+1)+' · 厚み '+previewRecipe.thickness.toFixed(2)+'× · 命中後 '+SkillEffects.life(previewRecipe).toFixed(2)+'秒';
-  const layered=SkillArcane.has(recipe.family);$('silk-controls').disabled=false;$('flutter').disabled=recipe.family!=='blade'&&!layered;$('baseline').disabled=recipe.family!=='blade';
+  const layered=SkillArcane.has(recipe.family);$('silk-controls').disabled=false;$('flutter').disabled=recipe.family!=='blade'&&!layered;$('baseline').disabled=false;for(const o of $('baseline').options)o.disabled=o.value!=='mist'&&recipe.family!=='blade';if(recipe.family!=='blade')$('baseline').value='mist';
   $('layer-controls').disabled=!layered;for(const k of ['sigil','body','motes'])$('layer-'+k).checked=recipe.layers[k];
   const exact=SkillEffects.presets.findIndex(p=>controls.every(k=>p.recipe[k]===recipe[k]));
   if(exact>=0)presetIndex=exact;
@@ -34,9 +35,9 @@
   $('beat-marks').replaceChildren();for(const at of SkillEffects.beats(recipe)){const m=document.createElement('i');m.style.left=at/SkillEffects.duration*100+'%';$('beat-marks').append(m);}
   $('play').textContent=playing?'Ⅱ':'▶';$('play').setAttribute('aria-label',playing?'一時停止':'再生');
   $('compare').disabled=!pinned;$('compare').setAttribute('aria-pressed',String(compare));
-  $('surface-compare').disabled=recipe.family!=='blade';if(recipe.family!=='blade')$('surface-compare').checked=false;
+  $('surface-compare').disabled=false;
   canvas.parentElement.classList.toggle('comparing',compare||$('surface-compare').checked);
-  $('mode-label').textContent=$('surface-compare').checked?'基準 / いまの厚み・揺らめき':compare?'A 記録した構成 / B いまの構成':'演出見本';
+  $('mode-label').textContent=$('surface-compare').checked?'輪郭の比較':compare?'A 記録した構成 / B いまの構成':'演出見本';
   try{localStorage.setItem(storageKey,JSON.stringify(config()));}catch{}
  }
  function setRecipe(next){recipe=SkillEffects.resolve(next);announce('');replay();}
@@ -45,11 +46,11 @@
  function draw(){
   const opts={mono:$('mono').checked,quality:cssW<500?'low':'high'};
   const surfaceCompare=$('surface-compare').checked;
-  const legacy=surfaceCompare&&$('baseline').value==='legacy',baseline=legacy?previewRecipe:SkillEffects.resolve({...previewRecipe,flutter:0,thickness:1});
+  const legacy=surfaceCompare&&$('baseline').value==='legacy',edgeComparison=$('baseline').value==='mist',baseline=legacy?SkillEffects.resolve({...previewRecipe,mist:0}):SkillEffects.resolve({...previewRecipe,...(edgeComparison?{mist:0}:{flutter:0,thickness:1,mist:0})});
   if(surfaceCompare||compare&&pinned){
    const stacked=cssW<520,w=stacked?cssW:cssW/2,h=stacked?cssH/2:cssH;
-   ctx.save();ctx.beginPath();ctx.rect(0,0,w,h);ctx.clip();SkillFxStage.draw(ctx,w,h,surfaceCompare?baseline:previewPinned,time,{...opts,legacyBlade:legacy,label:surfaceCompare?(legacy?'A / 初期の斬面':'A / 揺れなし・厚み 1.0×'):'A / 記録した構成'});ctx.restore();
-   ctx.save();ctx.translate(stacked?0:w,stacked?h:0);SkillFxStage.draw(ctx,w,h,previewRecipe,time,{...opts,label:surfaceCompare?'B / 厚み '+recipe.thickness.toFixed(1)+'×・揺れ '+Math.round(recipe.flutter*100)+'%':'B / いまの構成'});ctx.restore();
+   ctx.save();ctx.beginPath();ctx.rect(0,0,w,h);ctx.clip();SkillFxStage.draw(ctx,w,h,surfaceCompare?baseline:previewPinned,time,{...opts,legacyBlade:legacy,label:surfaceCompare?(legacy?'A / 初期の斬面':edgeComparison?'A / 霧なし':'A / 揺れなし・厚み 1.0×'):'A / 記録した構成'});ctx.restore();
+   ctx.save();ctx.translate(stacked?0:w,stacked?h:0);SkillFxStage.draw(ctx,w,h,previewRecipe,time,{...opts,label:surfaceCompare?'B / 霧 '+Math.round(recipe.mist*100)+'%':'B / いまの構成'});ctx.restore();
    ctx.fillStyle='#5b6664';if(stacked)ctx.fillRect(0,h,w,1);else ctx.fillRect(w,0,1,h);
   }
   else SkillFxStage.draw(ctx,cssW,cssH,previewRecipe,time,opts);
@@ -61,7 +62,7 @@
  for(const key of ['sigil','body','motes'])$('layer-'+key).addEventListener('change',()=>{recipe=SkillEffects.resolve({...recipe,layers:{...recipe.layers,[key]:$('layer-'+key).checked}});update();draw();});
  for(const key of controls)$(key).addEventListener('change',()=>setRecipe({...recipe,[key]:$(key).value}));
  // Keep the current frame while tuning: paused inspection must not jump away.
- for(const key of ['flutter','thickness','afterglow','variation'])$(key).addEventListener('input',()=>{recipe=SkillEffects.resolve({...recipe,[key]:Number($(key).value)});update();draw();});
+ for(const key of ['flutter','thickness','afterglow','variation','mist'])$(key).addEventListener('input',()=>{recipe=SkillEffects.resolve({...recipe,[key]:Number($(key).value)});update();draw();});
  $('reseed').addEventListener('click',()=>{recipe=SkillEffects.resolve({...recipe,seed:(recipe.seed+97)>>>0});update();draw();});
  $('palette').addEventListener('change',()=>{recipe=SkillEffects.resolve({...recipe,palette:$('palette').value});update();draw();});
  $('next-cast').addEventListener('click',()=>{castIndex++;replay();});

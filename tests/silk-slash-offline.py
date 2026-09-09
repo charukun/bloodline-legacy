@@ -24,6 +24,8 @@ target.use()
 program['vp'].write(np.array(d['vp'],np.float32).tobytes())
 program['lightVP'].write(np.eye(4,dtype=np.float32).tobytes())
 program['eye'].value = tuple(d['eye'])
+for key,value in {'skyStrength':1.,'sunStrength':1.,'skyColor':(.4,.5,.6),'groundColor':(.2,.2,.2),'sunColor':(1.,.9,.75)}.items():
+    if key in program:program[key].value=value
 white = ctx.texture((1,1),4,bytes([255,255,255,255]));white.use(0)
 ctx.enable(moderngl.BLEND)
 ctx.blend_func = moderngl.SRC_ALPHA, moderngl.ONE_MINUS_SRC_ALPHA
@@ -33,8 +35,8 @@ for frame in d['frames']:
     for g in sorted(frame['geometry'],key=lambda g:g.get('additive',False)):
         ctx.blend_func = (moderngl.SRC_ALPHA, moderngl.ONE) if g.get('additive') else (moderngl.SRC_ALPHA, moderngl.ONE_MINUS_SRC_ALPHA)
         vertices=np.column_stack((np.array(g['positions']).reshape(-1,3),np.array(g['normals']).reshape(-1,3))).astype('f4')
-        model=np.eye(4,dtype='f4').flatten();model[12:15]=g['center']
-        row=np.concatenate([model,[*g['ink'],g['alpha'],25. if 'additive' in g else 24.]]).astype('f4')
+        model=np.array(g['model'],dtype='f4') if 'model' in g else np.eye(4,dtype='f4').flatten();model[12:15]=g['center']
+        row=np.concatenate([model,[*g['ink'],g['alpha'],g.get('surface',25. if 'additive' in g else 24.)]]).astype('f4')
         vbo,instance=ctx.buffer(vertices.tobytes()),ctx.buffer(row.tobytes())
         vao=ctx.vertex_array(program,[(vbo,'3f 3f','pos','nor'),(instance,'16f 4f 1f /i','model','ink','surface')])
         vao.render(moderngl.TRIANGLES)

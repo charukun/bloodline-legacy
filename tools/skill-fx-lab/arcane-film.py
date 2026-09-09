@@ -15,8 +15,8 @@ for line in (out/'animation.jsonl').open():
     for g in sorted(sample['geometry'],key=lambda g:g['additive']):
         ctx.blend_func=(moderngl.SRC_ALPHA,moderngl.ONE if g['additive'] else moderngl.ONE_MINUS_SRC_ALPHA)
         vertices=np.column_stack((np.array(g['positions']).reshape(-1,3),np.array(g['normals']).reshape(-1,3))).astype('f4')
-        model=np.eye(4,dtype='f4').flatten();model[12:15]=g['center']
-        row=np.concatenate([model,[*g['ink'],g['alpha'],25.]]).astype('f4')
+        model=np.array(g['model'],dtype='f4') if 'model' in g else np.eye(4,dtype='f4').flatten();model[12:15]=g['center']
+        row=np.concatenate([model,[*g['ink'],g['alpha'],g.get('surface',25.)]]).astype('f4')
         vbo,instance=ctx.buffer(vertices.tobytes()),ctx.buffer(row.tobytes())
         vao=ctx.vertex_array(program,[(vbo,'3f 3f','pos','nor'),(instance,'16f 4f 1f /i','model','ink','surface')]);vao.render(moderngl.TRIANGLES);vao.release();vbo.release();instance.release()
     pixels=np.frombuffer(target.read(components=4),dtype=np.uint8).reshape(size[1],size[0],4)[::-1,:,:3].astype(float)/255
@@ -26,4 +26,4 @@ for line in (out/'animation.jsonl').open():
     if sample['index']==11:
         sheet.save(out/f"film-{sample['frame']:03d}.png")
         if sample['frame']==10:sheet.save(out/'original-effects.png')
-print('Native EGL film: 12 forms, 75 frames')
+print('Native EGL film: 12 panels, 75 frames')

@@ -26,7 +26,7 @@ test('layers are independently removable and imports replay the same effect',()=
 test('spell meshes share the composition budget and dark eclipse uses alpha instead of additive',()=>{
  vm.runInContext('const RG_CACHE=new Map()',c);const draws=[],r={quality:'low',eye:[4,5,8],fxBatches:new Map(),add:(...args)=>draws.push(args)},p=new P(r);
  p.compositionBudget=256;const eclipse=Arc.impact(FX.resolve({family:'eclipse'}),.1,'low');
- p.composition(eclipse,v=>v);assert(draws.some(a=>a[7][0]===5&&a.at(-1)===r.fxBatches));assert(draws.some(a=>a[7][0]!==5&&a.at(-1)===r.arcaneFX));
+ p.composition(eclipse,v=>v);assert(draws.some(a=>Math.floor(a[7][0])%8===5&&a.at(-1)===r.fxBatches));assert(draws.some(a=>Math.floor(a[7][0])%8!==5&&a.at(-1)===r.arcaneFX));
  for(let j=0;j<40;j++)p.composition(eclipse,v=>v);assert(p.compositionBudget>=0);assert(p.silkKeys.size<=8);
 });
 test('spell impacts require a hit, anchor their ground layer and keep their authored lifetime',()=>{

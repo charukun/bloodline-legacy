@@ -16,8 +16,8 @@ const SkillSilk=(()=>{
   return lerp(lerp(lattice(i,j,seed),lattice(i+1,j,seed),a),lerp(lattice(i,j+1,seed),lattice(i+1,j+1,seed),a),b);
  }
  const flow=(u,clock,seed)=>.72*noise(u*4.7,clock*2.2,seed)+.28*noise(u*10.8,clock*4.8,seed+41);
- const appearance=(recipe,clock)=>({flutter:recipe.flutter??.65,seed:((recipe.seed??73)^((recipe.seed??73)>>>16))>>>0,clock});
- const ink=p=>[(p.material?.flutter??0)+(p.palette??0)*2,(p.material?.seed??73)%251,p.material?.clock??0];
+ const appearance=(recipe,clock)=>({mist:recipe.mist??.85,flutter:recipe.flutter??.65,seed:((recipe.seed??73)^((recipe.seed??73)>>>16))>>>0,clock});
+ const ink=p=>[(p.material?.flutter??0)+(p.palette??0)*2,(p.material?.seed??73)%251+(p.material?.mist??0)*.5,p.material?.clock??0];
  const point=(path,u)=>{
   if(path==='pierce')return [.06*Math.sin(u*Math.PI),1.12,.2+u*2.1];
   if(path==='fall')return [.04*Math.sin(u*4),2.6-u*1.9,.35+u*1.92];
@@ -59,6 +59,7 @@ const SkillSilk=(()=>{
  // Same analytic mask as surface 24 in shaders.js. Values are smooth in time;
  // the inspection adapter samples this function without texture frame stepping.
  function mask(u,v,age,material={}){
+  const mist=material.mist??0,border=smooth(0,.14,v)*(1-smooth(.86,1,v));v=(v-.5)*(1+mist*.9)+.5;
   const flutter=material.flutter??0,clock=material.clock??0,seed=(material.seed??73)%251;
   const warp=Math.sin(u*19+age*.9)*.055+Math.sin(u*43-age)*.012+flutter*flow(u,clock,seed)*.16*smooth(.05,.65,v);
   const fiber=Math.pow(.5+.5*Math.sin((v+warp)*82+Math.sin(u*23)*2.2),7);
@@ -68,10 +69,26 @@ const SkillSilk=(()=>{
   const erosion=smooth(age*.95-.22,age*.95+.06,grain+.18*(1-v));
   const edge=smooth(0,.025,v)*(1-smooth(.86,1,v));
   const ends=smooth(0,.045,u)*(1-smooth(.93,1,u));
-  return {alpha:clamp((core*.9+wake)*erosion*edge*ends),light:core};
+  const base=clamp((core*.9+wake)*erosion*edge*ends);
+  return {alpha:mist?lerp(base,mistMask(1,u,v,age,clock,base)*border,mist):base,light:core*(1-mist*.7)};
+ }
+ // Three advected value-noise samples. No texture generation or new particles.
+ function mistMask(mode,u,v,age,clock,base){
+  const warp=noise(u*3+clock*.12,v*2-clock*.3,11)*.6;
+  const cloud=clamp(.5+.34*noise(u*7+warp,v*3-clock*.55,19)+.16*noise(u*19-clock*.12,v*9+warp,31));
+  const density=smooth(.20,.80,cloud),support=smooth(-.45,-.18,v)*(1-smooth(1.18,1.45,v));
+  const ends=smooth(0,.12,u)*(1-smooth(.84,1,u));
+  if(mode===0)return clamp(base*.22+support*smooth(0,.18,v)*(1-smooth(.55,1.25,v))*(.12+density*.5));
+  if(mode===2){const rings=Math.exp(-Math.pow((v-.12)*5,2))+Math.exp(-Math.pow((v-.9)*5,2));return clamp(base*.36+rings*support*(.06+density*.38));}
+  if(mode===4){const x=u*2-1,y=v*2-1,r=x*x+y*y;return clamp(Math.exp(-r*2.7)*(1-smooth(.65,1.7,Math.sqrt(r)))*(.22+density*.64)*age);}
+  if(mode===5)return clamp(1-smooth(.40,1,v+(cloud-.5)*.22));
+  const body=Math.exp(-Math.pow((v-.5+(cloud-.5)*.45)*2.8,2))*(.10+density*.66);
+  const halo=Math.exp(-Math.pow((v-.5)*1.6,2))*density*.18;
+  return clamp((base*.19+(body+halo)*ends*support)*(1-smooth(.55,1,age)*.45));
  }
  function geometry(ribbon,transform=v=>v){
-  const sections=ribbon.sections.map(s=>({a:transform(s.a),b:transform(s.b)}));
+  const pad=(ribbon.material?.mist??0)*.9;
+  const sections=ribbon.sections.map(s=>({a:transform(s.a.map((v,i)=>v+(v-s.b[i])*pad*.5)),b:transform(s.b.map((v,i)=>v+(v-s.a[i])*pad*.5))}));
   const center=sections[Math.floor(sections.length/2)].a;
   const P=[],N=[];let radius=0;
   const vertex=(p,u,v)=>{const q=difference(p,center);radius=Math.max(radius,Math.hypot(...q));P.push(...q);N.push(u,v,ribbon.age);};
@@ -101,5 +118,5 @@ const SkillSilk=(()=>{
   }
   return {kind:'ribbon',sections,age:1-fade,alpha:fade*.88,color:'#fff0d4',material};
  }
- return Object.freeze({stroke,mask,geometry,trail,noise,ink,surface:24});
+ return Object.freeze({stroke,mask,geometry,trail,noise,mistMask,ink,surface:24});
 })();

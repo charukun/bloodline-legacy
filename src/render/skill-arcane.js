@@ -36,7 +36,7 @@ const SkillArcane=(()=>{
   const p=fn(u),w=width*Math.pow(Math.sin(Math.PI*u),.65);return {a:p.map((v,i)=>v-axis[i]*w*.5),b:p.map((v,i)=>v+axis[i]*w*.5)};
  });
  function field(mode,strips,age,clock,alpha,recipe){return {kind:'field',mode,strips,age,clock,alpha,flutter:recipe.flutter??.65,color:'#c8efff',seed:recipe.seed};}
- function mask(mode,u,v,age,clock,flutter=.65){
+ function baseMask(mode,u,v,age,clock,flutter=.65){
   const edge=smooth(0,.035,v)*(1-smooth(.94,1,v)),ends=smooth(0,.03,u)*(1-smooth(.97,1,u));
   const drift=flutter*SkillSilk.noise(u*6,clock*2.1,19)*.12;
   if(mode===0){const lanes=Math.pow(.5+.5*Math.sin((u+clock*.14+drift)*TAU*9),9);return clamp(edge*(.13+lanes*.85)*Math.pow(1-v,1.35)*smooth(0,.05,v));}
@@ -46,6 +46,13 @@ const SkillArcane=(()=>{
   if(mode===4){const x=u*2-1,y=v*2-1,r=x*x+y*y;return clamp((Math.exp(-r*10)+Math.exp(-Math.abs(x)*50-Math.abs(y)*4)*.45+Math.exp(-Math.abs(y)*50-Math.abs(x)*4)*.45)*smooth(1,.65,Math.sqrt(r))*age);}
   if(mode===5)return 1-smooth(.80,1,v);
   return clamp(edge*ends*(Math.exp(-Math.pow((v-.5)*6,2))+.2)*(.72+.28*Math.sin(clock*35+u*12)));
+ }
+ function mask(mode,u,v,age,clock,flutter=.65,mist=.85){
+  const border=(mode===5?1:smooth(0,.14,v))*(1-smooth(.86,1,v))*(mode===4?smooth(0,.14,u)*(1-smooth(.86,1,u)):1),pad=mode===5?0:mist*.9;
+  v=(v-.5)*(1+pad)+.5;if(mode===4)u=(u-.5)*(1+pad)+.5;
+  // Clamp only the old mask input: its fractional power is undefined below 0.
+  const base=(v<0||v>1||u<0||u>1)?0:baseMask(mode,u,v,age,clock,flutter);
+  return mist?mix(base,SkillSilk.mistMask(mode,u,v,age,clock,base)*border,mist):base;
  }
  function stroke(recipe,u,quality='high'){
   if(!has(recipe.family)||!Number.isFinite(u)||u<0||u>1)return [];
@@ -132,13 +139,13 @@ const SkillArcane=(()=>{
  };
 
  function geometry(p,transform=v=>v,eye=[0,6,8]){
-  const P=[],N=[],strips=p.strips||[];
+  const P=[],N=[],strips=p.strips||[],pad=p.mode===5?0:(p.mist??.85)*.9;
   const vertex=(v,u,w,z)=>{P.push(...v);N.push(u,w,z);};
   const quad=(a,b,c,d,u=0,v=1,z=p.age)=>{vertex(a,u,0,z);vertex(b,u,1,z);vertex(c,v,1,z);vertex(a,u,0,z);vertex(c,v,1,z);vertex(d,v,0,z);};
-  for(const strip of strips){const s=strip.map(q=>({a:transform(q.a),b:transform(q.b)}));for(let j=0;j<s.length-1;j++)quad(s[j].a,s[j].b,s[j+1].b,s[j+1].a,j/(s.length-1),(j+1)/(s.length-1));}
+  for(const strip of strips){const s=strip.map(q=>({a:transform(q.a.map((v,i)=>v+(v-q.b[i])*pad*.5)),b:transform(q.b.map((v,i)=>v+(v-q.a[i])*pad*.5))}));for(let j=0;j<s.length-1;j++)quad(s[j].a,s[j].b,s[j+1].b,s[j+1].a,j/(s.length-1),(j+1)/(s.length-1));}
   if(p.points)for(const q of p.points){
    const c=transform(q.p),v=eye.map((x,i)=>x-c[i]),h=Math.hypot(v[0],v[2])||1,right=[v[2]/h,0,-v[0]/h],up=[-right[2]*v[1],right[2]*v[0]-right[0]*v[2],right[0]*v[1]],len=Math.hypot(...up)||1;
-   const at=(x,y)=>c.map((v,i)=>v+(right[i]*x+up[i]/len*y)*q.size);
+   const at=(x,y)=>c.map((v,i)=>v+(right[i]*x+up[i]/len*y)*q.size*(1+pad));
    quad(at(-1,-1),at(-1,1),at(1,1),at(1,-1),0,1,q.alpha);
   }
   if(!P.length)return null;
@@ -146,5 +153,5 @@ const SkillArcane=(()=>{
   for(let j=0;j<P.length;j+=3){for(let i=0;i<3;i++)P[j+i]-=center[i];radius=Math.max(radius,Math.hypot(P[j],P[j+1],P[j+2]));}
   return {positions:new Float32Array(P),normals:new Float32Array(N),count:P.length/3,radius,center,dirty:true};
  }
- return Object.freeze({definitions,has,life,stroke,impact,mask,geometry,surface:25,cost:p=>p.points?.length??p.strips.reduce((n,s)=>n+s.length-1,0),ink:p=>[p.mode+(p.palette??0)*8,p.clock,p.flutter]});
+ return Object.freeze({definitions,has,life,stroke,impact,mask,geometry,surface:25,cost:p=>p.points?.length??p.strips.reduce((n,s)=>n+s.length-1,0),ink:p=>[p.mode+(p.palette??0)*8+(p.mist??.85)*.5,p.clock,p.flutter]});
 })();

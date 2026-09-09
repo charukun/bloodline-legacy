@@ -67,6 +67,7 @@ test('lab controls support edits, scrubbing, comparison and reset without game s
  w.eval(`const FX_LAB_BUILD='test';\n`+read('src/render/skill-silk.js')+'\n'+read('src/render/skill-arcane.js')+'\n'+read('src/render/skill-effects.js')+'\n'+read('tools/skill-fx-lab/renderer.js')+'\n'+read('tools/skill-fx-lab/app.js'));
  const $=id=>w.document.getElementById(id);assert.equal($('presets').children.length,18);
  w.SkillFxLab.seek(.34);
+ $('mist').value='1';$('mist').dispatchEvent(new w.Event('input'));assert.equal(w.SkillFxLab.getRecipe().mist,1);assert.equal($('timeline').value,'340');assert.equal($('baseline').value,'mist');assert.equal($('surface-compare').disabled,false);
  $('flutter').value='0';$('flutter').dispatchEvent(new w.Event('input'));assert.equal(w.SkillFxLab.getRecipe().flutter,0);assert.equal($('timeline').value,'340');
  $('thickness').value='3';$('thickness').dispatchEvent(new w.Event('input'));assert.equal(w.SkillFxLab.getRecipe().thickness,3);assert.equal($('play').getAttribute('aria-label'),'再生');
  const seed=w.SkillFxLab.getRecipe().seed;$('reseed').click();assert.notEqual(w.SkillFxLab.getRecipe().seed,seed);

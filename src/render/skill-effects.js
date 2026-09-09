@@ -31,7 +31,7 @@ const SkillEffects = (() => {
   }
   if(value.seed!==undefined&&(!Number.isInteger(value.seed)||value.seed<0||value.seed>4294967295))throw Error('seedは0〜4294967295の整数にしてください');
   out.seed=value.seed??73;
-  for(const [key,min,max,fallback] of [['flutter',0,1,.65],['thickness',.5,3,2.2],['afterglow',.5,2.4,1],['variation',0,1,0]]){
+  for(const [key,min,max,fallback] of [['flutter',0,1,.65],['thickness',.5,3,2.2],['afterglow',.5,2.4,1],['variation',0,1,0],['mist',0,1,.85]]){
    const v=value[key]??fallback;
    if(!Number.isFinite(v)||v<min||v>max)throw Error(key+'は'+min+'〜'+max+'の数値にしてください');
    out[key]=v;
@@ -76,7 +76,7 @@ const SkillEffects = (() => {
   const rgb=h=>h.slice(1).match(/../g).map(x=>parseInt(x,16)),a=rgb(pair[1]),b=rgb(pair[2]);
   return '#'+a.map((v,i)=>Math.round(mix(v,b[i],clamp(phase))).toString(16).padStart(2,'0')).join('');
  }
- function decorate(list,recipe){return list.map(p=>{const phase=p.age??0,color=colorAt(recipe,phase);return {...p,palette:paletteIndex(recipe),color:p.mode===5?p.color:color??p.color};});}
+ function decorate(list,recipe){return list.map(p=>{const phase=p.age??0,color=colorAt(recipe,phase);return {...p,mist:recipe.mist??.85,palette:paletteIndex(recipe),color:p.mode===5?p.color:color??p.color};});}
  const add=(a,b)=>a.map((v,i)=>v+b[i]);
  function pathPoint(path,u){
   if(path==='pierce')return [.10*Math.sin(u*Math.PI),1.12,.2+u*2.1];
@@ -86,7 +86,7 @@ const SkillEffects = (() => {
  }
  function writer(recipe,quality){
   const list=[],native=palettes[recipe.family],colors=(recipe.palette??'native')==='native'?native:[colorAt(recipe,0),colorAt(recipe,.45),colorAt(recipe,1)],budget=quality==='low'?80:LIMIT;
-  const put=p=>{if(list.length<budget&&p.alpha>.008)list.push(p);};
+  const put=p=>{if(list.length<budget&&p.alpha>.008)list.push({...p,mist:recipe.mist??.85});};
   return {list,colors,
    line:(a,b,width=.025,alpha=1,tone=0)=>put({kind:'line',a,b,width:width*(recipe.thickness??2.2)/2.2,alpha:clamp(alpha),color:colors[tone]}),
    shard:(p,size,turn=0,alpha=1,tone=1)=>put({kind:'shard',p,size:size.map(v=>v*Math.sqrt((recipe.thickness??2.2)/2.2)),turn,alpha:clamp(alpha),color:colors[tone]})};

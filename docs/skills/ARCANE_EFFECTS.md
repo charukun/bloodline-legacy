@@ -108,3 +108,32 @@ waits only a short gap after the actual tail. The 3s scrub range accommodates
 maximum afterglow. Browser/device interaction, FPS and human judgement of
 perceptual novelty remain unverified; geometry tests are not a claim that every
 combination feels like a different skill.
+
+## Fog-edge material follow-up
+
+All 18 composed forms now default to `mist: 0.85`, with a 0–1 control retained
+in version-1 exports. Zero restores the previous material boundary. The HTML
+lab can compare mist-off and mist-on for every family using the same cast sample.
+
+Silk and spell strips gain transparent support padding without adding vertices.
+Three advected noise samples create moving density and wispy erosion; alpha fades
+to zero before the mesh boundary. The main path, impact silhouette, palette,
+contact time, afterglow and cast seed are unchanged. Camera-facing motes use a
+cloud-like falloff in place of the crisp star cross. Ordinary composed light
+needles and debris also get local haze materials (26/27); other combat needles
+keep their original material. This uses no screen blur, new texture, depth copy,
+additional particle or extra draw call. Wider transparent coverage and noise add
+fragment work; device FPS is still unmeasured.
+
+Packed palette/mist metadata keeps the existing vertex/instance layout. The
+native validation now captures actual `CombatPresentation.composition` output,
+including instance transforms and all four VFX material types, rather than only
+spell geometry. `FX_MIST_COMPARE=1 node tools/skill-fx-lab/arcane-evidence.mjs`
+followed by `python3 tools/skill-fx-lab/arcane-film.py` produces a six-family,
+twelve-panel before/after study. Canvas fallback remains an approximation.
+
+Validation for this follow-up: 286 tests pass (29 focused VFX tests), including
+support-boundary opacity, temporal continuity, unchanged geometry budgets,
+metadata decoding, ordinary-combat isolation and the lab's mist control.
+Native EGL checks game, skin and lab shader links plus 36 comparison samples.
+Browser/device playback and FPS remain unverified.
