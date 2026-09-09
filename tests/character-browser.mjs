@@ -66,6 +66,10 @@ async function fixture(page,{close=false}={}){
 async function shot(name){
   if(gate && name!=='failure' && !['after-gameplay','after-attack','after-equipment','after-mobile-gameplay'].includes(name))return;
   if(gate)await page.evaluate(()=>{const a=AERIN_QA.app;window.characterRasterize=true;a.renderer.staticShadowDirty=true;try{a.renderer.render(a.snapshot,0,{freezeCamera:true});}finally{window.characterRasterize=false;}});
+  if(gate&&name!=='failure'){
+    const pixels=await page.evaluate(()=>{const r=AERIN_QA.app.renderer,g=r.gl,w=g.drawingBufferWidth,h=g.drawingBufferHeight,rgba=new Uint8Array(w*h*4);g.readPixels(0,0,w,h,g.RGBA,g.UNSIGNED_BYTE,rgba);const colors=new Set();for(let i=0;i<rgba.length;i+=Math.max(4,Math.floor(rgba.length/4096/4)*4))colors.add(`${rgba[i]},${rgba[i+1]},${rgba[i+2]}`);return {width:w,height:h,colors:colors.size,error:g.getError(),discard:g.isEnabled(g.RASTERIZER_DISCARD)};});
+    check(name+' raster checkpoint',pixels.colors>8&&pixels.error===0&&!pixels.discard,pixels);
+  }
   await page.evaluate(()=>window.characterDrain?.());await page.screenshot({path:path.join(out,name+'.png')});report.lastScreenshot=name;flush();}
 try{
   browser=await chromium.launch({executablePath:process.env.CHROMIUM_EXECUTABLE||undefined,headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});

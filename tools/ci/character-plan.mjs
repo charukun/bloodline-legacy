@@ -7,7 +7,7 @@ export function characterPlan({event, fullReview=false, changedFiles=[], diffAva
   const common=validationPlan({event:'pull_request',baseBranch:'develop',changedFiles,diffAvailable,inventory:testInventory()});
   const relevant=common.scope==='full'||common.scope.split('+').some(s=>['character','ui','network'].includes(s))||changedFiles.some(p=>/^(tests\/character|tools\/.*character|tools\/ci\/character-)/.test(p));
   const full=fullReview||(event==='push'&&relevant);
-  return {browser:full||relevant, full, mode:full?'all':'gate',
+  return {browser:full||relevant, full, mode:full?'functional':'gate',
     assets:full||!diffAvailable||changedFiles.some(p=>/^(public\/assets\/character\/|tools\/(generate_character\.py|requirements-character\.txt)|tests\/character_asset_validation\.py|\.github\/workflows\/character-visual\.yml|tools\/ci\/character-plan\.mjs)$/.test(p))||changedFiles.some(p=>p.startsWith('public/assets/character/')),
     reason:full?'Integrated revision or explicit Full Review':relevant?'Head-only functional Character Gate':'No character/browser impact; general CI owns selected tests'};
 }
