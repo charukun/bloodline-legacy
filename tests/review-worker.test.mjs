@@ -26,3 +26,11 @@ test('GitHub errors never allow access and an unrelated repository permission ca
  const unavailable=createWorker(async()=>{throw Error('network down');});assert.equal((await unavailable.fetch(request('/review/skills','github_pat_'+'n'.repeat(60)),env())).status,503);
  const unrelated=createWorker(async()=>Response.json({full_name:'someone/else',permissions:{admin:true}}));assert.equal((await unrelated.fetch(request('/review/skills','github_pat_'+'e'.repeat(60)),env())).status,401);
 });
+
+import {verifyReviewAccess} from '../deploy/verify-review.mjs';
+test('new-host propagation may retry 404; public content or authorization failures cannot pass',async()=>{
+ let requests=0,waits=0;
+ await verifyReviewAccess(['https://review.example/review/skills'],{fetcher:async()=>++requests===1?new Response('',{status:404}):new Response('',{status:401,headers:{'WWW-Authenticate':'Basic','Cache-Control':'no-store'}}),wait:async()=>waits++});
+ assert.equal(requests,2);assert.equal(waits,1);
+ for(const status of [200,403,404,503])await assert.rejects(verifyReviewAccess(['https://review.example/review/runtime.mjs'],{fetcher:async()=>new Response('',{status}),wait:async()=>{},attempts:2}),/authorization gate failed/);
+});

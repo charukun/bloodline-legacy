@@ -23,7 +23,7 @@ async function openReview(t,mode,query=''){
  await vm.runInContext('(async()=>{'+model+'\n'+app+'})()',ctx);
  assert.equal(errors.length,0,errors[0]?.stack);assert.equal(frames.length,1);
  let time=10;const frame=()=>{assert.equal(frames.length,1);frames.shift()(time+=100);assert.equal(errors.length,0,errors[0]?.stack);};
- const change=(id,value,type='change')=>{const el=d.getElementById(id);el.value=value;el.dispatchEvent(new dom.window.Event(type));};
+ const change=(id,value,type='change')=>{const el=d.getElementById(id);el.value=value;el.dispatchEvent(new dom.window.Event(type,{bubbles:true}));};
  return {dom,d,frame,change,record,errors,saved};
 }
 test('skill and combat routes start, apply deep links and draw using shared game assets without touching saves',async t=>{
@@ -33,6 +33,8 @@ test('skill and combat routes start, apply deep links and draw using shared game
   for(const button of ['single','combo','combat','random','previous','restart']){r.d.getElementById(button).click();r.frame();assert.equal(r.d.getElementById('error').textContent,'',button);}
   r.change('speed','.25');r.change('view','1.57');r.d.getElementById('effects').click();r.frame();
   assert.doesNotMatch(r.d.getElementById('readout').textContent,/NaN|undefined/);
+  r.d.getElementById('pause').click();r.frame();const pausedDraws=r.record.draws;r.frame();assert.equal(r.record.draws,pausedDraws,'paused scene leaves the GPU idle');
+  r.change('view','0');r.frame();assert.ok(r.record.draws>pausedDraws,'paused camera controls still redraw');
   assert.equal(r.dom.window.localStorage.getItem('bloodline-save'),r.saved);assert.equal(r.dom.window.localStorage.length,1);
   for(const a of r.d.querySelectorAll('nav a'))assert.ok(new URL(a.href).searchParams.has('sha'));
  }

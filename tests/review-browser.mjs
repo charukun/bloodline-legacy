@@ -34,6 +34,7 @@ try{
    assert.equal(state.save,'unchanged');assert.deepEqual(state.keys,['bloodline-review-save-sentinel']);assert.ok(state.width<=state.view,'no horizontal overflow');assert.doesNotMatch(state.readout,/NaN|undefined/);
    const unexpected=network.filter(url=>/^https?:/.test(url)&&(new URL(url).pathname.startsWith('/api/')||new URL(url).origin!==base));
    assert.deepEqual(unexpected,[],'no game API or external HTTP requests; local blob/data decodes are allowed');
+   await page.locator('#pause').click();await page.waitForFunction(()=>document.getElementById('readout').textContent.includes('停止中'),null,{timeout:20000});
    await page.screenshot({path:path.join(evidence,`${mode}-${viewport.width}.png`),fullPage:true,timeout:15000});console.log(`Review browser passed: ${mode} at ${viewport.width}px`);results.push({mode,viewport,...state});
   }
   if(viewport.width===1280){

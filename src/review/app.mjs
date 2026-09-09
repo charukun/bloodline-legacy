@@ -16,7 +16,8 @@ try {
  const option=(value,label)=>{const o=document.createElement('option');o.value=value;o.textContent=label;return o;};
  for(const e of model.enemies().filter(e=>mode!=='enemies'||e.id!=='dummy'))$('enemy').append(option(e.id,e.name+' · '+e.id));$('enemy').value=enemy.id;
  $('weapon').append(option(-1,'素手'));R.WEAPONS.forEach((w,i)=>$('weapon').append(option(i,w.name)));$('weapon').value=skill.weapon>=0?skill.weapon:-1;
- let listedKey='',slotWeapon=null;
+ let listedKey='',slotWeapon=null,needsRender=true;
+ for(const event of ['input','change','click'])document.addEventListener(event,()=>{needsRender=true;});
  let selected=skill.id,slots=[0,1,2].map(phase=>model.skills().find(s=>!s.passive&&R.skillPhase(s)===phase&&s.weapon<0).id),history=[],r,trial,paused=false,time=0,last=0,carry=0,seq=0,request,measurement=null,lastReport=0,trialMode=mode==='combat'?'combat':'single';
  const sceneSim=new R.Simulation({seed:7349}),scenePlayer=sceneSim.addPlayer('enemy-review',{owner:'enemy-review'}),scene=sceneSim.snapshot(scenePlayer.id);scene.map=sceneSim.getRoom(scenePlayer).map;
  const templates=Object.fromEntries(Object.keys(R.ENEMY_FORMS).map(k=>[k,sceneSim.actor(k,0,0)]));
@@ -50,7 +51,7 @@ try {
  for(let phase=0;phase<3;phase++){const label=document.createElement('label');label.textContent=R.PHASES[phase];const select=document.createElement('select');select.id='slot-'+phase;select.onchange=()=>{slots[phase]=+select.value;};label.append(select);$('slots').append(label);}
  function clearVisual(){r.effects.length=0;r.skillMotionStates?.clear();r.art.skillFeet?.clear();r.damageMotion?.actors.clear();r.enemySentinels?.dispose();r.enemySentinels=null;r.enemyCreatures?.clear();const fx=r.combatPresentation;for(const id of fx.trails.keys())fx.forget(id);fx.castSamples.clear();fx.castSerial=0;fx.clearSilk?.();}
  function launch(next=trialMode){
-  if(!r)return;try{trialMode=next;time=0;carry=0;paused=false;last=0;$('pause').textContent='一時停止';clearVisual();
+  if(!r)return;try{needsRender=true;trialMode=next;time=0;carry=0;paused=false;last=0;$('pause').textContent='一時停止';clearVisual();
    r.combatPresentation.previewEnabled=$('effects').checked;
    if(mode!=='enemies')trial=model.trial({skill:selected,enemy:$('enemy').value,distance:+$('distance').value,weapon:+$('weapon').value,mode:next,slots});
    $('error').textContent='';update();
@@ -86,6 +87,8 @@ try {
  function frame(now){try{
   if(r.lost)throw Error('WebGLが切断されました。画面を再読み込みしてください。');
   if(document.hidden){last=0;request=requestAnimationFrame(frame);return;}
+  if(paused&&!needsRender&&!measurement){last=now;request=requestAnimationFrame(frame);return;}
+  const forced=needsRender;needsRender=false;
   const raw=last?(now-last)/1000:0,dt=Math.min(.05,raw);last=now;
   if(!paused){time+=dt*+$('speed').value;if(mode!=='enemies'&&trial){carry+=dt*+$('speed').value;while(carry>=1/60){const events=model.step(trial,1/60);if($('effects').checked)for(const e of events)r.effect(e,trial.sim.time);carry-=1/60;}}}
   let snapshot,description;
@@ -103,7 +106,7 @@ try {
    if(!paused&&!measurement&&time>(trialMode==='combat'?20:7)&&$('repeat').checked)launch();
   }
   if(snapshot)r.render(snapshot,paused?0:dt*+$('speed').value,{portrait:true,freezeCamera:true});
-  if(now-lastReport>150){lastReport=now;$('readout').textContent=(paused?'停止中 · ':'')+description;$('stats').textContent=`${r.stats.calls} calls · ${r.stats.triangles.toLocaleString()} tris · CPU ${r.cpuMs.toFixed(1)} ms · GPU ${r.gpuMs?.toFixed(1)??'N/A'} ms`;}
+  if(forced||now-lastReport>150){lastReport=now;$('readout').textContent=(paused?'停止中 · ':'')+description;$('stats').textContent=`${r.stats.calls} calls · ${r.stats.triangles.toLocaleString()} tris · CPU ${r.cpuMs.toFixed(1)} ms · GPU ${r.gpuMs?.toFixed(1)??'N/A'} ms`;}
   if(measurement){const elapsed=(now-measurement.start)/1000,index=Math.floor((elapsed-10)/10);$('measurement').textContent=elapsed<10?'準備中 '+Math.ceil(10-elapsed)+'秒':`計測 ${Math.min(3,index+1)} / 3`;if(index>=0&&index<3&&raw>0)measurement.runs[index].push({frameMs:raw*1000,cpuMs:r.cpuMs,gpuMs:r.gpuMs??null,calls:r.stats.calls,triangles:r.stats.triangles});if(elapsed>=40)finishMeasurement();}
   request=requestAnimationFrame(frame);
  }catch(e){fail(e);}}
