@@ -52,6 +52,7 @@ The imported x/z root motion is removed; Simulation still owns movement. Hand/he
 
 ## Build and validation
 
+- Distribution integrity: `node deploy/build.mjs dev` and `node deploy/check-build.mjs dev` PASS. The first CI run caught the new GLB missing from the explicit embedded-asset list; the list now includes it and still checks every embedded asset byte-for-byte.
 - `npm ci`, `npm test`: build and **269 tests passed**, zero failures/skips. Full result saved in `evidence/tests.txt`.
 - Focused coverage: two-type eligibility, GLB bounds, 23-bone budget, finite seven-state poses, real soldier guard flag during movement, exact strike deadline, snapshot immutability, hitstop, wounds/lost hands, shared geometry and palette cleanup.
 - Khronos glTF Validator: **0 errors, 0 warnings**, report `evidence/gltf-validation.json`. No external buffer/image URI, decoder or required extension.
