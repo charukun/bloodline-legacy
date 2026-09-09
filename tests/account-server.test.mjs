@@ -26,7 +26,18 @@ async function linked(f){
  return {token:guest.token,auth,code,account:result.account};
 }
 async function login(f,a){const o=await f.call('account/login-options');const result=await f.call('account/login-verify',{id:o.id,response:a.auth.login(o.options)});assert.equal(result.status,200,JSON.stringify(result));return result;}
-function rawSave(){const s=new engines[currentRules]({mode:'normal'}),p=s.addPlayer('local',{owner:'offline-owner',name:'リオ',clan:'暁風'});Object.assign(p,{age:27,prologue:false,inventory:['bell']});return JSON.stringify({...s.exportState(),_profile:{owner:p.owner,mode:'normal',online:false,clan:p.clan,name:p.name}});}
+function rawSave(rules=currentRules){const s=new engines[rules]({mode:'normal'}),p=s.addPlayer('local',{owner:'offline-owner',name:'リオ',clan:'暁風'});Object.assign(p,{age:27,prologue:false,inventory:['bell']});return JSON.stringify({...s.exportState(),_profile:{owner:p.owner,mode:'normal',online:false,clan:p.clan,name:p.name}});}
+
+test('cloud save lazily validates historical rules and retains the exact payload across restart',async()=>{
+ const f=fixture(),a=await linked(f),rules=Object.keys(engines).find(id=>id!==currentRules),raw=rawSave(rules);
+ assert.deepEqual(Object.keys(f.world.engines),[currentRules]);
+ const saved=await f.call('account/cloud-save',{raw,rules,revision:0},a.token);
+ assert.equal(saved.status,200,JSON.stringify(saved));assert.equal(saved.revision,1);
+ assert.deepEqual(Object.keys(f.world.engines),[currentRules,rules]);
+ const reboot=fixture(f.store),loaded=await reboot.call('account/cloud-load',{},a.token);
+ assert.equal(loaded.cloud.rules,rules);assert.equal(loaded.cloud.raw,raw);
+ assert.deepEqual(Object.keys(reboot.world.engines),[currentRules],'reading stored bytes does not initialize their archived runtime');
+});
 
 test('passkey linking binds the existing anonymous family, never client ownership',async()=>{
  const f=fixture(),joined=await f.call('join',{config:{name:'リオ'},beginLife:true}),auth=authenticator(),options=await f.call('account/register-options',{},joined.token);

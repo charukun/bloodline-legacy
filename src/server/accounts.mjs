@@ -190,7 +190,8 @@ export class Accounts {
       const hash=await accountDigest(body.raw);
       if(hash===a.cloud?.hash&&[revision,revision-1].includes(body.revision))return {revision,updatedAt:a.cloud.updatedAt};
       if(body.revision!==revision)fail('CLOUD_CONFLICT',409);
-      const Engine=this.w.engines[body.rules];if(!Engine)fail('UPDATE_REQUIRED',426);
+      if(!this.w.hasEngine(body.rules))fail('UPDATE_REQUIRED',426);
+      const Engine=await this.w.engine(body.rules);
       let saved,sim;try{saved=JSON.parse(body.raw);sim=Engine.restore(saved);}catch{fail('INVALID_SAVE');}
       const profile=saved._profile;
       if(sim.mode!==this.w.sim.mode||typeof profile?.owner!=='string'||profile.mode!==sim.mode||profile.online)fail('INVALID_SAVE');

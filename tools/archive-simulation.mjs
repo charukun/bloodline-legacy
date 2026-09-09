@@ -28,5 +28,6 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   if(!ids.includes(id)){await fs.writeFile(path.join(dir,id+'.mjs'),source,{flag:'wx'});ids.push(id);}
   await fs.writeFile(path.join(dir,'registry.json'),JSON.stringify(ids,null,2)+'\n');
   await fs.writeFile(path.join(dir,'registry.mjs'),ids.map((id,i)=>`import {Simulation as S${i}} from './${id}.mjs';`).join('\n')+`\nexport const engines={${ids.map((id,i)=>JSON.stringify(id)+':S'+i).join(',')}};\nexport const currentRules=${JSON.stringify(id)};\n`);
+  await fs.writeFile(path.join(dir,'loaders.mjs'),`// Generated lazy loaders. Keep every immutable archive available without initializing it at Worker startup.\nexport const engineLoaders={\n${ids.map(id=>`  ${JSON.stringify(id)}:()=>import('./${id}.mjs')`).join(',\n')}\n};\nexport const currentRules=${JSON.stringify(id)};\n`);
   console.log('Archived rules '+id);
 }
