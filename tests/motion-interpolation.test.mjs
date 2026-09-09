@@ -19,7 +19,7 @@ function fixture(smooth=true){
   accumulator:0,sinceSave:0,seq:sim.seq,mapCache:new Map(),online:false,
   updateMove(){this.command({type:'move',x:1,z:0});},saveWorld(){},
   audio:{setListener(){},updateFootsteps(){},fx(){}},
-  buildingLabels:{update(){}},ui:{portraitQueue:[],update(){},event(){},toast(){}},
+  buildingLabels:{update(){}},ui:{portraitQueue:[],update(){},updateWorld(){},event(){},toast(){}},
   renderer:{art:{sources:[]},effect(){},render(s){frames.push({x:s.player.x,z:s.player.z,t:s.t});}}
  });
  if(!smooth)game.motionInterpolation={capture(){},reset(){},sample:s=>s};

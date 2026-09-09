@@ -1,11 +1,20 @@
 # Living canopy and planted edges
 
-Source: develop `573f48a36da38bf0c976f89e6ff30c14f0abc4b8`, then the explicitly
-approved, still-open PR #22 (`9f6de49ccd184d0ef30c05c2d921695cfde73d51`).
+Source at implementation start: develop `573f48a36da38bf0c976f89e6ff30c14f0abc4b8`,
+then the explicitly approved, then-open PR #22 (`9f6de49ccd184d0ef30c05c2d921695cfde73d51`).
 The combined baseline is `a374fbf40ca6158d56d96715db34a981bdb53c82`.
-PR #22 is a pending dependency, not an assumed integration. Current damage and
+PR #22 was a pending dependency when the comparison was captured. Current damage and
 skill motion changes are present in this checkout. Policy v5 and the supplied
 Reference A apply. Branch: `work/plaza-living-canopy-20260909`.
+
+PR submission: the user approved the playable preview and requested a PR on
+2026-09-09. PR #22 is now merged. Fetched and merged develop
+`cd5f0344a176802dbfbfd3e9d28edadcd98a9907`, preserving the newer UI, facility actions,
+skill discovery and choreography changes. `npm test` rebuilt the combined game
+and passed **210/210 tests**. The PR diff against that develop contains only the
+four canopy implementation/test/evidence files. The visual measurements below
+remain the original controlled comparison, not new measurements of all intervening
+develop changes. The approved canopy code is unchanged by this integration.
 
 ## Visual changes
 
@@ -74,4 +83,5 @@ are retained in `docs/evidence/canopy-metrics.json`.
 UNVERIFIED: browser WebGL2, mobile touch feel, Pixel Fold/desktop GPU frame pacing,
 tilt-shift timing and bone-palette transitions. Native software results do not
 measure those. Playable review is provided before opening the new visual PR,
-as requested; no merge or new PR has been performed.
+as requested. The user has now approved PR submission; develop merging remains
+the responsibility of Integration WORK.

@@ -93,3 +93,76 @@ and combat presentation. No build-order change is required.
 Ready PR targets develop. Integration WORK reviews and merges; this WORK does not
 merge or deploy. Browser/gameplay visual approval and target-device pacing are the
 remaining external validation, rather than a claimed commercial-quality pass.
+
+## Choreography follow-up
+
+Started from develop `010f2d9615ac0492d3a118f7057a313667455df1`, after the first
+Skill Motion and Damage Motion integration. Rebased onto
+`be5f92ceb734cee7ed5d9860c2202b974f142f24`, preserving the carry-walking and
+parent-world-pose changes from the minor-polish integration. This is also the
+default comparison baseline. The approved follow-up focuses on six
+families (slash, thrust, slam, kick, spin, cast), inter-skill continuity, supporting
+feet and two-handed grips. The supplied v5 policy, implementation prompt and combat
+reference remain the sources; skill definitions and Simulation remain authoritative.
+
+- Authored asymmetric preparation, counterbalancing free arms, family-specific
+  stance widths and leads, chamber/extension/rechamber for kicks, and alternating
+  raised steps with support pivots in spins. Catalog variants inherit these bases.
+- Monotone Hermite interpolation carries nonzero angular velocity through the
+  existing `.43` contact instead of stopping at each key. Hips initiate before the
+  chest/hands. Heavy arts use a later acceleration and longer follow-through within
+  the existing swing; no combat duration changes.
+- Renderer-owned pose history carries the previous cut into the next charge and
+  then the real recovery. It is independent per renderer, pruned, and reset on room
+  changes, time discontinuities and teleports. Head orientation counterbalances the
+  torso toward the existing facing/target; it does not retarget an attack.
+- Analytic two-arm grip constrains the hands to the actual shaft and limb lengths.
+  Broad original rigs protract the shoulders slightly; CM01 retains its skeleton.
+  Shields and missing arms disable this grip. No additional meshes or draw passes.
+- Polearm/axe/staff tips join the existing real weapon-tip tracking. Armed strikes
+  use this path instead of a second synthetic arc. Trail lifetime, width and maximum
+  point count stay unchanged. The Damage Motion functions and gameplay rules are
+  preserved.
+
+### Reproducible review
+
+After a normal build, run:
+
+```sh
+node tools/build-skill-motion-review.mjs <full-comparison-base-sha>
+```
+
+This creates `dist/Bloodline_Legacy_Skill_Motion_Review.html`. It embeds the built
+game runtime/assets once and swaps the five motion-related modules for the fixed
+base when choosing Before. Both variants use the same scene, camera and timeline.
+The review includes six representative skills plus a Jo/Ha/Kyu chain, adult/age 14,
+normal/quarter speed, pause/seek, three angles, game-scale/close view and VFX on/off.
+Seeking reconstructs renderer history; A/B retains the selected point in the cycle.
+Only one iframe/GL context runs at a time. It creates synthetic snapshots using
+the game's `actionTiming`, without constructing Game, saving or connecting online.
+The `.18` review step and contact sparks are fixtures, not simulation validation.
+
+Added regression checks cover contact velocity, two-handed chain/recovery boundaries,
+real supporting-palm/weapon matrices and unchanged arm lengths, broad/young/old rigs,
+loss/shields and renderer isolation. Review controls and fixed contact timestamps
+are checked separately. Full tests at the starting base: **178 PASS** (171 baseline). After the
+rebase, **194 PASS**, including the well collision and minor-polish regressions.
+Build and review JavaScript syntax checks pass.
+
+CPU projection review covers both rigs for all six families without VFX. A warm
+pose-only sample across six equipped/unarmed skills measured after-change p95
+**0.48–0.64 ms** per CM01 character (GL calls stubbed). This is a local CPU sample,
+not mobile FPS; the shared host makes before/after timing noisy. Mesh counts,
+textures, draw passes and the existing trail budget are unchanged.
+
+Cloud Browser rejected the review URL with `ERR_BLOCKED_BY_CLIENT`. Local DOM tests
+and CPU projections of the actual skin matrices are not browser playback approval.
+The existing Character CI remains enabled; Pixel Fold GPU/frame pacing and aesthetic
+approval in the browser remain unverified. Normal development does not load the
+review files or its baseline copy.
+
+Changed runtime areas: `SkillMotion`, the two doll adapters, `RigRenderer.end`,
+weapon tip registration and `CombatPresentation.update`. New files: the three
+review tools and `tests/skill-motion-review.test.mjs`. Existing tests/documentation
+are extended. No files deleted, asset replacements, skill/UI/core/save changes,
+new dependencies or CI gate changes.
