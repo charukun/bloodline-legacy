@@ -12,7 +12,7 @@ const SkillPresentation = (() => {
  function event(ui,e) {
   if(e.player!==ui.g.playerId)return false;
   if(e.type==='death'){clear(ui);return false;}
-  if(e.type==='skillconnection') { ui.floatLines.push({...e,born:e.t,text:'繋がった'});ui.floatLines=ui.floatLines.slice(-16);return true; }
+  if(e.type==='skillconnection') { ui.floatLines.push({...e,born:e.t,shown:performance.now(),text:'繋がった'});ui.floatLines=ui.floatLines.slice(-16);return true; }
   if(!['insight','passive'].includes(e.type)||!BL_SKILL_CATALOG.byId.has(e.id))return false;
   const el=ensure(ui),d=BL_SKILL_CATALOG.byId.get(e.id);
   ui.skillRevealEvent={...e,shown:performance.now()};el.classList.remove('named');
