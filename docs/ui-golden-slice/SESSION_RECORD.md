@@ -1,5 +1,7 @@
 # Golden UI Vertical Slice — UI WORK
 
+> **HISTORICAL — 過去WORKの実装・検証記録。** 以下の旧ポリシー、命令形の統合手順、PR/branch状態、SHA、検証条件・結果は当時の記録であり、現行命令や現在headの成功証拠ではありません。担当調査に必要な場合だけ参照してください。[現行の文書案内](../README.md)。
+
 Status: **BLOCKED (GitHub WRITE) + VALIDATION_PENDING / Fallback review handoff / DO NOT MERGE**
 
 ## Source and scope

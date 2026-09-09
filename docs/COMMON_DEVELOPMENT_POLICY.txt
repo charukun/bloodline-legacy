@@ -1,0 +1,5 @@
+Legacy policy path — reference only
+
+The current common policy is v7 in docs/COMMON_DEVELOPMENT_POLICY.md, synchronized from the latest new 血脈の系譜 Project Sources.
+The former v6 text is retained in Git history and is not current instructions.
+Explicit current user instructions take precedence.
