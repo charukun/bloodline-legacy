@@ -28,10 +28,12 @@ export async function loadScene(root = repository, options = {}) {
   }
   try { await fs.access(path.join(root, 'src/world/golden-slice.js')); files.push('world/golden-slice.js'); } catch {}
   files.push('weather/weather.js', 'character/rig.js', 'render/combat-presentation.js', 'render/adapter.js');
+  if(options.enemyReview)files.splice(files.indexOf('render/combat-presentation.js'),0,'enemies/damage.js','enemies/sentinel.js','enemies/equipment.js','enemies/bestiary.js','../tools/enemies/review-scenes.js');
   const assets = {};
   for (const file of await fs.readdir(path.join(root, 'public/assets'))) {
     if (/\.(png|glb)$/.test(file)) assets[file] = (await fs.readFile(path.join(root, 'public/assets', file))).toString('base64');
   }
+  if(options.enemyReview)assets['enemies/sentinel.glb']=(await fs.readFile(path.join(root,'public/assets/enemies/sentinel.glb'))).toString('base64');
   const ctx = vm.createContext({ console, Image, TextDecoder, Uint8Array, Uint16Array,
     Uint32Array, Float32Array, DataView, ArrayBuffer, performance, Buffer,
     document: { createElement(type) { if (type !== 'canvas') throw Error(type); return createCanvas(1, 1); } },
@@ -53,13 +55,14 @@ export async function loadScene(root = repository, options = {}) {
     const snapshot=sim.snapshot(player.id); snapshot.map=makeVillage(snapshot.room.seed);snapshot.t=options.time;
     const r=Object.create(SliceRenderer.prototype);
     Object.assign(r,{width:options.width,height:options.height,canvas:{width:options.width,height:options.height},
-      camera:{x:options.x,z:options.z-1.5,zoom:options.zoom,yaw:options.yaw,pitch:options.pitch},
+      camera:{x:options.x,z:options.z-1.5,y:options.y??1,zoom:options.zoom,yaw:options.yaw,pitch:options.pitch},
       shakeOffset:[0,0],static:new Map(),dynamic:new Map(),groundFX:new Map(),fxBatches:new Map(),
       labels:[],effects:[],geo:new Map(),stats:{calls:0,triangles:0,instances:0,lodInstances:0},
       quality:options.quality,sceneKey:'village'+snapshot.map.seed,currentTime:options.time,
       program:{},shadowStatic:{tex:0},shadowDynamic:{tex:0},weather:new WeatherState(),frame:0});
     r.put=Renderer.prototype.put;
     r.art=new (typeof GoldenArt==='undefined'?VillageArt:GoldenArt)(r);
+    if(options.enemyReview){EnemyCreatures.install();r.enemyAPI={sentinel:EnemySentinel,creatures:EnemyCreatures,forms:ENEMY_FORMS,damage:EnemyDamage,review:EnemyReview};}
     const artStart=performance.now();r.art.village(snapshot.map);const artMs=performance.now()-artStart;
     if(options.isolatedMaterials){r.static.clear();r.art.root=rModel();r.art.target=r.static;r.art.B(0,-.20,options.z,20,.4,16,'#424a3d');}
     // Existing poses are flattened into rigid instance matrices for this offline

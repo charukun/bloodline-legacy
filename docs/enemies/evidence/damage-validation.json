@@ -1,0 +1,25 @@
+{
+  "base": "8ade374c84709e9ebcdfc77944b76ead87c0c8ba",
+  "sourceSHA256": {
+    "src/enemies/damage.js": "4bed1d79b153819ca12b9bd88053d1eb18f8f12fb9133fa52c77acf8e2f9d503",
+    "src/enemies/sentinel.js": "ac8b411391ad35079ec8500da722e34c995793ef53f25d167f091a92da870def",
+    "src/enemies/bestiary.js": "b0a82538bae15574ac05954b40c03519813bc885fe9783871241a6736be572ef",
+    "src/render/shaders.js": "6c65e317640791ceca3cd4302edfc638dc953e38c4f4349741af3929a701dc19",
+    "tools/enemies/review-scenes.js": "097c08d9fde594eec0b44ddf789ad315ff9a04904970ce04825738bc596d9436",
+    "tools/enemies/review-runtime.js": "c811cb287be83fb2ecc51008b8a5564a307560dfe6cf87b0dd309f4751b6ed8d"
+  },
+  "npmTest": {
+    "passed": 490,
+    "failed": 0,
+    "skipped": 0
+  },
+  "deployBuild": "PASS",
+  "embeddedAssetIntegrity": "PASS",
+  "enemyAssetLicense": "PASS",
+  "GLESProgramsPassed": 9,
+  "floatIntNegativeControl": "rejected as expected",
+  "nativeDiagnostic": "9 captures of actual meshes/shaders at staged wounds, attack, limb break and death",
+  "browser": "UNVERIFIED: supported browser security rejection",
+  "desktop60fps": "UNVERIFIED",
+  "pixelFold30fps": "UNVERIFIED"
+}

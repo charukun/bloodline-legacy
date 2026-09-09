@@ -59,8 +59,9 @@ test('presentation cache evicts absent characters',()=>{
 // its displacement, collision limits and unchanged action clocks separately.
 // The neutral frontal case retains prior damage/reaction behavior. New persisted
 // life, surface and damage-mark metadata is checked by the feature suites.
-const baselineExceptions=new Set(['hitPart','hitSeverity','hitReactAt','hitReactUntil','hitDir','hitStrength','hitMotionAt','hitMotionId','hitGuard','lifeState','traversables','damageMarks','grounded','supportHeight','verticalOffset','hitRecoil']);
-const state=sim=>JSON.parse(JSON.stringify(sim.exportState(),(k,v)=>k==='schema'?4:baselineExceptions.has(k)||k==='phaseLimitVersion'?undefined:v));
+const baselineExceptions=new Set(['hitPart','hitSeverity','hitReactAt','hitReactUntil','hitDir','hitStrength','hitMotionAt','hitMotionId','hitGuard','lifeState','traversables','damageMarks','grounded','supportHeight','verticalOffset','hitRecoil','enemyForm']);
+// Enemy names are visual identity; player/NPC names and protected state remain checked.
+const state=sim=>JSON.parse(JSON.stringify(sim.exportState(),function(k,v){if(k==='name'&&['goblin','soldier','elite','crawler','maw','wraith','boss'].includes(this.kind))return undefined;return k==='schema'?4:baselineExceptions.has(k)||k==='phaseLimitVersion'?undefined:v;}));
 test('damage, wound progression, attack interruption, hitstop and RNG match develop',()=>{
  const before=runtime(true);
  for(const seed of [13,27,48])for(const power of [.3,1,1.5,2,3])for(const part of ['head','torso','rightArm','leftLeg']){
