@@ -84,7 +84,7 @@ void main(){vec3 N=normalize(vNormal),L=normalize(vec3(-.48,.85,.42)),V=normaliz
   float fiber=pow(.5+.5*sin((v+warp)*82.+sin(u*23.)*2.2),7.);
   float core=exp(-pow((v-.16)/max(.115,fwidth(v)*.75),2.));
   float wake=exp(-v*2.9)*(.28+.64*fiber);
-  float grain=mix(.5+.5*sin(u*39.+v*16.+sin(u*17.-v*6.)*1.7),.5+.5*silkNoise(vec2(u*13.+clock*.6,v*5.-clock*.7),seed+89),flutter*.65);
+  float grain=mix(.5+.5*sin(u*39.+v*16.+sin(u*17.-v*6.)*1.7),.5+.5*silkNoise(vec2(u*13.+clock*.6,v*5.-clock*.7),seed+89.),flutter*.65);
   float erosion=smoothstep(age*.95-.22,age*.95+.06,grain+.18*(1.-v));
   float edge=smoothstep(0.,max(.025,fwidth(v)),v)*(1.-smoothstep(.86,1.,v));
   float ends=smoothstep(0.,.045,u)*(1.-smoothstep(.93,1.,u));

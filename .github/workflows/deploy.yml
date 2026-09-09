@@ -60,6 +60,12 @@ jobs:
         env:
           TARGET: ${{ steps.target.outputs.target }}
         run: node deploy/check-build.mjs "$TARGET"
+      - name: Multiplayer durability through the Workers runtime
+        if: steps.target.outputs.target != 'production'
+        timeout-minutes: 2
+        env:
+          TARGET: ${{ steps.target.outputs.target }}
+        run: node deploy/live-runtime.test.mjs "$TARGET"
       - run: deploy/node_modules/.bin/playwright install --with-deps chromium
         if: steps.target.outputs.target != 'dev'
       - name: Smoke test through local Workers runtime
@@ -130,6 +136,7 @@ jobs:
         run: |
           test -n "$CLOUDFLARE_API_TOKEN"
           test -n "$CLOUDFLARE_ACCOUNT_ID"
+          node deploy/check-rollout.mjs "$TARGET"
           deploy/node_modules/.bin/wrangler deploy --config "deploy/wrangler.$TARGET.json"
       - name: Verify published build (DEV HTTP; STAGING/PRODUCTION browser)
         run: |

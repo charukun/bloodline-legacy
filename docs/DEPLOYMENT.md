@@ -1,3 +1,7 @@
+# Current online/update architecture
+
+The original deployment audit below describes the pre-server baseline. The current API, environment-isolated Durable Object, save schema 4, rollout gate and required compatibility checks are defined in [Live Update](live-update/README.md). The former API 501 behavior remains only when the world binding is unavailable; production holding mode does not open a shared world.
+
 # Bloodline Legacy / 血脈の系譜 — Deployment運用
 
 状態: **develop移行/read-back完了。DEV・STAGINGの固定URLで公開WebGL smoke成功。PRODUCTIONの固定URLで待機ページ公開・smoke成功。3環境の自動配信を接続済み**。2026-09-08 JST。ゲームの正式Productionリリースは実施していない。
