@@ -117,9 +117,9 @@ test('each phase toggle persists through actual save and restore, including an e
  const original=p.phaseWeights.map(w=>Object.fromEntries(p.skills.map(id=>[id,w[id]||0])));
  for(const [phase,id]of [4001,4100,4101].entries()){
   d.querySelector(`[data-phase="${phase}"]`).click();d.querySelector(`[data-skill="${id}"]`).click();assert.equal(p.phaseWeights[phase][id],20);
-  const saved=JSON.parse(w.localStorage.getItem('aerin.tactics.v3.world.normal')),restored=api.Simulation.restore(saved).players.get(p.id);assert.equal(restored.phaseWeights[phase][id],20);
+  const saved=JSON.parse(w.localStorage.getItem('aerin.tactics.v3.world4.normal')),restored=api.Simulation.restore(saved).players.get(p.id);assert.equal(restored.phaseWeights[phase][id],20);
   d.querySelector(`[data-skill="${id}"]`).click();assert.equal(p.phaseWeights[phase][id],0);
-  const off=api.Simulation.restore(JSON.parse(w.localStorage.getItem('aerin.tactics.v3.world.normal'))).players.get(p.id);assert.equal(off.phaseWeights[phase][id],0);
+  const off=api.Simulation.restore(JSON.parse(w.localStorage.getItem('aerin.tactics.v3.world4.normal'))).players.get(p.id);assert.equal(off.phaseWeights[phase][id],0);
  }
  assert.equal(JSON.stringify(p.phaseWeights),JSON.stringify(original));
 });
@@ -130,7 +130,7 @@ test('rejected commands leave activation state and saves untouched while allowin
 });
 
 test('online tile activation uses the existing weights transport and reflects the acknowledged snapshot',t=>{
- const {sim,p,ui,g,d,sync}=fixture(t);sim.learn(p,4001);sync();g.online=true;g.commandBuffer=[];ui.skills();
+ const {sim,p,ui,g,d,sync}=fixture(t);sim.learn(p,4001);sync();g.online=true;g.live={ready:true};g.commandBuffer=[];ui.skills();
  d.querySelector('[data-skill="4001"]').click();const changes=g.commandBuffer.filter(c=>c.type==='weights');assert.equal(changes.length,1);assert.equal(changes[0].phase,0);assert.equal(changes[0].weights[4001],20);assert.equal(p.phaseWeights[0][4001],0,'UI does not mutate the authoritative player');
  sim.command(p.id,changes[0]);sync();assert.equal(d.querySelector('[data-skill="4001"]').getAttribute('aria-pressed'),'true');assert.equal(d.querySelector('[data-skill="4000"]').getAttribute('aria-pressed'),'true');
 });

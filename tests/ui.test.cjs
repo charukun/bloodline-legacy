@@ -15,7 +15,7 @@ test('bottom dock contains exactly consciousness, wardrobe and settings in order
 });
 test('dock switches sections without stacking; active parent also closes a nested page',async t=>{
  const {ui,d}=fixture(t),dock=ui.hudDock,body=dock.querySelector('[data-menu=body]'),settings=dock.querySelector('[data-menu=settings]');
- body.click();d.getElementById('open-rack').click();assert.equal(ui.modal,'rack');assert.equal(ui.navigation.length,1);body.click();assert.equal(ui.modal,null);
+ settings.click();d.getElementById('lineage-nav').click();assert.equal(ui.modal,'lineage');assert.equal(ui.navigation.length,1);settings.click();assert.equal(ui.modal,null);
  for(let i=0;i<8;i++){body.click();settings.click();assert.equal(ui.modal,'settings');assert.equal(ui.navigation.length,0);d.getElementById('lineage-nav').click();assert.equal(ui.modal,'lineage');settings.click();assert.equal(ui.modal,null);}
  assert.equal(d.querySelectorAll('.hud-bottom').length,1);assert.equal(ui.hudDock,dock);await flush();assert.equal(d.activeElement,settings);
 });
@@ -87,12 +87,12 @@ test('equipment age and rack-distance rules are enforced by real Simulation comm
  const {p,sim,g,ui,d,sync}=fixture(t),rack=g.snapshot.map.schools.find(a=>a.id==='armory');p.x=rack.x;p.z=rack.z+3;p.age=6;sync();ui.rack();
  assert.equal(d.querySelector('[data-slot="weapon"]').disabled,true);assert.equal(g.command({type:'equip',slot:'weapon',value:0}),false);
  p.age=7;sync();assert.equal(d.querySelector('[data-slot="weapon"][data-value="0"]').disabled,false);d.querySelector('[data-slot="weapon"][data-value="0"]').click();assert.equal(p.weapon,0);assert.equal(d.querySelector('[data-slot="weapon"][data-value="0"]').getAttribute('aria-pressed'),'true');assert.ok(d.querySelector('[data-slot="weapon"][data-value="0"] .selection-seal.lit'));
- p.x+=50;sync();assert.equal(d.querySelector('[data-slot="weapon"][data-value="1"]').disabled,true);assert.equal(g.command({type:'equip',slot:'weapon',value:1}),false);assert.equal(p.weapon,0);
+ p.x+=50;sync();assert.equal(ui.modal,null);assert.equal(d.querySelector('[data-slot="weapon"]'),null);assert.equal(g.command({type:'equip',slot:'weapon',value:1}),false);assert.equal(p.weapon,0);
 });
 test('modal navigation restores parent, scroll and focus and isolates the background',async t=>{
- const {ui,g,d}=fixture(t),trigger=d.querySelector('[data-menu="body"]');trigger.focus();trigger.click();await flush();assert.equal(ui.modal,'body');assert.equal(g.renderer.canvas.inert,true);assert.equal(d.getElementById('hud').inert,true);
- d.querySelector('.panel-content').scrollTop=90;const rack=d.getElementById('open-rack');rack.focus();rack.click();await flush();assert.equal(ui.modal,'rack');assert.equal(ui.navigation.length,1);
- d.querySelector('.panel-back').click();await flush();assert.equal(ui.modal,'body');assert.equal(d.activeElement.id,'open-rack');assert.equal(d.querySelector('.panel-content').scrollTop,90);
+ const {ui,g,d}=fixture(t),trigger=d.querySelector('[data-menu="settings"]');trigger.focus();trigger.click();await flush();assert.equal(ui.modal,'settings');assert.equal(g.renderer.canvas.inert,true);assert.equal(d.getElementById('hud').inert,true);
+ d.querySelector('.panel-content').scrollTop=90;const lineage=d.getElementById('lineage-nav');lineage.focus();lineage.click();await flush();assert.equal(ui.modal,'lineage');assert.equal(ui.navigation.length,1);
+ d.querySelector('.panel-back').click();await flush();assert.equal(ui.modal,'settings');assert.equal(d.activeElement.id,'lineage-nav');assert.equal(d.querySelector('.panel-content').scrollTop,90);
  d.querySelector('.panel-close').click();assert.equal(ui.modal,null);assert.equal(d.activeElement,trigger);assert.equal(g.renderer.canvas.inert,false);
 });
 test('Escape returns one level; Tab stays inside modal; rerender does not grow navigation',async t=>{
@@ -138,7 +138,7 @@ test('lineage renders only actual lives and safely escapes imported names',t=>{
 });
 test('real save/restore retains inventory, equipment, wounds, age and recorded lineage',t=>{
  const {sim,p,g,api}=fixture(t);p.inventory=['stone','bell'];p.weapon=0;p.armor=1;p.shield=true;p.wounds={head:{severity:'light',healsAt:25}};sim.legacy(p.owner).records.push({id:'ancestor',name:'前の命',gen:1,age:60,skills:[4000]});sim.legacy(p.owner).archive=[4000];
- g.saveWorld();const saved=JSON.parse(g.renderer.canvas.ownerDocument.defaultView.localStorage.getItem('aerin.tactics.v3.world.normal'));assert.ok(saved);
+ g.saveWorld();const saved=JSON.parse(g.renderer.canvas.ownerDocument.defaultView.localStorage.getItem('aerin.tactics.v3.world4.normal'));assert.ok(saved);
  const restored=api.Simulation.restore(saved),rp=restored.players.get(p.id);for(const key of ['age','inventory','weapon','armor','shield','wounds'])assert.equal(JSON.stringify(rp[key]),JSON.stringify(p[key]));assert.equal(restored.legacy(p.owner).records[0].name,'前の命');
 });
 test('showGame invalidates caches across repeated lives and restores all HUD nodes',t=>{

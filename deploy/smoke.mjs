@@ -5,6 +5,7 @@ import {spawn} from 'node:child_process';
 import {chromium, request} from 'playwright';
 import {root, sha256} from './build.mjs';
 import {environments} from './config.mjs';
+import {LiveContract} from '../src/live/contract.mjs';
 import {verifySkillSlice} from '../tests/skills/browser-contract.mjs';
 
 const environment = process.argv[2];
@@ -49,9 +50,9 @@ try {
   const health = await api.get('/api/health');
   assert.equal(health.status(),200);
   assert.match(health.headers()['content-type']||'',/application\/json/);
-  assert.deepEqual(await health.json(),{online:false,environment});
+  const h=await health.json();assert.equal(h.environment,environment);assert.equal(h.online,expected.mode==='game');if(h.online){assert.equal(h.build,expected.commit);assert.deepEqual(h.compatibility,LiveContract);}
   assert.equal((await api.get('/assets/deployment-smoke-missing.glb')).status(),404,'Missing model must not receive HTML fallback');
-  assert.equal((await api.post('/api/join',{data:{}})).status(),501,'Online API must not reach another environment');
+  assert.equal((await api.post('/api/join',{data:{}})).status(),expected.mode==='game'?426:503,'Unversioned clients must not join a shared world');
   if (!httpOnly) browser = await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
   for (const viewport of httpOnly ? [] : [{width:1280,height:800},{width:393,height:852}]) {
     const context = await browser.newContext({viewport,deviceScaleFactor:1});

@@ -42,7 +42,7 @@ test('scrolling a large memory collection preserves the inspected skill through 
 });
 
 test('online confirmation sends once, can recover after a missing reply and finishes from authoritative state',t=>{
- const {sim,p,g,ui,d,w,sync}=fixture(t);sim.learn(p,4001);sim.die(p,'寿命');sync();d.getElementById('death-continue').click();g.online=true;g.commandBuffer=[];
+ const {sim,p,g,ui,d,w,sync}=fixture(t);sim.learn(p,4001);sim.die(p,'寿命');sync();d.getElementById('death-continue').click();g.online=true;g.live={ready:true};g.commandBuffer=[];
  const original=w.setTimeout;let retry;w.setTimeout=(fn,ms,...args)=>{if(ms===5000)retry=fn;return original(fn,ms,...args);};
  d.querySelector('[data-bequest="4001"]').click();const confirm=d.getElementById('bequest-confirm');confirm.click();confirm.click();assert.equal(g.commandBuffer.length,1);assert.equal(p.legacyChoice.state,'pending');assert.equal(confirm.disabled,true);
  retry();assert.equal(confirm.disabled,false);g.commandBuffer=[];confirm.click();assert.equal(g.commandBuffer.length,1);assert.ok(sim.command(p.id,g.commandBuffer[0]));sync();

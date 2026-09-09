@@ -188,13 +188,17 @@ class UI {
   this.root.querySelector('.wardrobe-slots').innerHTML=slots.map(x=>`<button data-body-slot="${x.id}" class="belonging-slot ${x.item!==undefined?'inventory-slot '+(x.filled?'filled':''):''}" aria-label="${ESC(x.label+'・'+x.name)}" aria-pressed="${selected.id===x.id}" aria-controls="wardrobe-detail"><small>${ESC(x.label)}</small>${icon(x.glyph)}<strong>${ESC(x.name)}</strong></button>`).join('');
   this.root.querySelectorAll('[data-body-slot]').forEach(b=>b.onclick=()=>{this.describeBelonging(b.dataset.bodySlot);this.root.querySelector(`[data-body-slot="${b.dataset.bodySlot}"]`)?.focus({preventScroll:true});});
   document.getElementById('wardrobe-detail').innerHTML=`<small>${ESC(selected.label)}</small><h3>${ESC(selected.name)}</h3><p>${ESC(selected.desc)}</p>${selected.item!==undefined&&p.inventory.length===MAX_ITEMS&&p.passives.includes(4060)?`<p class="wardrobe-affinity">${icon('spark')}${itemAffinity(p).some(s=>s.items.length===2)?'ふたつの理が、響き合う。':'ふたつの品を、見比べる。'}</p>`:''}`;
-  document.getElementById('wardrobe-choice').innerHTML=selected.item!==undefined?selected.filled?`<button data-discard="${selected.item}" aria-label="${ESC(selected.name)}を手放す">${icon('hand')}手放す</button>`:'':`<button id="open-rack">${icon('sword')}武具棚${icon('arrow')}</button>`;
-  document.getElementById('open-rack')?.addEventListener('click',()=>this.rack());
+  document.getElementById('wardrobe-choice').innerHTML=selected.item!==undefined&&selected.filled?`<button data-discard="${selected.item}" aria-label="${ESC(selected.name)}を手放す">${icon('hand')}手放す</button>`:'';
   this.root.querySelector('[data-discard]')?.addEventListener('click',()=>{this.g.command({type:'discard',slot:selected.item});this.body();queueMicrotask(()=>this.root.querySelector(`[data-body-slot="${selected.id}"]`)?.focus({preventScroll:true}));});
  }
  bodySignature(p){return JSON.stringify([p.id,p.inventory,p.weapon,p.armor,p.shield,p.age<EQUIP_AGE,this.g.nearRack(),p.passives]);}
- wounds(){const p=this.g.snapshot?.player;if(!p)return;const hurt=Object.entries(p.wounds||{});this.open('wounds','身体の声',`<div class="wounds-figure">${anatomy(p,true)}</div><div class="wound-list">${hurt.length?hurt.map(([k,w])=>`<div><span>${BODY_NAMES[k]}</span><strong class="${w.severity}">${WOUND_NAMES[w.severity]}</strong></div>`).join(''):'<p>傷は、ない。</p>'}</div><div class="wound-key"><span>◆ 軽傷</span><span>◆ 重傷</span><span>◆ 欠損</span></div>`);}
- rack(){const p=this.g.snapshot?.player;if(!p)return;const near=this.g.nearRack(),minor=p.age<EQUIP_AGE,blocked=minor||!near;this.lastGear=[p.weapon,p.armor,p.shield,minor,near].join(':');this.open('rack','武具棚',`<p class="rack-note">${uiEquipmentNote(p,near)}</p><h3>得物</h3><div class="gear-grid">${[{name:'素手',id:-1},...WEAPONS.map((w,i)=>({...w,id:i}))].map(w=>`<button data-slot="weapon" data-value="${w.id}" aria-pressed="${p.weapon===w.id}" class="${p.weapon===w.id?'chosen':''}" ${blocked?'disabled':''}>${icon(w.id<0?'hand':w.id===4?'hammer':'sword')}<span>${w.name}</span>${uiSelectionSeal(p.weapon===w.id)}</button>`).join('')}</div><h3>身を包む</h3><div class="gear-grid">${ARMORS.map((a,i)=>`<button data-slot="armor" data-value="${i}" aria-pressed="${p.armor===i}" class="${p.armor===i?'chosen':''}" ${blocked?'disabled':''}>${icon(i===0?'cloth':'helm')}<span>${a.name}</span>${uiSelectionSeal(p.armor===i)}</button>`).join('')}</div><h3>左手</h3><div class="gear-grid">${[false,true].map(a=>`<button data-slot="shield" data-value="${a}" aria-pressed="${p.shield===a}" class="${p.shield===a?'chosen':''}" ${blocked?'disabled':''}>${icon(a?'shield':'hand')}<span>${a?'盾を持つ':'手を空ける'}</span>${uiSelectionSeal(p.shield===a)}</button>`).join('')}</div><p class="rack-school">今の学び · ${schoolName(gearSchool(p))}</p>`);this.root.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{const value=b.dataset.slot==='shield'?b.dataset.value==='true':+b.dataset.value;if(this.g.command({type:'equip',slot:b.dataset.slot,value})){this.rack();}});}
+ wounds(){
+  const p=this.g.snapshot?.player;if(!p)return;const hurt=Object.entries(p.wounds||{}),figure=anatomy(p,true),list=hurt.length?hurt.map(([k,w])=>`<div><span>${BODY_NAMES[k]}</span><strong class="${w.severity}">${WOUND_NAMES[w.severity]}</strong></div>`).join(''):'<p>傷は、ない。</p>';
+  if(this.modal==='wounds'){this.root.querySelector('.wounds-figure').innerHTML=figure;this.root.querySelector('.wound-list').innerHTML=list;return;}
+  this.open('wounds','身体の声',`<div class="wounds-figure">${figure}</div><div class="wound-list">${list}</div><div class="wound-key"><span>◆ 軽傷</span><span>◆ 重傷</span><span>◆ 欠損</span></div>`);
+ }
+ canUseRack(){const p=this.g.snapshot?.player;return this.g.screen==='game'&&canAct(p)&&!p.prologue&&!p.rescueTarget&&!p.traversal&&this.g.nearRack();}
+ rack(){if(!this.canUseRack()){if(this.modal==='rack'||this.navigating)this.closeModal();return false;}const p=this.g.snapshot.player,near=true,minor=p.age<EQUIP_AGE,blocked=minor;this.lastGear=[p.weapon,p.armor,p.shield,minor,near].join(':');this.open('rack','武具棚',`<p class="rack-note">${uiEquipmentNote(p,near)}</p><h3>得物</h3><div class="gear-grid">${[{name:'素手',id:-1},...WEAPONS.map((w,i)=>({...w,id:i}))].map(w=>`<button data-slot="weapon" data-value="${w.id}" aria-pressed="${p.weapon===w.id}" class="${p.weapon===w.id?'chosen':''}" ${blocked?'disabled':''}>${icon(w.id<0?'hand':w.id===4?'hammer':'sword')}<span>${w.name}</span>${uiSelectionSeal(p.weapon===w.id)}</button>`).join('')}</div><h3>身を包む</h3><div class="gear-grid">${ARMORS.map((a,i)=>`<button data-slot="armor" data-value="${i}" aria-pressed="${p.armor===i}" class="${p.armor===i?'chosen':''}" ${blocked?'disabled':''}>${icon(i===0?'cloth':'helm')}<span>${a.name}</span>${uiSelectionSeal(p.armor===i)}</button>`).join('')}</div><h3>左手</h3><div class="gear-grid">${[false,true].map(a=>`<button data-slot="shield" data-value="${a}" aria-pressed="${p.shield===a}" class="${p.shield===a?'chosen':''}" ${blocked?'disabled':''}>${icon(a?'shield':'hand')}<span>${a?'盾を持つ':'手を空ける'}</span>${uiSelectionSeal(p.shield===a)}</button>`).join('')}</div><p class="rack-school">今の学び · ${schoolName(gearSchool(p))}</p>`);this.root.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{if(!this.canUseRack()){this.closeModal();return;}const value=b.dataset.slot==='shield'?b.dataset.value==='true':+b.dataset.value;if(this.g.command({type:'equip',slot:b.dataset.slot,value})){this.rack();}});}
  queuePortrait(p,node,suffix=''){const record={id:p.id,name:p.name,appearance:{...p,prologue:false},skills:[suffix==='hud'||suffix==='wardrobe'?null:p.currentSkill||4000],idle:suffix==='hud'||suffix==='wardrobe',head:suffix==='hud'},key=JSON.stringify([suffix,p.id,p.race,Math.floor(p.age/7),p.hair,p.weapon,p.armor,p.shield,p.skin]);if(this.portraits.has(key))node.innerHTML=`<img alt="${ESC(p.name)}の姿" src="${this.portraits.get(key)}">`;else this.portraitQueue.push({key,record,node});}
  lineage(){this.lineageView.open();}
  talk(){this.talkFan.toggle();}
@@ -276,7 +280,7 @@ class UI {
   const y=(75-Math.round(fill*200)/200*62).toFixed(2),ceiling=(75-Math.round(cap*200)/200*62).toFixed(2);
   UIValue.attr(document.getElementById('orb-water'),'d',`M10 ${y}Q24 ${+y-2} 36 ${y}T62 ${y}V81H10Z`);UIValue.attr(document.getElementById('orb-wave'),'d',`M12 ${y}Q24 ${+y-2} 36 ${y}T60 ${y}`);UIValue.attr(document.getElementById('orb-cap'),'d',`M10 8H62V${ceiling}H10Z`);
   UIValue.text(document.getElementById('place'),s.room.kind==='front'?'最前線':p.z<-28?'村の外れ':s.room.name);UIValue.text(document.getElementById('day'),'春の月 '+(Math.floor(t/120)%28+1)+'日');
-  const woundsKey=JSON.stringify(p.wounds);if(woundsKey!==this.lastWounds){this.lastWounds=woundsKey;document.getElementById('wound-mark').innerHTML=anatomy(p);UIValue.attr(document.getElementById('wound-mark'),'aria-label',Object.keys(p.wounds||{}).length?'身体の傷を確認':'身体の状態を確認');}
+  const woundsKey=JSON.stringify(Object.entries(p.wounds||{}).map(([part,w])=>[part,w.severity]));if(woundsKey!==this.lastWounds){this.lastWounds=woundsKey;document.getElementById('wound-mark').innerHTML=anatomy(p);UIValue.attr(document.getElementById('wound-mark'),'aria-label',Object.keys(p.wounds||{}).length?'身体の傷を確認':'身体の状態を確認');if(this.modal==='wounds')this.wounds();}
   this.damageFeedback?.paint(document.getElementById('wound-mark'),t);
   const portraitKey=[p.id,Math.floor(p.age/7),p.race,p.armor,p.weapon,p.shield,p.skin,p.hair].join(':');if(portraitKey!==this.hudPortrait){this.hudPortrait=portraitKey;this.queuePortrait(p,document.getElementById('hud-portrait'),'hud');}
   const mapSignature=JSON.stringify([s.room.id,s.room.stage,Math.round(p.x*5),Math.round(p.z*5),Math.round(p.dir*10),s.actors.filter(a=>a.alive).map(a=>[a.id,Math.round(a.x),Math.round(a.z)]),this.modal==='map']);
@@ -284,29 +288,80 @@ class UI {
   this.updateContext(s);if(world)this.updateWorld(s);
   this.lineageView.update();SkillPresentation.update(this,s);
   if(this.modal==='skills'&&!this.pieDragging){const signature=this.skillsSignature(p);if(signature!==this.lastSkills)this.renderSkills();}
-  if(this.modal==='rack'){const signature=[p.weapon,p.armor,p.shield,p.age<EQUIP_AGE,this.g.nearRack()].join(':');if(signature!==this.lastGear)this.rack();}
+  if(this.modal==='rack'){const signature=[p.weapon,p.armor,p.shield,p.age<EQUIP_AGE,this.g.nearRack()].join(':');if(!this.canUseRack()||signature!==this.lastGear)this.rack();}
   if(this.modal==='body'&&this.bodySignature(p)!==this.lastBody)this.body();if(!p.alive)this.death(p);
  }
  updateRescueActions(s){
   let node=document.getElementById('rescue-actions');if(!node){node=document.createElement('div');node.id='rescue-actions';node.className='rescue-actions';this.hud.appendChild(node);}
-  node.hidden=!!this.modal;const p=s.player,target=s.players.find(q=>q.id!==p.id&&q.alive&&q.lifeState==='downed'&&!q.carrierId&&Math.hypot(q.x-p.x,q.z-p.z)<=LIFE_RULES.rescueRange);
+  node.hidden=!!this.modal;const p=s.player;
   const text=incapacitated(p)?p.lifeState==='carried'?'運んでもらっている':p.lifeState==='recovering'?'安全な場所で、息を整えている':'動けない。助けを待ちながら、息を整える':p.rescueTarget?(s.room.kind==='village'?'村の門の内側まで運ぼう':'岸辺の帰還地点まで運ぼう'):'';
-  const signature=[text,target?.id,p.rescueTarget,Math.ceil((1-(p.recoveryProgress||0))*100),this.modal].join(':');if(node._signature===signature)return;node._signature=signature;
-  node.innerHTML=(text?`<p role="status">${ESC(text)}${incapacitated(p)&&p.lifeState!=='carried'?`<progress aria-label="復帰までの回復" max="1" value="${p.recoveryProgress||0}"></progress>`:''}</p>`:'')+(canAct(p)&&!p.prologue?(p.rescueTarget?'<button data-drop>ここで降ろす</button>':target?`<button data-rescue="${ESC(target.id)}">${ESC(target.name)}を救助</button>`:''):'');
-  const rescue=node.querySelector('[data-rescue]');if(rescue)rescue.onclick=()=>{this.g.stopInput();this.g.command({type:'rescue',target:rescue.dataset.rescue});};const drop=node.querySelector('[data-drop]');if(drop)drop.onclick=()=>this.g.command({type:'rescue-drop'});
+  const signature=[text,p.rescueTarget,Math.ceil((1-(p.recoveryProgress||0))*100),this.modal].join(':');if(node._signature===signature)return;node._signature=signature;
+  node.innerHTML=(text?`<p role="status">${ESC(text)}${incapacitated(p)&&p.lifeState!=='carried'?`<progress aria-label="復帰までの回復" max="1" value="${p.recoveryProgress||0}"></progress>`:''}</p>`:'')+(canAct(p)&&!p.prologue&&p.rescueTarget?'<button data-drop>ここで降ろす</button>':'');
+  const drop=node.querySelector('[data-drop]');if(drop)drop.onclick=()=>this.g.command({type:'rescue-drop'});
  }
  updateContext(s){const p=s.player,t=s.t,school=s.room.kind==='village'?s.map.schools.find(a=>Math.hypot(a.x-p.x,a.z-p.z)<a.r):null,item=s.room.items?.find(i=>i.ready<=t&&Math.hypot(i.x-p.x,i.z-p.z)<2.3),dummy=s.actors.find(a=>a.kind==='dummy'&&a.alive&&Math.hypot(a.x-p.x,a.z-p.z)<4),options=[];
-  if(!p.prologue&&canAct(p)&&!p.rescueTarget){if(this.g.nearRack())options.push({id:'rack',name:'武具棚',glyph:'sword'});if(school&&p.age>=4){const a=ACTIVITY_DEFS[school.id];if(a)options.push({id:'activity',value:a.id,name:p.activity===a.id?'やめる':a.label,glyph:p.activity===a.id?'close':a.id==='pray'?'sun':a.id==='observe'?'eye':a.id==='play'?'leaf':'book'});}if(dummy&&!p.activity)options.push({id:'practice',value:dummy.id,name:p.autoFight===dummy.id?'稽古をやめる':'人形と稽古',glyph:'sword'});if(s.room.kind==='village'&&p.z>22)options.push({id:'boat',name:p.queued?'乗船をやめる':'舟に乗る',glyph:'boat'});if(s.room.kind==='front')options.push({id:'return',name:'帰り舟を呼ぶ',glyph:'boat'});}
+  if(!p.prologue&&canAct(p)&&!p.rescueTarget){
+   if(this.g.nearRack())options.push({id:'rack',name:'武具棚',glyph:'sword',facility:'armory'});
+   if(school&&p.age>=4){const a=ACTIVITY_DEFS[school.id];if(a)options.push({id:'activity',value:a.id,name:p.activity===a.id?'やめる':a.label,glyph:p.activity===a.id?'close':a.id==='pray'?'sun':a.id==='observe'?'eye':a.id==='play'?'leaf':'book',facility:school.id});}
+   if(dummy&&!p.activity)options.push({id:'practice',value:dummy.id,name:p.autoFight===dummy.id?'稽古をやめる':'人形と稽古',glyph:'sword',anchor:{id:'practice:'+dummy.id,kind:'actor',target:dummy.id,height:2.95}});
+   const casualty=s.players.find(q=>q.id!==p.id&&q.alive&&q.lifeState==='downed'&&!q.carrierId&&Math.hypot(q.x-p.x,q.z-p.z)<=LIFE_RULES.rescueRange);
+   if(casualty)options.push({id:'rescue',value:casualty.id,name:casualty.name+'を救助',glyph:'hand',anchor:{id:'rescue:'+casualty.id,kind:'player',target:casualty.id,height:1.15}});
+   if(s.room.kind==='village'&&p.z>22)options.push({id:'boat',name:p.queued?'乗船をやめる':'舟に乗る',glyph:'boat'});
+   if(s.room.kind==='front')options.push({id:'return',name:'帰り舟を呼ぶ',glyph:'boat'});
+  }
   this.updatePickup(item&&!p.prologue&&canAct(p)&&!p.rescueTarget?item:null,p);
-  for(const o of options){const facility=o.id==='activity'?school:o.id==='rack'?s.map.schools.find(a=>a.id==='armory'):null;if(facility)o.anchor={id:facility.id,x:facility.x,y:1.2,z:facility.z+1.5};if(o.id==='boat')o.anchor={id:'dock',x:0,y:.8,z:26};}
+  // Facility use belongs to the player's feet; interactions with a particular
+  // actor belong to that actor. Calling a boat has no present world target.
+  for(const o of options)if(o.facility||o.id==='boat')o.anchor={id:'feet',kind:'feet'};
   const signature=JSON.stringify(options);if(signature!==this.lastContext){this.lastContext=signature;const node=document.getElementById('context');node.innerHTML=options.filter(o=>!o.anchor).slice(0,3).map(o=>this.contextButton(o)).join('');this.bindContextButtons(node);this.syncFacilityActions(options.filter(o=>o.anchor));}
   this.positionFacilityActions(s);this.updateRescueActions(s);
  }
- contextButton(o){return `<button data-context="${o.id}" data-value="${ESC(o.value||'')}" ${o.disabled?'disabled':''}>${icon(o.glyph)}<span>${ESC(o.name)}${o.detail?`<small>${ESC(o.detail)}</small>`:''}</span></button>`;}
+ contextButton(o){return `<button data-context="${o.id}" data-value="${ESC(o.value||'')}"${o.facility?` data-facility="${ESC(o.facility)}"`:''}${o.id==='rescue'?` data-rescue="${ESC(o.value)}"`:''} ${o.disabled?'disabled':''}>${icon(o.glyph)}<span>${ESC(o.name)}${o.detail?`<small>${ESC(o.detail)}</small>`:''}</span></button>`;}
  bindContextButtons(node){node.querySelectorAll('[data-context]').forEach(b=>b.onclick=()=>this.activateContext(b.dataset.context,b.dataset.value));}
- activateContext(id,value){if(id==='rack'){this.rack();return;}this.g.stopInput();if(id==='activity')this.g.command({type:'activity',activity:value});if(id==='boat')this.g.command({type:'board'});if(id==='return')this.g.command({type:'return'});if(id==='practice'){const target=this.g.snapshot.actors.find(a=>a.id===value);if(!target)return;if(this.g.snapshot.player.autoFight===target.id){this.g.command({type:'sit',active:true});return;}this.g.command({type:'move',x:0,z:0});this.g.walkTarget={x:target.x,z:target.z,until:performance.now()+7000};}}
- syncFacilityActions(options){const root=document.getElementById('facility-actions'),groups=new Map();for(const o of options){if(!groups.has(o.anchor.id))groups.set(o.anchor.id,[]);groups.get(o.anchor.id).push(o);}this.facilityGroups??=new Map();for(const [id,items] of groups){let entry=this.facilityGroups.get(id);if(!entry){const node=document.createElement('div');node.className='facility-context';node.dataset.facility=id;root.appendChild(node);entry={node};this.facilityGroups.set(id,entry);}entry.anchor=items[0].anchor;const html=items.map(o=>this.contextButton(o)).join('');if(entry.html!==html){const focus=entry.node.contains(document.activeElement)?{id:document.activeElement.dataset.context,value:document.activeElement.dataset.value}:null;entry.node.innerHTML=html;entry.html=html;entry.size=null;this.bindContextButtons(entry.node);if(focus)[...entry.node.querySelectorAll('[data-context]')].find(b=>b.dataset.context===focus.id&&b.dataset.value===focus.value)?.focus({preventScroll:true});}}for(const [id,entry] of this.facilityGroups)if(!groups.has(id)){entry.node.remove();this.facilityGroups.delete(id);}}
- positionFacilityActions(s){const r=this.g.renderer,w=r.width||innerWidth,h=r.height||innerHeight,p=s?.player;for(const entry of this.facilityGroups?.values()||[]){const {node,anchor}=entry,pos=r.project(anchor.x,anchor.y,anchor.z);const facility=s?.room.kind==='village'&&s.map.schools.find(a=>a.id===anchor.id);const inRange=anchor.id==='dock'?s?.room.kind==='village'&&p.z>22:facility&&([...node.querySelectorAll('[data-context]')].some(b=>b.dataset.context==='rack'?this.g.nearRack():Math.hypot(p.x-facility.x,p.z-facility.z)<facility.r));const visible=this.g.screen==='game'&&canAct(p)&&!p.rescueTarget&&!p.traversal&&!p.prologue&&!this.modal&&inRange&&pos.visible&&pos.x>=0&&pos.x<=w&&pos.y>=0&&pos.y<=h;UIValue.style(node,'display',visible?'':'none');if(!visible)continue;if(!entry.size||entry.size.viewport!==w+'x'+h)entry.size={viewport:w+'x'+h,width:node.offsetWidth||160,height:node.offsetHeight||44};const x=clamp(pos.x-entry.size.width/2,8,Math.max(8,w-entry.size.width-8)),y=Math.max(8,pos.y-entry.size.height-10);UIValue.style(node,'transform',`translate3d(${x}px,${y}px,0)`);}}
+ contextAvailable(o,s){
+  const p=s?.player;if(this.g.screen!=='game'||!canAct(p)||p.rescueTarget||p.traversal||p.prologue||this.modal)return false;
+  if(o.id==='rack')return this.g.nearRack();
+  if(o.id==='activity'){const a=s.room.kind==='village'&&s.map.schools.find(a=>a.id===o.facility);return !!a&&p.age>=4&&Math.hypot(p.x-a.x,p.z-a.z)<a.r;}
+  if(o.id==='boat')return s.room.kind==='village'&&p.z>22;
+  if(o.id==='practice'){const a=s.actors.find(a=>a.id===o.value);return !!a&&a.kind==='dummy'&&a.alive&&!p.activity&&Math.hypot(p.x-a.x,p.z-a.z)<4;}
+  if(o.id==='rescue'){const a=s.players.find(a=>a.id===o.value);return !!a&&a.id!==p.id&&a.alive&&a.lifeState==='downed'&&!a.carrierId&&Math.hypot(p.x-a.x,p.z-a.z)<=LIFE_RULES.rescueRange;}
+  return o.id==='return'&&s.room.kind==='front';
+ }
+ activateContext(id,value){
+  const option=[...this.facilityGroups.values()].flatMap(e=>e.items).find(o=>o.id===id&&String(o.value||'')===value);
+  if(!this.contextAvailable(option||{id,value},this.g.snapshot))return;
+  if(id==='rack'){this.rack();return;}this.g.stopInput();if(id==='activity')this.g.command({type:'activity',activity:value});if(id==='boat')this.g.command({type:'board'});if(id==='return')this.g.command({type:'return'});if(id==='rescue')this.g.command({type:'rescue',target:value});
+  if(id==='practice'){const target=this.g.snapshot.actors.find(a=>a.id===value);if(this.g.snapshot.player.autoFight===target.id){this.g.command({type:'sit',active:true});return;}this.g.command({type:'move',x:0,z:0});this.g.walkTarget={x:target.x,z:target.z,until:performance.now()+7000};}
+ }
+ syncFacilityActions(options){
+  const root=document.getElementById('facility-actions'),groups=new Map();for(const o of options){if(!groups.has(o.anchor.id))groups.set(o.anchor.id,[]);groups.get(o.anchor.id).push(o);}this.facilityGroups??=new Map();
+  for(const [id,items] of groups){let entry=this.facilityGroups.get(id);if(!entry){const node=document.createElement('div');node.className='facility-context'+(items[0].anchor.kind==='feet'?' foot-context':'');node.dataset.anchor=id;root.appendChild(node);entry={node};this.facilityGroups.set(id,entry);}entry.anchor=items[0].anchor;entry.items=items;const html=items.map(o=>this.contextButton(o)).join('');
+   if(entry.html!==html){const focus=entry.node.contains(document.activeElement)?{id:document.activeElement.dataset.context,value:document.activeElement.dataset.value}:null;entry.node.innerHTML=html;entry.html=html;entry.size=null;entry.buttons=[...entry.node.querySelectorAll('[data-context]')];this.bindContextButtons(entry.node);if(focus)entry.buttons.find(b=>b.dataset.context===focus.id&&b.dataset.value===focus.value)?.focus({preventScroll:true});}
+  }
+  for(const [id,entry] of this.facilityGroups)if(!groups.has(id)){entry.node.remove();this.facilityGroups.delete(id);}
+ }
+ positionFacilityActions(s){
+  const r=this.g.renderer,w=r.width||innerWidth,h=r.height||innerHeight,p=s?.player,blocked=[];
+  // Actor actions get their headroom first. The compact facility row stays below
+  // the feet, and can move farther down to avoid a nearby target/button.
+  const groups=[...(this.facilityGroups?.values()||[])].sort((a,b)=>(a.anchor.kind==='feet')-(b.anchor.kind==='feet'));
+  for(const entry of groups){const {node,anchor,items,buttons}=entry,feet=anchor.kind==='feet';
+   let enabled=false;items.forEach((o,i)=>{const show=this.contextAvailable(o,s);if(buttons[i].hidden===show){buttons[i].hidden=!show;entry.size=null;}enabled||=show;});
+   const actor=feet?p:(anchor.kind==='player'?s.players:s.actors).find(a=>a.id===anchor.target);
+   const pos=actor&&r.project(actor.x,(actor.supportHeight||0)+(feet?.2:anchor.height),actor.z);
+   const visible=enabled&&pos?.visible&&pos.x>=0&&pos.x<=w&&pos.y>=0&&pos.y<=h;
+   UIValue.style(node,'display',visible?'':'none');if(!visible)continue;
+   if(!entry.size||entry.size.viewport!==w+'x'+h)entry.size={viewport:w+'x'+h,width:node.offsetWidth||160,height:node.offsetHeight||44};
+   const size=entry.size,x=clamp(pos.x-size.width/2,8,Math.max(8,w-size.width-8));let y=feet?pos.y+14:Math.max(8,pos.y-size.height-10);
+   if(feet){for(const box of blocked)if(x<box.right+8&&x+size.width>box.left-8&&y<box.bottom+8&&y+size.height>box.top-8)y=box.bottom+8;}
+   // Do not pin a departing target to the edge or put a foot action over its body.
+   if(y+size.height>h-8){UIValue.style(node,'display','none');continue;}
+   UIValue.style(node,'transform',`translate3d(${x}px,${y}px,0)`);
+   const pointer=clamp(pos.x-x,8,size.width-8)+'px';if(node.style.getPropertyValue('--anchor-x')!==pointer)node.style.setProperty('--anchor-x',pointer);
+   blocked.push({left:x,right:x+size.width,top:y,bottom:y+size.height});
+   if(!feet){const base=r.project(actor.x,.2,actor.z),radius=anchor.kind==='actor'?.85:1.25,corners=[];for(const dx of [-radius,radius])for(const dz of [-radius,radius])corners.push(r.project(actor.x+dx,.2,actor.z+dz));blocked.push({left:Math.min(...corners.map(q=>q.x)),right:Math.max(...corners.map(q=>q.x)),top:Math.min(pos.y,base.y),bottom:Math.max(...corners.map(q=>q.y))});}
+  }
+ }
  updateWorld(s){this.updateMother(s);this.updateWorldLabels(s);this.positionPickup(s);this.positionFacilityActions(s);}
  updatePickup(item,p){
   const node=document.getElementById('world-pickup'),o=item?uiPickup(item,p):null,key=JSON.stringify(o);
@@ -320,7 +375,7 @@ class UI {
   const node=document.getElementById('world-pickup'),b=node?.firstElementChild;if(!b)return;
   const p=s.player,item=s.room.items?.find(i=>i.id===b.dataset.value&&i.ready<=s.t&&Math.hypot(i.x-p.x,i.z-p.z)<2.3),r=this.g.renderer;
   const pos=item&&r.project(item.x,.65,item.z),w=r.width||innerWidth,h=r.height||innerHeight;
-  const visible=p.alive&&!p.prologue&&pos?.visible&&pos.x>=0&&pos.x<=w&&pos.y>=0&&pos.y<=h;
+  const visible=this.g.screen==='game'&&canAct(p)&&!p.rescueTarget&&!p.traversal&&!p.prologue&&!this.modal&&pos?.visible&&pos.x>=0&&pos.x<=w&&pos.y>=0&&pos.y<=h;
   UIValue.attr(node,'class',visible?'':'hidden');if(visible)UIValue.style(node,'transform',`translate3d(${pos.x}px,${pos.y-8}px,0) translate(-50%,-100%)`);
  }
  updateMother(s){

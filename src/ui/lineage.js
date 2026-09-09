@@ -4,7 +4,7 @@ class UILineage {
  get g(){return this.ui.g;}
  current(){
   const g=this.g;
-  if(g.profile.online){const p=g.online?g.snapshot?.player:null;return (p?.alive||p?.legacyChoice?.state==='pending')&&p.owner===g.profile.owner?p:null;}
+  if(g.profile.online){const p=g.online?g.snapshot?.player:null;return (p?.alive||p?.legacyChoice?.state==='pending')?p:null;}
   return [...g.sim.players.values()].find(p=>p.owner===g.profile.owner&&(p.alive||p.legacyChoice?.state==='pending'))||null;
  }
  source(){
@@ -88,19 +88,20 @@ class UILineage {
  }
  clear(){
   const state=this.resetState();if(!state.allowed)throw Error(state.reason);
-  const g=this.g,owner=g.profile.owner,worldKey=STORAGE_PREFIX+'world.'+g.loadedMode,profileKey=STORAGE_PREFIX+'profile';
+  const g=this.g,owner=g.profile.owner,worldKey=STORAGE_PREFIX+'world4.'+g.loadedMode,profileKey=STORAGE_PREFIX+'profile';
   // Prepare on a copy: a failed storage write must not erase the live simulation.
   const previousWorld=g.sim.exportState(),next=Simulation.restore(previousWorld);
-  for(const p of [...next.players.values()])if(p.owner===owner)next.removePlayer(p.id);
+  for(const p of [...next.players.values()])if(p.owner===owner){next.removePlayer(p.id);next.players.delete(p.id);}
   for(const room of next.rooms.values())for(const [id,p] of Object.entries(room.fallen||{}))if(p.owner===owner)delete room.fallen[id];
   delete next.legacies[owner];
   const profile={...g.profile,name:'',inherit:[],villageCode:''};
+  const nextRaw=JSON.stringify({...next.exportState(),_profile:profile});
   const backupKey=STORAGE_PREFIX+'backup.lineage.'+gameId();
   let oldWorld,oldProfile,writtenWorld=false,writtenProfile=false;
   try{
-   oldWorld=localStorage.getItem(worldKey);oldProfile=localStorage.getItem(profileKey);
+   oldWorld=localStorage.getItem(worldKey);if(g.saveBaseRaw!==undefined&&oldWorld!==g.saveBaseRaw){g.blockSave=true;throw Error('Stale save');}oldProfile=localStorage.getItem(profileKey);
    localStorage.setItem(backupKey,JSON.stringify({format:'AERIN-portable-1',version:VERSION,profile:g.profile,world:previousWorld}));
-   localStorage.setItem(worldKey,JSON.stringify(next.exportState()));writtenWorld=true;
+   localStorage.setItem(worldKey,nextRaw);writtenWorld=true;
    localStorage.setItem(profileKey,JSON.stringify(profile));writtenProfile=true;
   }catch{
    try{if(writtenWorld)oldWorld===null?localStorage.removeItem(worldKey):localStorage.setItem(worldKey,oldWorld);if(writtenProfile)oldProfile===null?localStorage.removeItem(profileKey):localStorage.setItem(profileKey,oldProfile);}catch{
@@ -109,7 +110,7 @@ class UILineage {
    }
    throw Error('記録を保存できませんでした。系譜は消去していません。保存先の空きを確認してください。');
   }
-  g.stopInput();g.events?.close();g.events=null;g.sim=next;Object.assign(g.profile,profile);
+  g.stopInput();g.events?.close();g.events=null;g.sim=next;g.saveBaseRaw=nextRaw;Object.assign(g.profile,profile);
   g.playerId=null;g.snapshot=null;g.seq=next.seq;g.pendingMove=null;g.commandBuffer=[];
   g.motionInterpolation?.reset();g.renderer.effects=[];g.renderer.staticShadowDirty=true;
   // Mount stays alive so the confirmation returns directly to the first-life UI.
