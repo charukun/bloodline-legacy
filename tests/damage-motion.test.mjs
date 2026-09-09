@@ -54,11 +54,13 @@ test('hitstop freezes reaction and a rewind/teleport does not reuse old blends',
 test('presentation cache evicts absent characters',()=>{
  const m=new api.DamageMotion();for(let i=0;i<150;i++)m.sample(actor({id:'actor'+i}),i*.5+1);assert(m.actors.size<=64);
 });
-// Compare every gameplay field and RNG state with the fixed develop source.
+// Compare protected gameplay fields and RNG with the fixed develop source.
+// hitRecoil is the newly authorized movement state; traveler-damage.test checks
+// its displacement, collision limits and unchanged action clocks separately.
 // The neutral frontal case retains prior damage/reaction behavior. New persisted
 // life, surface and damage-mark metadata is checked by the feature suites.
-const presentation=new Set(['hitPart','hitSeverity','hitReactAt','hitReactUntil','hitDir','hitStrength','hitMotionAt','hitMotionId','hitGuard','lifeState','traversables','damageMarks','grounded','supportHeight','verticalOffset']);
-const state=sim=>JSON.parse(JSON.stringify(sim.exportState(),(k,v)=>k==='schema'?4:presentation.has(k)||k==='phaseLimitVersion'?undefined:v));
+const baselineExceptions=new Set(['hitPart','hitSeverity','hitReactAt','hitReactUntil','hitDir','hitStrength','hitMotionAt','hitMotionId','hitGuard','lifeState','traversables','damageMarks','grounded','supportHeight','verticalOffset','hitRecoil']);
+const state=sim=>JSON.parse(JSON.stringify(sim.exportState(),(k,v)=>k==='schema'?4:baselineExceptions.has(k)||k==='phaseLimitVersion'?undefined:v));
 test('damage, wound progression, attack interruption, hitstop and RNG match develop',()=>{
  const before=runtime(true);
  for(const seed of [13,27,48])for(const power of [.3,1,1.5,2,3])for(const part of ['head','torso','rightArm','leftLeg']){
