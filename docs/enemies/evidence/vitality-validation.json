@@ -1,0 +1,58 @@
+{
+  "base": "8050da52899d5fd3761ca1f51383be2aea80c99d",
+  "sourceSHA256": {
+    "src/enemies/damage.js": "b2d7c8f4b5ba33068bc99614d59f9bc318baf2b27aa92b0dda3f91b785a7e912",
+    "src/enemies/sentinel.js": "ff2963fa8d403bca006796a3f7eaf29dc8b589be010d5bd5a67270f0e30c1e78",
+    "src/enemies/bestiary.js": "e8bbdd46786f3daf00afa4350d3d6ccfdb17ec035513e63237fb995696a29d32",
+    "src/render/shaders.js": "6c65e317640791ceca3cd4302edfc638dc953e38c4f4349741af3929a701dc19",
+    "tools/enemies/review-scenes.js": "07a1dbfee1fed43fc2852839dd81eaca91b2257a863663655f7c81f9e3f58584",
+    "tools/enemies/review-runtime.js": "b866414bb17a515227c753102335b0d6f47a0e7da5c2c9fb600bdc9ee70b1aac",
+    "tools/enemies/build-review.mjs": "4f81cf037be5ce7060b693a79e1257b83cd68aadae5bca7a10ced292c9969164"
+  },
+  "mapping": "wear = 1 - clamp(hp / hpMax, 0, 1); wounds severities and damageMarks do not advance global wear; actual lost flags remain independent",
+  "build": "PASS",
+  "focusedTests": {
+    "passed": 42,
+    "failed": 0,
+    "skipped": 0,
+    "files": [
+      "tests/enemy-damage.test.mjs",
+      "tests/enemy-review.test.mjs",
+      "tests/enemy-sentinel.test.mjs",
+      "tests/enemy-bestiary.test.mjs",
+      "tests/enemy-shaders.test.mjs",
+      "tests/village-terrain.test.mjs"
+    ]
+  },
+  "enemyAssetLicense": "PASS; external files unchanged",
+  "GLESProgramsPassed": 9,
+  "floatIntNegativeControl": "rejected as expected",
+  "nativeDiagnostic": {
+    "backend": "llvmpipe native EGL",
+    "remainingHP": [
+      100,
+      82,
+      52,
+      22,
+      0
+    ],
+    "forms": [
+      "moss-wolf",
+      "soldier",
+      "wraith"
+    ],
+    "localWounds": {},
+    "brokenParts": [],
+    "browser": false
+  },
+  "sharedDamageBytes": 2232,
+  "maxDamageTriangles": {
+    "low": 114,
+    "medium": 342
+  },
+  "browser": "UNVERIFIED: supported browser security rejection",
+  "desktop60fps": "UNVERIFIED",
+  "pixelFold30fps": "UNVERIFIED",
+  "simulationDelta": "none against pinned develop; terrain ground placement retained",
+  "historicalEvidence": "damage-* files describe the preceding per-part revision; current correction evidence uses vitality-*"
+}

@@ -87,6 +87,19 @@ function injuryModifiers(p){
  }
  return out;
 }
+// User-approved enemy readability rules. Existing limb injury multipliers stay
+// authoritative; HP adds fatigue and post-strike recovery, never damage scaling.
+function enemyCondition(p){
+ const enabled=!!ENEMY_FORMS[p?.kind],lost=part=>enabled&&p.wounds?.[part]?.severity==='lost';
+ const hp=Number.isFinite(p?.hp)&&Number.isFinite(p?.hpMax)&&p.hpMax>0?clamp(p.hp/p.hpMax,0,1):1;
+ const fatigue=enabled?clamp((.70-hp)/.45,0,1):0;
+ const rightLeg=lost('rightLeg'),leftLeg=lost('leftLeg'),rightArm=lost('rightArm'),leftArm=lost('leftArm');
+ const legs=Number(rightLeg)+Number(leftLeg),arms=Number(rightArm)+Number(leftArm);
+ const family=['soldier','elite','goblin','boss','mushroom'].includes(p?.kind)?'biped':['maw','stag'].includes(p?.kind)?'beast':p?.kind==='crawler'?'insect':'spirit';
+ return {enabled,hp,fatigue,critical:enabled&&hp<=.25,rightLeg,leftLeg,rightArm,leftArm,legs,arms,family,
+  crawl:enabled&&family==='biped'&&legs===2,drag:enabled&&family==='beast'&&(legs===2||arms===2),
+  move:1-fatigue*.16,recovery:enabled?fatigue*.55+(legs===2?.40:legs*.16)+arms*.10:0};
+}
 function skillRestriction(p,sk){
  if(!sk||sk.passive)return '';
  const lost=part=>p.wounds?.[part]?.severity==='lost';
@@ -118,7 +131,23 @@ function legacySkillById(id) {
   desc:`${weapon.name} / ${['横一閃','回転斬り','長射程の突き','三連撃','守りから反撃','一歩踏み込んで斬る','重い振り下ろし','周囲へ円環を放つ'][f]}。${EFFECT_NAMES[v]}。`,
   color:['#ded397','#e8ce95','#86d0ce','#e99d70','#9cbad8','#baa7df','#c2cca6','#f4dba4'][e]};
 }
-function makeVillage(seed=1,terrainRevision=1) {
+// The same footprint drives collision, support, boarding, activities and art.
+// The gangway rises continuously; the ship has no interior or climbable rails.
+const VILLAGE_SHIP=Object.freeze({deckY:1.2,stern:34,bow:56,gangwayStart:29.5,gangwayHalf:1.5,
+ shrine:{id:'shipPrayer',x:-3.4,z:38.5,r:1.75},
+ dummies:[{x:3.5,z:39},{x:3.5,z:43.5},{x:3.5,z:48}],
+ masts:[{x:0,z:40},{x:0,z:49}],
+ obstacles:[{x:0,z:40,r:.28},{x:0,z:49,r:.28},{x:-3.4,z:37.95,r:.65},{x:-4.8,z:47,r:.72},{x:4.8,z:47,r:.72}]});
+function shipHalfWidth(z){return z<38?4.8+(z-34)*.3:z<50?6:6-(z-50)*.65;}
+function onShipDeck(p,margin=0){return p.z>=VILLAGE_SHIP.stern+margin&&p.z<=VILLAGE_SHIP.bow-margin&&Math.abs(p.x)<=shipHalfWidth(p.z)-margin;}
+function villageActivityAt(map,p){return map?.ship&&onShipDeck(p)&&dist(p,map.ship.shrine)<map.ship.shrine.r?map.ship.shrine:map?.schools.find(s=>dist(p,s)<s.r);}
+function shipSupport(x,z){
+ if(onShipDeck({x,z}))return VILLAGE_SHIP.deckY;
+ if(z>=28.5&&z<29.5&&Math.abs(x)<=VILLAGE_SHIP.gangwayHalf)return (z-28.5)*.275;
+ if(z>=VILLAGE_SHIP.gangwayStart&&z<34&&Math.abs(x)<=VILLAGE_SHIP.gangwayHalf)return .275+(z-29.5)/4.5*(VILLAGE_SHIP.deckY-.275);
+ return 0;
+}
+function makeVillage(seed=1,terrainRevision=1,shipRevision=1) {
  const rng=random(seed),houses=[];
  // Two compact residential crescents: exactly 30 independent clan plots.
  for(let side of [-1,1])for(let i=0;i<15;i++) {
@@ -139,9 +168,9 @@ function makeVillage(seed=1,terrainRevision=1) {
  stair('north:walk-low',-4.7,-15.2,0,6);stair('north:walk-high',-7.9,-15.2,.6,6);
  traversables.push({id:'green:wall',kind:'vault',stone:true,x:9*mirror,z:16,width:5,depth:.34,height:1.05});
  }
- return {seed,terrainRevision,houses,traversables,schools:SCHOOLS.map(x=>({...x,x:x.x*mirror,z:x.z+(x.id==='church'?0:(rng()-.5)*1.2)})),port:{x:0,z:28},gate:{x:0,z:-29}};
+ return {seed,terrainRevision,shipRevision:terrainRevision>=1?shipRevision:0,houses,traversables,ship:terrainRevision>=1&&shipRevision>=1?VILLAGE_SHIP:undefined,schools:SCHOOLS.map(x=>({...x,x:x.x*mirror,z:x.z+(x.id==='church'?0:(rng()-.5)*1.2)})),port:{x:0,z:28},gate:{x:0,z:-29}};
 }
-function supportHeight(map,x,z){return (map?.traversables||[]).reduce((y,o)=>o.kind==='step'&&Math.abs(x-o.x)<=o.width/2&&Math.abs(z-o.z)<=o.depth/2?Math.max(y,o.height):y,0);}
+function supportHeight(map,x,z){return (map?.traversables||[]).reduce((y,o)=>o.kind==='step'&&Math.abs(x-o.x)<=o.width/2&&Math.abs(z-o.z)<=o.depth/2?Math.max(y,o.height):y,map?.ship?shipSupport(x,z):0);}
 function stairAt(map,x,z){return (map?.traversables||[]).some(o=>o.stair&&Math.abs(x-o.x)<=o.width/2+.001&&Math.abs(z-o.z)<=o.depth/2);}
 function terrainFootprint(map,x,z,margin=0){return (map?.traversables||[]).some(o=>o.kind==='step'&&Math.abs(x-o.x)<=o.width/2+margin&&Math.abs(z-o.z)<=o.depth/2+margin);}
 const TRAVERSAL_RULES=Object.freeze({maxVault:1.25,maxStep:.95,walkStep:.12,radius:.42,cooldown:.16});
@@ -395,7 +424,7 @@ class Simulation {
   this.stopTraversal(p);this.stopDash(p);this.stopActivity(p);p.input={x:0,z:0};p.autoFight=null;p.chain=null;p.combo=null;p.pendingSkill=null;p.attackStep=null;p.telegraph=null;p.guard=false;p.guardPending=false;p.seated=false;p.queued=false;p.retreatUntil=0;p.exitPending=0;p.attackBufferedUntil=0;p.engagement=null;p.hitRecoil=null;SkillSystem.reset(p);
  }
  safeGround(p,r=this.getRoom(p)){
-  return r?.kind==='village'?p.z>=-25.5&&p.z<=22:r?.kind==='front'&&p.z>=2&&p.z<=8&&Math.abs(p.x)<=5;
+  return r?.kind==='village'?(p.z>=-25.5&&p.z<=22||onShipDeck(p)):r?.kind==='front'&&p.z>=2&&p.z<=8&&Math.abs(p.x)<=5;
  }
  releaseRescue(carrier){
   if(!carrier?.rescueTarget)return false;
@@ -478,6 +507,7 @@ class Simulation {
  }
  tryTraversal(p,r,dx,dz){
   if(r.kind!=='village'||!this.traversalEligible(p))return false;
+  if(p.z>29||p.z+dz>29)return false;
   const n=Math.hypot(dx,dz);if(n<.001)return false;dx/=n;dz/=n;
   const from={x:p.x,z:p.z,supportHeight:p.supportHeight||0},probe={x:p.x+dx*.65,z:p.z+dz*.65};
   let obstacle=(r.map.traversables||[]).find(o=>o.kind==='vault'&&Math.abs(probe.x-o.x)<o.width/2+.2&&Math.abs(probe.z-o.z)<o.depth/2+.5),to,kind;
@@ -555,6 +585,19 @@ class Simulation {
   r.actors.push(this.actor('stag',-19,-38,1),this.actor('mushroom',18,-42,0));
   // No ambient villagers. Parents are rendered only for the opening scene.
   const spot=villagePracticePosition(r.map),dummy=this.actor('dummy',spot.x,spot.z);dummy.name='稽古人形';r.actors.push(dummy);
+  this.ensureShipActors(r);
+ }
+ ensureShipActors(r){
+  for(const [i,spot]of VILLAGE_SHIP.dummies.entries()){
+   let a=r.actors.find(a=>a.shipStation===i);
+   if(!a){
+    // Fixed fixtures must not consume the combat/life RNG or enemy ID stream.
+    const rngState=this.rng.getState(),eid=this.eid;
+    a=this.actor('dummy',spot.x,spot.z);this.rng.setState(rngState);this.eid=eid;
+    a.id='ship-dummy:'+r.id+':'+i;a.shipStation=i;a.name='甲板の稽古人形';r.actors.push(a);
+   }
+   a.x=a.homeX=spot.x;a.z=a.homeZ=spot.z;a.supportHeight=VILLAGE_SHIP.deckY;
+  }
  }
  preparePlayer(p){
   p.lifeState??=p.alive?'active':'dead';p.health??=100;p.statuses??={};p.statusClock=this.time;p.lastHurtAt??=-100;
@@ -719,7 +762,7 @@ class Simulation {
   }
  }
 
- getArea(p){if(this.getRoom(p)?.kind!=='village')return'front';return this.getRoom(p).map.schools.find(s=>Math.hypot(p.x-s.x,p.z-s.z)<s.r)?.id||'village';}
+ getArea(p){if(this.getRoom(p)?.kind!=='village')return'front';return villageActivityAt(this.getRoom(p).map,p)?.id||(onShipDeck(p)?'ship':'village');}
  notice(p,text){if((p.lastNotice??-10)+.8>this.time)return;p.lastNotice=this.time;this.emit('notice',{player:p.id,room:p.room,text});}
  learn(p,id){
   const sk=skillById(id);if(!sk)return false;const list=sk.passive?p.passives:p.skills;if(list.includes(id))return false;list.push(id);
@@ -779,7 +822,8 @@ class Simulation {
    p.phaseWeights[phase]=weights;p.weights=p.phaseWeights[0];return true;
   }
   if(cmd.type==='chat'){const text=cleanText(cmd.text,60);if(!text||this.time-p.lastChat<2.5)return false;this.wake(p);this.stopDash(p);p.input={x:0,z:0};p.speech=text;p.speechUntil=this.time+6;p.lastChat=this.time;this.emit('speech',{player:id,room:r.id,text,x:p.x,z:p.z});return true;}
-  if(cmd.type==='board'){if(r.kind!=='village'||p.age<15||Math.hypot(p.x,p.z-28)>5)return false;p.queued=!p.queued;p.activity=null;this.emit('board',{player:id,room:r.id,queued:p.queued});return true;}
+  // Boarding is physical: a stale reservation command cannot board from shore.
+  if(cmd.type==='board')return false;
   if(cmd.type==='return'){if(r.kind!=='front'||p.rescueAt)return false;p.rescueAt=this.time+this.yearSeconds;this.emit('rescue',{player:id,room:r.id,x:p.x,z:p.z});return true;}
   if(cmd.type==='discard'){
    const slot=Number.isInteger(cmd.slot)?cmd.slot:0;if(slot<0||slot>=p.inventory.length)return false;
@@ -843,12 +887,12 @@ class Simulation {
   // Enemy approach shares this path; do not scan the room at every substep.
   const bodies=[],addBody=a=>{if(a===p||!a.alive||a.carrierId||a.id===p.rescueTarget||(a.kind==='player'&&a.room!==r.id))return;const radius=this.contactSpacing(p,a);if(Math.abs(a.x-p.x)<=radius+Math.abs(dx)&&Math.abs(a.z-p.z)<=radius+Math.abs(dz))bodies.push({a,radius2:radius*radius});};
   for(const a of r.actors)addBody(a);for(const a of this.players.values())addBody(a);
-  const bounded={x:0,z:0,supportHeight:p.supportHeight||0},bodyRadius=this.collisionRadius(p);
+  const bounded={x:0,z:0,kind:p.kind,age:p.age,prologue:p.prologue,rescueTarget:p.rescueTarget,supportHeight:p.supportHeight||0},bodyRadius=this.collisionRadius(p);
   const sceneryBlocked=q=>{
    const floor=supportHeight(r.map,q.x,q.z),from=p.supportHeight||0;
    if(Math.abs(floor-from)>TRAVERSAL_RULES.walkStep)return true;
    // Preserve current contact spacing while rejecting unsupported retaining-wall edges.
-   if(from>TRAVERSAL_RULES.walkStep&&!stairAt(r.map,p.x,p.z)&&!stairAt(r.map,q.x,q.z)){
+   if(terrainFootprint(r.map,p.x,p.z)&&from>TRAVERSAL_RULES.walkStep&&!stairAt(r.map,p.x,p.z)&&!stairAt(r.map,q.x,q.z)){
     for(const [x,z] of [[-bodyRadius,0],[bodyRadius,0],[0,-bodyRadius],[0,bodyRadius]])if(supportHeight(r.map,q.x+x,q.z+z)<from-TRAVERSAL_RULES.walkStep)return true;
    }
    q.supportHeight=floor;bounded.x=q.x;bounded.z=q.z;bounded.supportHeight=floor;this.bound(bounded,r,bodyRadius);return Math.hypot(bounded.x-q.x,bounded.z-q.z)>1e-6;
@@ -929,7 +973,7 @@ class Simulation {
   p.skillUses[sk.id]=(p.skillUses[sk.id]||0)+1;p.lastSkillAt=this.time;p.seated=false;p.chain=null;p.guard=false;p.guardPending=false;p.usages.attack++;p.combo.total++;
   this.tryInsight(p,'attack');
   const r=this.getRoom(p),target=r.actors.filter(e=>e.alive&&enemiesOnly(e)&&(!e.neutral||e.aggro||dist(e,p)<sk.reach+.5)&&dist(e,p)<Math.max(5,sk.reach+1)).sort((a,b)=>dist(a,p)-dist(b,p))[0];
-  const dummy=r.actors.find(e=>e.kind==='dummy'&&dist(e,p)<4);
+  const dummies=r.actors.filter(e=>e.kind==='dummy'&&e.alive&&dist(e,p)<4).sort((a,b)=>dist(a,p)-dist(b,p)),dummy=dummies.find(e=>e.id===p.autoFight)||dummies[0];
   const facing=target||dummy;if(facing){p.focusTarget=facing.id;p.focusUntil=this.time+4;}if(facing&&!p.flickAim)p.dir=Math.atan2(facing.x-p.x,facing.z-p.z);
   p.flickAim=false;const stepDistance=this.attackStepDistance(p,sk)/Math.max(1,sk.hits||1),timing=actionTiming(sk);
   const approach=sk.approach,approachDistance=approach?(hasStatus(p,'root',this.time)?0:approach.distance*injuryModifiers(p).move*(p.age<15?.8:1)):stepDistance;
@@ -1095,7 +1139,7 @@ inflictWound(p,part,severity,source=null,strength=null){
   if(p.activity){
    if(ACTIVITY_DEFS[area]?.id!==p.activity||p.autoFight){this.stopActivity(p);return;}
    p.activityClock+=dt;this.progressDeed(p,p.activity,dt);
-   if(this.time>=p.activityNextAt){const lines=ACTIVITY_LINES[p.activity];let n=Math.floor(this.rng()*lines.length);if(n===p.lastActivityLine)n=(n+1)%lines.length;
+   if(this.time>=p.activityNextAt){const lines=ACTIVITY_LINES[area]||ACTIVITY_LINES[p.activity];let n=Math.floor(this.rng()*lines.length);if(n===p.lastActivityLine)n=(n+1)%lines.length;
     p.lastActivityLine=n;p.activityNextAt=this.time+4.1+this.rng()*2.3;
     this.emit('progress',{player:p.id,room:p.room,text:lines[n],x:p.x,z:p.z});
    }
@@ -1105,7 +1149,18 @@ inflictWound(p,part,severity,source=null,strength=null){
  }
  bound(p,r,bodyRadius=this.collisionRadius(p),ignored=null){
   if(r.kind==='village'){
-   p.x=clamp(p.x,-35,35);p.z=clamp(p.z,-46,29.5);
+   p.x=clamp(p.x,-35,35);p.z=clamp(p.z,-46,VILLAGE_SHIP.bow-bodyRadius);
+   if(p.z>29.5){
+    if(p.kind==='player'&&(p.age<15||p.prologue)){p.z=29.5;}
+    else{
+     const margin=bodyRadius,opening=VILLAGE_SHIP.gangwayHalf-margin;
+     // Inset the stern rail, except for the open gangway in its centre.
+     const width=p.z<34+margin?opening:shipHalfWidth(p.z)-margin*1.2;
+     p.x=clamp(p.x,-width,width);
+     for(const m of VILLAGE_SHIP.obstacles){const d=dist(p,m),radius=m.r+margin;if(d<radius){const angle=Math.atan2(p.x-m.x,p.z-m.z);p.x=m.x+Math.sin(angle)*radius;p.z=m.z+Math.cos(angle)*radius;}}
+     p.x=clamp(p.x,-width,width);p.supportHeight=shipSupport(p.x,p.z);return;
+    }
+   }
    // Shared fence and landing geometry is also used by ArtDirector.village.
    const onStairs=stairAt(r.map,p.x,p.z);
    for(const o of r.map.traversables||[]){
@@ -1115,6 +1170,7 @@ inflictWound(p,part,severity,source=null,strength=null){
    }
    for(const x of [-4.1,4.1]){const dx=p.x-x,dz=p.z+28;if(Math.abs(dx)<1.1&&Math.abs(dz)<1.1){if(Math.abs(dx)>Math.abs(dz))p.x=x+Math.sign(dx||1)*1.1;else p.z=-28+Math.sign(dz||1)*1.1;}}
    if(p.z>23&&Math.abs(p.x)>4)p.z=23;
+   if(p.z>23)p.supportHeight=r.map?.ship?shipSupport(p.x,p.z):0;
    for(const h of r.map.houses){const dx=p.x-h.x,dz=p.z-h.z;if(Math.abs(dx)<2&&Math.abs(dz)<1.8){if(Math.abs(dx)/2>Math.abs(dz)/1.8)p.x=h.x+Math.sign(dx||1)*2;else p.z=h.z+Math.sign(dz||1)*1.8;}}
    for(const s of r.map.schools.filter(s=>s.id!=='dance')){const dx=p.x-s.x,dz=p.z-(s.z-2);if(Math.abs(dx)<2.5&&Math.abs(dz)<1.5){if(Math.abs(dx)/2.5>Math.abs(dz)/1.5)p.x=s.x+Math.sign(dx||1)*2.5;else p.z=s.z-2+Math.sign(dz||1)*1.5;}}
    // The square is walkable, but its stone well and posts occupy a 1.30m radius.
@@ -1159,7 +1215,7 @@ inflictWound(p,part,severity,source=null,strength=null){
     else if(l>.1&&!p.pendingSkill&&!p.combo)p.dir=Math.atan2(p.input.x,p.input.z);
     if(p.actionUntil<=this.time&&!p.pendingSkill)p.action=p.seated?'sit':p.activity?(ACTIVITY_DEFS[this.getArea(p)]?.motion||p.activity):p.guard?(l>.1?'guardWalk':'guard'):l>.1?(p.dash?'dash':'run'):'idle';
    }
-   this.bound(p,r);p.zone=this.getArea(p);if(p.queued&&Math.hypot(p.x,p.z-28)>6)p.queued=false;
+   this.bound(p,r);p.zone=this.getArea(p);p.queued=r.kind==='village'&&p.age>=15&&onShipDeck(p);
    if(p.speechUntil<=this.time)p.speech='';this.detectContact(p,r);if(p.rescueTarget)this.syncRescue(p,r);
   }
   for(const r of this.rooms.values()){
@@ -1172,7 +1228,7 @@ inflictWound(p,part,severity,source=null,strength=null){
      const guards=r.actors.filter(e=>e.alive&&e.kind==='guard');if(guards.length<4){const lane=[0,1,2,3].find(i=>!guards.some(g=>g.lane===i))??0,g=this.actor('guard',-10.5+lane*7,-30.5);g.lane=lane;r.actors.push(g);}
      r.waveAt=this.time+2;
     }
-    const cycle=Math.floor(this.time/this.boatInterval);if(cycle>r.boatCycle){r.boatCycle=cycle;const travelers=ps.filter(p=>canAct(p)&&!p.rescueTarget&&p.queued&&p.age>=15&&Math.hypot(p.x,p.z-28)<6);if(travelers.length)this.depart(r,travelers);}
+    const cycle=Math.floor(this.time/this.boatInterval);if(cycle>r.boatCycle){r.boatCycle=cycle;const travelers=ps.filter(p=>canAct(p)&&!p.rescueTarget&&!p.prologue&&p.age>=15&&onShipDeck(p));if(travelers.length)this.depart(r,travelers);}
    }else if(ps.length&&!r.bossDefeated){
     const alive=r.actors.filter(e=>e.alive);if(r.stage<5&&r.kills>=r.quota&&!alive.length){r.cleared.push(r.stage);r.stage++;r.kills=0;r.quota=this.frontQuota(r.partySize);this.emit('advance',{room:r.id,stage:r.stage});this.spawnFrontWave(r);}
     else if(r.stage<5&&alive.length<Math.min(8,2+Math.ceil(r.partySize/5))&&this.time>r.waveAt&&r.kills+alive.length<r.quota)this.spawnFrontWave(r);
@@ -1186,7 +1242,7 @@ inflictWound(p,part,severity,source=null,strength=null){
  }
  frontQuota(party){return this.mode==='demo'?Math.max(3,Math.ceil(party*.6)):Math.max(16,party*7);}
  depart(r,travelers){const front=this.makeRoom('front');front.partySize=travelers.length;front.quota=this.frontQuota(travelers.length);front.expedition=travelers.map(p=>p.id);front.home=r.id;
-  for(const [i,p] of travelers.entries()){p.autoFight=null;p.chain=null;p.statuses={};p.seated=false;p.room=front.id;p.supportHeight=0;p.verticalOffset=0;p.expedition=front.id;p.x=(i%6-2.5)*1.6;p.z=5+Math.floor(i/6)*1.1;p.queued=false;p.activity=null;p.input={x:0,z:0};p.guard=false;p.combo=null;p.pendingSkill=null;p.attackStep=null;p.retreatUntil=0;this.emit('depart',{player:p.id,room:front.id});}this.spawnFrontWave(front);
+  for(const [i,p] of travelers.entries()){this.cancelAction(p);p.hitReactUntil=0;p.hitstopUntil=0;p.action='idle';p.actionUntil=this.time;p.grounded=true;p.autoFight=null;p.chain=null;p.statuses={};p.seated=false;p.room=front.id;p.supportHeight=0;p.verticalOffset=0;p.expedition=front.id;p.x=(i%6-2.5)*1.6;p.z=5+Math.floor(i/6)*1.1;p.queued=false;p.activity=null;p.input={x:0,z:0};p.guard=false;p.combo=null;p.pendingSkill=null;p.attackStep=null;p.retreatUntil=0;this.emit('depart',{player:p.id,room:front.id});}this.spawnFrontWave(front);
  }
  spawnFrontWave(r){const center=-(r.stage*44+20);if(r.stage===5){if(!r.actors.some(a=>a.kind==='boss'))r.actors.push(this.actor('boss',0,center,3));return;}
   const count=Math.min(4,Math.max(1,r.quota-r.kills-r.actors.filter(e=>e.alive).length));for(let i=0;i<count;i++){const kinds=r.stage===0?['goblin','maw','crawler']:r.stage===1?['soldier','crawler','archer']:['elite','soldier','mage','maw'];const kind=kinds[Math.floor(this.rng()*kinds.length)];r.actors.push(this.actor(kind,(this.rng()-.5)*17,center+(this.rng()-.5)*15,kind==='crawler'?0:kind==='elite'?2:1));}r.waveAt=this.time+4;
@@ -1218,10 +1274,10 @@ inflictWound(p,part,severity,source=null,strength=null){
     }
    }
   }
-  const ranged=false,reach=ranged?11:e.wounds.rightArm?.severity==='lost'?1.2:e.kind==='boss'?5:e.elite?3.4:2.3;
+  const condition=enemyCondition(e),ranged=false,reach=ranged?11:e.wounds.rightArm?.severity==='lost'?1.2:e.kind==='boss'?5:e.elite?3.4:2.3;
   if(e.telegraph){
    e.action='windup';if(target.kind!=='player'&&target.telegraph&&!ranged&&Math.abs(target.telegraph.at-e.telegraph.at)<.5&&Math.min(target.telegraph.at,e.telegraph.at)-this.time<.25&&dist(e,target)<reach+.4){this.resolveClash(e,target,r);return;}
-   if(this.time>=e.telegraph.at){const tg=e.telegraph;e.telegraph=null;e.guard=false;e.action='attack';e.actionStarted=this.time;e.actionUntil=this.time+.75;e.cooldown=this.time+(e.elite?2.3:1.9);if(e.kind==='boss')e.exposedUntil=this.time+1.65;if(ranged)e.ammo--;
+   if(this.time>=e.telegraph.at){const tg=e.telegraph;e.telegraph=null;e.guard=false;e.action='attack';e.actionStarted=this.time;e.actionUntil=this.time+.75+condition.recovery;e.cooldown=this.time+(e.elite?2.3:1.9)+condition.recovery;if(e.kind==='boss')e.exposedUntil=this.time+1.65;if(ranged)e.ammo--;
     this.emit('enemySwing',{room:r.id,source:e.id,target:target.id,x:e.x,z:e.z,dir:tg.dir,reach:tg.reach,arc:tg.arc,kind:e.kind,unblockable:tg.unblockable});
     for(const t of targets){if(!t.alive||!this.clearPath(e,t,r)||dist(e,t)>tg.reach+.35||Math.abs(angleDiff(Math.atan2(t.x-e.x,t.z-e.z),tg.dir))>tg.arc/2)continue;
      if(t.kind==='player')this.hitPlayer(t,e,tg);else{if(this.awareness(t,e).engaged&&this.rng()<COMBAT_AWARENESS.engagedAvoid)continue;this.releaseRescue(t);this.recordDamage(t,'torso',e.elite?1.05:.7);t.sleepUntil=0;if(t.statuses)delete t.statuses.sleep;const amount=(e.elite?1.05:.7)*(hasStatus(e,'weak',this.time)?.65:1);t.npcResolve-=amount;t.hp=(t.hp??70)-amount*(t.hpMax??70)/(t.npcResolveMax||12);this.reactToHit(t,e,'torso',e.elite?'heavy':'light');this.impact(e,t,'torso',e.elite);t.action='hit';t.actionStarted=this.time;t.actionUntil=this.time+.65;t.stun=t.actionUntil;if(t.npcResolve<=0||t.hp<=0)this.killActor(t,e,r);else this.emit('hit',{room:r.id,target:t.id,source:e.id,x:t.x,z:t.z,part:'torso'});if(t.alive&&e.attackCount%4===0){const status=e.kind==='guard'?'stun':({crawler:'poison',wraith:'slow',maw:'root',goblin:'blind',mage:'burn',elite:'weak'})[e.kind];if(status)this.applyStatus(t,status,3,e,r);}}if(ranged)break;
@@ -1232,7 +1288,7 @@ inflictWound(p,part,severity,source=null,strength=null){
   const distance=dist(e,target),injury=injuryModifiers(e),vulnerable=target.cooldown>this.time||target.action==='recover'||Math.abs(angleDiff(target.dir,Math.atan2(e.x-target.x,e.z-target.z)))>1.9;
   if(e.smart&&distance<reach+1&&distance>reach*.7&&this.time>e.cooldown&&!vulnerable&&e.counterOpportunity<this.time){e.guard=e.wounds.leftArm?.severity!=='lost';e.action='guard';return;}
   if(e.smart&&e.counterOpportunity===undefined)e.counterOpportunity=0;
-  if(distance>reach*.82){const speed=(e.kind==='guard'?2.8:e.kind==='boss'?2.6:3.1)*injury.move*(hasStatus(e,'slow',this.time)?.5:1)*(hasStatus(e,'root',this.time)?0:1);this.moveAttackStep(e,r,Math.sin(e.dir)*speed*dt,Math.cos(e.dir)*speed*dt,true);e.action='run';e.guard=false;if(r.kind==='village')e.z=Math.min(-29.6,e.z);}
+  if(distance>reach*.82){const speed=(e.kind==='guard'?2.8:e.kind==='boss'?2.6:3.1)*injury.move*condition.move*(hasStatus(e,'slow',this.time)?.5:1)*(hasStatus(e,'root',this.time)?0:1);this.moveAttackStep(e,r,Math.sin(e.dir)*speed*dt,Math.cos(e.dir)*speed*dt,true);e.action='run';e.guard=false;if(r.kind==='village')e.z=Math.min(-29.6,e.z);}
   else if(this.time>=e.cooldown){e.attackCount++;const unblockable=(e.kind==='boss'&&e.attackCount%3===0)||(e.elite&&e.attackCount%4===0),duration=e.elite?1.55:e.smart&&vulnerable?1.05:1.35;e.guard=false;e.telegraph={target:target.id,at:this.time+duration,started:this.time,dir:e.dir,reach,arc:ranged?.65:unblockable?2.5:1.7,unblockable,ranged,part:e.elite&&e.attackCount%2===0?'rightArm':undefined};e.action='windup';}
   else e.action='idle';
  }
@@ -1264,7 +1320,7 @@ inflictWound(p,part,severity,source=null,strength=null){
   const room=this.getRoom(p);if(room?.kind==='front'){room.fallen||={};room.fallen[p.id]=JSON.parse(JSON.stringify({...p,speech:'',speechUntil:0}));}const home=this.rooms.get(p.home);if(home){delete home.clans[p.id];this.checkAbandoned(home);}this.bank(p);const legacy=this.legacy(p.owner);legacy.generation=Math.max(legacy.generation,p.gen+1);
   this.emit('death',{player:p.id,room:p.room,cause,age:p.age,kills:p.recorded?p.kills:0,skills:p.bankedSkills,x:p.x,z:p.z});
  }
- snapshot(id,after=0){const p=this.players.get(id);if(!p)return null;const r=this.getRoom(p);return {version:VERSION,t:this.time,seq:this.seq,mode:this.mode,player:p,room:{id:r.id,kind:r.kind,seed:r.seed,terrainRevision:r.map?.terrainRevision||0,code:r.code,name:r.name,stage:r.stage,kills:r.kills,quota:r.quota,cleared:r.cleared,clans:r.clans,bossDefeated:r.bossDefeated,partySize:r.partySize,fields:r.fields||[],items:r.items||[],abandoned:r.abandoned},actors:r.actors,players:[...this.players.values()].filter(q=>q.room===r.id),boatIn:this.boatInterval-this.time%this.boatInterval,yearSeconds:this.yearSeconds,legacy:this.legacy(p.owner),events:this.events.filter(e=>e.seq>after&&(e.room===r.id||e.player===id))};}
+ snapshot(id,after=0){const p=this.players.get(id);if(!p)return null;const r=this.getRoom(p);return {version:VERSION,t:this.time,seq:this.seq,mode:this.mode,player:p,room:{id:r.id,kind:r.kind,seed:r.seed,terrainRevision:r.map?.terrainRevision||0,shipRevision:r.map?.shipRevision||0,code:r.code,name:r.name,stage:r.stage,kills:r.kills,quota:r.quota,cleared:r.cleared,clans:r.clans,bossDefeated:r.bossDefeated,partySize:r.partySize,fields:r.fields||[],items:r.items||[],abandoned:r.abandoned},actors:r.actors,players:[...this.players.values()].filter(q=>q.room===r.id),boatIn:this.boatInterval-this.time%this.boatInterval,yearSeconds:this.yearSeconds,legacy:this.legacy(p.owner),events:this.events.filter(e=>e.seq>after&&(e.room===r.id||e.player===id))};}
  exportState({live=false}={}){const data={schema:4,version:VERSION,seed:this.seed,rngState:this.rng.getState(),mode:this.mode,time:this.time,seq:this.seq,eid:this.eid,roomSeq:this.roomSeq,rooms:[...this.rooms],players:[...this.players].map(([id,p])=>[id,live?p:{...p,speech:'',speechUntil:0}]),legacies:this.legacies,abandoned:this.abandoned};return JSON.parse(JSON.stringify(data));}
  static migrateSave(input){
   const data=JSON.parse(JSON.stringify(input));
@@ -1287,8 +1343,8 @@ inflictWound(p,part,severity,source=null,strength=null){
   const d=this.migrateSave(input),s=new Simulation({seed:d.seed,mode:d.mode});
   for(const key of ['time','seq','eid','roomSeq','legacies','abandoned'])s[key]=d[key];
   s.rooms=new Map(d.rooms);s.players=new Map(d.players);s.rng.setState(d.rngState);s.events=[];
-  for(const r of s.rooms.values())if(r.kind==='village')r.map=makeVillage(r.seed);
+  for(const r of s.rooms.values())if(r.kind==='village'){const upgrade=!r.map?.ship;r.map=makeVillage(r.seed);if(upgrade)s.ensureShipActors(r);}
   s.reconcileTerrain();return s;
  }
- static restore(data){data=this.migrateSave(data);if(data?.schema!==4||!Array.isArray(data.players)||!Array.isArray(data.rooms)||data.players.length>200)throw Error('この改修より前の進行中データは別保管されています。');const s=new Simulation({seed:data.seed,mode:data.mode});s.time=+data.time||0;s.seq=+data.seq||0;s.eid=+data.eid||0;s.roomSeq=+data.roomSeq||1;s.rooms=new Map(data.rooms);s.players=new Map(data.players);s.legacies=data.legacies||{};s.abandoned=data.abandoned||[];if(Number.isInteger(data.rngState))s.rng.setState(data.rngState);for(const p of s.players.values()){if(!s.rooms.has(p.room))throw Error('村の記録がありません。');p.attackBufferedUntil=0;p.attackStep??=null;p.hitReactAt??=0;p.hitReactUntil??=0;p.hitDir??=0;p.hitSeverity??=null;p.input={x:0,z:0};p.guard=false;p.guardPending=false;p.speech='';p.speechUntil=0;p.phaseLimitVersion=0;s.preparePlayer(p);p.dash=null;p.autoFight=null;p.chain=null;p.pendingSkill=null;p.combo=null;p.attackStep=null;delete p.hitRecoil;s.stopTraversal(p);p.action=incapacitated(p)?p.lifeState:p.alive?(p.seated?'sit':'idle'):'fall';SkillSystem.restore(s,p);}for(const r of s.rooms.values()){if(r.kind==='village'){r.map=makeVillage(r.seed);const spot=villagePracticePosition(r.map);for(const a of r.actors)if(a.kind==='dummy'){a.x=a.homeX=spot.x;a.z=a.homeZ=spot.z;}}r.actors=r.actors.filter(a=>a.kind!=='villager');for(const a of r.actors){if(a.kind==='archer')a.kind='soldier';if(a.kind==='mage')a.kind='goblin';a.statuses??={};a.hp??=a.kind==='guard'?130:a.elite?120:70;a.hpMax??=a.hp;a.npcResolveMax??=a.kind==='guard'?18:14;if(data.version!==VERSION)a.npcResolve=a.npcResolveMax;}}for(const l of Object.values(s.legacies))l.archive=l.archive.filter(id=>skillById(id));s.reconcileTerrain();return s;}
+ static restore(data){data=this.migrateSave(data);if(data?.schema!==4||!Array.isArray(data.players)||!Array.isArray(data.rooms)||data.players.length>200)throw Error('この改修より前の進行中データは別保管されています。');const s=new Simulation({seed:data.seed,mode:data.mode});s.time=+data.time||0;s.seq=+data.seq||0;s.eid=+data.eid||0;s.roomSeq=+data.roomSeq||1;s.rooms=new Map(data.rooms);s.players=new Map(data.players);s.legacies=data.legacies||{};s.abandoned=data.abandoned||[];if(Number.isInteger(data.rngState))s.rng.setState(data.rngState);for(const p of s.players.values()){if(!s.rooms.has(p.room))throw Error('村の記録がありません。');p.attackBufferedUntil=0;p.attackStep??=null;p.hitReactAt??=0;p.hitReactUntil??=0;p.hitDir??=0;p.hitSeverity??=null;p.input={x:0,z:0};p.guard=false;p.guardPending=false;p.speech='';p.speechUntil=0;p.phaseLimitVersion=0;s.preparePlayer(p);p.dash=null;p.autoFight=null;p.chain=null;p.pendingSkill=null;p.combo=null;p.attackStep=null;delete p.hitRecoil;s.stopTraversal(p);p.action=incapacitated(p)?p.lifeState:p.alive?(p.seated?'sit':'idle'):'fall';SkillSystem.restore(s,p);}for(const r of s.rooms.values()){if(r.kind==='village'){r.map=makeVillage(r.seed);const spot=villagePracticePosition(r.map);for(const a of r.actors)if(a.kind==='dummy'&&a.shipStation==null){a.x=a.homeX=spot.x;a.z=a.homeZ=spot.z;}s.ensureShipActors(r);}r.actors=r.actors.filter(a=>a.kind!=='villager');for(const a of r.actors){if(a.kind==='archer')a.kind='soldier';if(a.kind==='mage')a.kind='goblin';a.statuses??={};a.hp??=a.kind==='guard'?130:a.elite?120:70;a.hpMax??=a.hp;a.npcResolveMax??=a.kind==='guard'?18:14;if(data.version!==VERSION)a.npcResolve=a.npcResolveMax;}}for(const p of s.players.values()){const r=s.getRoom(p);if(r.kind==='village'){if(p.z>29.5){s.bound(p,r);p.supportHeight=supportHeight(r.map,p.x,p.z);}if(p.queued||onShipDeck(p))p.queued=p.age>=15&&onShipDeck(p);}}for(const l of Object.values(s.legacies))l.archive=l.archive.filter(id=>skillById(id));s.reconcileTerrain();return s;}
 }

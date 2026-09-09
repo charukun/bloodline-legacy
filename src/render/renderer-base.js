@@ -9,7 +9,7 @@ class Renderer{
  setQuality(q){this.quality=q;this.scale=q==='low'?.75:1;this.lastSize='';this.resize();}
  put(type,m,c,surface=0,alpha=1,target=this.dynamic){let batch=target.get(type);if(!batch){batch=[];target.set(type,batch);}const col=Array.isArray(c)?c:rColor(c);batch.push([...m,col[0],col[1],col[2],alpha,surface]);}
  add(type,x,y,z,sx,sy,sz,c,yaw=0,rz=0,rx=0,surf=0,alpha=1,target=this.dynamic){this.put(type,rModel(x,y,z,sx,sy,sz,yaw,rz,rx),c,surf,alpha,target);}
- blob(x,z,sx,sz,a=.28,target=this.fxBatches){this.add('disk',x,.27,z,sx,1,sz,'#665b42',0,0,0,2,a,target);}
+ blob(x,z,sx,sz,a=.28,target=this.fxBatches){this.add('disk',x,.27+supportHeight(this.traversalMap,x,z),z,sx,1,sz,'#665b42',0,0,0,2,a,target);}
  geometry(type){if(this.geo.has(type))return this.geo.get(type);const gl=this.gl,g=rGeometry(type);if(!g.count)throw new Error('Unknown mesh: '+type);const vao=gl.createVertexArray();gl.bindVertexArray(vao);const data=new Float32Array(g.count*6);for(let i=0;i<g.count;i++){data.set(g.positions.subarray(i*3,i*3+3),i*6);data.set(g.normals.subarray(i*3,i*3+3),i*6+3);}const vertex=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,vertex);gl.bufferData(gl.ARRAY_BUFFER,data,gl.STATIC_DRAW);for(let i=0;i<2;i++){gl.enableVertexAttribArray(i);gl.vertexAttribPointer(i,3,gl.FLOAT,false,24,i*12);}let craftBuffer=null;if(g.craft){craftBuffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,craftBuffer);gl.bufferData(gl.ARRAY_BUFFER,g.craft,gl.STATIC_DRAW);gl.enableVertexAttribArray(9);gl.vertexAttribPointer(9,3,gl.FLOAT,false,12,0);}const instance=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,instance);for(let i=0;i<4;i++){gl.enableVertexAttribArray(2+i);gl.vertexAttribPointer(2+i,4,gl.FLOAT,false,84,i*16);gl.vertexAttribDivisor(2+i,1);}gl.enableVertexAttribArray(6);gl.vertexAttribPointer(6,4,gl.FLOAT,false,84,64);gl.vertexAttribDivisor(6,1);gl.enableVertexAttribArray(7);gl.vertexAttribPointer(7,1,gl.FLOAT,false,84,80);gl.vertexAttribDivisor(7,1);gl.bindVertexArray(null);const out={...g,vao,vertex,instance,craftBuffer};this.geo.set(type,out);return out;}
  geometryBounds(type){
   const g=rGeometry(type);
@@ -39,15 +39,54 @@ class Renderer{
   // Skinned characters supply their existing conservative animation envelope.
   const x=m[12],y=m[13],z=m[14];const r=Math.max(Math.hypot(m[0],m[1],m[2]),Math.hypot(m[4],m[5],m[6]),Math.hypot(m[8],m[9],m[10]))*1.75;const clipX=vp[0]*x+vp[4]*y+vp[8]*z+vp[12],clipY=vp[1]*x+vp[5]*y+vp[9]*z+vp[13];return Math.abs(clipX)<1+r*this.unitsToClip+padding&&Math.abs(clipY)<1+r*this.unitsToClip+padding;
  }
+ staticRanges(items,bounds){
+  // Index immutable scenery by 8-unit cells. Bounds include each complete mesh,
+  // including off-center/rotated/oversized parts. Never use just its origin.
+  this.staticRangeCache??=new WeakMap();
+  let cached=this.staticRangeCache.get(items);
+  if(cached&&cached.count===items.length&&cached.bounds===bounds)return cached;
+  const cells=new Map(),radii=[],c=bounds.center,e=bounds.extent;
+  for(let j=0;j<items.length;j++){
+   const m=items[j],key=Math.floor(m[12]/8)+','+Math.floor(m[14]/8);
+   let cell=cells.get(key);
+   if(!cell){cell={indices:[],min:[Infinity,Infinity,Infinity],max:[-Infinity,-Infinity,-Infinity]};cells.set(key,cell);}cell.indices.push(j);
+   radii.push(Math.max(Math.hypot(m[0],m[1],m[2]),Math.hypot(m[4],m[5],m[6]),Math.hypot(m[8],m[9],m[10])));
+   for(let k=0;k<3;k++){
+    const center=m[k]*c[0]+m[k+4]*c[1]+m[k+8]*c[2]+m[k+12];
+    const extent=Math.abs(m[k])*e[0]+Math.abs(m[k+4])*e[1]+Math.abs(m[k+8])*e[2];
+    cell.min[k]=Math.min(cell.min[k],center-extent);cell.max[k]=Math.max(cell.max[k],center+extent);
+   }
+  }
+  for(const cell of cells.values()){
+   cell.center=cell.min.map((v,k)=>(v+cell.max[k])*.5);cell.extent=cell.min.map((v,k)=>(cell.max[k]-v)*.5);
+  }
+  cached={count:items.length,bounds,cells,radii,selected:[]};this.staticRangeCache.set(items,cached);return cached;
+ }
  drawBatches(map,program,shadow=false){
-  const gl=this.gl,buckets=new Map(),pixelScale=this.width/this.viewWidth,scenery=map===this.static;
-  for(const [type,items] of map){const bounds=this.geometryBounds(type);for(const m of items){
+  this.bucketScratch??=new WeakMap();let scratch=this.bucketScratch.get(map);
+  if(!scratch){scratch={buckets:new Map(),pool:new Map()};this.bucketScratch.set(map,scratch);}
+  const {buckets,pool}=scratch;buckets.clear();for(const rows of pool.values())rows.length=0;
+  const gl=this.gl,pixelScale=this.width/this.viewWidth,scenery=map===this.static,vp=shadow?this.lightVP:this.vp,padding=shadow?.4:.09;
+  this.rangeIdentity??=rModel();
+  for(const [type,items] of map){const bounds=this.geometryBounds(type),index=scenery?this.staticRanges(items,bounds):null;
+   if(index){
+    index.selected.length=0;
+    for(const cell of index.cells.values()){
+     this.stats.staticRangesTested=(this.stats.staticRangesTested||0)+1;
+     if(this.visible(this.rangeIdentity,vp,padding,cell))for(const j of cell.indices)index.selected.push(j);
+    }
+    // Preserve the original row order, including coplanar surfaces.
+    index.selected.sort((a,b)=>a-b);
+   }
+   const count=index?index.selected.length:items.length;
+   for(let i=0;i<count;i++){const j=index?index.selected[i]:i,m=items[j];
    if(shadow&&(m[20]===1||m[20]===2||m[20]===4||m[19]<.85))continue;
    // Roof shells already cast the building silhouette. Millimetre paving relief
    // and overlapping tile faces do not need a second copy in the static shadow.
    if(shadow&&scenery&&(m[20]===20||type==='craft:paving'||type==='gltf:roof-shingle'||type==='golden:slate'))continue;
-   if(!this.visible(m,shadow?this.lightVP:this.vp,shadow?.4:.09,bounds))continue;
-   const radius=Math.max(Math.hypot(m[0],m[1],m[2]),Math.hypot(m[4],m[5],m[6]),Math.hypot(m[8],m[9],m[10])),pixels=radius*pixelScale;
+   if(scenery)this.stats.staticRowsTested=(this.stats.staticRowsTested||0)+1;
+   if(!this.visible(m,vp,padding,bounds))continue;
+   const radius=scenery?index.radii[j]:Math.max(Math.hypot(m[0],m[1],m[2]),Math.hypot(m[4],m[5],m[6]),Math.hypot(m[8],m[9],m[10])),pixels=radius*pixelScale;
    let lod=type;if(type==='sphere'&&(pixels<11||shadow))lod='bead';else if(type==='rbox'&&(pixels<7||shadow&&radius<.65))lod='box';else if(type==='leaf'&&(pixels<7||shadow))lod='leaflow';
    // Environment only: retain character geometry, animation and silhouette.
    if(scenery){
@@ -57,10 +96,10 @@ class Renderer{
     if(shadow&&RG_CACHE.get(type)?.shadowMesh)lod=RG_CACHE.get(type).shadowMesh;
    }
    if(lod!==type)this.stats.lodInstances++;
-   if(!buckets.has(lod))buckets.set(lod,[]);buckets.get(lod).push(m);
+   if(!buckets.has(lod)){if(!pool.has(lod))pool.set(lod,[]);buckets.set(lod,pool.get(lod));}buckets.get(lod).push(m);
   }}
   this.instanceScratch??=new Map();
-  for(const [type,rows]of buckets){const g=this.geometry(type),length=rows.length*21;let data=this.instanceScratch.get(type);
+  for(const [type,rows]of buckets){if(!rows.length)continue;const g=this.geometry(type),length=rows.length*21;let data=this.instanceScratch.get(type);
    if(!data||data.length<length){data=new Float32Array(2**Math.ceil(Math.log2(Math.max(64,length))));this.instanceScratch.set(type,data);}
    for(let i=0;i<rows.length;i++)data.set(rows[i],i*21);
    gl.bindVertexArray(g.vao);gl.bindBuffer(gl.ARRAY_BUFFER,g.instance);gl.bufferData(gl.ARRAY_BUFFER,data.subarray(0,length),gl.DYNAMIC_DRAW);gl.drawArraysInstanced(gl.TRIANGLES,0,g.count,rows.length);this.stats.calls++;this.stats.triangles+=g.count/3*rows.length;if(!shadow)this.stats.instances+=rows.length;
@@ -92,7 +131,7 @@ class Renderer{
  const x=c.x+Math.sin(c.yaw)*(this.panelShift||0)+Math.cos(c.yaw)*(this.panelShiftSide||0),z=c.z+Math.cos(c.yaw)*(this.panelShift||0)-Math.sin(c.yaw)*(this.panelShiftSide||0),y=c.y??1;
  this.viewCenter={x,z,y};const target=[x,y,z],distance=38,eye=[x+Math.sin(c.yaw)*Math.cos(c.pitch)*distance,y+Math.sin(c.pitch)*distance,z+Math.cos(c.yaw)*Math.cos(c.pitch)*distance];this.eye=eye;this.view=rLookAt(eye,target);this.vp=rMultiply(rOrtho(-this.viewWidth/2,this.viewWidth/2,-this.viewHeight/2,this.viewHeight/2,.1,120),this.view);this.unitsToClip=2/Math.min(this.viewWidth,this.viewHeight);const shadowCenter=[c.x,0,c.z],lightEye=[c.x-22,38,c.z+19];this.lightVP=rMultiply(rOrtho(-24,24,-24,24,.1,100),rLookAt(lightEye,shadowCenter));}
  screenToWorld(dx,dy){const y=this.camera.yaw,p=this.camera.pitch;return{x:Math.cos(y)*dx+Math.sin(y)*dy/Math.sin(p),z:-Math.sin(y)*dx+Math.cos(y)*dy/Math.sin(p)};}
- pointToWorld(x,y){const dx=(x/this.width-.5)*this.viewWidth,dy=(y/this.height-.5)*this.viewHeight;const v=this.screenToWorld(dx,dy),c=this.viewCenter||this.camera,viewY=c.y??1;return{x:c.x+v.x-viewY*Math.sin(this.camera.yaw)/Math.tan(this.camera.pitch),z:c.z+v.z-viewY*Math.cos(this.camera.yaw)/Math.tan(this.camera.pitch)};}
+ pointToWorld(x,y){const dx=(x/this.width-.5)*this.viewWidth,dy=(y/this.height-.5)*this.viewHeight;const v=this.screenToWorld(dx,dy),c=this.viewCenter||this.camera,viewY=c.y??1;const at=h=>({x:c.x+v.x+(h-viewY)*Math.sin(this.camera.yaw)/Math.tan(this.camera.pitch),z:c.z+v.z+(h-viewY)*Math.cos(this.camera.yaw)/Math.tan(this.camera.pitch)});let q=at(0);if(this.traversalMap?.ship&&q.z>27){q=at(VILLAGE_SHIP.deckY);for(let i=0;i<10;i++)q=at(shipSupport(q.x,q.z));}return q;}
  project(x,y,z){const m=this.vp;if(!m)return{x:-999,y:-999,visible:false};const xx=m[0]*x+m[4]*y+m[8]*z+m[12],yy=m[1]*x+m[5]*y+m[9]*z+m[13],zz=m[2]*x+m[6]*y+m[10]*z+m[14];return{x:(xx+1)*this.width/2,y:(1-yy)*this.height/2,visible:Math.abs(xx)<1.15&&Math.abs(yy)<1.15&&Math.abs(zz)<1};}
  effect(ev,t){if(ev.type==='skillconnection'&&ev.signal==='quiet')return;if(['hit','wound','partbreak','blocked','guard','guarded','parry','skill','death','status','release','released','learn','skillconnection'].includes(ev.type)){this.effects.push({...ev,born:t,life:ev.type==='partbreak'?1.25:ev.type==='skill'?1.1:.8});if(this.effects.length>100)this.effects.splice(0,20);}}
  combatFX(snapshot,t){const entities=[...snapshot.players||[],...snapshot.actors||[]];if(snapshot.player&&!entities.some(x=>x.id===snapshot.player.id))entities.push(snapshot.player);const find=id=>entities.find(x=>x.id===id);for(const p of entities){if(p.alive===false)continue;const sk=skillById(p.pendingSkill?.id??p.attackSkill);const pt=t;
@@ -149,7 +188,7 @@ class Renderer{
   const yawTarget=c.yaw+Math.atan2(Math.sin(yaw-c.yaw),Math.cos(yaw-c.yaw));
   damp('yaw',yawTarget,9);damp('pitch',pitch,9);damp('zoom',zoom,7);
   const height=c.zoom/aspectScale,anchor=options.anchorY??.62;
-  const ahead=((anchor-.5)*height-((c.y??1)-.18)*Math.cos(c.pitch))/Math.sin(c.pitch);
+  const ahead=((anchor-.5)*height-((c.y??1)-.18-(p.supportHeight||0))*Math.cos(c.pitch))/Math.sin(c.pitch);
   damp('x',cx-Math.sin(c.yaw)*ahead+f.leadX,12);
   damp('z',cz-Math.cos(c.yaw)*ahead+f.leadZ,12);
  }
@@ -168,7 +207,7 @@ class Renderer{
    }else put('bead',0,.29,0,.23,.14,.18,item.item==='charcoal'?'#50463c':'#b6aa8d');
   }
  }
- render(snapshot,dt=.016,options={}){if(this.lost||!snapshot)return;this.resize();const gl=this.gl,t=snapshot.t||0,p=snapshot.player||snapshot.players?.[0],area=snapshot.room?.kind||'village';let key=options.portrait?'portrait':options.clan?'showcase':area==='village'?'village'+snapshot.map.seed+':'+(snapshot.map.terrainRevision||0):'front'+Math.floor(-(p?.z||0)/44);if(key!==this.sceneKey){this.sceneKey=key;this.static.clear();if(options.portrait){this.groundFX.clear();this.labels=[];}else if(options.clan)this.art.showcase();else if(area==='village')this.art.village(snapshot.map);else this.art.front(snapshot.map.seed,Math.floor(-(p?.z||0)/44));this.staticShadowDirty=true;}
+ render(snapshot,dt=.016,options={}){if(this.lost||!snapshot)return;this.resize();const gl=this.gl,t=snapshot.t||0,p=snapshot.player||snapshot.players?.[0],area=snapshot.room?.kind||'village';let key=options.portrait?'portrait':options.clan?'showcase':area==='village'?'village'+snapshot.map.seed+':'+(snapshot.map.terrainRevision||0)+':'+(snapshot.map.shipRevision||0):'front'+Math.floor(-(p?.z||0)/44);if(key!==this.sceneKey){this.sceneKey=key;this.static.clear();if(options.portrait){this.groundFX.clear();this.labels=[];}else if(options.clan)this.art.showcase();else if(area==='village')this.art.village(snapshot.map);else this.art.front(snapshot.map.seed,Math.floor(-(p?.z||0)/44));this.staticShadowDirty=true;}
  this.diorama.update(snapshot,dt,options);
  this.updateCamera(snapshot,dt,options);
  this.framePanel(snapshot,dt,options);this.matrix();this.stats={calls:0,triangles:0,instances:0,lodInstances:0,resolution:this.canvas.width+'×'+this.canvas.height,scale:this.scale,meshTypes:this.geo.size};this.dynamic.clear();this.fxBatches.clear();this.arcaneFX.clear();this.impactFX.clear();
