@@ -1,0 +1,358 @@
+{
+  "base": "eabe0cba5577949350058b1e1e3bd41bc6c7c5f3",
+  "method": "80-year-old human; 3 warmup pairs, 15 measured alternating pairs; each completed render bracketed by synchronous one-pixel readback. UI update timed separately. Two quiescent pages; no concurrent rendering.",
+  "backend": "Chromium / SwiftShader, not native device performance",
+  "samples": [
+    {
+      "pair": 3,
+      "version": "after",
+      "complete": 1225.5,
+      "submit": 9.699999995529652,
+      "ui": 0.29999999701976776,
+      "calls": 40,
+      "triangles": 168050,
+      "solve": 0.5,
+      "gl": 0
+    },
+    {
+      "pair": 3,
+      "version": "before",
+      "complete": 3171.10000000149,
+      "submit": 5.700000002980232,
+      "ui": 10,
+      "calls": 40,
+      "triangles": 169886,
+      "solve": null,
+      "gl": 0
+    },
+    {
+      "pair": 4,
+      "version": "before",
+      "complete": 1590.1000000014901,
+      "submit": 28.5,
+      "ui": 14.300000004470348,
+      "calls": 40,
+      "triangles": 169886,
+      "solve": null,
+      "gl": 0
+    },
+    {
+      "pair": 4,
+      "version": "after",
+      "complete": 1397.2000000029802,
+      "submit": 19.100000001490116,
+      "ui": 11.5,
+      "calls": 40,
+      "triangles": 168050,
+      "solve": 3.0999999940395355,
+      "gl": 0
+    },
+    {
+      "pair": 5,
+      "version": "after",
+      "complete": 1446.8000000044703,
+      "submit": 33.70000000298023,
+      "ui": 0.29999999701976776,
+      "calls": 40,
+      "triangles": 168050,
+      "solve": 1.4000000059604645,
+      "gl": 0
+    },
+    {
+      "pair": 5,
+      "version": "before",
+      "complete": 2023.1999999955297,
+      "submit": 16.299999997019768,
+      "ui": 8.799999997019768,
+      "calls": 40,
+      "triangles": 169886,
+      "solve": null,
+      "gl": 0
+    },
+    {
+      "pair": 6,
+      "version": "before",
+      "complete": 1421.3000000044703,
+      "submit": 18.80000000447035,
+      "ui": 20.700000002980232,
+      "calls": 40,
+      "triangles": 169886,
+      "solve": null,
+      "gl": 0
+    },
+    {
+      "pair": 6,
+      "version": "after",
+      "complete": 1337.8999999985099,
+      "submit": 13.600000001490116,
+      "ui": 1.2000000029802322,
+      "calls": 40,
+      "triangles": 168050,
+      "solve": 1.8999999985098839,
+      "gl": 0
+    },
+    {
+      "pair": 7,
+      "version": "after",
+      "complete": 2166.60000000149,
+      "submit": 4.600000001490116,
+      "ui": 9.599999994039536,
+      "calls": 40,
+      "triangles": 168050,
+      "solve": 0.5,
+      "gl": 0
+    },
+    {
+      "pair": 7,
+      "version": "before",
+      "complete": 2585.7000000029802,
+      "submit": 13.899999998509884,
+      "ui": 11.299999997019768,
+      "calls": 40,
+      "triangles": 169886,
+      "solve": null,
+      "gl": 0
+    },
+    {
+      "pair": 8,
+      "version": "before",
+      "complete": 1698.6999999955297,
+      "submit": 19,
+      "ui": 0.20000000298023224,
+      "calls": 40,
+      "triangles": 169886,
+      "solve": null,
+      "gl": 0
+    },
+    {
+      "pair": 8,
+      "version": "after",
+      "complete": 1329.7999999970198,
+      "submit": 8.600000001490116,
+      "ui": 0.30000000447034836,
+      "calls": 40,
+      "triangles": 168050,
+      "solve": 1.1000000014901161,
+      "gl": 0
+    },
+    {
+      "pair": 9,
+      "version": "after",
+      "complete": 1391,
+      "submit": 6,
+      "ui": 18.700000002980232,
+      "calls": 40,
+      "triangles": 168050,
+      "solve": 0.3999999985098839,
+      "gl": 0
+    },
+    {
+      "pair": 9,
+      "version": "before",
+      "complete": 1853.1000000014901,
+      "submit": 22.80000000447035,
+      "ui": 25,
+      "calls": 40,
+      "triangles": 169886,
+      "solve": null,
+      "gl": 0
+    },
+    {
+      "pair": 10,
+      "version": "before",
+      "complete": 1407.8000000044703,
+      "submit": 27.899999998509884,
+      "ui": 9.199999995529652,
+      "calls": 40,
+      "triangles": 169886,
+      "solve": null,
+      "gl": 0
+    },
+    {
+      "pair": 10,
+      "version": "after",
+      "complete": 1754.1000000014901,
+      "submit": 15.600000001490116,
+      "ui": 15.799999997019768,
+      "calls": 40,
+      "triangles": 168050,
+      "solve": 1.1000000014901161,
+      "gl": 0
+    },
+    {
+      "pair": 11,
+      "version": "after",
+      "complete": 1265.2999999970198,
+      "submit": 14.5,
+      "ui": 0.30000000447034836,
+      "calls": 40,
+      "triangles": 168050,
+      "solve": 4.100000001490116,
+      "gl": 0
+    },
+    {
+      "pair": 11,
+      "version": "before",
+      "complete": 1271.2000000029802,
+      "submit": 15,
+      "ui": 0.3999999985098839,
+      "calls": 40,
+      "triangles": 169886,
+      "solve": null,
+      "gl": 0
+    },
+    {
+      "pair": 12,
+      "version": "before",
+      "complete": 1290.3999999985099,
+      "submit": 5.5,
+      "ui": 21,
+      "calls": 40,
+      "triangles": 169886,
+      "solve": null,
+      "gl": 0
+    },
+    {
+      "pair": 12,
+      "version": "after",
+      "complete": 1594.6000000014901,
+      "submit": 18.399999998509884,
+      "ui": 8.100000001490116,
+      "calls": 40,
+      "triangles": 168050,
+      "solve": 1.2999999970197678,
+      "gl": 0
+    },
+    {
+      "pair": 13,
+      "version": "after",
+      "complete": 1420.1000000014901,
+      "submit": 19.100000001490116,
+      "ui": 11.799999997019768,
+      "calls": 40,
+      "triangles": 168050,
+      "solve": 1.4000000059604645,
+      "gl": 0
+    },
+    {
+      "pair": 13,
+      "version": "before",
+      "complete": 1270.3999999985099,
+      "submit": 25.299999997019768,
+      "ui": 0.6000000014901161,
+      "calls": 40,
+      "triangles": 169886,
+      "solve": null,
+      "gl": 0
+    },
+    {
+      "pair": 14,
+      "version": "before",
+      "complete": 1216,
+      "submit": 6.5,
+      "ui": 0.4000000059604645,
+      "calls": 40,
+      "triangles": 169886,
+      "solve": null,
+      "gl": 0
+    },
+    {
+      "pair": 14,
+      "version": "after",
+      "complete": 1699.6000000014901,
+      "submit": 10.100000001490116,
+      "ui": 12.399999998509884,
+      "calls": 40,
+      "triangles": 168050,
+      "solve": 1,
+      "gl": 0
+    },
+    {
+      "pair": 15,
+      "version": "after",
+      "complete": 1647.5,
+      "submit": 19.600000001490116,
+      "ui": 7.899999998509884,
+      "calls": 40,
+      "triangles": 168050,
+      "solve": 0.9000000059604645,
+      "gl": 0
+    },
+    {
+      "pair": 15,
+      "version": "before",
+      "complete": 1464.4000000059605,
+      "submit": 14.600000001490116,
+      "ui": 17.899999998509884,
+      "calls": 40,
+      "triangles": 169886,
+      "solve": null,
+      "gl": 0
+    },
+    {
+      "pair": 16,
+      "version": "before",
+      "complete": 1805.4000000059605,
+      "submit": 19.5,
+      "ui": 34.30000000447035,
+      "calls": 40,
+      "triangles": 169886,
+      "solve": null,
+      "gl": 0
+    },
+    {
+      "pair": 16,
+      "version": "after",
+      "complete": 1252.3000000044703,
+      "submit": 22.600000001490116,
+      "ui": 0.29999999701976776,
+      "calls": 40,
+      "triangles": 168050,
+      "solve": 2.1999999955296516,
+      "gl": 0
+    },
+    {
+      "pair": 17,
+      "version": "after",
+      "complete": 1205.6000000014901,
+      "submit": 4.700000002980232,
+      "ui": 0.20000000298023224,
+      "calls": 40,
+      "triangles": 168050,
+      "solve": 0.20000000298023224,
+      "gl": 0
+    },
+    {
+      "pair": 17,
+      "version": "before",
+      "complete": 1243,
+      "submit": 10.199999995529652,
+      "ui": 1.6999999955296516,
+      "calls": 40,
+      "triangles": 169886,
+      "solve": null,
+      "gl": 0
+    }
+  ],
+  "summary": {
+    "before": {
+      "frames": 15,
+      "medianCompleteMs": 1464.4000000059605,
+      "medianSubmitMs": 16.299999997019768,
+      "medianUiMs": 10,
+      "medianSolveMs": null,
+      "calls": 40,
+      "triangles": 169886
+    },
+    "after": {
+      "frames": 15,
+      "medianCompleteMs": 1397.2000000029802,
+      "medianSubmitMs": 14.5,
+      "medianUiMs": 7.899999998509884,
+      "medianSolveMs": 1.1000000014901161,
+      "calls": 40,
+      "triangles": 168050
+    },
+    "ratio": 0.9541108986597195
+  }
+}

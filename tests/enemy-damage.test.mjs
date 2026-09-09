@@ -15,6 +15,21 @@ h.run(`function damageFixture(form,level,part,time=1.35,quality='medium',extra={
 const plain=v=>JSON.parse(JSON.stringify(v));
 const forms=h.run('Object.values(ENEMY_FORMS).flat()');
 
+test('damage marks and broken surfaces follow raised ground for every enemy form',()=>{
+ for(const form of forms){h.ctx.form=form;
+  for(const level of ['heavy','lost']){h.ctx.level=level;
+   const flat=h.run("damageFixture(form,level,'rightArm')");
+   const raised=h.run("damageFixture(form,level,'rightArm',1.35,'medium',{supportHeight:1.2,verticalOffset:.3})");
+   assert(flat.unchanged&&raised.unchanged,form.id+' read only');
+   assert.equal(raised.batches.length,flat.batches.length,form.id);
+   for(let i=0;i<flat.batches.length;i++){
+    const a=flat.batches[i],b=raised.batches[i];assert.equal(a.type,b.type);
+    for(let k=0;k<16;k++)assert.ok(Math.abs(b.m[k]-a.m[k]-(k===13?1.5:0))<1e-5,form.id+' '+a.type+' ground translation');
+   }
+  }
+ }
+});
+
 test('whole-body damage follows lost HP alone, monotonically and within bounds',()=>{
  for(const values of [{},{hp:NaN,hpMax:100},{hp:1,hpMax:Infinity},{hp:100,hpMax:0},{hp:100,hpMax:-10}]){h.ctx.p=values;assert.equal(h.run('EnemyDamage.state(p).wear'),0);}
  let prior=0;
