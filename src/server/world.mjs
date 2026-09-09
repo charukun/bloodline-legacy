@@ -1,5 +1,6 @@
 import {LiveContract,clientCompatible,safePlayer} from '../live/contract.mjs';
 import {engines,currentRules} from './engines/registry.mjs';
+import {Accounts} from './accounts.mjs';
 
 const reply=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const uuid=()=>crypto.randomUUID();
@@ -12,7 +13,7 @@ export class GameWorld {
   constructor(ctx,env,options={}) {
     this.ctx=ctx;this.env=env;this.engines=options.engines||engines;this.target=options.rules||currentRules;
     this.contract=options.contract||LiveContract;this.now=options.now||Date.now;
-    this.streams=new Map();this.tail=Promise.resolve();this.timer=null;this.tickBusy=false;
+    this.streams=new Map();this.tail=Promise.resolve();this.timer=null;this.tickBusy=false;this.accounts=new Accounts(this);
     this.ready=ctx.blockConcurrencyWhile(async()=>{
       const saved=await ctx.storage.get('checkpoint');
       if(saved){
@@ -28,6 +29,7 @@ export class GameWorld {
         this.fresh=true;this.rules=this.target;this.sim=new this.engines[this.rules]({mode:env.WORLD_MODE||'normal'});
         this.sessions=new Map();this.epoch=uuid();this.revision=0;
       }
+      try{await this.accounts.load();}catch{this.failure='ACCOUNT_RECOVERY_REQUIRED';}
       this.lastTick=this.now();
     });
   }
@@ -90,11 +92,11 @@ export class GameWorld {
     },100);
     this.timer.unref?.();
   }
-  async body(request){
+  async body(request,limit=16384){
     if(!request.body)return {};
     const reader=request.body.getReader(),decoder=new TextDecoder();let text='',size=0;
     while(true){const {value,done}=await reader.read();if(done)break;size+=value.byteLength;
-      if(size>16384){await reader.cancel();throw Object.assign(Error('REQUEST_TOO_LARGE'),{status:413});}
+      if(size>limit){await reader.cancel();throw Object.assign(Error('REQUEST_TOO_LARGE'),{status:413});}
       text+=decoder.decode(value,{stream:true});
     }
     text+=decoder.decode();
@@ -111,6 +113,7 @@ export class GameWorld {
         let session=key&&this.sessions.get(key);
         if(!clientCompatible(client,this.contract))return reply({code:'UPDATE_REQUIRED',compatibility:this.version(),progressProtected:!!session},426);
         if(!Array.isArray(client.supportedRules)||client.supportedRules.length>32)return reply({code:'INVALID_CLIENT'},400);
+        if(url.pathname.startsWith('/api/account/'))return reply(await this.accounts.handle(request,{key,session,client}));
         if(token&&(!session||(session.expires<=this.now()&&url.pathname!=='/api/join')))return reply({code:'SESSION_EXPIRED'},401);
         if(url.pathname==='/api/join'&&request.method==='POST'){
           const body=await this.body(request);
@@ -145,9 +148,9 @@ export class GameWorld {
         }
         if(url.pathname==='/api/events'&&request.method==='GET'){
           const old=this.streams.get(key);if(old){try{old.controller.close();}catch{}}
-          const record={};const stream=new ReadableStream({start:controller=>{
+          const record={},streamLease=session.lease;const stream=new ReadableStream({start:controller=>{
             record.controller=controller;this.streams.set(key,record);controller.enqueue(this.encode(this.packet(session,true)));
-          },cancel:()=>{if(this.streams.get(key)===record)this.streams.delete(key);this.serial(async()=>{this.sim.command(session.playerId,{type:'move',x:0,z:0});await this.persist();}).catch(()=>{});}});
+          },cancel:()=>{if(this.streams.get(key)!==record)return;this.streams.delete(key);this.serial(async()=>{if(this.sessions.get(key)!==session||session.lease!==streamLease)return;this.sim.command(session.playerId,{type:'move',x:0,z:0});await this.persist();}).catch(()=>{});}});
           this.startClock();return new Response(stream,{headers:{'Content-Type':'text/event-stream','Cache-Control':'no-store','X-Accel-Buffering':'no'}});
         }
         if(url.pathname==='/api/command'&&request.method==='POST'){

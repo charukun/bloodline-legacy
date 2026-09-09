@@ -1,7 +1,7 @@
 /* Deterministic review snapshots shared by the interactive page and diagnostics. */
 const EnemyReview={
- forms:Object.values(ENEMY_FORMS).flat(),
- mixed:Array.from({length:5},(_,i)=>Object.values(ENEMY_FORMS).flatMap(rows=>rows[i]?[rows[i]]:[])).flat(),
+ forms:(()=>{const all=Object.values(ENEMY_FORMS).flat();return [...EnemyFauna.ids.map(id=>all.find(f=>f.id===id)),...all.filter(f=>!EnemyFauna.ids.includes(f.id))];})(),
+ mixed:Array.from({length:Math.max(...Object.values(ENEMY_FORMS).map(rows=>rows.length))},(_,i)=>Object.values(ENEMY_FORMS).flatMap(rows=>rows[i]?[rows[i]]:[])).flat(),
  duration:pose=>pose==='sequence'?13:3.6,
  vitality(p,remaining=100,brokenPart='none'){
   p.hpMax=p.hpMax||100;p.hp=p.hpMax*(Number.isFinite(remaining)?Math.max(0,Math.min(100,remaining)):100)/100;

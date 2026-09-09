@@ -1,0 +1,32 @@
+// CI-owned browser verification of the integrated game; fixtures only prepare age/location/time.
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import http from 'node:http';
+import assert from 'node:assert/strict';
+import {chromium} from '../deploy/node_modules/playwright/index.mjs';
+const root=path.resolve(import.meta.dirname,'..'),out=path.join(root,'verification/current/gate-care');await fs.mkdir(out,{recursive:true});
+const html=await fs.readFile(path.join(root,'dist/index.html'));
+const server=http.createServer((req,res)=>{if(req.url.startsWith('/api/')||req.url==='/version.json'){res.setHeader('Content-Type','application/json');return res.end('{"online":false}');}res.setHeader('Content-Type','text/html; charset=utf-8');res.end(html);});await new Promise(r=>server.listen(0,'127.0.0.1',r));
+const report={head:process.env.GITHUB_SHA,backend:'Chromium / SwiftShader',viewports:['1000x800','393x852'],checks:[],errors:[],passed:false,limitations:['QA fixtures prepare adult/child age, casualties and stamina.','Software WebGL is not mobile hardware performance verification.']};let browser,page;
+try{
+ browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});page=await browser.newPage({viewport:{width:1000,height:800},deviceScaleFactor:1});page.setDefaultTimeout(120000);page.on('pageerror',e=>report.errors.push(e.message));
+ await page.goto('http://127.0.0.1:'+server.address().port+'/?qa');await page.waitForFunction('window.AERIN_QA');await page.locator('#begin-life').click();const pages=await page.locator('.guide-pages i').count();for(let i=0;i<pages;i++)await page.locator('#guide-next').click();await page.waitForFunction('AERIN_QA.app.screen==="game"');
+ await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();a.closed=true;a.stopInput();a.ui.closeModal();a.renderer.setQuality('medium');a.renderer.weather.setOverride('clear');Object.assign(p,{age:24,ageFraction:0,prologue:false,introUntil:-100,releaseAt:-100,x:8,z:-20.6,stun:0,cooldown:0,health:30,lastHurtAt:-100,wounds:{torso:{severity:'heavy',healsAt:30}},action:'idle',actionUntil:0});const r=a.sim.getRoom(p);r.actors=r.actors.filter(e=>e.role==='medic');r.waveAt=1e9;a.renderer.camera={x:5,z:-23,zoom:23,yaw:.25,pitch:.7};
+  // Advance only presentation samples to settle the renderer's 100ms crossfade;
+  // gameplay time and positions are advanced only by careStep.
+  window.careDraw=()=>{a.snapshot=a.decorate(a.sim.snapshot(a.playerId,a.seq));for(const e of a.snapshot.events)a.ui.event(e);a.seq=a.snapshot.seq;for(let i=0;i<8;i++)a.renderer.render({...a.snapshot,t:a.snapshot.t+i/30},1/30,{freezeCamera:true});a.ui.update(a.snapshot);a.buildingLabels?.update(a.snapshot,a.renderer);const g=a.renderer.gl;g.readPixels(0,0,1,1,g.RGBA,g.UNSIGNED_BYTE,new Uint8Array(4));};
+  window.careStep=n=>{for(let i=0;i<n;i++){a.updateMove();a.sim.tick(1/30);}careDraw();};careDraw();
+ });
+ const check=async(name,fn)=>{const ok=await page.evaluate(fn);report.checks.push({name,pass:!!ok});assert.ok(ok,name);console.log('PASS '+name);};const shot=async name=>page.screenshot({path:path.join(out,name+'.png')});
+ await shot('clinic-wide');await page.locator('[data-context=treatment]').click();await page.evaluate(()=>careStep(150));await check('foot button starts seated treatment and restores health',()=>AERIN_QA.player().seated&&AERIN_QA.player().health>70);await shot('treatment');
+ await page.keyboard.down('s');await page.evaluate(()=>careStep(10));await page.keyboard.up('s');await check('movement interrupts seated treatment',()=>!AERIN_QA.player().seated);
+ await page.setViewportSize({width:393,height:852});await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();a.renderer.resize();Object.assign(p,{x:3,z:-26,stamina:14,staminaCap:45,health:100,wounds:{}});a.renderer.camera={x:3,z:-28,zoom:16,yaw:.3,pitch:.6};careDraw();});
+ await check('critical stamina is colored and animated without blocking controls',()=>{const q=document.querySelector('.stamina-orb');return q.dataset.fatigue==='2'&&getComputedStyle(q).animationName==='stamina-breath'&&getComputedStyle(q.querySelector('#water stop')).stopColor==='rgb(189, 96, 63)'&&!document.querySelector('.modal-root.visible');});await shot('stamina-critical');
+ await check('breathing follows the character without covering the HUD',()=>{const n=document.querySelector('.breath-callout');if(!n)return false;const b=n.getBoundingClientRect();return getComputedStyle(n).position==='absolute'&&b.left>40&&b.top>115&&b.bottom<innerHeight-140&&b.width<120;});
+ await page.evaluate(()=>{const p=AERIN_QA.player();p.stamina=46;p.staminaCap=100;careDraw();});await check('warning clears after recovery',()=>document.querySelector('.stamina-orb').dataset.fatigue==='0');
+ await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player(),r=a.sim.getRoom(p);Object.assign(p,{x:5,z:-34,stamina:100});const guard=a.sim.actor('guard',-6,-33);r.actors.push(guard);window.careGuardId=guard.id;a.sim.killActor(guard,null,r);a.sim.downPlayer(p,'深手');a.renderer.camera={x:1,z:-28,zoom:22,yaw:.2,pitch:.72};careStep(300);});
+ await check('two medics carry a player and guard through the gate',()=>{const a=AERIN_QA.app,r=a.sim.getRoom(AERIN_QA.player());return AERIN_QA.player().lifeState==='carried'&&r.actors.find(e=>e.id===careGuardId).lifeState==='carried'&&r.actors.filter(e=>e.role==='medic'&&e.rescueTarget).length===2;});await shot('rescue');
+ await page.evaluate(()=>{AERIN_QA.app.saveWorld();AERIN_QA.app.loadMode();AERIN_QA.app.screen='game';AERIN_QA.step(1500);const a=AERIN_QA.app;a.renderer.camera={x:7,z:-22,zoom:19,yaw:.1,pitch:.75};careDraw();});
+ await check('saved rescue reaches treatment and restores both casualties',()=>{const a=AERIN_QA.app,p=AERIN_QA.player(),g=a.sim.getRoom(p).actors.find(e=>e.id===careGuardId);return p.lifeState==='active'&&p.z>-26&&g.alive&&g.lifeState==='active'&&!g.carrierId;});await shot('recovered');
+ await check('no WebGL error',()=>AERIN_QA.app.renderer.gl.getError()===0);assert.deepEqual(report.errors,[]);report.passed=true;
+}catch(error){report.failure=error.message;report.state=await page?.evaluate(()=>({player:window.AERIN_QA?.player(),body:document.body.innerText.slice(-1800)})).catch(()=>null);await page?.screenshot({path:path.join(out,'failure.png'),timeout:30000}).catch(()=>{});throw error;}finally{await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));await browser?.close();await new Promise(r=>server.close(r));}

@@ -9,22 +9,23 @@ function noticeFixture(t){
  return {...f,reveal,clock:n=>{now=n;f.sync();}};
 }
 
-test('insight and passive discovery show only one small noninteractive label on consciousness',t=>{
+test('insight and passive discovery show only one noninteractive golden revelation on consciousness',t=>{
  const {ui,d,w,p,reveal}=noticeFixture(t),style=d.createElement('style');style.textContent=fs.readFileSync(new URL('../src/skills/skills.css',import.meta.url),'utf8');d.head.appendChild(style);
+ // A consecutive active + passive cluster keeps the active discovery title.
  for(const id of [60000,60900]){
   reveal(id);const badge=d.getElementById('skill-revelation'),button=d.querySelector('[data-menu="skills"]');
-  assert.equal(badge.parentElement,button);assert.equal(badge.textContent,id===60900?'心得':'閃き');assert.equal(badge.getAttribute('role'),'status');
+  assert.equal(badge.parentElement,button);assert.equal(badge.querySelector('.revelation-word').textContent,'閃き');assert.ok(badge.querySelector('.revelation-name').textContent);assert.equal(badge.getAttribute('role'),'status');
   assert.equal(d.querySelectorAll('#skill-revelation').length,1);assert.equal(badge.querySelector('button,a,[tabindex]'),null);
   assert.equal(d.querySelector('.reveal-open,.reveal-memory,.reveal-name,.reveal-english'),null);assert.equal(ui.modal,null);assert.equal(ui.blocksWorldInput(),false);
-  const css=w.getComputedStyle(badge);assert.equal(css.width,'36px');assert.equal(css.height,'18px');assert.equal(css.position,'absolute');assert.equal(css.pointerEvents,'none');assert.equal(w.getComputedStyle(button).position,'relative');
+  const css=w.getComputedStyle(badge);assert.equal(css.width,'260px');assert.equal(css.height,'112px');assert.equal(css.position,'absolute');assert.equal(css.pointerEvents,'none');assert.equal(w.getComputedStyle(button).position,'relative');
  }
  assert.equal(p.skills.includes(60900),false,'presentation cannot grant a skill');
 });
 
-test('the notice expires after 2.2 seconds while the unread glow waits for manual inspection',t=>{
+test('the notice expires after 3 seconds while the unread glow waits for manual inspection',t=>{
  const {p,sim,ui,d,sync,reveal,clock}=noticeFixture(t);sim.learn(p,60000);p.skillLife.unread=[60000];sync();reveal();
  const badge=d.getElementById('skill-revelation'),button=d.querySelector('[data-menu="skills"]');
- clock(3199);assert.ok(badge.classList.contains('visible'));clock(3200);assert.ok(!badge.classList.contains('visible'));assert.equal(badge.textContent,'');assert.ok(button.classList.contains('has-insight'));assert.equal(ui.modal,null);
+ clock(3999);assert.ok(badge.classList.contains('visible'));clock(4000);assert.ok(!badge.classList.contains('visible'));assert.equal(badge.textContent,'');assert.ok(button.classList.contains('has-insight'));assert.equal(ui.modal,null);
  button.click();assert.equal(ui.modal,'skills');assert.equal(d.querySelector('[role="dialog"]').getAttribute('aria-label'),'意識');assert.equal(p.skillLife.unread.length,0);sync();assert.ok(!button.classList.contains('has-insight'));
  d.querySelector('[data-skill="60000"]').click();assert.ok(d.getElementById('skill-detail').textContent.length>0);
 });
@@ -42,7 +43,7 @@ test('the label follows the existing dock through menus and a rebuilt HUD, witho
 
 test('consecutive discoveries share a notice; foreign events do not replace it; death clears it',t=>{
  const {ui,d,p,reveal,clock}=noticeFixture(t);reveal();const badge=d.getElementById('skill-revelation');clock(2000);reveal(60900);reveal(60001,'other-player');
- assert.equal(ui.skillRevealEvent.id,60900);assert.equal(d.querySelectorAll('#skill-revelation').length,1);clock(3200);assert.ok(badge.classList.contains('visible'));clock(4200);assert.ok(!badge.classList.contains('visible'));
+ assert.equal(ui.skillRevealEvent.id,60900);assert.equal(d.querySelectorAll('#skill-revelation').length,1);clock(3200);assert.ok(badge.classList.contains('visible'));clock(5000);assert.ok(!badge.classList.contains('visible'));
  reveal();ui.event({type:'death',player:p.id});assert.equal(ui.skillRevealEvent,null);assert.ok(!badge.classList.contains('visible'));
 });
 

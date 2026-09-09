@@ -37,6 +37,7 @@ style+='\n'+await fs.readFile(path.join(root,'src/ui/interaction.css'),'utf8')+'
 style+='\n'+await fs.readFile(path.join(root,'src/ui/talk-fan.css'),'utf8');
 style+='\n'+await fs.readFile(path.join(root,'src/ui/bequest.css'),'utf8');
 style+='\n'+await fs.readFile(path.join(root,'src/live/update.css'),'utf8');
+style+='\n'+await fs.readFile(path.join(root,'src/account/account.css'),'utf8');
 style+='\n'+await fs.readFile(path.join(root,'src/ui/skills-panel.css'),'utf8')+'\n'+await fs.readFile(path.join(root,'src/ui/wardrobe-panel.css'),'utf8')+'\n'+lineage.fontCSS;
 style+='\n'+await fs.readFile(path.join(root,'src/ui/diorama-materials.css'),'utf8');
 style=style.replace(/asset:([a-z-]+\.png)/g,(_,name)=>`data:image/png;base64,${assets[name]}`);
