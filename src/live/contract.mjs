@@ -9,7 +9,7 @@ export function safePlayer(p, room, t) {
   if(p.legacyChoice?.state==='pending')return false;
   if(!p.alive)return !!p.recorded;
   return !['downed','carried','recovering'].includes(p.lifeState) && !p.rescueTarget && !p.carrierId && !p.traversal && !p.prologue && !p.pendingSkill && !p.combo && !p.chain && !p.autoFight && !p.dash &&
-    !p.attackStep && !p.queued && !p.rescueAt && !p.activity && !(p.stun>t) &&
+    !p.attackStep && !((room?.kind||room?.room?.kind)==='village'&&p.z>29.5) && !p.queued && !p.rescueAt && !p.activity && !(p.stun>t) &&
     !(p.hitReactUntil>t) && !(p.hitstopUntil>t) && !(p.speechUntil>t) && !(p.motherUntil>t) &&
     !(p.actionUntil>t) && !(Math.hypot(p.input?.x||0,p.input?.z||0)>.01) &&
     !(room?.actors||[]).some(a=>a.alive && !['guard','villager','dummy'].includes(a.kind) &&
