@@ -72,7 +72,7 @@ test('death recap shows actual use, successful pairs and escaped provenance; arc
  p.skillUses={60000:20,60001:12,60002:4,60130:100}; // passives cannot define a fighting style
  p.skillLife.connections={'60000:60001':4};
  p.skillLife.discovered=[{id:60000,key:'bl.skill.hammer.opening',family:'hammer',route:'cross',reasons:['鍛冶場で拍子を覚えた','<img src=x onerror=bad()>'],at:10,tags:[]}];
- sim.die(p,'深手');const history=sim.legacy(p.owner).records.at(-1).skillHistory;
+ sim.die(p,'深手');assert.equal(p.legacyChoice.state,'pending');assert.ok(sim.command(p.id,{type:'choose-legacy',skill:60000}));const history=sim.legacy(p.owner).records.at(-1).skillHistory;
  assert.deepEqual(Array.from(history.signature),[60000,60001,60002]);
  const restored=sim.constructor.restore(sim.exportState());assert.deepEqual(plain(restored.legacy(p.owner).records.at(-1).skillHistory),plain(history));
  g.snapshot=g.decorate(sim.snapshot(p.id,sim.seq));const old=w.setTimeout;w.setTimeout=fn=>{fn();return 0;};try{ui.death(p);}finally{w.setTimeout=old;}

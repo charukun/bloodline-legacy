@@ -58,7 +58,7 @@ const CM01 = (()=>{
   }
   groundAt(x,z){return SkillMotion.groundAt(this.r,x,z);}
 
-  update(p,t){if(!eligible(p,true)){this.lastFrame=-1;return;}const start=performance.now(),r=this.r;this.owner=p;this.lastFrame=r.frame;let st=this.state;
+  update(p,t){if(!eligible(p,true)){this.lastFrame=-1;return;}p=carriedVisualPose(p);const start=performance.now(),r=this.r;this.owner=p;this.lastFrame=r.frame;let st=this.state;
    const motionT=Number.isFinite(p.renderPoseTime)?p.renderPoseTime:t;
    if(!st||st.id!==p.id||t<st.t||t-st.t>.35||Math.hypot(p.x-st.x,p.z-st.z)>1.5){st=this.state={id:p.id,t,motionT,x:p.x,z:p.z,phase:0,speed:0,feet:[],lastQ:null};}
    // Simulation snapshots run at 30 Hz; extra render frames must not restart
@@ -75,8 +75,8 @@ const CM01 = (()=>{
    if(moving&&!st.moving){st.phase=duty*.5+d/stride;for(const foot of st.feet)if(foot)foot.settle=null;}
    else if(moving)st.phase+=d/stride;
    st.moving=moving;st.gaitMode=gaitMode;
-   const phase=st.phase*TAU,reaction=damagePose(r,p,t),pose=damageArtPose(r,p,t,artPose(p,t,SkillMotion.stateFor(r,p,t))),ail=ailmentPose(p,t),guard=p.guard||p.guardUntil>t||p.autoFight;
-   const fall=!p.alive?smooth((t-(p.deathAt??t))/1.12):0;const sampledGround=this.groundAt(p.x,p.z);if(!Number.isFinite(st.ground))st.ground=sampledGround;st.ground+=(sampledGround-st.ground)*(1-Math.exp(-dt*14));const baseY=p.baseY!=null?p.baseY:st.ground-.020;
+   const phase=st.phase*TAU,reaction=damagePose(r,p,t,st.feet),pose=damageArtPose(r,p,t,artPose(p,t,SkillMotion.stateFor(r,p,t))),ail=ailmentPose(p,t),guard=p.guard||p.guardUntil>t||p.autoFight;
+   const fall=!p.alive?(p.wasDownedOnDeath?1:smooth((t-(p.deathAt??t))/1.12)):0;const sampledGround=p.traversal?Math.max(.10,p.supportHeight||0):this.groundAt(p.x,p.z);if(!Number.isFinite(st.ground))st.ground=sampledGround;st.ground+=(sampledGround-st.ground)*(1-Math.exp(-dt*14));const baseY=(p.baseY!=null?p.baseY:st.ground-.020)+(p.verticalOffset||0);
    const rootQ=Q.euler(pose.pitch+reaction.pitch+ail.pitch+fall*1.48,(p.dir||0)+pose.yaw,pose.roll+reaction.roll+ail.roll);
    const rootM=matrix([p.x+reaction.x+Math.cos(p.dir||0)*(pose.weightX||0)+Math.sin(p.dir||0)*(pose.weightZ||0),baseY+pose.y+ail.y-reaction.drop,p.z+reaction.z-Math.sin(p.dir||0)*(pose.weightX||0)+Math.cos(p.dir||0)*(pose.weightZ||0)],rootQ);
    const q=asset.bind.map(()=>Q.identity()),offset=asset.bind.map(()=>[0,0,0]),scale=asset.bind.map(()=>[1,1,1]);
@@ -111,7 +111,7 @@ const CM01 = (()=>{
      for(let i=start+3;i<=start+4;i++)globalM[i]=rMultiply(globalM[asset.parents[i]],localM[i]);
     }
    }
-   const useGroundIK=!p.seated&&!p.activity&&fall===0&&(pose.skillMotion||Math.abs(pose.y)<.22&&Math.abs(pose.rightLeg)<1.2&&Math.abs(pose.leftLeg)<1.2);
+   const useGroundIK=!incapacitated(p)&&!p.traversal&&!p.seated&&!p.activity&&fall===0&&(pose.skillMotion||Math.abs(pose.y)<.22&&Math.abs(pose.rightLeg)<1.2&&Math.abs(pose.leftLeg)<1.2);
    if(pose.skillMotion&&!st.skillFeet)st.skillFeet=st.feet.map(f=>f?{anchor:[...f.anchor],yaw:f.yaw,t,motionT,rootX:p.x,rootZ:p.z,lift:0}:null);
    if(!pose.skillMotion)st.skillFeet=null;
    let contactError=0,contacts=0;this.footDebug=[];const targets=[];
@@ -125,21 +125,18 @@ const CM01 = (()=>{
      foot.damageAnchor=null;foot.damageKey=null;
      /* Shared authored combat footwork is applied below. */
     }else if(bracing){
-     const damageKey=p.hitMotionId??p.lastImpactAt??p.hitReactAt;
-     if(foot.damageKey!==damageKey){foot.damageKey=damageKey;foot.damageAnchor=[...foot.anchor];}
-     const sx=reaction[footKey+'X'],sz=reaction[footKey+'Z'];
-     foot.anchor=[foot.damageAnchor[0]+cs*sx+sn*sz,foot.damageAnchor[1]-sn*sx+cs*sz];
-     foot.lift=reaction[footKey+'Lift'];foot.swing=foot.lift>1e-6;foot.settle=null;
+     damageFoot(p,reaction,side,foot);
     }else if(!moving){
      foot.damageAnchor=null;foot.damageKey=null;
      // Recover a stationary stance with an actual small step. Interpolating a
      // planted anchor on the floor makes both soles skate when motion stops.
      const turn=Math.atan2(Math.sin(facing-foot.yaw),Math.cos(facing-foot.yaw));
-     const needsStep=Math.hypot(...V.sub(foot.anchor,desired))>.045||Math.abs(turn)>.22;
+     const needsStep=Math.hypot(...V.sub(foot.anchor,desired))>(foot.damageSettled?.20:.045)||Math.abs(turn)>.22;
      if(!foot.settle&&(foot.swing||(needsStep&&!st.feet.some(f=>f?.settle))))foot.settle={from:[...foot.anchor],to:desired,yaw:foot.yaw,turn,lift:foot.lift,elapsed:0};
      if(foot.settle){const step=foot.settle;step.elapsed+=dt;const u=clamp(step.elapsed/.24,0,1);foot.anchor=V.lerp(step.from,step.to,smooth(u));foot.lift=step.lift*(1-u)+Math.sin(Math.PI*u)*.11;foot.yaw=step.yaw+step.turn*smooth(u);foot.swing=u<1;if(u>=1){foot.settle=null;foot.lift=0;}}
      else{foot.swing=false;foot.lift=0;}
     }else if(isSwing){
+     foot.damageSettled=false;
      foot.damageAnchor=null;foot.damageKey=null;
      if(!foot.swing){foot.start=[...foot.anchor];foot.startPhase=normalized;foot.target=toWorld(side*.18,.025+stride*(1-normalized+duty*.5));foot.swing=true;}
      const predicted=toWorld(side*.18,.025+stride*(1-normalized+duty*.5));foot.target=V.lerp(foot.target,predicted,1-Math.exp(-dt*22));
@@ -189,7 +186,7 @@ const CM01 = (()=>{
 const CM01_PREVIOUS_LOAD=AssetBank.load.bind(AssetBank);
 AssetBank.load=async function(){await CM01_PREVIOUS_LOAD();await CM01.load(VISUAL_ASSETS['character/young-human-male-cm01.glb']);};
 const CM01_PREVIOUS_DOLL=VillageArt.prototype.doll;
-VillageArt.prototype.doll=function(p,t,local){if(!CM01.asset||!CM01.eligible(p,local)||!this.r.rigs)return CM01_PREVIOUS_DOLL.call(this,p,t,local);const r=this.r;if(!r.characterMaster)r.characterMaster=new CM01.Character(r);const cm=r.characterMaster;cm.update(p,t);
+VillageArt.prototype.doll=function(p,t,local){if(p.rescueTarget||incapacitated(p)||p.traversal)p={...p,weapon:-1,shield:false};if(!CM01.asset||!CM01.eligible(p,local)||!this.r.rigs)return CM01_PREVIOUS_DOLL.call(this,p,t,local);const r=this.r;if(!r.characterMaster)r.characterMaster=new CM01.Character(r);const cm=r.characterMaster;cm.update(p,t);
  const root=this.root,target=this.target;this.target=r.dynamic;
  // Keep the original equipment geometry and the existing tip/trail registration.
  r.rigs.begin(p,t);try{if(p.weapon>=0&&p.wounds?.rightArm?.severity!=='lost'){this.root=cm.transforms[11];this.with(rModel(0,-.075,.03,1,1,1,0,-.06,Math.PI-.12),()=>this.weapon(p.weapon,.84));}if(p.shield&&p.wounds?.leftArm?.severity!=='lost'){this.root=cm.transforms[16];this.shield(-.08,.06,.19,.94);}}finally{if(r.rigs.pending.parts.length)r.rigs.end();else r.rigs.pending=null;this.root=root;this.target=target;}

@@ -27,7 +27,7 @@ test('first life opens without invented ancestors; native race, name and setting
  const settings=root.querySelector('#settings');settings.focus();settings.click();await flush();assert.equal(ui.modal,'settings');ui.closeModal();await flush();assert.equal(root.activeElement,settings);assert.equal(ui.clan.inert,false);
 });
 test('new life still starts through Game.start with one actual inherited skill',async t=>{
- const {g,sim,p,ui,d}=fixture(t);sim.die(p,'老衰');g.screen='clan';g.profile.uiExplained=true;g.profile.race=1;g.profile.name='次の灯';g.renderer.effects=[];g.renderer.camera={};
+ const {g,sim,p,ui,d}=fixture(t);sim.die(p,'老衰');assert.ok(sim.command(p.id,{type:'choose-legacy',skill:4000}));g.screen='clan';g.profile.uiExplained=true;g.profile.race=1;g.profile.name='次の灯';g.renderer.effects=[];g.renderer.camera={};
  sim.legacy(p.owner).archive=[4000];g.profile.inherit=[4000];ui.showClan();await g.start();
  const next=g.snapshot.player;assert.equal(g.screen,'game');assert.notEqual(next.id,p.id);assert.equal(next.race,1);assert.equal(next.name,'次の灯');assert.deepEqual(Array.from(next.inherit),[4000]);assert.equal(next.gen,2);assert.equal(d.querySelectorAll('.hud-bottom button').length,3);
 });
@@ -86,7 +86,7 @@ test('inventory shows two stable slots, current equipment in text, and discard u
 test('equipment age and rack-distance rules are enforced by real Simulation commands',t=>{
  const {p,sim,g,ui,d,sync}=fixture(t),rack=g.snapshot.map.schools.find(a=>a.id==='armory');p.x=rack.x;p.z=rack.z+3;p.age=6;sync();ui.rack();
  assert.equal(d.querySelector('[data-slot="weapon"]').disabled,true);assert.equal(g.command({type:'equip',slot:'weapon',value:0}),false);
- p.age=7;sync();assert.equal(d.querySelector('[data-slot="weapon"][data-value="0"]').disabled,false);d.querySelector('[data-slot="weapon"][data-value="0"]').click();assert.equal(p.weapon,0);assert.match(d.querySelector('[data-slot="weapon"][data-value="0"]').textContent,/装備中/);
+ p.age=7;sync();assert.equal(d.querySelector('[data-slot="weapon"][data-value="0"]').disabled,false);d.querySelector('[data-slot="weapon"][data-value="0"]').click();assert.equal(p.weapon,0);assert.equal(d.querySelector('[data-slot="weapon"][data-value="0"]').getAttribute('aria-pressed'),'true');assert.ok(d.querySelector('[data-slot="weapon"][data-value="0"] .selection-seal.lit'));
  p.x+=50;sync();assert.equal(d.querySelector('[data-slot="weapon"][data-value="1"]').disabled,true);assert.equal(g.command({type:'equip',slot:'weapon',value:1}),false);assert.equal(p.weapon,0);
 });
 test('modal navigation restores parent, scroll and focus and isolates the background',async t=>{

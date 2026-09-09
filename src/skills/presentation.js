@@ -13,11 +13,11 @@ const SkillPresentation = (() => {
   if(e.player!==ui.g.playerId)return false;
   if(e.type==='death'){clear(ui);return false;}
   if(e.type==='skillconnection') {
-   if(e.first) {ui.floatLines.push({...e,born:e.t,life:2.3,text:connectionText(e.connectionKind)});ui.floatLines=ui.floatLines.slice(-16);}
+   if(e.first) {ui.floatLines.push({...e,born:e.t,shown:performance.now(),life:2.3,text:connectionText(e.connectionKind)});ui.floatLines=ui.floatLines.slice(-16);}
    return true;
   }
   if(e.type==='skillglimpse') {
-   if(!ui.skillRevealEvent) {ui.floatLines.push({...e,born:e.t,life:4.6});ui.floatLines=ui.floatLines.slice(-16);}
+   if(!ui.skillRevealEvent) {ui.floatLines.push({...e,born:e.t,shown:performance.now(),life:4.6});ui.floatLines=ui.floatLines.slice(-16);}
    return true;
   }
   if(!['insight','passive'].includes(e.type)||!BL_SKILL_CATALOG.byId.has(e.id))return false;
