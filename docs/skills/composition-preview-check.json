@@ -1,0 +1,231 @@
+{
+  "baseline": "8c2b873",
+  "kind": "JSDOM + real renderer submission; GL stub; CPU only; single paired pass, not device FPS",
+  "framesPerCase": 180,
+  "pairs": [
+    {
+      "label": "composition 0",
+      "before": {
+        "maxTravel": 0,
+        "cpuMedianMs": 0.9955000000009022,
+        "cpuP95Ms": 4.361449999998513
+      },
+      "after": {
+        "maxTravel": 1.660770031217482,
+        "cpuMedianMs": 0.8832549999997354,
+        "cpuP95Ms": 2.003665999999612
+      }
+    },
+    {
+      "label": "composition 1",
+      "before": {
+        "maxTravel": 1.1999999999999997,
+        "cpuMedianMs": 0.7102460000005522,
+        "cpuP95Ms": 1.4405310000001919
+      },
+      "after": {
+        "maxTravel": 1.6789978947368431,
+        "cpuMedianMs": 0.665262000000439,
+        "cpuP95Ms": 1.4698599999992439
+      }
+    },
+    {
+      "label": "composition 2",
+      "before": {
+        "maxTravel": 0.6,
+        "cpuMedianMs": 0.7345430000004853,
+        "cpuP95Ms": 4.200308999999834
+      },
+      "after": {
+        "maxTravel": 1.2499999999999998,
+        "cpuMedianMs": 0.7128139999995255,
+        "cpuP95Ms": 1.8242119999995339
+      }
+    },
+    {
+      "label": "composition 3",
+      "before": {
+        "maxTravel": 0.6500000000000002,
+        "cpuMedianMs": 0.5768259999986185,
+        "cpuP95Ms": 1.1607060000005731
+      },
+      "after": {
+        "maxTravel": 1.3500000000000003,
+        "cpuMedianMs": 0.5712359999997716,
+        "cpuP95Ms": 1.1015619999998307
+      }
+    },
+    {
+      "label": "composition 4",
+      "before": {
+        "maxTravel": 0.45000000000000007,
+        "cpuMedianMs": 0.5500130000000354,
+        "cpuP95Ms": 1.1547329999993963
+      },
+      "after": {
+        "maxTravel": 0.9000000000000004,
+        "cpuMedianMs": 0.5765670000000682,
+        "cpuP95Ms": 1.2565290000002278
+      }
+    },
+    {
+      "label": "composition 5",
+      "before": {
+        "maxTravel": 0.6946221994724903,
+        "cpuMedianMs": 0.6704849999987346,
+        "cpuP95Ms": 1.4265830000003916
+      },
+      "after": {
+        "maxTravel": 1.2499999999999998,
+        "cpuMedianMs": 0.45603699999992386,
+        "cpuP95Ms": 0.8697510000001785
+      }
+    }
+  ],
+  "cases": [
+    {
+      "label": "composition 0",
+      "hits": 2,
+      "fxPeak": 18,
+      "tipFrames": 0,
+      "maxTravel": 1.660770031217482,
+      "cpuMedianMs": 0.8832549999997354,
+      "cpuP95Ms": 2.003665999999612
+    },
+    {
+      "label": "composition 1",
+      "hits": 1,
+      "fxPeak": 19,
+      "tipFrames": 0,
+      "maxTravel": 1.6789978947368431,
+      "cpuMedianMs": 0.665262000000439,
+      "cpuP95Ms": 1.4698599999992439
+    },
+    {
+      "label": "composition 2",
+      "hits": 0,
+      "fxPeak": 3,
+      "tipFrames": 0,
+      "maxTravel": 1.2499999999999998,
+      "cpuMedianMs": 0.7128139999995255,
+      "cpuP95Ms": 1.8242119999995339
+    },
+    {
+      "label": "composition 3",
+      "hits": 0,
+      "fxPeak": 16,
+      "tipFrames": 0,
+      "maxTravel": 1.3500000000000003,
+      "cpuMedianMs": 0.5712359999997716,
+      "cpuP95Ms": 1.1015619999998307
+    },
+    {
+      "label": "composition 4",
+      "hits": 0,
+      "fxPeak": 10,
+      "tipFrames": 0,
+      "maxTravel": 0.9000000000000004,
+      "cpuMedianMs": 0.5765670000000682,
+      "cpuP95Ms": 1.2565290000002278
+    },
+    {
+      "label": "composition 5",
+      "hits": 0,
+      "fxPeak": 8,
+      "tipFrames": 0,
+      "maxTravel": 1.2499999999999998,
+      "cpuMedianMs": 0.45603699999992386,
+      "cpuP95Ms": 0.8697510000001785
+    },
+    {
+      "label": "weapon 4001",
+      "hits": 1,
+      "fxPeak": 5,
+      "tipFrames": 180,
+      "maxTravel": 0.9000000000000004,
+      "cpuMedianMs": 0.6706009999998059,
+      "cpuP95Ms": 1.3831109999991895
+    },
+    {
+      "label": "weapon 4002",
+      "hits": 1,
+      "fxPeak": 5,
+      "tipFrames": 180,
+      "maxTravel": 0.9000000000000004,
+      "cpuMedianMs": 0.6037309999992431,
+      "cpuP95Ms": 1.3320590000002994
+    },
+    {
+      "label": "weapon 4003",
+      "hits": 1,
+      "fxPeak": 12,
+      "tipFrames": 180,
+      "maxTravel": 0.9000000000000004,
+      "cpuMedianMs": 0.6739930000003369,
+      "cpuP95Ms": 1.4225059999989753
+    },
+    {
+      "label": "weapon 4004",
+      "hits": 1,
+      "fxPeak": 19,
+      "tipFrames": 180,
+      "maxTravel": 1.6649999999999994,
+      "cpuMedianMs": 0.7003699999986566,
+      "cpuP95Ms": 1.6393060000009427
+    },
+    {
+      "label": "weapon 4005",
+      "hits": 1,
+      "fxPeak": 20,
+      "tipFrames": 180,
+      "maxTravel": 0.9000000000000004,
+      "cpuMedianMs": 0.6767650000001595,
+      "cpuP95Ms": 1.9211689999992814
+    },
+    {
+      "label": "weapon 4006",
+      "hits": 1,
+      "fxPeak": 105,
+      "tipFrames": 180,
+      "maxTravel": 0.9000000000000004,
+      "cpuMedianMs": 0.5890130000007048,
+      "cpuP95Ms": 1.2989590000015596
+    },
+    {
+      "label": "weapon 4016",
+      "hits": 1,
+      "fxPeak": 18,
+      "tipFrames": 180,
+      "maxTravel": 0.9000000000000004,
+      "cpuMedianMs": 0.620308000001387,
+      "cpuP95Ms": 1.723589000001084
+    },
+    {
+      "label": "weapon 4017",
+      "hits": 1,
+      "fxPeak": 13,
+      "tipFrames": 180,
+      "maxTravel": 0.9000000000000002,
+      "cpuMedianMs": 0.6016040000013163,
+      "cpuP95Ms": 1.1812660000014148
+    },
+    {
+      "label": "weapon 4019",
+      "hits": 1,
+      "fxPeak": 8,
+      "tipFrames": 180,
+      "maxTravel": 0.9000000000000004,
+      "cpuMedianMs": 0.5341829999997572,
+      "cpuP95Ms": 1.281633000000511
+    },
+    {
+      "label": "stowed greatsword",
+      "hits": 2,
+      "fxPeak": 18,
+      "tipFrames": 47,
+      "maxTravel": 1.660770031217482,
+      "cpuMedianMs": 0.6498690000007628,
+      "cpuP95Ms": 3.1049720000009984
+    }
+  ]
+}

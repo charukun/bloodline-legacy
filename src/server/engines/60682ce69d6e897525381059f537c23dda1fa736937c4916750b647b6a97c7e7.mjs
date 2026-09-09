@@ -1,3 +1,186 @@
+// Generated immutable rules runtime. Regenerate with node tools/archive-simulation.mjs
+const SkillComposition=(function createSkillComposition(){
+ const forms=[
+  {code:0,key:'needle',name:'針拳',family:'thread',anim:'thrust',path:'pierce',reach:2.4,arc:.65,targets:['torso'],requires:['rightArm'],text:'細い間合いをまっすぐ突く。'},
+  {code:1,key:'hammer',name:'炉拳',family:'hammer',anim:'slam',path:'fall',reach:1.9,arc:1.4,targets:['head'],requires:['rightArm'],text:'頭上から重さを落とす。'},
+  {code:2,key:'heel',name:'毬蹴',family:'footwork',anim:'kick',path:'pierce',reach:1.8,arc:1,targets:['torso'],requires:['rightLeg'],text:'片足を支えに、正面へ蹴り込む。'},
+  {code:3,key:'chase',name:'追枝',family:'trail',anim:'zigzag',path:'pierce',reach:2.7,arc:.8,targets:['rightArm'],requires:['rightArm'],text:'角度を返しながら、遠い腕を捉える。'},
+  {code:4,key:'cross',name:'割拍',family:'contest',anim:'cross',path:'sweep',reach:2.1,arc:2.3,targets:['torso'],requires:['rightArm'],text:'身体の前を交差する打撃を放つ。'},
+  {code:5,key:'palm',name:'静掌',family:'patient',anim:'counter',path:'pierce',reach:1.5,arc:1.3,targets:['torso'],requires:['leftArm'],text:'懐で左の掌を短く打ち込む。'},
+  {code:6,key:'echo',name:'響打',family:'bell',anim:'double',path:'sweep',reach:2,arc:1.7,targets:['leftArm'],requires:['rightArm'],text:'手首を返して相手の腕を打つ。'},
+  {code:7,key:'wheel',name:'羽輪',family:'feather',anim:'spin',path:'orbit',reach:2,arc:5.4,targets:['torso'],requires:['rightArm'],maxTargets:3,text:'身を回し、周囲の相手を巻き込む。'},
+  {code:8,key:'drop',name:'礎落',family:'stone',anim:'leap',path:'fall',reach:2.2,arc:1.2,targets:['torso'],requires:['rightArm','rightLeg'],text:'跳ね上がる姿勢から、一点へ打ち下ろす。'},
+  {code:9,key:'rake',name:'炭払',family:'ember',anim:'slide',path:'sweep',reach:2.1,arc:2.8,targets:['leftLeg'],requires:['rightArm'],maxTargets:2,text:'身を低くして、足元を広く払う。'},
+  {code:10,key:'edge',name:'綾刃',family:'weave',anim:'slash',path:'sweep',reach:2.3,arc:2.1,targets:['rightArm','leftArm'],requires:['rightArm'],text:'横へ振り抜き、構えた腕を切り開く。'},
+  {code:11,key:'trip',name:'結脚',family:'knot',anim:'kick',path:'orbit',reach:1.65,arc:2.7,targets:['rightLeg'],requires:['rightLeg'],text:'近い相手の脚を横から払う。'}
+ ];
+ const cadences=[
+  {code:0,key:'single',name:'一閃',cuts:[0,1],text:'一撃に息を乗せる。'},
+  {code:1,key:'return',name:'双返',cuts:[0,.5,1],text:'等しい二拍で返す。'},
+  {code:2,key:'delay',name:'間返',cuts:[0,.26,1],text:'短い一打のあと、間を置いて返す。'},
+  {code:3,key:'triple',name:'三綴',cuts:[0,.24,.57,1],text:'三つの打撃を畳みかける。'}
+ ];
+ const feet=[
+  {code:0,key:'plant',name:'据える',distance:0,angle:0,text:'足場を保つ。'},
+  {code:1,key:'drive',name:'踏み込む',distance:.85,angle:0,text:'深く踏み込む。'},
+  {code:2,key:'side',name:'横へ回る',distance:.6,angle:Math.PI/2,text:'横へ足を運び、攻める軸をずらす。'},
+  {code:3,key:'draw',name:'半歩引く',distance:.45,angle:Math.PI,text:'半歩引いて間合いを測る。'}
+ ];
+ const reactions=[
+  {code:0,key:'break',name:'姿勢崩し',action:{stagger:.65},entry:'offbalance',fx:'fracture',text:'姿勢を崩す。'},
+  {code:1,key:'bind',name:'足止め',action:{status:'slow',duration:1.4},entry:'close',fx:'pinch',text:'命中した相手の動きを鈍らせる。'},
+  {code:2,key:'drain',name:'力を削ぐ',action:{status:'weak',duration:1.2},entry:'rhythm',fx:'cleave',text:'短く相手の力を削ぐ。'},
+  {code:3,key:'push',name:'押し離す',action:{knockback:.48},entry:'offbalance',fx:'ripple',text:'打点から相手を押し離す。'}
+ ];
+ const endings=[
+  {code:0,key:'follow',name:'間合いを詰める',phase:0,distance:.35,angle:0,exit:'close',recovery:.55,text:'打ち終わりに詰め、近さを残す。'},
+  {code:1,key:'settle',name:'構えを整える',phase:1,distance:0,angle:0,exit:'rhythm',recovery:.28,text:'その場で構えを整え、次の拍子へ渡す。'},
+  {code:2,key:'withdraw',name:'間合いを開ける',phase:2,distance:.65,angle:Math.PI,exit:'rhythm',recovery:.65,text:'打ち終わりに引き、間合いを開ける。'}
+ ];
+ const tables={form:forms,cadence:cadences,footwork:feet,reaction:reactions,ending:endings};
+ // Display-only vocabulary, indexed by permanent recipe codes. Each entry is
+ // an authored Japanese/English pair; neither locale exposes internal tokens.
+ // Technique imagery + epithet gives a readable title, not a recipe or phase.
+ const titles=[
+  [['糸通し','Needlework'],['縫い返し','Returning Stitch'],['待ち針','Patient Needle'],['三重縫い','Triple Stitch']],
+  [['炉打ち','Forge Strike'],['金床返し','Anvil Rebound'],['火床起こし','Hearth Rousing'],['鍛え打ち','Tempering Blows']],
+  [['毬蹴り','Ball Kick'],['蹴り返し','Returning Kick'],['爪先待ち','Patient Heel'],['弾み蹴り','Bounding Kicks']],
+  [['枝渡り','Branch Crossing'],['燕返し','Swallow Return'],['道草打ち','Wandering Strike'],['千鳥追い','Plover Chase']],
+  [['交差打ち','Cross Strike'],['綾重ね','Layered Weave'],['拍子外し','Broken Rhythm'],['畳み打ち','Folding Blows']],
+  [['掌打ち','Palm Strike'],['波返し','Returning Wave'],['息合わせ','Measured Breath'],['水切り掌','Skipping Palm']],
+  [['鐘打ち','Bell Strike'],['こだま返し','Echo Return'],['残響打ち','Lingering Chime'],['連ね鐘','Pealing Bells']],
+  [['羽払い','Feather Sweep'],['風車返し','Windmill Return'],['風待ち輪','Patient Whirl'],['羽衣巡り','Feather Dance']],
+  [['礎落とし','Foundation Drop'],['石跳ね返し','Stone Rebound'],['雫落とし','Falling Droplet'],['段落とし','Cascading Drops']],
+  [['炭払い','Cinder Sweep'],['灰返し','Ashen Return'],['熾火起こし','Ember Rousing'],['火掻き','Hearth Raking']],
+  [['綾断ち','Silken Cut'],['織り返し','Shuttle Return'],['糸切り待ち','Patient Shear'],['機織り刃','Loom Blades']],
+  [['脚絡め','Leg Snare'],['結び返し','Returning Knot'],['ほつれ払い','Unraveling Sweep'],['組み紐蹴り','Braided Kicks']]
+ ];
+ // Footwork / contact / finish choose one complete image, never three
+ // single-kanji suffixes. These are titles, not claims about discovery history.
+ const epithets=[
+  [[['根張り','Deep Root'],['岩戸','Stone Gate'],['落葉','Falling Leaf']],
+   [['苔庭','Moss Garden'],['夕凪','Evening Calm'],['朝露','Morning Dew']],
+   [['埋み火','Banked Ember'],['灯守り','Lamplighter'],['薄明かり','Fading Light']],
+   [['山鳴り','Mountain Roar'],['潮騒','Ocean Murmur'],['引き潮','Ebb Tide']]],
+  [[['山崩れ','Landslide'],['雷鳴','Thunder'],['通り雨','Passing Rain']],
+   [['蔦這い','Climbing Ivy'],['結び目','Tied Cord'],['送り糸','Trailing Thread']],
+   [['野火','Wildfire'],['残り火','Last Ember'],['夕焼け','Sunset']],
+   [['押し潮','Rising Tide'],['滝壺','Waterfall Basin'],['波送り','Parting Wave']]],
+  [[['風切り','Wind Shear'],['木枯らし','Winter Gale'],['舞い葉','Dancing Leaf']],
+   [['糸車','Spinning Wheel'],['花籠','Flower Basket'],['花吹雪','Petal Storm']],
+   [['辻風','Whirlwind'],['砂時計','Hourglass'],['砂流れ','Drifting Sand']],
+   [['渦潮','Whirlpool'],['水車','Waterwheel'],['波紋','Rippling Water']]],
+  [[['返り風','Returning Wind'],['雪待ち','Waiting Snow'],['雪解け','Snowmelt']],
+   [['返り糸','Returning Thread'],['月待ち','Moon Watch'],['夜露','Night Dew']],
+   [['遠火','Distant Flame'],['冬灯り','Winter Lantern'],['星明かり','Starlight']],
+   [['返り潮','Returning Tide'],['入江','Sheltered Cove'],['帰り道','Homeward Path']]]
+ ];
+ function names(f,c,w,r,e){
+  const title=titles[f.code][c.code],epithet=epithets[w.code][r.code][e.code];
+  return {ja:`${epithet[0]}の${title[0]}`,en:`${epithet[1]} ${title[1]}`};
+ }
+ const motif={thread:'thread',hammer:'stone',footwork:'bell',trail:'blade',contest:'blade',patient:'shadow',bell:'bell',feather:'blade',stone:'stone',ember:'ember',weave:'thread',knot:'thread'};
+ function resolve(input){
+  if(input?.version!==undefined&&input.version!==1)throw Error('未対応の技構成です');
+  const parts={};for(const [key,choices]of Object.entries(tables)){
+   parts[key]=choices.find(v=>v.key===input?.[key]);if(!parts[key])throw Error('不明な技の部品: '+key);
+  }return parts;
+ }
+ function id(input){const p=resolve(input);return 700000+p.form.code*10000+p.cadence.code*1000+p.footwork.code*100+p.reaction.code*10+p.ending.code;}
+ function build(input,anchor){
+  const {form:f,cadence:c,footwork:w,reaction:r,ending:e}=resolve(input),skillId=id(input),hits=c.cuts.length-1,phase=(f.code+c.code+e.phase)%3;
+  const recipe=Object.freeze({version:1,...Object.fromEntries(Object.keys(tables).map(k=>[k,input[k]]))});
+  const requiresExperience=anchor.requiresExperience.map(g=>[...g]);
+  // Added ideas need a second lived source. Existing memento/cross families
+  // already have two groups and retain their provenance requirements.
+  if(requiresExperience.length===1)requiresExperience.push(['combat','play','rest','care','explore']);
+  const desc=f.text+c.text+w.text+r.text+e.text;
+  const action={weapon:-1,school:'life',anim:f.anim,requires:f.requires,targets:f.targets,
+   reach:f.reach,arc:f.arc,maxTargets:f.maxTargets||1,charge:f.anim==='slam'||f.anim==='leap'?.36:.2,
+   swing:hits===1?.4:hits===2?.58:.76,recovery:e.recovery,cost:7+hits*3+(w.distance>0?2:0)+(r.key==='break'?2:0),
+   fatigue:.45+hits*.2,power:(f.maxTargets?.8:1.05)/hits,hits,step:0,beatCuts:c.cuts,motionPath:f.path,
+   approach:{distance:w.distance,angle:w.angle},finishStep:{distance:e.distance,angle:e.angle},...r.action,
+   fx:{version:1,family:motif[f.family],path:f.path,rhythm:hits===1?'single':hits===2?'double':'triplet',impact:r.fx,release:e.key==='withdraw'?'recoil':e.key==='settle'?'vanish':'drift',seed:skillId,mist:.85,thickness:2.2,variation:.65,layers:{sigil:false,body:true,motes:true}}};
+  return {id:skillId,key:`bl.skill.v1.${f.key}.${c.key}.${w.key}.${r.key}.${e.key}`,family:f.family,phase,
+   names:names(f,c,w,r,e),
+   descriptions:{ja:desc,en:`${f.key} with ${c.key} timing, ${w.key} footwork, ${r.key} contact and ${e.key} finish.`},
+   tags:[...anchor.tags],requiresExperience,rarity:anchor.rarity,inheritance:anchor.inheritance,color:anchor.color,
+   entry:phase===0?[]:[r.entry],exit:[e.exit],connection:phase===1?{recovery:.72}:{cost:.82},composition:recipe,action};
+ }
+ function expand(authored){
+  const anchors=new Map();for(const d of authored)if(!d.passive&&!d.composition&&!anchors.has(d.family))anchors.set(d.family,d);
+  const out=[];for(const f of forms){const anchor=anchors.get(f.family);if(!anchor)continue;
+   for(const c of cadences)for(const w of feet)for(const r of reactions)for(const e of endings)
+    out.push(build({form:f.key,cadence:c.key,footwork:w.key,reaction:r.key,ending:e.key},anchor));
+  }return out;
+ }
+ return Object.freeze({version:1,tables,id,resolve,build,expand});
+})();
+const BL_SKILL_DEFINITIONS=[{"key":"bl.skill.hammer.opening","tags":["weight","rhythm","craft"],"requiresExperience":[["craft","weight"]],"color":"#dcab72","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":9,"fatigue":0.7,"charge":0.24,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.38,"hits":1,"anim":"slam","school":"life","requires":["rightArm"],"weapon":-1,"breakPower":1.3,"stagger":1.35},"id":60000,"phase":0,"ja":"炉打ち","en":"Hearth Knock","desc":"短く叩いて重心を崩す。威力は控えめ。","descEn":"A short blow upsets balance without much damage.","entry":[],"exit":["offbalance"],"family":"hammer","names":{"ja":"炉打ち","en":"Hearth Knock"},"descriptions":{"ja":"短く叩いて重心を崩す。威力は控えめ。","en":"A short blow upsets balance without much damage."}},{"key":"bl.skill.hammer.turn","tags":["weight","rhythm","craft"],"requiresExperience":[["craft","weight"]],"color":"#dcab72","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":14,"fatigue":0.7,"charge":0.22,"swing":0.57,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.48,"hits":2,"anim":"double","school":"life","requires":["rightArm"],"weapon":-1},"id":60001,"phase":1,"ja":"鉄返し","en":"Iron Rebound","desc":"反動を返して二度打つ。崩れた相手を拾いやすい。","descEn":"Return the recoil in two blows; catches an unbalanced foe.","entry":["offbalance"],"exit":["rhythm"],"connection":{"charge":0.68,"tracking":0.42},"family":"hammer","names":{"ja":"鉄返し","en":"Iron Rebound"},"descriptions":{"ja":"反動を返して二度打つ。崩れた相手を拾いやすい。","en":"Return the recoil in two blows; catches an unbalanced foe."}},{"key":"bl.skill.hammer.close","tags":["weight","rhythm","craft"],"requiresExperience":[["craft","weight"]],"color":"#dcab72","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":23,"fatigue":0.7,"charge":0.55,"swing":0.4,"recovery":1.15,"reach":2.15,"arc":1.6,"power":1.55,"hits":1,"anim":"slam","school":"life","requires":["rightArm"],"weapon":-1,"breakPower":3},"id":60002,"phase":2,"ja":"炉底割り","en":"Hearthbreaker","desc":"深く振り下ろして構えを砕く。外すと隙が大きい。","descEn":"A committed downward strike breaks guards; a miss leaves you open.","entry":["rhythm"],"exit":["offbalance"],"connection":{"recovery":0.68,"knockback":0.35},"family":"hammer","names":{"ja":"炉底割り","en":"Hearthbreaker"},"descriptions":{"ja":"深く振り下ろして構えを砕く。外すと隙が大きい。","en":"A committed downward strike breaks guards; a miss leaves you open."}},{"key":"bl.skill.thread.opening","tags":["patience","precision","craft"],"requiresExperience":[["care","patience","craft"]],"color":"#bcb7d0","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":9,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.7,"arc":0.6,"power":0.62,"hits":1,"anim":"thrust","school":"life","requires":["rightArm"],"weapon":-1,"step":0.25},"id":60010,"phase":0,"ja":"糸通し","en":"Thread the Needle","desc":"細く踏み込む一撃。正面以外には届きにくい。","descEn":"A precise forward strike with a narrow line of contact.","entry":[],"exit":["close"],"affinities":["net","care"],"family":"thread","names":{"ja":"糸通し","en":"Thread the Needle"},"descriptions":{"ja":"細く踏み込む一撃。正面以外には届きにくい。","en":"A precise forward strike with a narrow line of contact."}},{"key":"bl.skill.thread.turn","tags":["patience","precision","craft"],"requiresExperience":[["care","patience","craft"]],"color":"#bcb7d0","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":12,"fatigue":0.7,"charge":0.22,"swing":0.5,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.44,"hits":2,"anim":"cross","school":"life","requires":["rightArm"],"weapon":-1},"id":60011,"phase":1,"ja":"綾返し","en":"Woven Return","desc":"二つの拍子で打ち返す。近くの相手と繋がる。","descEn":"Two alternating beats weave into a nearby foe.","entry":["close"],"exit":["rhythm"],"connection":{"reach":0.3,"tracking":0.6},"affinities":["net","care"],"family":"thread","names":{"ja":"綾返し","en":"Woven Return"},"descriptions":{"ja":"二つの拍子で打ち返す。近くの相手と繋がる。","en":"Two alternating beats weave into a nearby foe."}},{"key":"bl.skill.thread.close","tags":["patience","precision","craft"],"requiresExperience":[["care","patience","craft"]],"color":"#bcb7d0","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":12,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.42,"reach":2.15,"arc":1.1,"power":0.64,"hits":1,"anim":"slide","school":"life","requires":["rightArm"],"weapon":-1,"status":"slow","duration":1.7},"id":60012,"phase":2,"ja":"結び止め","en":"Last Knot","desc":"低く払って足を鈍らせる。広くは届かない。","descEn":"A low sweep briefly slows the target in front.","entry":["rhythm"],"exit":["close"],"connection":{"cost":0.78,"recovery":0.8},"affinities":["net","care"],"family":"thread","names":{"ja":"結び止め","en":"Last Knot"},"descriptions":{"ja":"低く払って足を鈍らせる。広くは届かない。","en":"A low sweep briefly slows the target in front."}},{"key":"bl.skill.footwork.opening","tags":["play","light","rhythm"],"requiresExperience":[["play","light","rhythm"]],"color":"#bdd09c","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":7,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.48,"hits":1,"anim":"kick","school":"life","requires":["rightLeg"],"weapon":-1,"step":0.45},"id":60020,"phase":0,"ja":"毬拍子","en":"Skipping Beat","desc":"弾むように近づき、小さく打つ。","descEn":"A bouncing step carries a light strike forward.","entry":[],"exit":["rhythm"],"family":"footwork","names":{"ja":"毬拍子","en":"Skipping Beat"},"descriptions":{"ja":"弾むように近づき、小さく打つ。","en":"A bouncing step carries a light strike forward."}},{"key":"bl.skill.footwork.turn","tags":["play","light","rhythm"],"requiresExperience":[["play","light","rhythm"]],"color":"#bdd09c","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":14,"fatigue":0.7,"charge":0.22,"swing":0.6,"recovery":0.56,"reach":2.15,"arc":3.6,"power":0.37,"hits":2,"anim":"spin","school":"life","requires":["rightArm"],"weapon":-1,"maxTargets":2},"id":60021,"phase":1,"ja":"くるり舞","en":"Turning Dance","desc":"回りながら二度払う。周囲の相手も巻き込む。","descEn":"Two circular blows can catch nearby enemies.","entry":["rhythm"],"exit":["close"],"connection":{"reach":0.3,"tracking":0.6},"family":"footwork","names":{"ja":"くるり舞","en":"Turning Dance"},"descriptions":{"ja":"回りながら二度払う。周囲の相手も巻き込む。","en":"Two circular blows can catch nearby enemies."}},{"key":"bl.skill.footwork.close","tags":["play","light","rhythm"],"requiresExperience":[["play","light","rhythm"]],"color":"#bdd09c","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":6,"fatigue":0.7,"charge":0.12,"swing":0.4,"recovery":0.22,"reach":2.15,"arc":1.6,"power":0.68,"hits":1,"anim":"kick","school":"life","requires":["rightLeg"],"weapon":-1},"id":60022,"phase":2,"ja":"遊び終い","en":"Playful Farewell","desc":"素早く蹴って構え直す。消耗は小さい。","descEn":"A quick finishing kick returns to a ready stance.","entry":["close"],"exit":["rhythm"],"connection":{"cost":0.78,"recovery":0.8},"family":"footwork","names":{"ja":"遊び終い","en":"Playful Farewell"},"descriptions":{"ja":"素早く蹴って構え直す。消耗は小さい。","en":"A quick finishing kick returns to a ready stance."}},{"key":"bl.skill.trail.opening","tags":["explore","track","precision"],"requiresExperience":[["explore","track"]],"color":"#a4c5ad","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":9,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.9,"arc":0.7,"power":0.72,"hits":1,"anim":"thrust","school":"life","requires":["rightArm"],"weapon":-1,"step":0.4},"id":60030,"phase":0,"ja":"足跡突き","en":"Trail Point","desc":"一歩先へ届く突き。狭い間合いを縫う。","descEn":"A long narrow thrust reaches one step farther.","entry":[],"exit":["close"],"affinities":["weapon","precision"],"family":"trail","names":{"ja":"足跡突き","en":"Trail Point"},"descriptions":{"ja":"一歩先へ届く突き。狭い間合いを縫う。","en":"A long narrow thrust reaches one step farther."}},{"key":"bl.skill.trail.turn","tags":["explore","track","precision"],"requiresExperience":[["explore","track"]],"color":"#a4c5ad","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":13,"fatigue":0.7,"charge":0.22,"swing":0.55,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.42,"hits":2,"anim":"zigzag","school":"life","requires":["rightArm"],"weapon":-1,"step":0.35},"id":60031,"phase":1,"ja":"追い枝","en":"Following Bough","desc":"角度を変えて追い打つ。近い相手を逃しにくい。","descEn":"Turn into a follow-up against a nearby target.","entry":["close"],"exit":["offbalance"],"connection":{"reach":0.3,"tracking":0.6},"affinities":["weapon","precision"],"family":"trail","names":{"ja":"追い枝","en":"Following Bough"},"descriptions":{"ja":"角度を変えて追い打つ。近い相手を逃しにくい。","en":"Turn into a follow-up against a nearby target."}},{"key":"bl.skill.trail.close","tags":["explore","track","precision"],"requiresExperience":[["explore","track"]],"color":"#a4c5ad","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":17,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.86,"reach":3.1,"arc":1,"power":1.26,"hits":1,"anim":"slash","school":"life","requires":["rightArm"],"weapon":-1},"id":60032,"phase":2,"ja":"獣道断ち","en":"Trail Sever","desc":"長く届く一撃で締める。空振り後の戻りは遅い。","descEn":"A long finishing cut takes time to recover after a miss.","entry":["offbalance"],"exit":["close"],"connection":{"cost":0.78,"recovery":0.8},"affinities":["weapon","precision"],"family":"trail","names":{"ja":"獣道断ち","en":"Trail Sever"},"descriptions":{"ja":"長く届く一撃で締める。空振り後の戻りは遅い。","en":"A long finishing cut takes time to recover after a miss."}},{"key":"bl.skill.contest.opening","tags":["combat","weight","tension"],"requiresExperience":[["combat"]],"color":"#cf9b87","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":9,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.44,"hits":1,"anim":"thrust","school":"life","requires":["rightArm"],"weapon":-1,"breakPower":1.5,"stagger":1.35},"id":60040,"phase":0,"ja":"間割り","en":"Opening Wedge","desc":"低く打ち込み、押し合いの隙を作る。","descEn":"Drive a low blow into the opening of an exchange.","entry":[],"exit":["offbalance"],"family":"contest","names":{"ja":"間割り","en":"Opening Wedge"},"descriptions":{"ja":"低く打ち込み、押し合いの隙を作る。","en":"Drive a low blow into the opening of an exchange."}},{"key":"bl.skill.contest.turn","tags":["combat","weight","tension"],"requiresExperience":[["combat"]],"color":"#cf9b87","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":15,"fatigue":0.7,"charge":0.22,"swing":0.55,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.55,"hits":2,"anim":"cross","school":"life","requires":["rightArm"],"weapon":-1},"id":60041,"phase":1,"ja":"せめぎ返し","en":"Contested Return","desc":"崩れた構えへ重ねて打ち込む。","descEn":"A forceful return presses an unbalanced guard.","entry":["offbalance"],"exit":["rhythm"],"connection":{"reach":0.3,"tracking":0.6},"family":"contest","names":{"ja":"せめぎ返し","en":"Contested Return"},"descriptions":{"ja":"崩れた構えへ重ねて打ち込む。","en":"A forceful return presses an unbalanced guard."}},{"key":"bl.skill.contest.close","tags":["combat","weight","tension"],"requiresExperience":[["combat"]],"color":"#cf9b87","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":22,"fatigue":0.7,"charge":0.45,"swing":0.4,"recovery":0.9,"reach":2.15,"arc":1.6,"power":1.2,"hits":1,"anim":"slam","school":"life","requires":["rightArm"],"weapon":-1,"breakPower":3},"id":60042,"phase":2,"ja":"断ち拍子","en":"Decisive Beat","desc":"溜めて叩き、強固な構えも崩す。消耗は大きい。","descEn":"A committed heavy blow can break a formidable guard.","entry":["rhythm"],"exit":["offbalance"],"connection":{"cost":0.78,"recovery":0.8},"family":"contest","names":{"ja":"断ち拍子","en":"Decisive Beat"},"descriptions":{"ja":"溜めて叩き、強固な構えも崩す。消耗は大きい。","en":"A committed heavy blow can break a formidable guard."}},{"key":"bl.skill.patient.opening","tags":["patience","observe","rest"],"requiresExperience":[["patience","rest","study","tension"]],"color":"#9eafb0","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":5,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.35,"reach":2.15,"arc":0.8,"power":0.35,"hits":1,"anim":"thrust","school":"life","requires":["rightArm"],"weapon":-1},"id":60050,"phase":0,"ja":"待ち針","en":"Patient Needle","desc":"小さく刺して次の拍子へ備える。","descEn":"A small precise strike prepares the next beat.","entry":[],"exit":["rhythm"],"affinities":["defeat","rest"],"family":"patient","names":{"ja":"待ち針","en":"Patient Needle"},"descriptions":{"ja":"小さく刺して次の拍子へ備える。","en":"A small precise strike prepares the next beat."}},{"key":"bl.skill.patient.turn","tags":["patience","observe","rest"],"requiresExperience":[["patience","rest","study","tension"]],"color":"#9eafb0","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":5,"fatigue":0.7,"charge":0.13,"swing":0.38,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.52,"hits":1,"anim":"slash","school":"life","requires":["rightArm"],"weapon":-1},"id":60051,"phase":1,"ja":"息継ぎ打ち","en":"Breath Between","desc":"大振りせずに繋ぐ。長い連携でも息を残しやすい。","descEn":"An economical linking blow leaves breath for later.","entry":["rhythm"],"exit":["close"],"connection":{"reach":0.3,"tracking":0.6},"affinities":["defeat","rest"],"family":"patient","names":{"ja":"息継ぎ打ち","en":"Breath Between"},"descriptions":{"ja":"大振りせずに繋ぐ。長い連携でも息を残しやすい。","en":"An economical linking blow leaves breath for later."}},{"key":"bl.skill.patient.close","tags":["patience","observe","rest"],"requiresExperience":[["patience","rest","study","tension"]],"color":"#9eafb0","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":7,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.24,"reach":2.15,"arc":1.6,"power":0.45,"hits":1,"anim":"counter","school":"life","requires":["leftArm"],"weapon":-1,"breakPower":1.7},"id":60052,"phase":2,"ja":"静の掌","en":"Quiet Palm","desc":"近い相手を押し崩し、短く終える。","descEn":"A close palm blow breaks balance and settles quickly.","entry":["close"],"exit":["offbalance"],"connection":{"cost":0.78,"recovery":0.8},"affinities":["defeat","rest"],"family":"patient","names":{"ja":"静の掌","en":"Quiet Palm"},"descriptions":{"ja":"近い相手を押し崩し、短く終える。","en":"A close palm blow breaks balance and settles quickly."}},{"key":"bl.skill.bell.opening","tags":["memory","rhythm","bell"],"requiresExperience":[["bell"],["rhythm","combat","craft","play"]],"color":"#ceb778","rarity":0.7,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":6,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.38,"hits":1,"anim":"thrust","school":"life","requires":["rightArm"],"weapon":-1},"id":60060,"phase":0,"ja":"鈴触れ","en":"Bell Touch","desc":"軽い一撃が、遅い次の響きを誘う。","descEn":"A light touch sets the rhythm for a later resonance.","entry":[],"exit":["ringing"],"affinities":["family"],"family":"bell","names":{"ja":"鈴触れ","en":"Bell Touch"},"descriptions":{"ja":"軽い一撃が、遅い次の響きを誘う。","en":"A light touch sets the rhythm for a later resonance."}},{"key":"bl.skill.bell.turn","tags":["memory","rhythm","bell"],"requiresExperience":[["bell"],["rhythm","combat","craft","play"]],"color":"#ceb778","rarity":0.7,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":14,"fatigue":0.7,"charge":0.22,"swing":0.85,"recovery":0.56,"reach":2.05,"arc":1.6,"power":0.58,"hits":2,"anim":"double","school":"life","requires":["rightArm"],"weapon":-1},"id":60061,"phase":1,"ja":"残響打ち","en":"Echoing Blow","desc":"間をおいて二度響く。相手が離れると二打目を外す。","descEn":"Two separated blows; the second can miss a departing foe.","entry":["ringing"],"exit":["rhythm"],"connection":{"reach":0.3,"tracking":0.6},"affinities":["family"],"family":"bell","names":{"ja":"残響打ち","en":"Echoing Blow"},"descriptions":{"ja":"間をおいて二度響く。相手が離れると二打目を外す。","en":"Two separated blows; the second can miss a departing foe."}},{"key":"bl.skill.bell.close","tags":["memory","rhythm","bell"],"requiresExperience":[["bell"],["rhythm","combat","craft","play"]],"color":"#ceb778","rarity":0.7,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":19,"fatigue":0.7,"charge":0.42,"swing":0.4,"recovery":0.95,"reach":2.15,"arc":1.6,"power":1.4,"hits":1,"anim":"slam","school":"life","requires":["rightArm"],"weapon":-1,"breakPower":2},"id":60062,"phase":2,"ja":"鳴り納め","en":"Closing Chime","desc":"響きを重ねて振り切る。大きな隙が残る。","descEn":"Finish the resonance with a committed, slow-recovering sweep.","entry":["rhythm"],"exit":["ringing"],"connection":{"cost":0.78,"recovery":0.8},"affinities":["family"],"family":"bell","names":{"ja":"鳴り納め","en":"Closing Chime"},"descriptions":{"ja":"響きを重ねて振り切る。大きな隙が残る。","en":"Finish the resonance with a committed, slow-recovering sweep."}},{"key":"bl.skill.feather.opening","tags":["feather","light","explore"],"requiresExperience":[["feather"],["light","explore","track","play"]],"color":"#b7cfce","rarity":0.7,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":5,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":2.4,"power":0.4,"hits":1,"anim":"slash","school":"life","requires":["rightArm"],"weapon":-1},"id":60070,"phase":0,"ja":"羽先払い","en":"Feathertip","desc":"浅く払って、近い間合いを保つ。","descEn":"A shallow sweep keeps the exchange close.","entry":[],"exit":["close"],"family":"feather","names":{"ja":"羽先払い","en":"Feathertip"},"descriptions":{"ja":"浅く払って、近い間合いを保つ。","en":"A shallow sweep keeps the exchange close."}},{"key":"bl.skill.feather.turn","tags":["feather","light","explore"],"requiresExperience":[["feather"],["light","explore","track","play"]],"color":"#b7cfce","rarity":0.7,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":10,"fatigue":0.7,"charge":0.12,"swing":0.45,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.36,"hits":2,"anim":"double","school":"life","requires":["rightArm"],"weapon":-1},"id":60071,"phase":1,"ja":"風羽返し","en":"Turning Feather","desc":"軽く二度返す。接近した相手へ向く。","descEn":"Two light reversals work best at close range.","entry":["close"],"exit":["rhythm"],"connection":{"reach":0.3,"tracking":0.6},"family":"feather","names":{"ja":"風羽返し","en":"Turning Feather"},"descriptions":{"ja":"軽く二度返す。接近した相手へ向く。","en":"Two light reversals work best at close range."}},{"key":"bl.skill.feather.close","tags":["feather","light","explore"],"requiresExperience":[["feather"],["light","explore","track","play"]],"color":"#b7cfce","rarity":0.7,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":15,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.68,"reach":2.15,"arc":1.6,"power":1.1,"hits":1,"anim":"leap","school":"life","requires":["rightArm"],"weapon":-1,"step":0.45},"id":60072,"phase":2,"ja":"落羽","en":"Falling Feather","desc":"跳ねて打ち下ろす。着地には小さな隙がある。","descEn":"A rising motion ends in a downward strike and exposed landing.","entry":["rhythm"],"exit":["offbalance"],"connection":{"cost":0.78,"recovery":0.8},"family":"feather","names":{"ja":"落羽","en":"Falling Feather"},"descriptions":{"ja":"跳ねて打ち下ろす。着地には小さな隙がある。","en":"A rising motion ends in a downward strike and exposed landing."}},{"key":"bl.skill.stone.opening","tags":["stone","weight","memory"],"requiresExperience":[["stone"],["weight","combat","explore","study"]],"color":"#c0b2a0","rarity":0.7,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":8,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.3,"hits":1,"anim":"slam","school":"life","requires":["rightArm"],"weapon":-1,"breakPower":1.6,"stagger":1.35},"id":60080,"phase":0,"ja":"石据え","en":"Set the Stone","desc":"重心を落として打つ。軽い構えを崩す。","descEn":"A grounded blow breaks a light stance.","entry":[],"exit":["offbalance"],"family":"stone","names":{"ja":"石据え","en":"Set the Stone"},"descriptions":{"ja":"重心を落として打つ。軽い構えを崩す。","en":"A grounded blow breaks a light stance."}},{"key":"bl.skill.stone.turn","tags":["stone","weight","memory"],"requiresExperience":[["stone"],["weight","combat","explore","study"]],"color":"#c0b2a0","rarity":0.7,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":15,"fatigue":0.7,"charge":0.22,"swing":0.62,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.5,"hits":2,"anim":"cross","school":"life","requires":["rightArm"],"weapon":-1},"id":60081,"phase":1,"ja":"転がし返し","en":"Rolling Return","desc":"崩れた相手へ連続して重さを乗せる。","descEn":"Roll two weighty blows into an unbalanced enemy.","entry":["offbalance"],"exit":["rhythm"],"connection":{"charge":0.68,"tracking":0.42},"family":"stone","names":{"ja":"転がし返し","en":"Rolling Return"},"descriptions":{"ja":"崩れた相手へ連続して重さを乗せる。","en":"Roll two weighty blows into an unbalanced enemy."}},{"key":"bl.skill.stone.close","tags":["stone","weight","memory"],"requiresExperience":[["stone"],["weight","combat","explore","study"]],"color":"#c0b2a0","rarity":0.7,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":21,"fatigue":0.7,"charge":0.55,"swing":0.4,"recovery":1,"reach":2.15,"arc":1.6,"power":1.25,"hits":1,"anim":"slam","school":"life","requires":["rightArm"],"weapon":-1,"breakPower":3},"id":60082,"phase":2,"ja":"礎落とし","en":"Foundation Drop","desc":"重さを一点へ落とす。硬い構えにも通じる。","descEn":"Drop weight into one point to break a strong guard.","entry":["rhythm"],"exit":["offbalance"],"connection":{"recovery":0.68,"knockback":0.35},"family":"stone","names":{"ja":"礎落とし","en":"Foundation Drop"},"descriptions":{"ja":"重さを一点へ落とす。硬い構えにも通じる。","en":"Drop weight into one point to break a strong guard."}},{"key":"bl.skill.ember.opening","tags":["charcoal","craft","memory"],"requiresExperience":[["charcoal"],["craft","weight","study"]],"color":"#de996d","rarity":0.55,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":8,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":2.6,"power":0.4,"hits":1,"anim":"slide","school":"life","requires":["rightArm"],"weapon":-1},"id":60090,"phase":0,"ja":"炭掻き","en":"Ember Rake","desc":"低く広く払って、次の火種を残す。","descEn":"A broad low sweep prepares the next ember.","entry":[],"exit":["ember"],"family":"ember","names":{"ja":"炭掻き","en":"Ember Rake"},"descriptions":{"ja":"低く広く払って、次の火種を残す。","en":"A broad low sweep prepares the next ember."}},{"key":"bl.skill.ember.turn","tags":["charcoal","craft","memory"],"requiresExperience":[["charcoal"],["craft","weight","study"]],"color":"#de996d","rarity":0.55,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":15,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.35,"hits":2,"anim":"double","school":"life","requires":["rightArm"],"weapon":-1,"status":"burn","duration":1.2},"id":60091,"phase":1,"ja":"熾し返し","en":"Rekindling","desc":"細かな二打で火種を拾う。触れた相手に熱を残す。","descEn":"Two small blows kindle a brief burn on contact.","entry":["ember"],"exit":["rhythm"],"connection":{"reach":0.3,"tracking":0.6},"family":"ember","names":{"ja":"熾し返し","en":"Rekindling"},"descriptions":{"ja":"細かな二打で火種を拾う。触れた相手に熱を残す。","en":"Two small blows kindle a brief burn on contact."}},{"key":"bl.skill.ember.close","tags":["charcoal","craft","memory"],"requiresExperience":[["charcoal"],["craft","weight","study"]],"color":"#de996d","rarity":0.55,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":16,"fatigue":0.7,"charge":0.4,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.9,"hits":1,"anim":"slam","school":"life","requires":["rightArm"],"weapon":-1,"status":"weak","duration":1.5},"id":60092,"phase":2,"ja":"灰かぶり","en":"Ashfall","desc":"灰を落とすように叩く。短く相手の力を削ぐ。","descEn":"A downward strike briefly weakens the target.","entry":["rhythm"],"exit":["offbalance"],"connection":{"cost":0.78,"recovery":0.8},"family":"ember","names":{"ja":"灰かぶり","en":"Ashfall"},"descriptions":{"ja":"灰を落とすように叩く。短く相手の力を削ぐ。","en":"A downward strike briefly weakens the target."}},{"key":"bl.skill.weave.opening","tags":["craft","combat","cross"],"requiresExperience":[["craft","care"],["combat","study"]],"color":"#c6b18c","rarity":0.65,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":7,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.45,"hits":1,"anim":"counter","school":"life","requires":["rightArm"],"weapon":-1,"breakPower":1.3},"id":60100,"phase":0,"ja":"打ち合わせ","en":"Meeting Blows","desc":"仕事で覚えた拍子を、敵の構えへ合わせる。","descEn":"Bring a practiced working rhythm into an enemy guard.","entry":[],"exit":["rhythm"],"family":"weave","names":{"ja":"打ち合わせ","en":"Meeting Blows"},"descriptions":{"ja":"仕事で覚えた拍子を、敵の構えへ合わせる。","en":"Bring a practiced working rhythm into an enemy guard."}},{"key":"bl.skill.weave.turn","tags":["craft","combat","cross"],"requiresExperience":[["craft","care"],["combat","study"]],"color":"#c6b18c","rarity":0.65,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":12,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":0.7,"power":0.7,"hits":1,"anim":"thrust","school":"life","requires":["rightArm"],"weapon":-1,"breakPower":2.2},"id":60101,"phase":1,"ja":"縫い崩し","en":"Seam Break","desc":"拍子を拾い、狭い一点を崩す。","descEn":"Follow a rhythm into a narrow break in the stance.","entry":["rhythm"],"exit":["offbalance"],"connection":{"reach":0.3,"tracking":0.6},"family":"weave","names":{"ja":"縫い崩し","en":"Seam Break"},"descriptions":{"ja":"拍子を拾い、狭い一点を崩す。","en":"Follow a rhythm into a narrow break in the stance."}},{"key":"bl.skill.weave.close","tags":["craft","combat","cross"],"requiresExperience":[["craft","care"],["combat","study"]],"color":"#c6b18c","rarity":0.65,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":21,"fatigue":0.7,"charge":0.22,"swing":0.85,"recovery":0.7,"reach":2.15,"arc":1.6,"power":0.48,"hits":3,"anim":"cross","school":"life","requires":["rightArm"],"weapon":-1},"id":60102,"phase":2,"ja":"折り返し三打","en":"Threefold Return","desc":"崩れを三つの打撃へ変える。長くその場へ留まる。","descEn":"Three blows exploit lost balance but commit you to the exchange.","entry":["offbalance"],"exit":["rhythm"],"connection":{"cost":0.78,"recovery":0.8},"family":"weave","names":{"ja":"折り返し三打","en":"Threefold Return"},"descriptions":{"ja":"崩れを三つの打撃へ変える。長くその場へ留まる。","en":"Three blows exploit lost balance but commit you to the exchange."}},{"key":"bl.skill.unexpected.opening","tags":["explore","rest","cross"],"requiresExperience":[["explore","track"],["rest","patience","pray"]],"color":"#9eb4a8","rarity":0.5,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":6,"fatigue":0.7,"charge":0.22,"swing":0.4,"recovery":0.56,"reach":2.15,"arc":1.6,"power":0.4,"hits":1,"anim":"thrust","school":"life","requires":["rightArm"],"weapon":-1,"step":0.28},"id":60110,"phase":0,"ja":"木陰の間","en":"Underleaf Pause","desc":"慌てず小さく踏み込む。近さを次へ残す。","descEn":"An unhurried small step leaves the next exchange close.","entry":[],"exit":["close"],"family":"unexpected","names":{"ja":"木陰の間","en":"Underleaf Pause"},"descriptions":{"ja":"慌てず小さく踏み込む。近さを次へ残す。","en":"An unhurried small step leaves the next exchange close."}},{"key":"bl.skill.unexpected.turn","tags":["explore","rest","cross"],"requiresExperience":[["explore","track"],["rest","patience","pray"]],"color":"#9eb4a8","rarity":0.5,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":11,"fatigue":0.7,"charge":0.22,"swing":0.52,"recovery":0.56,"reach":2.15,"arc":3.5,"power":0.66,"hits":1,"anim":"spin","school":"life","requires":["rightArm"],"weapon":-1,"maxTargets":2},"id":60111,"phase":1,"ja":"流れ枝","en":"Drifting Bough","desc":"大きく弧を描き、二人までを巻き込む。","descEn":"A flowing arc can catch two nearby targets.","entry":["close"],"exit":["rhythm"],"connection":{"reach":0.3,"tracking":0.6},"family":"unexpected","names":{"ja":"流れ枝","en":"Drifting Bough"},"descriptions":{"ja":"大きく弧を描き、二人までを巻き込む。","en":"A flowing arc can catch two nearby targets."}},{"key":"bl.skill.unexpected.close","tags":["explore","rest","cross"],"requiresExperience":[["explore","track"],["rest","patience","pray"]],"color":"#9eb4a8","rarity":0.5,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":20,"fatigue":0.7,"charge":0.52,"swing":0.4,"recovery":1.1,"reach":2.15,"arc":1.6,"power":1.55,"hits":1,"anim":"slam","school":"life","requires":["rightArm"],"weapon":-1,"breakPower":2.8},"id":60112,"phase":2,"ja":"夕凪返し","en":"Evening Stillness","desc":"静かに強く打ち下ろす。外すと戻りが遅い。","descEn":"A calm heavy fall lands hard but recovers slowly after a miss.","entry":["rhythm"],"exit":["offbalance"],"connection":{"cost":0.78,"recovery":0.8},"family":"unexpected","names":{"ja":"夕凪返し","en":"Evening Stillness"},"descriptions":{"ja":"静かに強く打ち下ろす。外すと戻りが遅い。","en":"A calm heavy fall lands hard but recovers slowly after a miss."}},{"key":"bl.skill.knot.opening","tags":["net","care","precision"],"requiresExperience":[["net"],["care","track","combat"]],"color":"#a5c9bb","rarity":0.65,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":9,"fatigue":0.6,"charge":0.27,"swing":0.4,"recovery":0.55,"reach":1.85,"arc":1.4,"power":0.45,"hits":1,"anim":"thrust","school":"life","requires":["rightArm"],"weapon":-1,"status":"slow","duration":1.4},"id":60120,"phase":0,"ja":"糸口","en":"Loose End","desc":"短く差し込み、結び目のように相手の足を迷わせる。","descEn":"A short thrust tangles the opponent's footing.","entry":[],"exit":["close"],"family":"knot","names":{"ja":"糸口","en":"Loose End"},"descriptions":{"ja":"短く差し込み、結び目のように相手の足を迷わせる。","en":"A short thrust tangles the opponent's footing."}},{"key":"bl.skill.knot.turn","tags":["net","care","precision"],"requiresExperience":[["net"],["care","track","combat"]],"color":"#a5c9bb","rarity":0.65,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":12,"fatigue":0.6,"charge":0.27,"swing":0.4,"recovery":0.55,"reach":1.65,"arc":1.4,"power":0.3,"hits":1,"anim":"kick","school":"life","requires":["rightLeg"],"weapon":-1,"breakPower":1.4},"id":60121,"phase":1,"ja":"絡め返し","en":"Knot Turn","desc":"近づいた相手の足元を払う。遠い相手は拾えない。","descEn":"Sweep a nearby opponent's footing; cannot catch a distant target.","entry":["close"],"exit":["offbalance"],"connection":{"breakPower":0.35,"recovery":0.72},"family":"knot","names":{"ja":"絡め返し","en":"Knot Turn"},"descriptions":{"ja":"近づいた相手の足元を払う。遠い相手は拾えない。","en":"Sweep a nearby opponent's footing; cannot catch a distant target."}},{"key":"bl.skill.knot.close","tags":["net","care","precision"],"requiresExperience":[["net"],["care","track","combat"]],"color":"#a5c9bb","rarity":0.65,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":11,"fatigue":0.6,"charge":0.27,"swing":0.4,"recovery":0.65,"reach":1.85,"arc":1.4,"power":0.55,"hits":1,"anim":"slash","school":"life","requires":["rightArm"],"weapon":-1,"knockback":0.55},"id":60122,"phase":2,"ja":"結び解き","en":"Untying","desc":"崩れを拾って押し離す。結末を、次の間合いに変える。","descEn":"Catch an imbalance and push away, making space for the next exchange.","entry":["offbalance"],"exit":["rhythm"],"connection":{"knockback":0.4,"cost":0.82},"family":"knot","names":{"ja":"結び解き","en":"Untying"},"descriptions":{"ja":"崩れを拾って押し離す。結末を、次の間合いに変える。","en":"Catch an imbalance and push away, making space for the next exchange."}},{"key":"bl.skill.rescue_call.opening","tags":["combat","tension","patience"],"requiresExperience":[["combat","tension"]],"color":"#e8c983","rarity":1,"inheritance":{"bias":0.22,"copy":false},"action":{"cost":12,"fatigue":1,"charge":0.35,"swing":0.45,"recovery":0.7,"reach":0,"arc":6.28,"power":0,"hits":1,"anim":"counter","step":0,"school":"life","requires":[],"weapon":-1,"lure":true},"id":60390,"phase":0,"ja":"引き受けの声","en":"Rallying Call","desc":"対峙相手のいない近くの敵をひとり引き受ける。味方を横から狙う敵を優先。呼び声はしばらく届き、続けては使えない。","descEn":"Draw one nearby unengaged foe toward you, prioritizing free attackers threatening an ally. The call fades and needs time to renew.","entry":[],"exit":[],"family":"rescue_call","names":{"ja":"引き受けの声","en":"Rallying Call"},"descriptions":{"ja":"対峙相手のいない近くの敵をひとり引き受ける。味方を横から狙う敵を優先。呼び声はしばらく届き、続けては使えない。","en":"Draw one nearby unengaged foe toward you, prioritizing free attackers threatening an ally. The call fades and needs time to renew."}},{"id":60900,"key":"bl.skill.hearth_breath","ja":"炉辺の息","en":"Hearth Breath","desc":"仕事の合間に覚えた呼吸。自然に息が戻りやすい。","descEn":"A working rhythm helps breath return naturally.","tags":["craft","rest","patience"],"requiresExperience":[["craft"],["rest","patience"]],"effect":"regen","value":0.45,"action":{},"color":"#c7c09b","inheritance":{"bias":0.16,"copy":false},"family":"hearth_breath","phase":0,"passive":true,"entry":[],"exit":[],"names":{"ja":"炉辺の息","en":"Hearth Breath"},"descriptions":{"ja":"仕事の合間に覚えた呼吸。自然に息が戻りやすい。","en":"A working rhythm helps breath return naturally."},"rarity":0.8},{"id":60901,"key":"bl.skill.quiet_capacity","ja":"静穏の余白","en":"Quiet Reserve","desc":"落ち着いた暮らしが、疲れた息の上限を少し戻す。","descEn":"Quiet habits help recover a little exhausted stamina capacity.","tags":["pray","rest","patience"],"requiresExperience":[["pray","rest"],["patience"]],"effect":"capRegen","value":0.1,"action":{},"color":"#c7c09b","inheritance":{"bias":0.16,"copy":false},"family":"quiet_capacity","phase":0,"passive":true,"entry":[],"exit":[],"names":{"ja":"静穏の余白","en":"Quiet Reserve"},"descriptions":{"ja":"落ち着いた暮らしが、疲れた息の上限を少し戻す。","en":"Quiet habits help recover a little exhausted stamina capacity."},"rarity":0.8},{"id":60902,"key":"bl.skill.weight_memory","ja":"重みの記憶","en":"Remembered Weight","desc":"経験した押し合いに、少しだけ踏みとどまる。","descEn":"Remembered contests give a small advantage in a clash.","tags":["combat","weight"],"requiresExperience":[["combat"],["weight"]],"effect":"clash","value":0.06,"action":{},"color":"#c7c09b","inheritance":{"bias":0.16,"copy":false},"family":"weight_memory","phase":0,"passive":true,"entry":[],"exit":[],"names":{"ja":"重みの記憶","en":"Remembered Weight"},"descriptions":{"ja":"経験した押し合いに、少しだけ踏みとどまる。","en":"Remembered contests give a small advantage in a clash."},"rarity":0.8},{"id":60903,"key":"bl.skill.work_economy","ja":"手仕事の無駄なし","en":"Economy of Labor","desc":"重い技を扱うとき、少しだけ息を節約する。","descEn":"Spend slightly less breath on heavy techniques.","tags":["craft","care","weight"],"requiresExperience":[["craft"],["care","weight"]],"effect":"heavyCost","value":0.07,"action":{},"color":"#c7c09b","inheritance":{"bias":0.16,"copy":false},"family":"work_economy","phase":0,"passive":true,"entry":[],"exit":[],"names":{"ja":"手仕事の無駄なし","en":"Economy of Labor"},"descriptions":{"ja":"重い技を扱うとき、少しだけ息を節約する。","en":"Spend slightly less breath on heavy techniques."},"rarity":0.8},{"id":60904,"key":"bl.skill.deep_faith","ja":"篤い信仰","en":"Deep Devotion","desc":"祈りを重ね、心に灯を宿す。奇跡を受け入れ、その祈りが少し届きやすくなる。","descEn":"Repeated prayer kindles devotion. Open your heart to miracles and make them a little more likely to answer.","tags":["pray","patience"],"requiresExperience":[["pray"]],"effect":"faith","value":2,"action":{"school":"church"},"color":"#dec78e","inheritance":{"bias":0.16,"copy":false},"family":"deep_faith","phase":0,"passive":true,"entry":[],"exit":[],"names":{"ja":"篤い信仰","en":"Deep Devotion"},"descriptions":{"ja":"祈りを重ね、心に灯を宿す。奇跡を受け入れ、その祈りが少し届きやすくなる。","en":"Repeated prayer kindles devotion. Open your heart to miracles and make them a little more likely to answer."},"rarity":0.8}];
+BL_SKILL_DEFINITIONS.push(...SkillComposition.expand(BL_SKILL_DEFINITIONS));
+
+/* Authored dialogue. Simulation consumes this data; it contains no DOM or timers. */
+const ACTIVITY_DEFS = Object.freeze({
+  sword:{id:'study',label:'指南書を読む',motion:'study',verb:'武術の稽古'},
+  magic:{id:'read',label:'魔術書を読む',motion:'read',verb:'書物をひらく'},
+  church:{id:'pray',label:'祈る',motion:'pray',verb:'静かな祈り'},
+  forge:{id:'observe',label:'仕事を見学する',motion:'observe',verb:'火と鉄を見つめる'},
+  dance:{id:'play',label:'遊ぶ',motion:'play',verb:'広場で遊ぶ'},
+  hunter:{id:'track',label:'足跡を学ぶ',motion:'track',verb:'野の知恵を学ぶ'},
+  armory:{id:'care',label:'手入れをする',motion:'care',verb:'身支度を整える'}
+});
+const ACTIVITY_LINES = {
+ study:['重心を、もう少し低く。','絵の足運びをなぞってみる。','踵を返すと、景色が回った。','力を抜いたほうが、速い。','相手の足を見る。','頁の端に、小さな書き込み。','倒れ方にも、作法がある。','踏み込む前に、息を吐く。','紙の上の達人を真似てみた。','一歩だけ、無駄が減った。','手ではなく、腰から動かす。','足を払う。その先を読む。','古い墨の匂いがした。','同じ構えを、もう一度。','受けた力を、横へ逃がす。','剣がなくても、身は守れる。'],
+ read:['栞の先に、知らない文字。','頁が、ひとりでにめくれた。','指先で、術式をなぞる。','小石の重みに、意味がある。','火は、どこへ帰るのだろう。','銀の鈴と、古い挿絵。','読めなかった一行が読めた。','余白に、風の結び方。','栞をひとつ、先へ送る。','窓の光が文字を照らす。','ふたつの品を、並べて考える。','羽根が、かすかに震えた。','頁の奥で、灯がまたたく。','閉じた本にも、声がある。','黒い背表紙が気にかかる。','今はまだ、続きを読まない。'],
+ pray:['鐘の余韻に、息を重ねる。','小さな願いを、胸に置く。','誰かの無事を祈った。','蝋燭の火が、ふっと揺れた。','答えはない。それでも祈る。','冷たい石に、膝をつく。','名前を呼ぶように、祈った。','風が聖堂を通り抜ける。','焦る心が、静まっていく。','今日の無事を、ありがとう。','届くかどうかは、神さま次第。','指の隙間に、光が落ちる。','小さな鈴が、ひとつ鳴った。','帰ってくる場所を思い出す。','言葉にならない願いもある。','胸の奥に、灯がともる。'],
+ observe:['槌の音に、耳を澄ます。','赤い鉄が、白く光った。','一打ごとに、形が変わる。','握り方を、そっと真似た。','打つ前の、静かな間。','火花が袖の前を飛んだ。','水桶から、湯気が立つ。','重さを、腕ではなく足で受ける。','刃の厚みを見比べる。','煤のついた図面を眺めた。','鉄が歌う音がする。','ひびの音は、少し高い。','待つことも、鍛冶のうち。','槌を振るう肩を覚えた。','布で刃を、ひと拭き。','炭の火が、静かに息をする。'],
+ play:['敷石の継ぎ目を、跳び越える。','小石が、ころころ転がった。','葉っぱの舟を浮かべた。','影を追いかけて、ひと回り。','風に向かって、腕をひらく。','靴先で、輪を描いた。','落ち葉を、空へ放った。','片足立ち。もう少し。','どこまで跳べるだろう。','くるりと回って、着地。','木陰の涼しさが心地よい。','花びらが、手のひらに乗った。','遊びの中で、足が覚える。','もう一度だけ、遠くへ。','噴水に、小さな虹。','息が弾んで、笑ってしまう。'],
+ track:['土に残った足跡をなぞる。','折れた枝は、まだ新しい。','草の倒れ方を見比べる。','音を立てず、一歩。','風下の匂いを覚える。','羽根の落ちた先を見る。','苔の湿りを、指で確かめる。','獣と人では、歩幅が違う。','遠くの物音に耳を向ける。','石を避けて、足を置く。','帰り道の目印を探す。','枝の影が、道を教える。','足元から、景色を読む。','焦らなければ、見えてくる。'],
+ care:['布のほつれを、結び直す。','小物をふたつ、並べてみる。','留め具を、ひとつ確かめる。','手に馴染む重さを探す。','盾の縁を指でなぞった。','鞘の埃を、払い落とす。','革紐を、きゅっと締める。','持ち替えると、構えも変わる。','刃には、薄く油をひく。','手の届く場所にしまった。','古い傷にも、持ち主の癖。','身軽さも、大切な備え。','次の旅へ、少しずつ。','布の襟を、整えた。']
+};
+const MOTHER_LINES = {
+ cradle:[
+  '会いたかったよ。\n生まれてきてくれて、ありがとう。',
+  '小さな手だね。ぎゅっと握ってくれるの？\n大丈夫、ちゃんと抱いているからね。',
+  'あっちが気になる？\n行きたいところを指してごらん。一緒に行こう。',
+  'ほら、ここが私たちの村だよ。\n少しずつ、一緒に見て回ろうね。',
+  '眠くなったら、目を閉じていいんだよ。\nお母さんが抱っこしているからね。',
+  'あら、笑った。\nあなたが笑うと、お母さんもうれしいな。',
+  '歩けるようになっても、急がなくていいからね。\n疲れたら座って、ゆっくり休もう。',
+  '好きなもの、たくさん見つけてね。\nお母さんにも教えてくれるとうれしいな。'
+ ],
+ church:['鐘が聞こえるね。きれいな音だね。\nあなたが元気に育ちますようにって、お祈りしよう。','お母さんも、あなたが生まれる前から\nここでお祈りしていたんだよ。'],
+ magic:['あの建物には、本がたくさんあるんだよ。\nどんなお話が好きになるのかな。','その石が気になるの？\n本を読んだら、何かわかるかもしれないね。'],
+ sword:['あそこは道場だよ。\n強くなっても、自分の身体を大切にしてね。'],
+ forge:['トン、トンって聞こえるね。鉄を打つ音だよ。\n熱いから、ここから一緒に見ようね。'],
+ armory:['七つになったら、ここで武具を借りられるよ。\n身体に合うものを選ぼうね。'],
+ dance:['広いねえ。ここなら、いっぱい遊べるね。\n走れるようになるのが楽しみだね。'],
+ hunter:['ほら、土の上に足跡があるよ。\n誰が歩いたのかな。一緒に見てみよう。'],
+ outside:['柵の向こうは危ないから、村の中にいようね。\n大事なあなたに、怪我をしてほしくないの。','敵が来ても、無理に戦わなくていいんだよ。\n離れて、衛兵さんのところへ戻っておいで。']
+};
+const GIFT_LINES = {
+ stone:'丸くて、すべすべだね。気に入った？\n落とさないように、しまっておこうね。',
+ bell:'ほら、かわいい音がするよ。\nこの鈴は、あなたにあげるね。',
+ feather:'ふわふわの羽根だね。\nそっと触ってごらん。くすぐったいね。',
+ charcoal:'おててが真っ黒になっちゃったね。\nあとで一緒に洗おうね。',
+ net:'小さな網だよ。何を見つけるのかな。\n指に絡まないように、気をつけてね。'
+};
+const FAREWELL_LINES=[
+ 'わあ、ひとりで立てたね。\n大丈夫、ゆっくりでいいよ。',
+ '転んでも、うまくできなくても大丈夫。\nつらくなったら、いつでも帰っておいで。',
+ 'いってらっしゃい。大好きだよ。\n帰ってきたら、ぎゅっとしようね。'
+];
+const GUARD_LINES = {
+ young:['そこから先は危ないぞ。私の後ろへ！','小さな足で、よく来たな。無理はするなよ。','まだ背負うには重い戦いだ。村へお帰り。','怪我はないか？ 下がって息を整えろ。'],
+ helper:['助太刀、感謝する！','その一打、見事だ。こちらは任せろ。','背中を預けるぞ。無理はせずにな。','いい間合いだ。息を切らすな！'],
+ veteran:['頼もしい顔が来たな！','この戦列は、お前と守ろう。','その技を、次の者にも残してやれ。','助かった。さすがの腕だ。'],
+ hurt:['深手だな。下がれ、私が受ける！','今は休め。戻る道は私が守る。','立てるか？ 無理をするな！']
+};
+
+
+
+const RESCUE_LINES={approach:'そこで待て。今、助けに行く！',lift:'つかまっていろ。村まで運ぶぞ。',arrival:'ここなら大丈夫だ。ゆっくり息を整えろ。'};
+
 
 /* Shared, renderer-independent simulation. All gameplay decisions stay here. */
 const VERSION = '0.6.0';
@@ -87,19 +270,6 @@ function injuryModifiers(p){
  }
  return out;
 }
-// User-approved enemy readability rules. Existing limb injury multipliers stay
-// authoritative; HP adds fatigue and post-strike recovery, never damage scaling.
-function enemyCondition(p){
- const enabled=!!ENEMY_FORMS[p?.kind],lost=part=>enabled&&p.wounds?.[part]?.severity==='lost';
- const hp=Number.isFinite(p?.hp)&&Number.isFinite(p?.hpMax)&&p.hpMax>0?clamp(p.hp/p.hpMax,0,1):1;
- const fatigue=enabled?clamp((.70-hp)/.45,0,1):0;
- const rightLeg=lost('rightLeg'),leftLeg=lost('leftLeg'),rightArm=lost('rightArm'),leftArm=lost('leftArm');
- const legs=Number(rightLeg)+Number(leftLeg),arms=Number(rightArm)+Number(leftArm);
- const family=['soldier','elite','goblin','boss','mushroom'].includes(p?.kind)?'biped':['maw','stag'].includes(p?.kind)?'beast':p?.kind==='crawler'?'insect':'spirit';
- return {enabled,hp,fatigue,critical:enabled&&hp<=.25,rightLeg,leftLeg,rightArm,leftArm,legs,arms,family,
-  crawl:enabled&&family==='biped'&&legs===2,drag:enabled&&family==='beast'&&(legs===2||arms===2),
-  move:1-fatigue*.16,recovery:enabled?fatigue*.55+(legs===2?.40:legs*.16)+arms*.10:0};
-}
 function skillRestriction(p,sk){
  if(!sk||sk.passive)return '';
  const lost=part=>p.wounds?.[part]?.severity==='lost';
@@ -131,23 +301,7 @@ function legacySkillById(id) {
   desc:`${weapon.name} / ${['横一閃','回転斬り','長射程の突き','三連撃','守りから反撃','一歩踏み込んで斬る','重い振り下ろし','周囲へ円環を放つ'][f]}。${EFFECT_NAMES[v]}。`,
   color:['#ded397','#e8ce95','#86d0ce','#e99d70','#9cbad8','#baa7df','#c2cca6','#f4dba4'][e]};
 }
-// The same footprint drives collision, support, boarding, activities and art.
-// The gangway rises continuously; the ship has no interior or climbable rails.
-const VILLAGE_SHIP=Object.freeze({deckY:1.2,stern:34,bow:56,gangwayStart:29.5,gangwayHalf:1.5,
- shrine:{id:'shipPrayer',x:-3.4,z:38.5,r:1.75},
- dummies:[{x:3.5,z:39},{x:3.5,z:43.5},{x:3.5,z:48}],
- masts:[{x:0,z:40},{x:0,z:49}],
- obstacles:[{x:0,z:40,r:.28},{x:0,z:49,r:.28},{x:-3.4,z:37.95,r:.65},{x:-4.8,z:47,r:.72},{x:4.8,z:47,r:.72}]});
-function shipHalfWidth(z){return z<38?4.8+(z-34)*.3:z<50?6:6-(z-50)*.65;}
-function onShipDeck(p,margin=0){return p.z>=VILLAGE_SHIP.stern+margin&&p.z<=VILLAGE_SHIP.bow-margin&&Math.abs(p.x)<=shipHalfWidth(p.z)-margin;}
-function villageActivityAt(map,p){return map?.ship&&onShipDeck(p)&&dist(p,map.ship.shrine)<map.ship.shrine.r?map.ship.shrine:map?.schools.find(s=>dist(p,s)<s.r);}
-function shipSupport(x,z){
- if(onShipDeck({x,z}))return VILLAGE_SHIP.deckY;
- if(z>=28.5&&z<29.5&&Math.abs(x)<=VILLAGE_SHIP.gangwayHalf)return (z-28.5)*.275;
- if(z>=VILLAGE_SHIP.gangwayStart&&z<34&&Math.abs(x)<=VILLAGE_SHIP.gangwayHalf)return .275+(z-29.5)/4.5*(VILLAGE_SHIP.deckY-.275);
- return 0;
-}
-function makeVillage(seed=1,terrainRevision=1,shipRevision=1) {
+function makeVillage(seed=1) {
  const rng=random(seed),houses=[];
  // Two compact residential crescents: exactly 30 independent clan plots.
  for(let side of [-1,1])for(let i=0;i<15;i++) {
@@ -157,23 +311,12 @@ function makeVillage(seed=1,terrainRevision=1,shipRevision=1) {
  }
  const mirror=rng()<.5?-1:1;
  const traversables=[];for(let x=-32;x<32;x+=4)if(Math.abs(x)>=6)traversables.push({id:'fence:'+x,kind:'vault',x,z:-28,width:3.7,depth:.24,height:1.18});
- // Walkable landings and retaining walls share their exact footprint with art.
+ // A short stone terrace beside the central walk, with three supported landings.
  for(let i=0;i<3;i++)traversables.push({id:'terrace:'+i,kind:'step',x:-9*mirror,z:12.8-i*1.5,width:3.4,depth:1.5,height:.3*(i+1)});
- if(terrainRevision>=1){
- traversables[traversables.length-1].width=6.4;
- const stair=(id,x,z,base,count)=>{for(let i=0;i<count;i++)traversables.push({id:id+':'+i,kind:'step',stair:true,x:(x-(i+.5)*.3)*mirror,z,width:.3,depth:1.8,height:base+(i+1)*.1});};
- stair('terrace:walk',-3.1,9.8,0,9);
- traversables.push({id:'north:lower',kind:'step',terrace:true,x:-10.5*mirror,z:-15.2,width:8,depth:5.6,height:.6});
- traversables.push({id:'north:upper',kind:'step',terrace:true,x:-11.5*mirror,z:-15.2,width:3.6,depth:3.2,height:1.2});
- stair('north:walk-low',-4.7,-15.2,0,6);stair('north:walk-high',-7.9,-15.2,.6,6);
- traversables.push({id:'green:wall',kind:'vault',stone:true,x:9*mirror,z:16,width:5,depth:.34,height:1.05});
- }
- return {seed,terrainRevision,shipRevision:terrainRevision>=1?shipRevision:0,houses,traversables,ship:terrainRevision>=1&&shipRevision>=1?VILLAGE_SHIP:undefined,schools:SCHOOLS.map(x=>({...x,x:x.x*mirror,z:x.z+(x.id==='church'?0:(rng()-.5)*1.2)})),port:{x:0,z:28},gate:{x:0,z:-29}};
+ return {seed,houses,traversables,schools:SCHOOLS.map(x=>({...x,x:x.x*mirror,z:x.z+(x.id==='church'?0:(rng()-.5)*1.2)})),port:{x:0,z:28},gate:{x:0,z:-29}};
 }
-function supportHeight(map,x,z){return (map?.traversables||[]).reduce((y,o)=>o.kind==='step'&&Math.abs(x-o.x)<=o.width/2&&Math.abs(z-o.z)<=o.depth/2?Math.max(y,o.height):y,map?.ship?shipSupport(x,z):0);}
-function stairAt(map,x,z){return (map?.traversables||[]).some(o=>o.stair&&Math.abs(x-o.x)<=o.width/2+.001&&Math.abs(z-o.z)<=o.depth/2);}
-function terrainFootprint(map,x,z,margin=0){return (map?.traversables||[]).some(o=>o.kind==='step'&&Math.abs(x-o.x)<=o.width/2+margin&&Math.abs(z-o.z)<=o.depth/2+margin);}
-const TRAVERSAL_RULES=Object.freeze({maxVault:1.25,maxStep:.95,walkStep:.12,radius:.42,cooldown:.16});
+function supportHeight(map,x,z){return (map?.traversables||[]).reduce((y,o)=>o.kind==='step'&&Math.abs(x-o.x)<=o.width/2&&Math.abs(z-o.z)<=o.depth/2?Math.max(y,o.height):y,0);}
+const TRAVERSAL_RULES=Object.freeze({maxVault:1.25,maxStep:.95,radius:.42,cooldown:.16});
 // Inner forecourt: clear of the reading stand and inside the existing
 // dojo activity area and village shore boundary in either mirrored layout.
 function villagePracticePosition(map){const dojo=map.schools.find(s=>s.id==='sword');return {x:dojo.x-(Math.sign(dojo.x)||1)*1.75,z:dojo.z+3};}
@@ -216,7 +359,7 @@ function art(id,name,opt={}){
  const s={id,name,weapon:-1,form:0,element:0,variant:0,trigger:'combo',school:'sword',color:'#dfc58b',cost:10,fatigue:1,charge:.22,swing:.30,recovery:.65,reach:2.0,arc:1.7,power:1,breakPower:0,targets:['torso'],requires:['rightArm'],motion:'打撃',desc:'隙を見つけて打つ。',flow:.08,chance:1,maxTargets:1,...opt};
  book.set(id,s);return s;
 }
-art(4000,'殴る',{unarmed:true,cost:6,fatigue:.25,charge:.13,swing:.26,reach:1.3,recovery:.5,flow:.18,requires:[],targets:['torso','head'],desc:'踏み込んで拳を打つ。'});
+art(4000,'殴る',{cost:6,fatigue:.25,charge:.13,swing:.26,reach:1.3,recovery:.5,flow:.18,requires:[],targets:['torso','head'],desc:'踏み込んで拳を打つ。'});
 art(4001,'斬る',{weapon:0,cost:10,charge:.22,reach:2.55,targets:['rightArm','leftArm'],motion:'横斬り',desc:'腕を狙う基本の剣技。崩れた敵には深く入る。',flow:.22});
 art(4002,'斬り裂く',{weapon:1,cost:9,charge:.10,swing:.23,reach:1.75,power:2,targets:['torso'],flow:.30,motion:'連ね斬り',desc:'懐で深く裂く。間合いは小、連携しやすさは大。'});
 art(4003,'叩き斬る',{weapon:2,cost:19,fatigue:3,charge:.56,swing:.40,reach:2.95,power:2,targets:['torso','leftArm'],recovery:1.05,motion:'袈裟斬り',desc:'重い刃で叩き斬る。消費・威力・隙は大。'});
@@ -424,7 +567,7 @@ class Simulation {
   this.stopTraversal(p);this.stopDash(p);this.stopActivity(p);p.input={x:0,z:0};p.autoFight=null;p.chain=null;p.combo=null;p.pendingSkill=null;p.attackStep=null;p.telegraph=null;p.guard=false;p.guardPending=false;p.seated=false;p.queued=false;p.retreatUntil=0;p.exitPending=0;p.attackBufferedUntil=0;p.engagement=null;p.hitRecoil=null;SkillSystem.reset(p);
  }
  safeGround(p,r=this.getRoom(p)){
-  return r?.kind==='village'?(p.z>=-25.5&&p.z<=22||onShipDeck(p)):r?.kind==='front'&&p.z>=2&&p.z<=8&&Math.abs(p.x)<=5;
+  return r?.kind==='village'?p.z>=-25.5&&p.z<=22:r?.kind==='front'&&p.z>=2&&p.z<=8&&Math.abs(p.x)<=5;
  }
  releaseRescue(carrier){
   if(!carrier?.rescueTarget)return false;
@@ -493,21 +636,19 @@ class Simulation {
   g.dir=Math.atan2(goal.x-g.x,goal.z-g.z);this.moveWalk(g,r,Math.sin(g.dir)*2.8*dt,Math.cos(g.dir)*2.8*dt);g.action='run';return true;
  }
  clearPath(a,b,r){
-  const floorA=a.supportHeight||0,floorB=b.supportHeight||0;if(Math.abs(floorA-floorB)>TRAVERSAL_RULES.maxStep)return false;
   const n=Math.max(1,Math.ceil(dist(a,b)/.18));
-  for(let i=1;i<=n;i++){const q={x:a.x+(b.x-a.x)*i/n,z:a.z+(b.z-a.z)*i/n,supportHeight:Math.max(floorA,floorB)},old={...q};this.bound(q,r);if(dist(q,old)>.001)return false;}return true;
+  for(let i=1;i<=n;i++){const q={x:a.x+(b.x-a.x)*i/n,z:a.z+(b.z-a.z)*i/n},old={...q};this.bound(q,r);if(dist(q,old)>.001)return false;}return true;
  }
  traversalEligible(p){return this.combatReady(p)&&p.kind==='player'&&p.age>=4&&!p.pendingSkill&&!p.combo&&!p.chain&&!p.traversal&&!(p.traversalReadyAt>this.time)&&!hasStatus(p,'root',this.time)&&!['leftLeg','rightLeg'].some(k=>['heavy','lost'].includes(p.wounds?.[k]?.severity));}
  canLand(p,q,r,ignored=null,landing=true){
   const test={...q},before={...q};this.bound(test,r,this.collisionRadius(p),ignored);if(dist(test,before)>.001)return false;
   const bodies=[...r.actors,...this.players.values()].filter(a=>a!==p&&a.alive&&!a.carrierId&&(a.kind!=='player'||a.room===r.id));
   if(bodies.some(a=>dist(a,q)<this.collisionRadius(p)+this.collisionRadius(a)))return false;
-  if(landing){for(const [x,z] of [[-.4,-.4],[-.4,.4],[.4,-.4],[.4,.4]])if(Math.abs(supportHeight(r.map,q.x+x,q.z+z)-(q.supportHeight||0))>.05)return false;}
+  if(landing&&(q.supportHeight||0)>0){for(const [x,z] of [[-.4,-.4],[-.4,.4],[.4,-.4],[.4,.4]])if(Math.abs(supportHeight(r.map,q.x+x,q.z+z)-(q.supportHeight||0))>.05)return false;}
   return true;
  }
  tryTraversal(p,r,dx,dz){
   if(r.kind!=='village'||!this.traversalEligible(p))return false;
-  if(p.z>29||p.z+dz>29)return false;
   const n=Math.hypot(dx,dz);if(n<.001)return false;dx/=n;dz/=n;
   const from={x:p.x,z:p.z,supportHeight:p.supportHeight||0},probe={x:p.x+dx*.65,z:p.z+dz*.65};
   let obstacle=(r.map.traversables||[]).find(o=>o.kind==='vault'&&Math.abs(probe.x-o.x)<o.width/2+.2&&Math.abs(probe.z-o.z)<o.depth/2+.5),to,kind;
@@ -516,7 +657,6 @@ class Simulation {
    const distance=(Math.abs(obstacle.z-p.z)+obstacle.depth/2+.72)/Math.abs(dz);to={x:p.x+dx*distance,z:p.z+dz*distance,supportHeight:0};kind='vault';
    if(Math.abs(to.x-obstacle.x)>obstacle.width/2-.48)return false;
   }else{
-   if(stairAt(r.map,probe.x,probe.z)||stairAt(r.map,p.x,p.z))return false;
    const ahead=supportHeight(r.map,probe.x,probe.z),rise=ahead-from.supportHeight;if(Math.abs(rise)<.18||Math.abs(rise)>TRAVERSAL_RULES.maxStep)return false;
    to={x:p.x+dx*1.12,z:p.z+dz*1.12};to.supportHeight=supportHeight(r.map,to.x,to.z);kind='climb';
    if(Math.abs(to.supportHeight-from.supportHeight)<.18||Math.abs(to.supportHeight-from.supportHeight)>TRAVERSAL_RULES.maxStep)return false;
@@ -525,7 +665,6 @@ class Simulation {
   // Validate the full body corridor before committing. Only the chosen fence is ignored.
   const samples=Math.max(2,Math.ceil(dist(from,to)/.15));for(let i=1;i<samples;i++){
    const q={x:from.x+(to.x-from.x)*i/samples,z:from.z+(to.z-from.z)*i/samples,supportHeight:Math.max(from.supportHeight,to.supportHeight)};
-   if(supportHeight(r.map,q.x,q.z)>q.supportHeight+.05)return false;
    if(!this.canLand(p,q,r,obstacle?.id||'steps',false))return false;
   }
   this.cancelAction(p);p.dir=Math.atan2(dx,dz);p.traversal={kind,obstacle:obstacle?.id||null,room:r.id,from,to,started:this.time,duration:kind==='vault'?.68:.55,progress:0};p.grounded=false;p.action=kind;p.actionStarted=this.time;p.actionUntil=this.time+p.traversal.duration;this.emit('traverse',{player:p.id,room:r.id,kind,x:p.x,z:p.z});return true;
@@ -585,19 +724,6 @@ class Simulation {
   r.actors.push(this.actor('stag',-19,-38,1),this.actor('mushroom',18,-42,0));
   // No ambient villagers. Parents are rendered only for the opening scene.
   const spot=villagePracticePosition(r.map),dummy=this.actor('dummy',spot.x,spot.z);dummy.name='稽古人形';r.actors.push(dummy);
-  this.ensureShipActors(r);
- }
- ensureShipActors(r){
-  for(const [i,spot]of VILLAGE_SHIP.dummies.entries()){
-   let a=r.actors.find(a=>a.shipStation===i);
-   if(!a){
-    // Fixed fixtures must not consume the combat/life RNG or enemy ID stream.
-    const rngState=this.rng.getState(),eid=this.eid;
-    a=this.actor('dummy',spot.x,spot.z);this.rng.setState(rngState);this.eid=eid;
-    a.id='ship-dummy:'+r.id+':'+i;a.shipStation=i;a.name='甲板の稽古人形';r.actors.push(a);
-   }
-   a.x=a.homeX=spot.x;a.z=a.homeZ=spot.z;a.supportHeight=VILLAGE_SHIP.deckY;
-  }
  }
  preparePlayer(p){
   p.lifeState??=p.alive?'active':'dead';p.health??=100;p.statuses??={};p.statusClock=this.time;p.lastHurtAt??=-100;
@@ -762,7 +888,7 @@ class Simulation {
   }
  }
 
- getArea(p){if(this.getRoom(p)?.kind!=='village')return'front';return villageActivityAt(this.getRoom(p).map,p)?.id||(onShipDeck(p)?'ship':'village');}
+ getArea(p){if(this.getRoom(p)?.kind!=='village')return'front';return this.getRoom(p).map.schools.find(s=>Math.hypot(p.x-s.x,p.z-s.z)<s.r)?.id||'village';}
  notice(p,text){if((p.lastNotice??-10)+.8>this.time)return;p.lastNotice=this.time;this.emit('notice',{player:p.id,room:p.room,text});}
  learn(p,id){
   const sk=skillById(id);if(!sk)return false;const list=sk.passive?p.passives:p.skills;if(list.includes(id))return false;list.push(id);
@@ -822,8 +948,7 @@ class Simulation {
    p.phaseWeights[phase]=weights;p.weights=p.phaseWeights[0];return true;
   }
   if(cmd.type==='chat'){const text=cleanText(cmd.text,60);if(!text||this.time-p.lastChat<2.5)return false;this.wake(p);this.stopDash(p);p.input={x:0,z:0};p.speech=text;p.speechUntil=this.time+6;p.lastChat=this.time;this.emit('speech',{player:id,room:r.id,text,x:p.x,z:p.z});return true;}
-  // Boarding is physical: a stale reservation command cannot board from shore.
-  if(cmd.type==='board')return false;
+  if(cmd.type==='board'){if(r.kind!=='village'||p.age<15||Math.hypot(p.x,p.z-28)>5)return false;p.queued=!p.queued;p.activity=null;this.emit('board',{player:id,room:r.id,queued:p.queued});return true;}
   if(cmd.type==='return'){if(r.kind!=='front'||p.rescueAt)return false;p.rescueAt=this.time+this.yearSeconds;this.emit('rescue',{player:id,room:r.id,x:p.x,z:p.z});return true;}
   if(cmd.type==='discard'){
    const slot=Number.isInteger(cmd.slot)?cmd.slot:0;if(slot<0||slot>=p.inventory.length)return false;
@@ -887,16 +1012,8 @@ class Simulation {
   // Enemy approach shares this path; do not scan the room at every substep.
   const bodies=[],addBody=a=>{if(a===p||!a.alive||a.carrierId||a.id===p.rescueTarget||(a.kind==='player'&&a.room!==r.id))return;const radius=this.contactSpacing(p,a);if(Math.abs(a.x-p.x)<=radius+Math.abs(dx)&&Math.abs(a.z-p.z)<=radius+Math.abs(dz))bodies.push({a,radius2:radius*radius});};
   for(const a of r.actors)addBody(a);for(const a of this.players.values())addBody(a);
-  const bounded={x:0,z:0,kind:p.kind,age:p.age,prologue:p.prologue,rescueTarget:p.rescueTarget,supportHeight:p.supportHeight||0},bodyRadius=this.collisionRadius(p);
-  const sceneryBlocked=q=>{
-   const floor=supportHeight(r.map,q.x,q.z),from=p.supportHeight||0;
-   if(Math.abs(floor-from)>TRAVERSAL_RULES.walkStep)return true;
-   // Preserve current contact spacing while rejecting unsupported retaining-wall edges.
-   if(terrainFootprint(r.map,p.x,p.z)&&from>TRAVERSAL_RULES.walkStep&&!stairAt(r.map,p.x,p.z)&&!stairAt(r.map,q.x,q.z)){
-    for(const [x,z] of [[-bodyRadius,0],[bodyRadius,0],[0,-bodyRadius],[0,bodyRadius]])if(supportHeight(r.map,q.x+x,q.z+z)<from-TRAVERSAL_RULES.walkStep)return true;
-   }
-   q.supportHeight=floor;bounded.x=q.x;bounded.z=q.z;bounded.supportHeight=floor;this.bound(bounded,r,bodyRadius);return Math.hypot(bounded.x-q.x,bounded.z-q.z)>1e-6;
-  };
+  const bounded={x:0,z:0,supportHeight:p.supportHeight||0},bodyRadius=this.collisionRadius(p);
+  const sceneryBlocked=q=>{bounded.x=q.x;bounded.z=q.z;this.bound(bounded,r,bodyRadius);return Math.hypot(bounded.x-q.x,bounded.z-q.z)>1e-6;};
   const bodyBlocked=q=>bodies.some(({a,radius2})=>{const after=(a.x-q.x)**2+(a.z-q.z)**2;return after<radius2&&after<(a.x-p.x)**2+(a.z-p.z)**2-1e-7;});
   let travelled=0;
   for(let i=0;i<steps;i++){
@@ -908,7 +1025,7 @@ class Simulation {
     q=axes.filter(([x,z])=>Math.hypot(x,z)>1e-8).map(([x,z])=>({x:p.x+x,z:p.z+z,supportHeight:p.supportHeight||0})).find(a=>!sceneryBlocked(a)&&!bodyBlocked(a));
     if(!q)break;
    }else if(bodyBlocked(q))break;
-   travelled+=Math.hypot(q.x-p.x,q.z-p.z);p.x=q.x;p.z=q.z;if(q.supportHeight||p.supportHeight!=null)p.supportHeight=q.supportHeight;
+   travelled+=Math.hypot(q.x-p.x,q.z-p.z);p.x=q.x;p.z=q.z;
   }
   return travelled;
  }
@@ -927,7 +1044,6 @@ class Simulation {
   if(!amount||a.blocked)return;
   const moved=this.moveAttackStep(p,this.getRoom(p),Math.sin(a.dir)*amount,Math.cos(a.dir)*amount);
   a.moved+=moved;if(moved<amount-.00001)a.blocked=true;
-  if(a.aimTarget&&moved>0){const target=this.getRoom(p).actors.find(e=>e.id===a.aimTarget&&e.alive);if(target)p.dir=a.aimFrom+clamp(angleDiff(Math.atan2(target.x-p.x,target.z-p.z),a.aimFrom),-a.turn,a.turn)*progress;}
   if(!a.sounded&&moved>.001){a.sounded=true;this.emit('step',{player:p.id,room:p.room,x:p.x,z:p.z,kind:'lunge'});}
  }
  reactToHit(target,source,part,severity='light',strength=null,blocked=false){
@@ -974,11 +1090,11 @@ class Simulation {
   p.skillUses[sk.id]=(p.skillUses[sk.id]||0)+1;p.lastSkillAt=this.time;p.seated=false;p.chain=null;p.guard=false;p.guardPending=false;p.usages.attack++;p.combo.total++;
   this.tryInsight(p,'attack');
   const r=this.getRoom(p),target=r.actors.filter(e=>e.alive&&enemiesOnly(e)&&(!e.neutral||e.aggro||dist(e,p)<sk.reach+.5)&&dist(e,p)<Math.max(5,sk.reach+1)).sort((a,b)=>dist(a,p)-dist(b,p))[0];
-  const dummies=r.actors.filter(e=>e.kind==='dummy'&&e.alive&&dist(e,p)<4).sort((a,b)=>dist(a,p)-dist(b,p)),dummy=dummies.find(e=>e.id===p.autoFight)||dummies[0];
+  const dummy=r.actors.find(e=>e.kind==='dummy'&&dist(e,p)<4);
   const facing=target||dummy;if(facing){p.focusTarget=facing.id;p.focusUntil=this.time+4;}if(facing&&!p.flickAim)p.dir=Math.atan2(facing.x-p.x,facing.z-p.z);
   p.flickAim=false;const stepDistance=this.attackStepDistance(p,sk)/Math.max(1,sk.hits||1),timing=actionTiming(sk);
   const approach=sk.approach,approachDistance=approach?(hasStatus(p,'root',this.time)?0:approach.distance*injuryModifiers(p).move*(p.age<15?.8:1)):stepDistance;
-  p.attackStep=approachDistance?{started:this.time+Math.max(0,timing.charge-(approach?clamp(approachDistance/6,.16,.34):.12)),until:this.time+Math.max(.001,timing.charge),distance:approachDistance,progress:0,moved:0,dir:p.dir+(approach?.angle||0),aimFrom:p.dir,aimTarget:approach?.turn?facing?.id:null,turn:approach?.turn||0,blocked:false,sounded:false}:null;
+  p.attackStep=approachDistance?{started:this.time+Math.max(0,timing.charge-(approach?.2:.12)),until:this.time+Math.max(.001,timing.charge),distance:approachDistance,progress:0,moved:0,dir:p.dir+(approach?.angle||0),blocked:false,sounded:false}:null;
   p.pendingSkill={id:sk.id,target:facing?.id||null,started:this.time,at:this.time+timing.charge,dir:p.dir,stage:'charge'};p.action='charge';p.motion=sk.form;p.actionStarted=this.time;p.actionUntil=this.time+timing.charge;p.attackSkill=sk.id;p.attackReach=sk.reach;p.attackArc=sk.arc;
   this.emit('charge',{player:p.id,room:p.room,id:sk.id,duration:timing.charge,x:p.x,z:p.z});
   if(timing.charge===0)this.releaseSkill(p);return true;
@@ -1140,7 +1256,7 @@ inflictWound(p,part,severity,source=null,strength=null){
   if(p.activity){
    if(ACTIVITY_DEFS[area]?.id!==p.activity||p.autoFight){this.stopActivity(p);return;}
    p.activityClock+=dt;this.progressDeed(p,p.activity,dt);
-   if(this.time>=p.activityNextAt){const lines=ACTIVITY_LINES[area]||ACTIVITY_LINES[p.activity];let n=Math.floor(this.rng()*lines.length);if(n===p.lastActivityLine)n=(n+1)%lines.length;
+   if(this.time>=p.activityNextAt){const lines=ACTIVITY_LINES[p.activity];let n=Math.floor(this.rng()*lines.length);if(n===p.lastActivityLine)n=(n+1)%lines.length;
     p.lastActivityLine=n;p.activityNextAt=this.time+4.1+this.rng()*2.3;
     this.emit('progress',{player:p.id,room:p.room,text:lines[n],x:p.x,z:p.z});
    }
@@ -1150,28 +1266,15 @@ inflictWound(p,part,severity,source=null,strength=null){
  }
  bound(p,r,bodyRadius=this.collisionRadius(p),ignored=null){
   if(r.kind==='village'){
-   p.x=clamp(p.x,-35,35);p.z=clamp(p.z,-46,VILLAGE_SHIP.bow-bodyRadius);
-   if(p.z>29.5){
-    if(p.kind==='player'&&(p.age<15||p.prologue)){p.z=29.5;}
-    else{
-     const margin=bodyRadius,opening=VILLAGE_SHIP.gangwayHalf-margin;
-     // Inset the stern rail, except for the open gangway in its centre.
-     const width=p.z<34+margin?opening:shipHalfWidth(p.z)-margin*1.2;
-     p.x=clamp(p.x,-width,width);
-     for(const m of VILLAGE_SHIP.obstacles){const d=dist(p,m),radius=m.r+margin;if(d<radius){const angle=Math.atan2(p.x-m.x,p.z-m.z);p.x=m.x+Math.sin(angle)*radius;p.z=m.z+Math.cos(angle)*radius;}}
-     p.x=clamp(p.x,-width,width);p.supportHeight=shipSupport(p.x,p.z);return;
-    }
-   }
+   p.x=clamp(p.x,-35,35);p.z=clamp(p.z,-46,29.5);
    // Shared fence and landing geometry is also used by ArtDirector.village.
-   const onStairs=stairAt(r.map,p.x,p.z);
    for(const o of r.map.traversables||[]){
-    if(o.id===ignored||o.kind==='step'&&(o.stair||ignored==='steps'||(p.supportHeight||0)>=o.height-.05||onStairs&&o.height-(p.supportHeight||0)<=.22))continue;
-    const rx=o.width/2+bodyRadius,rz=o.depth/2+bodyRadius,dx=p.x-o.x,dz=p.z-o.z;
+    if(o.id===ignored||o.kind==='step'&&(ignored==='steps'||(p.supportHeight||0)>=o.height-.05))continue;
+    const rx=o.width/2+.42,rz=o.depth/2+.42,dx=p.x-o.x,dz=p.z-o.z;
     if(Math.abs(dx)<rx&&Math.abs(dz)<rz){if(Math.abs(dx)/rx>Math.abs(dz)/rz)p.x=o.x+Math.sign(dx||1)*rx;else p.z=o.z+Math.sign(dz||1)*rz;}
    }
    for(const x of [-4.1,4.1]){const dx=p.x-x,dz=p.z+28;if(Math.abs(dx)<1.1&&Math.abs(dz)<1.1){if(Math.abs(dx)>Math.abs(dz))p.x=x+Math.sign(dx||1)*1.1;else p.z=-28+Math.sign(dz||1)*1.1;}}
    if(p.z>23&&Math.abs(p.x)>4)p.z=23;
-   if(p.z>23)p.supportHeight=r.map?.ship?shipSupport(p.x,p.z):0;
    for(const h of r.map.houses){const dx=p.x-h.x,dz=p.z-h.z;if(Math.abs(dx)<2&&Math.abs(dz)<1.8){if(Math.abs(dx)/2>Math.abs(dz)/1.8)p.x=h.x+Math.sign(dx||1)*2;else p.z=h.z+Math.sign(dz||1)*1.8;}}
    for(const s of r.map.schools.filter(s=>s.id!=='dance')){const dx=p.x-s.x,dz=p.z-(s.z-2);if(Math.abs(dx)<2.5&&Math.abs(dz)<1.5){if(Math.abs(dx)/2.5>Math.abs(dz)/1.5)p.x=s.x+Math.sign(dx||1)*2.5;else p.z=s.z-2+Math.sign(dz||1)*1.5;}}
    // The square is walkable, but its stone well and posts occupy a 1.30m radius.
@@ -1216,7 +1319,7 @@ inflictWound(p,part,severity,source=null,strength=null){
     else if(l>.1&&!p.pendingSkill&&!p.combo)p.dir=Math.atan2(p.input.x,p.input.z);
     if(p.actionUntil<=this.time&&!p.pendingSkill)p.action=p.seated?'sit':p.activity?(ACTIVITY_DEFS[this.getArea(p)]?.motion||p.activity):p.guard?(l>.1?'guardWalk':'guard'):l>.1?(p.dash?'dash':'run'):'idle';
    }
-   this.bound(p,r);p.zone=this.getArea(p);p.queued=r.kind==='village'&&p.age>=15&&onShipDeck(p);
+   this.bound(p,r);p.zone=this.getArea(p);if(p.queued&&Math.hypot(p.x,p.z-28)>6)p.queued=false;
    if(p.speechUntil<=this.time)p.speech='';this.detectContact(p,r);if(p.rescueTarget)this.syncRescue(p,r);
   }
   for(const r of this.rooms.values()){
@@ -1229,7 +1332,7 @@ inflictWound(p,part,severity,source=null,strength=null){
      const guards=r.actors.filter(e=>e.alive&&e.kind==='guard');if(guards.length<4){const lane=[0,1,2,3].find(i=>!guards.some(g=>g.lane===i))??0,g=this.actor('guard',-10.5+lane*7,-30.5);g.lane=lane;r.actors.push(g);}
      r.waveAt=this.time+2;
     }
-    const cycle=Math.floor(this.time/this.boatInterval);if(cycle>r.boatCycle){r.boatCycle=cycle;const travelers=ps.filter(p=>canAct(p)&&!p.rescueTarget&&!p.prologue&&p.age>=15&&onShipDeck(p));if(travelers.length)this.depart(r,travelers);}
+    const cycle=Math.floor(this.time/this.boatInterval);if(cycle>r.boatCycle){r.boatCycle=cycle;const travelers=ps.filter(p=>canAct(p)&&!p.rescueTarget&&p.queued&&p.age>=15&&Math.hypot(p.x,p.z-28)<6);if(travelers.length)this.depart(r,travelers);}
    }else if(ps.length&&!r.bossDefeated){
     const alive=r.actors.filter(e=>e.alive);if(r.stage<5&&r.kills>=r.quota&&!alive.length){r.cleared.push(r.stage);r.stage++;r.kills=0;r.quota=this.frontQuota(r.partySize);this.emit('advance',{room:r.id,stage:r.stage});this.spawnFrontWave(r);}
     else if(r.stage<5&&alive.length<Math.min(8,2+Math.ceil(r.partySize/5))&&this.time>r.waveAt&&r.kills+alive.length<r.quota)this.spawnFrontWave(r);
@@ -1243,7 +1346,7 @@ inflictWound(p,part,severity,source=null,strength=null){
  }
  frontQuota(party){return this.mode==='demo'?Math.max(3,Math.ceil(party*.6)):Math.max(16,party*7);}
  depart(r,travelers){const front=this.makeRoom('front');front.partySize=travelers.length;front.quota=this.frontQuota(travelers.length);front.expedition=travelers.map(p=>p.id);front.home=r.id;
-  for(const [i,p] of travelers.entries()){this.cancelAction(p);p.hitReactUntil=0;p.hitstopUntil=0;p.action='idle';p.actionUntil=this.time;p.grounded=true;p.autoFight=null;p.chain=null;p.statuses={};p.seated=false;p.room=front.id;p.supportHeight=0;p.verticalOffset=0;p.expedition=front.id;p.x=(i%6-2.5)*1.6;p.z=5+Math.floor(i/6)*1.1;p.queued=false;p.activity=null;p.input={x:0,z:0};p.guard=false;p.combo=null;p.pendingSkill=null;p.attackStep=null;p.retreatUntil=0;this.emit('depart',{player:p.id,room:front.id});}this.spawnFrontWave(front);
+  for(const [i,p] of travelers.entries()){p.autoFight=null;p.chain=null;p.statuses={};p.seated=false;p.room=front.id;p.supportHeight=0;p.verticalOffset=0;p.expedition=front.id;p.x=(i%6-2.5)*1.6;p.z=5+Math.floor(i/6)*1.1;p.queued=false;p.activity=null;p.input={x:0,z:0};p.guard=false;p.combo=null;p.pendingSkill=null;p.attackStep=null;p.retreatUntil=0;this.emit('depart',{player:p.id,room:front.id});}this.spawnFrontWave(front);
  }
  spawnFrontWave(r){const center=-(r.stage*44+20);if(r.stage===5){if(!r.actors.some(a=>a.kind==='boss'))r.actors.push(this.actor('boss',0,center,3));return;}
   const count=Math.min(4,Math.max(1,r.quota-r.kills-r.actors.filter(e=>e.alive).length));for(let i=0;i<count;i++){const kinds=r.stage===0?['goblin','maw','crawler']:r.stage===1?['soldier','crawler','archer']:['elite','soldier','mage','maw'];const kind=kinds[Math.floor(this.rng()*kinds.length)];r.actors.push(this.actor(kind,(this.rng()-.5)*17,center+(this.rng()-.5)*15,kind==='crawler'?0:kind==='elite'?2:1));}r.waveAt=this.time+4;
@@ -1275,10 +1378,10 @@ inflictWound(p,part,severity,source=null,strength=null){
     }
    }
   }
-  const condition=enemyCondition(e),ranged=false,reach=ranged?11:e.wounds.rightArm?.severity==='lost'?1.2:e.kind==='boss'?5:e.elite?3.4:2.3;
+  const ranged=false,reach=ranged?11:e.wounds.rightArm?.severity==='lost'?1.2:e.kind==='boss'?5:e.elite?3.4:2.3;
   if(e.telegraph){
    e.action='windup';if(target.kind!=='player'&&target.telegraph&&!ranged&&Math.abs(target.telegraph.at-e.telegraph.at)<.5&&Math.min(target.telegraph.at,e.telegraph.at)-this.time<.25&&dist(e,target)<reach+.4){this.resolveClash(e,target,r);return;}
-   if(this.time>=e.telegraph.at){const tg=e.telegraph;e.telegraph=null;e.guard=false;e.action='attack';e.actionStarted=this.time;e.actionUntil=this.time+.75+condition.recovery;e.cooldown=this.time+(e.elite?2.3:1.9)+condition.recovery;if(e.kind==='boss')e.exposedUntil=this.time+1.65;if(ranged)e.ammo--;
+   if(this.time>=e.telegraph.at){const tg=e.telegraph;e.telegraph=null;e.guard=false;e.action='attack';e.actionStarted=this.time;e.actionUntil=this.time+.75;e.cooldown=this.time+(e.elite?2.3:1.9);if(e.kind==='boss')e.exposedUntil=this.time+1.65;if(ranged)e.ammo--;
     this.emit('enemySwing',{room:r.id,source:e.id,target:target.id,x:e.x,z:e.z,dir:tg.dir,reach:tg.reach,arc:tg.arc,kind:e.kind,unblockable:tg.unblockable});
     for(const t of targets){if(!t.alive||!this.clearPath(e,t,r)||dist(e,t)>tg.reach+.35||Math.abs(angleDiff(Math.atan2(t.x-e.x,t.z-e.z),tg.dir))>tg.arc/2)continue;
      if(t.kind==='player')this.hitPlayer(t,e,tg);else{if(this.awareness(t,e).engaged&&this.rng()<COMBAT_AWARENESS.engagedAvoid)continue;this.releaseRescue(t);this.recordDamage(t,'torso',e.elite?1.05:.7);t.sleepUntil=0;if(t.statuses)delete t.statuses.sleep;const amount=(e.elite?1.05:.7)*(hasStatus(e,'weak',this.time)?.65:1);t.npcResolve-=amount;t.hp=(t.hp??70)-amount*(t.hpMax??70)/(t.npcResolveMax||12);this.reactToHit(t,e,'torso',e.elite?'heavy':'light');this.impact(e,t,'torso',e.elite);t.action='hit';t.actionStarted=this.time;t.actionUntil=this.time+.65;t.stun=t.actionUntil;if(t.npcResolve<=0||t.hp<=0)this.killActor(t,e,r);else this.emit('hit',{room:r.id,target:t.id,source:e.id,x:t.x,z:t.z,part:'torso'});if(t.alive&&e.attackCount%4===0){const status=e.kind==='guard'?'stun':({crawler:'poison',wraith:'slow',maw:'root',goblin:'blind',mage:'burn',elite:'weak'})[e.kind];if(status)this.applyStatus(t,status,3,e,r);}}if(ranged)break;
@@ -1289,7 +1392,7 @@ inflictWound(p,part,severity,source=null,strength=null){
   const distance=dist(e,target),injury=injuryModifiers(e),vulnerable=target.cooldown>this.time||target.action==='recover'||Math.abs(angleDiff(target.dir,Math.atan2(e.x-target.x,e.z-target.z)))>1.9;
   if(e.smart&&distance<reach+1&&distance>reach*.7&&this.time>e.cooldown&&!vulnerable&&e.counterOpportunity<this.time){e.guard=e.wounds.leftArm?.severity!=='lost';e.action='guard';return;}
   if(e.smart&&e.counterOpportunity===undefined)e.counterOpportunity=0;
-  if(distance>reach*.82){const speed=(e.kind==='guard'?2.8:e.kind==='boss'?2.6:3.1)*injury.move*condition.move*(hasStatus(e,'slow',this.time)?.5:1)*(hasStatus(e,'root',this.time)?0:1);this.moveAttackStep(e,r,Math.sin(e.dir)*speed*dt,Math.cos(e.dir)*speed*dt,true);e.action='run';e.guard=false;if(r.kind==='village')e.z=Math.min(-29.6,e.z);}
+  if(distance>reach*.82){const speed=(e.kind==='guard'?2.8:e.kind==='boss'?2.6:3.1)*injury.move*(hasStatus(e,'slow',this.time)?.5:1)*(hasStatus(e,'root',this.time)?0:1);this.moveAttackStep(e,r,Math.sin(e.dir)*speed*dt,Math.cos(e.dir)*speed*dt,true);e.action='run';e.guard=false;if(r.kind==='village')e.z=Math.min(-29.6,e.z);}
   else if(this.time>=e.cooldown){e.attackCount++;const unblockable=(e.kind==='boss'&&e.attackCount%3===0)||(e.elite&&e.attackCount%4===0),duration=e.elite?1.55:e.smart&&vulnerable?1.05:1.35;e.guard=false;e.telegraph={target:target.id,at:this.time+duration,started:this.time,dir:e.dir,reach,arc:ranged?.65:unblockable?2.5:1.7,unblockable,ranged,part:e.elite&&e.attackCount%2===0?'rightArm':undefined};e.action='windup';}
   else e.action='idle';
  }
@@ -1321,7 +1424,7 @@ inflictWound(p,part,severity,source=null,strength=null){
   const room=this.getRoom(p);if(room?.kind==='front'){room.fallen||={};room.fallen[p.id]=JSON.parse(JSON.stringify({...p,speech:'',speechUntil:0}));}const home=this.rooms.get(p.home);if(home){delete home.clans[p.id];this.checkAbandoned(home);}this.bank(p);const legacy=this.legacy(p.owner);legacy.generation=Math.max(legacy.generation,p.gen+1);
   this.emit('death',{player:p.id,room:p.room,cause,age:p.age,kills:p.recorded?p.kills:0,skills:p.bankedSkills,x:p.x,z:p.z});
  }
- snapshot(id,after=0){const p=this.players.get(id);if(!p)return null;const r=this.getRoom(p);return {version:VERSION,t:this.time,seq:this.seq,mode:this.mode,player:p,room:{id:r.id,kind:r.kind,seed:r.seed,terrainRevision:r.map?.terrainRevision||0,shipRevision:r.map?.shipRevision||0,code:r.code,name:r.name,stage:r.stage,kills:r.kills,quota:r.quota,cleared:r.cleared,clans:r.clans,bossDefeated:r.bossDefeated,partySize:r.partySize,fields:r.fields||[],items:r.items||[],abandoned:r.abandoned},actors:r.actors,players:[...this.players.values()].filter(q=>q.room===r.id),boatIn:this.boatInterval-this.time%this.boatInterval,yearSeconds:this.yearSeconds,legacy:this.legacy(p.owner),events:this.events.filter(e=>e.seq>after&&(e.room===r.id||e.player===id))};}
+ snapshot(id,after=0){const p=this.players.get(id);if(!p)return null;const r=this.getRoom(p);return {version:VERSION,t:this.time,seq:this.seq,mode:this.mode,player:p,room:{id:r.id,kind:r.kind,seed:r.seed,code:r.code,name:r.name,stage:r.stage,kills:r.kills,quota:r.quota,cleared:r.cleared,clans:r.clans,bossDefeated:r.bossDefeated,partySize:r.partySize,fields:r.fields||[],items:r.items||[],abandoned:r.abandoned},actors:r.actors,players:[...this.players.values()].filter(q=>q.room===r.id),boatIn:this.boatInterval-this.time%this.boatInterval,yearSeconds:this.yearSeconds,legacy:this.legacy(p.owner),events:this.events.filter(e=>e.seq>after&&(e.room===r.id||e.player===id))};}
  exportState({live=false}={}){const data={schema:4,version:VERSION,seed:this.seed,rngState:this.rng.getState(),mode:this.mode,time:this.time,seq:this.seq,eid:this.eid,roomSeq:this.roomSeq,rooms:[...this.rooms],players:[...this.players].map(([id,p])=>[id,live?p:{...p,speech:'',speechUntil:0}]),legacies:this.legacies,abandoned:this.abandoned};return JSON.parse(JSON.stringify(data));}
  static migrateSave(input){
   const data=JSON.parse(JSON.stringify(input));
@@ -1333,19 +1436,323 @@ inflictWound(p,part,severity,source=null,strength=null){
   // Schema 4 formalizes validated state; gameplay fields and schema-3 values are retained.
   data.schema=4;return data;
  }
- reconcileTerrain(){
-  for(const p of this.players.values()){const r=this.getRoom(p);if(r.kind!=='village'||p.traversal)continue;
-   const wall=r.map.traversables.find(o=>o.id==='green:wall');if(!terrainFootprint(r.map,p.x,p.z)&&!p.supportHeight&&!(wall&&Math.abs(p.x-wall.x)<wall.width/2+.42&&Math.abs(p.z-wall.z)<wall.depth/2+.42))continue;
-   p.supportHeight=supportHeight(r.map,p.x,p.z);this.bound(p,r);p.supportHeight=supportHeight(r.map,p.x,p.z);
-   if(p.lifeState==='carried')p.baseY=1.32+p.supportHeight;
-  }
- }
  static restoreLive(input){
   const d=this.migrateSave(input),s=new Simulation({seed:d.seed,mode:d.mode});
   for(const key of ['time','seq','eid','roomSeq','legacies','abandoned'])s[key]=d[key];
   s.rooms=new Map(d.rooms);s.players=new Map(d.players);s.rng.setState(d.rngState);s.events=[];
-  for(const r of s.rooms.values())if(r.kind==='village'){const upgrade=!r.map?.ship;r.map=makeVillage(r.seed);if(upgrade)s.ensureShipActors(r);}
-  s.reconcileTerrain();return s;
+  for(const r of s.rooms.values())if(r.kind==='village')r.map=makeVillage(r.seed);
+  return s;
  }
- static restore(data){data=this.migrateSave(data);if(data?.schema!==4||!Array.isArray(data.players)||!Array.isArray(data.rooms)||data.players.length>200)throw Error('この改修より前の進行中データは別保管されています。');const s=new Simulation({seed:data.seed,mode:data.mode});s.time=+data.time||0;s.seq=+data.seq||0;s.eid=+data.eid||0;s.roomSeq=+data.roomSeq||1;s.rooms=new Map(data.rooms);s.players=new Map(data.players);s.legacies=data.legacies||{};s.abandoned=data.abandoned||[];if(Number.isInteger(data.rngState))s.rng.setState(data.rngState);for(const p of s.players.values()){if(!s.rooms.has(p.room))throw Error('村の記録がありません。');p.attackBufferedUntil=0;p.attackStep??=null;p.hitReactAt??=0;p.hitReactUntil??=0;p.hitDir??=0;p.hitSeverity??=null;p.input={x:0,z:0};p.guard=false;p.guardPending=false;p.speech='';p.speechUntil=0;p.phaseLimitVersion=0;s.preparePlayer(p);p.dash=null;p.autoFight=null;p.chain=null;p.pendingSkill=null;p.combo=null;p.attackStep=null;delete p.hitRecoil;s.stopTraversal(p);p.action=incapacitated(p)?p.lifeState:p.alive?(p.seated?'sit':'idle'):'fall';SkillSystem.restore(s,p);}for(const r of s.rooms.values()){if(r.kind==='village'){r.map=makeVillage(r.seed);const spot=villagePracticePosition(r.map);for(const a of r.actors)if(a.kind==='dummy'&&a.shipStation==null){a.x=a.homeX=spot.x;a.z=a.homeZ=spot.z;}s.ensureShipActors(r);}r.actors=r.actors.filter(a=>a.kind!=='villager');for(const a of r.actors){if(a.kind==='archer')a.kind='soldier';if(a.kind==='mage')a.kind='goblin';a.statuses??={};a.hp??=a.kind==='guard'?130:a.elite?120:70;a.hpMax??=a.hp;a.npcResolveMax??=a.kind==='guard'?18:14;if(data.version!==VERSION)a.npcResolve=a.npcResolveMax;}}for(const p of s.players.values()){const r=s.getRoom(p);if(r.kind==='village'){if(p.z>29.5){s.bound(p,r);p.supportHeight=supportHeight(r.map,p.x,p.z);}if(p.queued||onShipDeck(p))p.queued=p.age>=15&&onShipDeck(p);}}for(const l of Object.values(s.legacies))l.archive=l.archive.filter(id=>skillById(id));s.reconcileTerrain();return s;}
+ static restore(data){data=this.migrateSave(data);if(data?.schema!==4||!Array.isArray(data.players)||!Array.isArray(data.rooms)||data.players.length>200)throw Error('この改修より前の進行中データは別保管されています。');const s=new Simulation({seed:data.seed,mode:data.mode});s.time=+data.time||0;s.seq=+data.seq||0;s.eid=+data.eid||0;s.roomSeq=+data.roomSeq||1;s.rooms=new Map(data.rooms);s.players=new Map(data.players);s.legacies=data.legacies||{};s.abandoned=data.abandoned||[];if(Number.isInteger(data.rngState))s.rng.setState(data.rngState);for(const p of s.players.values()){if(!s.rooms.has(p.room))throw Error('村の記録がありません。');p.attackBufferedUntil=0;p.attackStep??=null;p.hitReactAt??=0;p.hitReactUntil??=0;p.hitDir??=0;p.hitSeverity??=null;p.input={x:0,z:0};p.guard=false;p.guardPending=false;p.speech='';p.speechUntil=0;p.phaseLimitVersion=0;s.preparePlayer(p);p.dash=null;p.autoFight=null;p.chain=null;p.pendingSkill=null;p.combo=null;p.attackStep=null;delete p.hitRecoil;s.stopTraversal(p);p.action=incapacitated(p)?p.lifeState:p.alive?(p.seated?'sit':'idle'):'fall';SkillSystem.restore(s,p);}for(const r of s.rooms.values()){if(r.kind==='village'){r.map=makeVillage(r.seed);const spot=villagePracticePosition(r.map);for(const a of r.actors)if(a.kind==='dummy'){a.x=a.homeX=spot.x;a.z=a.homeZ=spot.z;}}r.actors=r.actors.filter(a=>a.kind!=='villager');for(const a of r.actors){if(a.kind==='archer')a.kind='soldier';if(a.kind==='mage')a.kind='goblin';a.statuses??={};a.hp??=a.kind==='guard'?130:a.elite?120:70;a.hpMax??=a.hp;a.npcResolveMax??=a.kind==='guard'?18:14;if(data.version!==VERSION)a.npcResolve=a.npcResolveMax;}}for(const l of Object.values(s.legacies))l.archive=l.archive.filter(id=>skillById(id));return s;}
 }
+
+/* Event-driven life experience. Uses its own saved RNG; never the combat/world RNG. */
+const BloodlineSkills = (() => {
+ 'use strict';
+ const REVISION = 4, MAX_JOURNAL = 96, MAX_CONTEXTS = 192;
+ const ACTIVE_PACING = Object.freeze({gain:.4,threshold:3.65,perKnown:.25,maxThreshold:9.5,cooldown:105,perKnownSeconds:15,maxCooldown:300,cost:4.6,perKnownCost:.35});
+ const TAGS = new Set(['weight','rhythm','craft','care','patience','play','light','explore','track','precision','combat','tension','observe','rest','study','pray','read','memory','bell','feather','stone','charcoal','net','cross','family','defeat','weapon']);
+ const finite = (v, fallback = 0) => Number.isFinite(v) ? v : fallback;
+ const object = v => v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+ const list = v => Array.isArray(v) ? v : [];
+ const validTags = v => [...new Set(list(v).filter(t => TAGS.has(t)))];
+ function hash(value) { let h=2166136261; for (const c of String(value)) { h^=c.charCodeAt(0); h=Math.imul(h,16777619); } return h>>>0||1; }
+ function next(state) { let x=state.rng>>>0; x^=x<<13; x^=x>>>17; x^=x<<5; state.rng=x>>>0||1; return state.rng/4294967296; }
+ function pick(items, weight, state) {
+  const weights=items.map(d=>Math.max(0,finite(weight(d)))), total=weights.reduce((a,b)=>a+b,0);
+  if (!total) return null;
+  let n=next(state)*total;
+  for(let i=0;i<items.length;i++) { n-=weights[i]; if(n<0) return items[i]; }
+  return items.at(-1);
+ }
+ function create(seed, life) {
+  return {version:1,revision:REVISION,life:String(life),lifeSeed:hash(seed+':'+life),rng:hash(seed+':'+life),experience:{},recent:{},contexts:{},acceptedAt:{},journal:[],discovered:[],memories:{},charge:0,lastDiscovery:-100,lastOpportunity:-100,activeInspiration:{charge:0,lastDiscovery:-100,rng:hash(seed+':'+life+':active')},lastEvent:-100,serial:0,unread:[],seenRegions:[],sampleAt:0,sampleX:null,sampleZ:null,connections:{},glimpses:{lastAt:-100,seen:[]},equipmentSeen:[],inheritedTags:[],inspiration:{route:null,sourceSerials:[]}};
+ }
+ function restore(raw,seed,life) {
+  const s=create(seed,life);
+  if(!raw || raw.version!==1) return s;
+  s.lifeSeed=Number.isInteger(raw.lifeSeed)&&raw.lifeSeed>0?raw.lifeSeed>>>0:s.lifeSeed;
+  s.rng=Number.isInteger(raw.rng)&&raw.rng>0?raw.rng>>>0:s.rng;
+  for(const field of ['experience','recent']) for(const [k,v] of Object.entries(object(raw[field]))) if(TAGS.has(k)&&Number.isFinite(v)&&v>=0) s[field][k]=Math.min(v,10000);
+  for(const field of ['contexts','acceptedAt']) s[field]=Object.fromEntries(Object.entries(object(raw[field])).filter(([k,v])=>k.length<120&&Number.isFinite(v)&&v>=0).slice(-MAX_CONTEXTS));
+  s.journal=list(raw.journal).filter(e=>e&&Number.isFinite(e.at)&&Array.isArray(e.tags)&&typeof e.text==='string').slice(-MAX_JOURNAL).map(e=>({at:e.at,serial:finite(e.serial),kind:String(e.kind).slice(0,32),context:String(e.context).slice(0,110),tags:validTags(e.tags),text:e.text.slice(0,180)}));
+  s.discovered=list(raw.discovered).filter(e=>e&&Number.isInteger(e.id)&&typeof e.key==='string').slice(-1024).map(e=>({id:e.id,key:e.key.slice(0,100),family:String(e.family||'').slice(0,64),at:finite(e.at),trigger:finite(e.trigger),route:['main','cross','deviation'].includes(e.route)?e.route:'main',reasons:list(e.reasons).slice(0,4).map(x=>String(x).slice(0,180)),tags:validTags(e.tags),sourceSerials:list(e.sourceSerials).filter(Number.isInteger).slice(0,4)}));
+  s.unread=[...new Set(list(raw.unread).filter(Number.isInteger))].slice(-1024);
+  for(const [k,m] of Object.entries(object(raw.memories))) if(TAGS.has(k)&&m&&typeof m.text==='string') s.memories[k]={text:m.text.slice(0,180),at:finite(m.at),origin:m.origin==='family'?'family':'found'};
+  for(const k of ['charge','lastDiscovery','lastEvent','serial','sampleAt']) s[k]=finite(raw[k],s[k]);
+  s.charge=Math.max(0,Math.min(s.charge,12));s.serial=Math.max(0,Math.floor(s.serial));
+  s.lastOpportunity=finite(raw.lastOpportunity,s.lastDiscovery);
+  const active=object(raw.activeInspiration);
+  s.activeInspiration={charge:Math.max(0,Math.min(finite(active.charge,s.charge*ACTIVE_PACING.gain),12)),lastDiscovery:finite(active.lastDiscovery,s.lastDiscovery),rng:Number.isInteger(active.rng)&&active.rng>0?active.rng>>>0:hash(s.lifeSeed+':active')};
+  for(const k of ['sampleX','sampleZ']) s[k]=Number.isFinite(raw[k])?raw[k]:null;
+  s.seenRegions=list(raw.seenRegions).filter(x=>typeof x==='string').slice(-96);
+  s.inheritedTags=validTags(raw.inheritedTags).slice(0,6);s.equipmentSeen=list(raw.equipmentSeen).filter(x=>typeof x==='string').slice(0,64);
+  s.connections=Object.fromEntries(Object.entries(object(raw.connections)).filter(([k,v])=>/^\d+:\d+$/.test(k)&&Number.isFinite(v)&&v>0).slice(-256).map(([k,v])=>[k,Math.min(10000,v)]));
+  s.glimpses={lastAt:finite(raw.glimpses?.lastAt,-100),seen:list(raw.glimpses?.seen).filter(k=>GLIMPSES.some(g=>g.key===k)).slice(-16)};
+  s.inspiration={route:['main','cross','deviation'].includes(raw.inspiration?.route)?raw.inspiration.route:null,sourceSerials:list(raw.inspiration?.sourceSerials).filter(Number.isInteger).slice(0,4)};
+  return s;
+ }
+ // A crossing needs distinct kinds of experience, not two tags emitted by one task.
+ function witnesses(def,state) {
+  const groups=def.requiresExperience;
+  const memories=Object.entries(state.memories).map(([tag,m])=>({...m,kind:'memento',tags:[tag,'memory'],serial:0}));
+  const choices=groups.map(group=>[...state.journal].reverse().concat(memories).filter(r=>r.tags.some(t=>group.includes(t))));
+  if(choices.some(xs=>!xs.length)) return [];
+  if(groups.length===1) return [choices[0][0]];
+  for(const first of choices[0]) {
+   const result=[first];
+   for(const xs of choices.slice(1)) {
+    const found=xs.find(r=>result.every(other=>r.kind!==other.kind));
+    if(found) result.push(found);
+   }
+   if(result.length===groups.length) return result;
+  }
+  return [];
+ }
+ class Catalog {
+  constructor(defs) {
+   this.defs=defs;this.byId=new Map();this.byKey=new Map();this.families=new Map();this.index=new Map();this.conditions=new Map();this.metrics={events:0,evaluated:0,pools:0};
+   for(const d of defs) {
+    if(this.byId.has(d.id)||this.byKey.has(d.key)) throw Error('Duplicate skill identity');
+    this.byId.set(d.id,d);this.byKey.set(d.key,d);
+    this.conditions.set(d.id,JSON.stringify(d.requiresExperience));
+    if(!this.families.has(d.family)) this.families.set(d.family,[]);
+    this.families.get(d.family).push(d);
+    for(const tag of new Set(d.requiresExperience.flat())) { if(!this.index.has(tag))this.index.set(tag,new Set());this.index.get(tag).add(d.family); }
+   }
+  }
+  search(text,locale='ja',limit=30) { const q=String(text).toLowerCase().slice(0,100);return this.defs.filter(d=>(d.names[locale]||d.names.ja).toLowerCase().includes(q)||d.key.includes(q)).slice(0,Math.max(0,Math.min(100,limit))); }
+  pool(state,event,context={}) {
+   const families=new Set();
+   for(const tag of event.tags) for(const family of this.index.get(tag)||[]) families.add(family);
+   const learned=new Set([...(context.known||[]),...state.discovered.map(d=>d.id)]),result=[],proofCache=new Map();
+   for(const family of families) {
+    const variants=[];
+    for(const d of this.families.get(family)) {
+     this.metrics.evaluated++;
+     if(learned.has(d.id))continue;
+     if(d.action?.school==='shield'&&!context.shield||d.action?.weapon>=0&&d.action.weapon!==context.weapon||(d.action?.requires||[]).some(part=>context.lost?.includes(part)))continue;
+     const proofKey=this.conditions.get(d.id);let proof=proofCache.get(proofKey);
+     if(!proof){proof=d.requiresExperience.every(group=>group.some(t=>(state.experience[t]||0)>=(state.memories[t]?1:1.25)))?witnesses(d,state):[];proofCache.set(proofKey,proof);}if(!proof.length)continue;
+     variants.push({def:d,proof});
+    }
+    if(variants.length)result.push({family,variants,anchor:this.families.get(family)[0]});
+   }
+   this.metrics.pools++;return result;
+  }
+  observe(state,event,context={}) {
+   this.metrics.events++;
+   const at=finite(event.at),tags=validTags(event.tags),key=String(event.context||event.kind).slice(0,110);
+   if(!tags.length||typeof event.text!=='string'||at<state.lastEvent)return null;
+   if(at-(state.acceptedAt[key]??-100)<3.8)return null;
+   const n=state.contexts[key]||0,gain=Math.max(.06,1/Math.sqrt(1+n*.8));
+   state.contexts[key]=n+1;state.acceptedAt[key]=at;
+   for(const field of ['contexts','acceptedAt']) { const keys=Object.keys(state[field]);if(keys.length>MAX_CONTEXTS)delete state[field][keys[0]]; }
+   for(const tag of Object.keys(state.recent))state.recent[tag]*=.89;
+   for(const tag of tags){state.experience[tag]=Math.min(10000,(state.experience[tag]||0)+gain);state.recent[tag]=Math.min(12,(state.recent[tag]||0)+gain);}
+   // Inspiration matures from accepted experience; it is not XP or a level-up currency.
+   const inspirationGain=.35+.5*gain;
+   state.lastEvent=at;state.serial++;state.charge=Math.min(12,state.charge+inspirationGain);
+   const active=state.activeInspiration;active.charge=Math.min(12,active.charge+inspirationGain*ACTIVE_PACING.gain);
+   const record={at,kind:String(event.kind),context:key,tags,text:event.text.slice(0,180),serial:state.serial};
+   state.journal.push(record);if(state.journal.length>MAX_JOURNAL)state.journal.shift();
+   if(event.memento&&TAGS.has(event.memento)&&!state.memories[event.memento])state.memories[event.memento]={text:record.text,at,origin:event.origin||'found'};
+   state.inheritedTags=validTags(context.inheritedTags).slice(0,6);
+   if(context.age<4||context.prologue||state.charge<3.65||at-state.lastOpportunity<30)return null;
+   const pool=this.pool(state,{...event,tags},context);if(!pool.length)return null;
+   const chance=Math.min(.92,.24+Math.max(0,state.charge-3.65)*.14+Math.max(0,at-state.lastOpportunity-90)*.001);
+   if(next(state)>chance)return null;
+   const recentFamilies=state.discovered.slice(-5).map(d=>d.family);
+   const routeFor=v=>v.def.requiresExperience.length>1?'cross':v.def.tags.some(t=>tags.includes(t)&&!['memory','patience','rhythm'].includes(t))?'main':'deviation';
+   const familyWeight=f=>{
+    const d=f.anchor||f.variants[0].def,basis=d.requiresExperience.flat(),route=routeFor({def:d});
+    const focus=basis.reduce((n,t)=>n+(state.recent[t]||0),0)/basis.length,history=basis.reduce((n,t)=>n+Math.sqrt(state.experience[t]||0),0)/basis.length;
+    const inherited=basis.some(t=>state.inheritedTags.includes(t))?1+Math.min(.35,d.inheritance?.bias??.22):1;
+    const affinity=(d.affinities||[]).some(t=>(state.experience[t]||0)>1)?1.25:1;
+    const lifeBias=.7+(hash(state.lifeSeed+':'+f.family)%1000)/1000*.6;
+    const familiar=1/(1+recentFamilies.filter(x=>x===f.family).length*.6);
+    return d.rarity*(.55+focus*.35+history*.1)*({main:1,cross:1.7,deviation:.28}[route])*inherited*familiar*affinity*lifeBias;
+   };
+   let family=pick(pool,familyWeight,state);if(!family)return null;
+   const phases=new Set([0,...(context.known||[]).map(id=>this.byId.get(id)).filter(d=>d&&!d.passive).map(d=>d.phase)]);
+   const variantWeight=v=>(!v.def.passive&&!phases.has(v.def.phase)?1.5:1)*v.def.rarity;
+   let selected=pick(family.variants,variantWeight,state);
+   // Preserve the original opportunity cadence and mixed pool for passives.
+   // A still-maturing active idea spends this opportunity, never grants a passive instead.
+   state.lastOpportunity=at;state.charge=Math.max(0,state.charge-4.6);
+   if(!selected.def.passive){
+    const known=new Set([...(context.known||[]),...state.discovered.map(d=>d.id)]),count=[...known].filter(id=>{const d=this.byId.get(id);return d&&!d.passive;}).length;
+    const threshold=Math.min(ACTIVE_PACING.maxThreshold,ACTIVE_PACING.threshold+count*ACTIVE_PACING.perKnown),interval=Math.min(ACTIVE_PACING.maxCooldown,ACTIVE_PACING.cooldown+count*ACTIVE_PACING.perKnownSeconds);
+    if(active.charge<threshold||at-active.lastDiscovery<interval)return null;
+    const lastFamily=state.discovered.findLast(d=>!this.byId.get(d.id)?.passive)?.family;
+    const activePool=pool.map(f=>({...f,variants:f.variants.filter(v=>!v.def.passive)})).filter(f=>f.variants.length);
+    family=pick(activePool,f=>familyWeight(f)*(routeFor(f.variants[0])==='cross'?1.6:1)*(f.family===lastFamily?.35:1),active);
+    selected=pick(family.variants,variantWeight,active);
+    active.charge=Math.max(0,active.charge-ACTIVE_PACING.cost-count*ACTIVE_PACING.perKnownCost);active.lastDiscovery=at;
+   }
+   const d=selected.def;
+   const proof=[...selected.proof];
+   for(const tag of tags)if(state.memories[tag]&&proof.length<3&&!proof.some(r=>r.text===state.memories[tag].text))proof.push({...state.memories[tag],serial:0});
+   const discovery={id:d.id,key:d.key,family:d.family,at,reasons:[...new Set(proof.map(r=>r.text))],trigger:record.serial,tags:[...d.tags],route:routeFor(selected),sourceSerials:proof.map(r=>r.serial).filter(Boolean)};
+   state.discovered.push(discovery);state.unread.push(d.id);state.lastDiscovery=at;
+   state.inspiration={route:discovery.route,sourceSerials:discovery.sourceSerials};return discovery;
+  }
+ }
+ // These are observations about lived contrasts, not recipes or pending skill IDs.
+ const GLIMPSES = [
+  {key:'craft-combat',groups:[['craft'],['combat']],text:'道具を扱う手つきが、戦いの手応えと重なる……'},
+  {key:'rest-tension',groups:[['rest'],['tension','defeat']],text:'息を整えると、あの張りつめた一瞬が浮かぶ……'},
+  {key:'explore-precision',groups:[['explore'],['precision']],text:'歩いて覚えた間合いが、狙いを定める感覚に重なる……'},
+  {key:'play-rhythm',groups:[['play'],['rhythm']],text:'遊びの拍子が、別の動きの中にも聞こえる……'},
+  {key:'family-patience',groups:[['family'],['patience']],text:'待つ静けさの中に、あの人と過ごした時間がよみがえる……'},
+  {key:'memento-rhythm',groups:[['bell','stone','feather','charcoal','net'],['rhythm']],text:'手元の小さな思い出が、今日の動きに結びつきかける……'}
+ ];
+ function glimpse(state,at) {
+  const seen=state.glimpses;
+  if(state.serial<8||at-seen.lastAt<120||at-state.lastDiscovery<30)return null;
+  const recent=state.journal.filter(r=>at-r.at<=180);
+  const choices=GLIMPSES.filter(g=>!seen.seen.includes(g.key)&&g.groups.some(tags=>tags.some(t=>recent.at(-1)?.tags.includes(t))))
+   .sort((a,b)=>hash(state.lifeSeed+':'+a.key)-hash(state.lifeSeed+':'+b.key));
+  for(const g of choices) {
+   const proof=witnesses({requiresExperience:g.groups},{journal:recent,memories:state.memories});
+   if(proof.length!==g.groups.length)continue;
+   seen.lastAt=at;seen.seen.push(g.key);
+   return {text:g.text,sources:proof.map(r=>r.serial||0)};
+  }
+  return null;
+ }
+ function connection(def,link,target,time,band) { return !!(def&&link&&link.target===target&&link.until>=time&&link.band<band&&def.entry.some(tag=>link.tags.includes(tag))); }
+ return {Catalog,create,restore,hash,next,connection,witnesses,glimpse,REVISION};
+})();
+
+/* Explicit adapters to the existing Simulation. No prototype overrides or extra loop. */
+const BL_SKILL_CATALOG = new BloodlineSkills.Catalog(BL_SKILL_DEFINITIONS);
+for (const def of BL_SKILL_DEFINITIONS) {
+ const a=def.action||{};
+ art(def.id,def.names.ja,{...a,animation:a.anim||'slash',travel:a.step??.25,form:['slam','leap'].includes(a.anim)?6:['thrust','zigzag'].includes(a.anim)?2:a.hits>1?3:0,status:a.status?{id:a.status,duration:a.duration}:null,school:a.anim==='slam'?'heavy':a.school||'life',band:def.phase,passive:!!def.passive,trigger:def.passive?'passive':'combo',effect:def.effect,value:def.value,color:def.color,desc:def.descriptions.ja,motion:def.names.ja,skillKey:def.key});
+}
+const SkillSystem = (() => {
+ const activities={
+  observe:{tags:['craft','weight','rhythm'],text:'鍛冶場で、道具が打ち返す拍子を見た'},
+  care:{tags:['care','craft','patience'],text:'武具を手入れし、力の通り道を確かめた'},
+  play:{tags:['play','light','rhythm'],text:'庭で遊び、弾む足の拍子を覚えた'},
+  track:{tags:['track','explore','precision'],text:'狩人の足跡を学び、一歩先を読んだ'},
+  study:{tags:['study','combat','patience'],text:'指南書と稽古で、構えの意味を学んだ'},
+  read:{tags:['read','patience','rhythm'],text:'書物を読み、繰り返す形に気づいた'},
+  pray:{tags:['pray','rest','patience'],text:'祈りの間、息と静けさを確かめた'}
+ };
+ const names={bell:'鈴',stone:'小石',feather:'羽根',charcoal:'炭の欠片',net:'糸の網'};
+ const legacyTags={heavy:['weight','craft'],light:['light','explore'],blade:['combat','precision'],unarmed:['combat','rhythm'],shield:['patience','combat'],church:['rest','patience'],magic:['patience','rhythm']};
+ const identity=p=>p.id+':'+p.gen+':'+p.appearanceSeed;
+ function prepare(sim,p) {
+  if(!p.skillLife) { p.skillLife=BloodlineSkills.create(sim.seed,identity(p));p.skillLife.sampleAt=sim.time;p.skillLife.equipmentSeen.push(p.weapon+':'+p.armor+':'+p.shield); }
+  p.skillLifeNotice??='';
+ }
+ function restore(sim,p) {
+  const raw=p.skillLife;p.skillLifeNotice='';
+  if(raw&&(raw.version!==1||!Array.isArray(raw.journal)||!Array.isArray(raw.discovered)||typeof raw.experience!=='object')){p.skillLifeBackup??={raw:JSON.parse(JSON.stringify(raw)),reason:'invalid-skill-extension'};p.skillLifeNotice='技の記憶を修復しました。元の記録は別に保管しています。';}
+  p.skillLife=BloodlineSkills.restore(raw,sim.seed,identity(p));
+  p.skillLife.discovered=p.skillLife.discovered.filter(d=>BL_SKILL_CATALOG.byId.get(d.id)?.key===d.key&&(p.skills.includes(d.id)||p.passives.includes(d.id)));
+  p.skillLife.unread=p.skillLife.unread.filter(id=>p.skills.includes(id)||p.passives.includes(id));
+  reset(p);
+ }
+ function reset(p) { p.skillLink=null;p.skillCast=null;p.skillExit=null; }
+ function withMemento(p,event) {
+  const held=(p.inventory||[]).filter(id=>names[id]);if(!held.length)return event;
+  const id=held[p.skillLife.serial%held.length];
+  return {...event,tags:[...event.tags,id,'memory'],text:event.text+'。手元には'+names[id]+'があった'};
+ }
+ function record(sim,p,event) {
+  if(!p?.alive)return;prepare(sim,p);
+  const inherited=[...new Set((p.inherit||[]).flatMap(id=>BL_SKILL_CATALOG.byId.get(id)?.tags||legacyTags[skillById(id)?.school]||['combat']))];
+  // A witnessed defeat influences a future idea, never grants the parent's technique.
+  const ancestor=sim.legacy(p.owner).records.findLast(r=>(p.inherit||[]).includes(r.skill));
+  if(ancestor?.skillHistory?.defeat)inherited.push('tension','patience');
+  const serial=p.skillLife.serial;
+  const d=BL_SKILL_CATALOG.observe(p.skillLife,{...event,at:sim.time},{age:p.age,prologue:p.prologue,known:[...p.skills,...p.passives],weapon:p.weapon,shield:p.shield,lost:Object.entries(p.wounds||{}).filter(([,v])=>v.severity==='lost').map(([k])=>k),inheritedTags:inherited});
+  if(d)sim.learn(p,d.id);
+  else if(p.skillLife.serial!==serial&&!p.prologue&&p.age>=4&&!p.autoFight) {
+   const glimpse=BloodlineSkills.glimpse(p.skillLife,sim.time);
+   if(glimpse)sim.emit('skillglimpse',{player:p.id,room:p.room,x:p.x,z:p.z,...glimpse});
+  }
+ }
+ function onEvent(sim,e) {
+  const p=sim.players.get(e.player||e.source);if(!p)return;
+  prepare(sim,p);
+  if(['insight','passive'].includes(e.type)) { e.discovery=p.skillLife.discovered.find(d=>d.id===e.id);return; }
+  if(['wound','death','clash','depart','returned','released','sit'].includes(e.type))reset(p);
+  if(!p.alive)return;
+  let event=null;
+  if(e.type==='progress'&&activities[p.activity])event={kind:p.activity,context:'work:'+p.activity,...activities[p.activity]};
+  if(e.type==='pickup'&&names[e.item]) {
+   const origin=e.gift?'family':'found',text=(e.gift?'家族から受け取った':'道で拾った')+names[e.item];
+   // First provenance stays intact after discard/reacquisition and holding in later activities.
+   p.skillLife.memories[e.item]??={origin,text,at:sim.time};
+   event={kind:'memento',context:'pickup:'+e.item,tags:[e.item,'memory',...(e.gift?['family']:['explore'])],text,memento:e.item,origin};
+  }
+  if(e.type==='mother'&&p.prologue)event={kind:'family',context:'family:mother',tags:['family','patience'],text:'腕の中で、母の声を聞いた'};
+  if(e.type==='equipped'&&!p.skillLife.equipmentSeen.includes(p.weapon+':'+p.armor+':'+p.shield)){p.skillLife.equipmentSeen.push(p.weapon+':'+p.armor+':'+p.shield);event={kind:'equipment',context:'gear:'+p.weapon+':'+p.armor+':'+p.shield,tags:['weapon','care',...(p.weapon===2||p.armor===2?['weight']:['precision'])],text:'武具棚で身支度を変え、重心を確かめた'};}
+  if(e.type==='hit'&&e.source===p.id) {
+   const def=BL_SKILL_CATALOG.byId.get(e.skill),target=sim.getRoom(p)?.actors.find(a=>a.id===e.target);
+   if(target)event={kind:'contact',context:'contact:'+target.kind,tags:['combat','rhythm',...(target.kind==='dummy'?['patience']:['tension','weight'])],text:target.kind==='dummy'?'稽古人形に打ち込み、当たる拍子を確かめた':'敵に打ち込み、押し合う重みを知った'};
+  }
+  if(e.type==='wound'&&e.severity!=='fatal')event={kind:'setback',context:'combat:wound',tags:['combat','tension','defeat'],text:'傷を負い、攻め終わりの隙を思い知った'};
+  if(e.type==='clash')event={kind:'clash',context:'combat:clash',tags:['combat','weight','tension'],text:'敵とぶつかり、踏みとどまる重みを知った'};
+  if(e.type==='kill')event={kind:'victory',context:'combat:win',tags:['combat','precision'],text:'敵を倒し、最後の間合いを覚えた'};
+  if(e.type==='returned')event={kind:'return',context:'journey:return',tags:['explore','rest','tension'],text:'最前線から帰り、村の静けさを知った'};
+  if(event)record(sim,p,withMemento(p,event));
+ }
+ function contact(sim,p,target,sk) {
+  const def=BL_SKILL_CATALOG.byId.get(sk.id);if(!def)return;
+  // Called after the original damage / reaction resolution, never on a miss or guard.
+  if(target.alive&&sk.stagger&&target.kind!=='boss') {
+   target.stun=Math.max(target.stun,sim.time+sk.stagger/(target.elite?1.65:1));
+   target.actionUntil=Math.max(target.actionUntil,target.stun);target.telegraph=null;
+  }
+  const cast=p.skillCast;
+  if(cast?.linked&&cast.id===def.id&&cast.target===target.id&&!cast.announced) {
+   cast.announced=true;const key=cast.from+':'+def.id;
+   p.skillLife.connections[key]=Math.min(10000,(p.skillLife.connections[key]||0)+1);
+   const first=p.skillLife.connections[key]===1,signal=first?'discovery':sim.time-(p.skillConnectionAt??-100)>=6?'echo':'quiet';
+   if(signal!=='quiet')p.skillConnectionAt=sim.time;
+   sim.emit('skillconnection',{player:p.id,room:p.room,id:def.id,from:cast.from,target:target.id,x:target.x,z:target.z,dir:p.dir,connectionKind:cast.connectionKind,first,signal});
+  }
+  if(!target.alive){p.skillExit=null;return;}
+  const tags=def.exit.filter(tag=>tag!=='offbalance'||target.kind==='dummy'||target.stun>sim.time||target.exposedUntil>sim.time).filter(tag=>tag!=='close'||dist(target,p)<=2.4);
+  p.skillExit={id:def.id,target:target.id,tags,until:sim.time+5,band:p.combo?.band??0};
+ }
+ function sample(sim,p) {
+  const s=p.skillLife;if(p.prologue||p.age<4||sim.time<s.sampleAt)return;
+  s.sampleAt=sim.time+5;
+  const moved=s.sampleX!==null&&Math.hypot(p.x-s.sampleX,p.z-s.sampleZ)>3;
+  s.sampleX=p.x;s.sampleZ=p.z;
+  if(p.activity)return;
+  if(moved&&!p.autoFight) {
+   const region=p.room+':'+(p.z<-28?'outskirts':sim.getArea(p)),fresh=!s.seenRegions.includes(region);
+   if(fresh)s.seenRegions.push(region);if(s.seenRegions.length>96)s.seenRegions.shift();
+   record(sim,p,withMemento(p,{kind:'explore',context:'walk:'+region,tags:['explore','light',...(fresh?['precision']:[])],text:fresh?'歩いて、新しい場所の間合いを覚えた':'歩き慣れた道の、足の運びを確かめた'}));
+  } else if(p.seated&&sim.time-p.lastExertion<35)record(sim,p,withMemento(p,{kind:'rest',context:'rest:'+sim.getArea(p),tags:['rest','patience'],text:'動いたあとに腰を下ろし、息を整えた'}));
+ }
+ function prepareCast(sim,p,sk) {
+  p.skillCast=null;
+  const d=BL_SKILL_CATALOG.byId.get(sk.id);if(!d){p.skillLink=null;return sk;}
+  const target=sim.getRoom(p)?.actors.find(e=>e.id===p.autoFight&&e.alive),link=p.skillLink;p.skillLink=null;
+  if(!target||dist(target,p)>sk.reach+.8||!BloodlineSkills.connection(d,link,target.id,sim.time,p.combo?.band??0))return sk;
+  if(d.entry.includes('offbalance')&&link.tags.includes('offbalance')&&target.kind!=='dummy'&&!(target.stun>sim.time||target.exposedUntil>sim.time))return sk;
+  const bonus=d.connection||{},cast={id:sk.id,from:link.id,linked:true,target:target.id,announced:false,connectionKind:d.entry.find(tag=>link.tags.includes(tag))};
+  for(const key of ['charge','recovery','cost'])if(bonus[key]!==undefined)cast[key]=sk[key]*bonus[key];
+  for(const key of ['reach','breakPower','knockback','tracking'])if(bonus[key]!==undefined)cast[key]=(sk[key]||0)+bonus[key];
+  p.skillCast=cast;return {...sk,...cast};
+ }
+ function active(p,id) { const sk=skillById(id);return sk&&p.skillCast?.id===id?{...sk,...p.skillCast}:sk; }
+ function complete(sim,p) {
+  p.skillLink=p.skillExit&&p.skillExit.id===p.currentSkill?p.skillExit:null;p.skillExit=null;
+ }
+ function remember(p) {
+  return {revision:BloodlineSkills.REVISION,defeat:p.cause!=='寿命'&&!!p.cause,families:[...new Set(p.skillLife.discovered.map(d=>d.family))],discoveries:p.skillLife.discovered.slice(-8).map(d=>({id:d.id,reasons:d.reasons,route:d.route})),connections:{...p.skillLife.connections},signature:Object.entries(p.skillUses||{}).filter(([id,n])=>Number.isFinite(n)&&n>0&&skillById(+id)&&!skillById(+id).passive).sort((a,b)=>b[1]-a[1]||Number(a[0])-Number(b[0])).slice(0,3).map(([id])=>Number(id))};
+ }
+ return {prepare,restore,reset,record,onEvent,contact,sample,prepareCast,active,complete,remember};
+})();
+
+
+export {Simulation};
