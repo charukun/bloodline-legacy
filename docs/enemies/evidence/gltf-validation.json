@@ -1,0 +1,38 @@
+{
+  "uri": "sentinel.glb",
+  "mimeType": "model/gltf-binary",
+  "validatorVersion": "2.0.0-dev.3.10",
+  "validatedAt": "2026-09-09T06:20:41.881Z",
+  "issues": {
+    "numErrors": 0,
+    "numWarnings": 0,
+    "numInfos": 0,
+    "numHints": 0,
+    "messages": [],
+    "truncated": false
+  },
+  "info": {
+    "version": "2.0",
+    "generator": "Bloodline Legacy enemy compiler 1",
+    "resources": [
+      {
+        "pointer": "/buffers/0",
+        "mimeType": "application/gltf-buffer",
+        "storage": "glb",
+        "byteLength": 537120
+      }
+    ],
+    "animationCount": 8,
+    "materialCount": 1,
+    "hasMorphTargets": false,
+    "hasSkins": true,
+    "hasTextures": false,
+    "hasDefaultScene": true,
+    "drawCallCount": 1,
+    "totalVertexCount": 5048,
+    "totalTriangleCount": 5104,
+    "maxUVs": 0,
+    "maxInfluences": 4,
+    "maxAttributes": 7
+  }
+}

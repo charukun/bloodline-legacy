@@ -34,6 +34,15 @@ class CombatPresentation{
    const m=cm.transforms[CM01.asset.names.indexOf(bone)];
    if(m)return [m[12]-Math.sin(dir)*.12,m[13],m[14]-Math.cos(dir)*.12];
   }
+  const sentinel=r.enemySentinels?.records.get(target?.id);
+  if(sentinel&&sentinel.frame===r.frame){
+   const name=({head:'head',torso:'chest',rightArm:'lowerarm.r',leftArm:'lowerarm.l',rightLeg:'lowerleg.r',leftLeg:'lowerleg.l'})[part]||'chest';
+   const index=EnemySentinel.asset.g.nodes.findIndex(n=>n.name===name),bone=sentinel.world[index];
+   if(bone){const m=rMultiply(sentinel.root,bone),lift=part==='head'?.42:part==='torso'?-.14:0;
+    return [m[12]-Math.sin(dir)*.12,m[13]+lift*sentinel.config.scale[1],m[14]-Math.cos(dir)*.12];}
+  }
+  const creature=r.enemyCreatures?.get(target?.id);
+  if(creature&&creature.frame===r.frame&&creature.sockets[part])return [...creature.sockets[part]];
   const age=target?.age??25,race=target?.race||0;
   const scale=target?.bodyScale??(age<4?.46:age<10?.64+(age-4)*.022:age<18?.78+(age-10)*.027:1)*(race===2?.86:race===1?1.07:race===3?.95:1);
   const height=part==='head'?2.4:part.endsWith('Leg')?.55:1.55,side=part.startsWith('right')?1:part.startsWith('left')?-1:0;

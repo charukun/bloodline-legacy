@@ -57,8 +57,9 @@ test('presentation cache evicts absent characters',()=>{
 // Compare every gameplay field and RNG state with the fixed develop source.
 // The neutral frontal case retains prior damage/reaction behavior. New persisted
 // life, surface and damage-mark metadata is checked by the feature suites.
-const presentation=new Set(['hitPart','hitSeverity','hitReactAt','hitReactUntil','hitDir','hitStrength','hitMotionAt','hitMotionId','hitGuard','lifeState','traversables','damageMarks','grounded','supportHeight','verticalOffset']);
-const state=sim=>JSON.parse(JSON.stringify(sim.exportState(),(k,v)=>presentation.has(k)||k==='phaseLimitVersion'?undefined:v));
+const presentation=new Set(['hitPart','hitSeverity','hitReactAt','hitReactUntil','hitDir','hitStrength','hitMotionAt','hitMotionId','hitGuard','lifeState','traversables','damageMarks','grounded','supportHeight','verticalOffset','enemyForm']);
+// Enemy form/name are presentation identity; player and NPC names remain checked.
+const state=sim=>JSON.parse(JSON.stringify(sim.exportState(),function(k,v){if(k==='name'&&['goblin','soldier','elite','crawler','maw','wraith','boss'].includes(this.kind))return undefined;return presentation.has(k)||k==='phaseLimitVersion'?undefined:v;}));
 test('damage, wound progression, attack interruption, hitstop and RNG match develop',()=>{
  const before=runtime(true);
  for(const seed of [13,27,48])for(const power of [.3,1,1.5,2,3])for(const part of ['head','torso','rightArm','leftLeg']){
