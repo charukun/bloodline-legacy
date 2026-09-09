@@ -190,7 +190,7 @@ const SkillMotion=(()=>{
   if(p.pendingSkill){const q=p.pendingSkill;return {sk,shape:shape(sk),stage:'charge',u:clamp((t-q.started)/Math.max(.001,q.at-q.started),0,1),beat:0,index:0,hits:sk.hits||1};}
   if(p.action!=='attack'||t>p.actionUntil)return null;
   const hits=sk.hits||1,duration=Math.max(.001,p.actionUntil-p.actionStarted),u=clamp((t-p.actionStarted)/duration,0,1);
-  const index=Math.min(hits-1,Math.floor(u*hits));return {sk,shape:shape(sk),stage:'attack',u,beat:Math.min(1,u*hits-index),index,hits,duration:duration/hits};
+  const b=skillBeat(sk,u);return {sk,shape:shape(sk),stage:'attack',u,beat:b.beat,index:b.index,hits,duration:duration*(b.end-b.start)};
  }
  // Every beat has a wind-up, contact, overshoot and return. The end of an
  // internal beat IS the next wind-up; there is no modulo snap at a hit boundary.
@@ -209,6 +209,7 @@ const SkillMotion=(()=>{
    if(a!=='zigzag')pose.rightArmZ=-pose.rightArmZ;
   }
   if(a==='slide'){pose.y-=.17;pose.torso+=.13;pose.rightArm+=.18;}
+  if(a==='kick'&&c.sk.motionPath==='orbit'){pose.y-=.13;pose.yaw+=(kind===0?-.35:kind===1?.6:1);pose.torsoYaw-=.2;}
   if(a==='leap'&&kind===0)pose.y=-.12;
   if(a==='spin'||a==='eclipse'){
    pose.yaw=(index+(kind===0?0:kind===1?.43:.62))*TAU;

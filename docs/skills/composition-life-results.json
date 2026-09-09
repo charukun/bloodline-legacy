@@ -1,0 +1,462 @@
+{
+  "conditions": "Simulation at 30Hz; adult/location fixture; actual activity/pickup/weights/combat commands, no discovery grants. Same 720-second activity budget at the slower discovery pace; event-only diversity cohorts retain their 240-second budget.",
+  "lives": [
+    {
+      "name": "稽古と学び",
+      "skills": [
+        {
+          "id": 60390,
+          "name": "引き受けの声",
+          "route": "main",
+          "reasons": [
+            "指南書と稽古で、構えの意味を学んだ"
+          ]
+        },
+        {
+          "id": 60041,
+          "name": "せめぎ返し",
+          "route": "main",
+          "reasons": [
+            "指南書と稽古で、構えの意味を学んだ"
+          ]
+        },
+        {
+          "id": 703001,
+          "name": "据・針拳三綴〈崩繋〉",
+          "route": "cross",
+          "reasons": [
+            "武具を手入れし、力の通り道を確かめた",
+            "指南書と稽古で、構えの意味を学んだ"
+          ]
+        },
+        {
+          "id": 60900,
+          "name": "炉辺の息",
+          "route": "cross",
+          "reasons": [
+            "武具を手入れし、力の通り道を確かめた",
+            "指南書と稽古で、構えの意味を学んだ"
+          ]
+        },
+        {
+          "id": 711200,
+          "name": "廻・炉拳双返〈崩追〉",
+          "route": "cross",
+          "reasons": [
+            "武具を手入れし、力の通り道を確かめた",
+            "指南書と稽古で、構えの意味を学んだ"
+          ]
+        }
+      ],
+      "latest": {
+        "ids": [
+          60390,
+          703001,
+          711200
+        ],
+        "kind": "crawler",
+        "elapsed": 12.3,
+        "won": true,
+        "survived": true,
+        "health": 100,
+        "enemyHp": -3.517500000000001,
+        "connections": 0,
+        "used": [
+          60390,
+          703001,
+          711200
+        ]
+      },
+      "best": {
+        "ids": [
+          60390,
+          703001,
+          711200
+        ],
+        "kind": "crawler",
+        "elapsed": 12.3,
+        "won": true,
+        "survived": true,
+        "health": 100,
+        "enemyHp": -3.517500000000001,
+        "connections": 0,
+        "used": [
+          60390,
+          703001,
+          711200
+        ]
+      }
+    },
+    {
+      "name": "足跡と遊び",
+      "skills": [
+        {
+          "id": 730231,
+          "name": "廻・追枝一閃〈押繋〉",
+          "route": "cross",
+          "reasons": [
+            "狩人の足跡を学び、一歩先を読んだ。手元には羽根があった",
+            "道で拾った羽根。手元には羽根があった",
+            "道で拾った羽根"
+          ]
+        },
+        {
+          "id": 733020,
+          "name": "据・追枝三綴〈削追〉",
+          "route": "cross",
+          "reasons": [
+            "狩人の足跡を学び、一歩先を読んだ。手元には羽根があった",
+            "道で拾った羽根。手元には羽根があった",
+            "道で拾った羽根"
+          ]
+        },
+        {
+          "id": 771302,
+          "name": "退・羽輪双返〈崩離〉",
+          "route": "cross",
+          "reasons": [
+            "庭で遊び、弾む足の拍子を覚えた。手元には羽根があった",
+            "狩人の足跡を学び、一歩先を読んだ。手元には羽根があった",
+            "道で拾った羽根"
+          ]
+        },
+        {
+          "id": 60112,
+          "name": "夕凪返し",
+          "route": "cross",
+          "reasons": [
+            "狩人の足跡を学び、一歩先を読んだ。手元には羽根があった",
+            "祈りの間、息と静けさを確かめた。手元には羽根があった",
+            "道で拾った羽根"
+          ]
+        },
+        {
+          "id": 60904,
+          "name": "篤い信仰",
+          "route": "main",
+          "reasons": [
+            "祈りの間、息と静けさを確かめた。手元には羽根があった",
+            "道で拾った羽根"
+          ]
+        }
+      ],
+      "latest": {
+        "ids": [
+          733020,
+          771302,
+          60112
+        ],
+        "kind": "crawler",
+        "elapsed": 9.37,
+        "won": true,
+        "survived": true,
+        "health": 100,
+        "enemyHp": -13.125000000000004,
+        "connections": 1,
+        "used": [
+          733020,
+          771302,
+          60112
+        ]
+      },
+      "best": {
+        "ids": [
+          733020,
+          771302,
+          60112
+        ],
+        "kind": "crawler",
+        "elapsed": 9.37,
+        "won": true,
+        "survived": true,
+        "health": 100,
+        "enemyHp": -13.125000000000004,
+        "connections": 1,
+        "used": [
+          733020,
+          771302,
+          60112
+        ]
+      }
+    },
+    {
+      "name": "家族の鈴と手仕事",
+      "skills": [
+        {
+          "id": 60002,
+          "name": "炉底割り",
+          "route": "main",
+          "reasons": [
+            "鍛冶場で、道具が打ち返す拍子を見た。手元には鈴があった",
+            "家族から受け取った鈴"
+          ]
+        },
+        {
+          "id": 762032,
+          "name": "据・響打間返〈押離〉",
+          "route": "cross",
+          "reasons": [
+            "家族から受け取った鈴。手元には鈴があった",
+            "鍛冶場で、道具が打ち返す拍子を見た。手元には鈴があった",
+            "家族から受け取った鈴"
+          ]
+        },
+        {
+          "id": 60903,
+          "name": "手仕事の無駄なし",
+          "route": "cross",
+          "reasons": [
+            "武具を手入れし、力の通り道を確かめた。手元には鈴があった",
+            "鍛冶場で、道具が打ち返す拍子を見た。手元には鈴があった",
+            "家族から受け取った鈴"
+          ]
+        },
+        {
+          "id": 60900,
+          "name": "炉辺の息",
+          "route": "cross",
+          "reasons": [
+            "鍛冶場で、道具が打ち返す拍子を見た。手元には鈴があった",
+            "武具を手入れし、力の通り道を確かめた。手元には鈴があった",
+            "家族から受け取った鈴"
+          ]
+        },
+        {
+          "id": 701322,
+          "name": "退・針拳双返〈削離〉",
+          "route": "cross",
+          "reasons": [
+            "鍛冶場で、道具が打ち返す拍子を見た。手元には鈴があった",
+            "武具を手入れし、力の通り道を確かめた。手元には鈴があった",
+            "家族から受け取った鈴"
+          ]
+        },
+        {
+          "id": 60902,
+          "name": "重みの記憶",
+          "route": "cross",
+          "reasons": [
+            "指南書と稽古で、構えの意味を学んだ。手元には鈴があった",
+            "鍛冶場で、道具が打ち返す拍子を見た。手元には鈴があった",
+            "家族から受け取った鈴"
+          ]
+        },
+        {
+          "id": 801232,
+          "name": "廻・綾刃双返〈押離〉",
+          "route": "cross",
+          "reasons": [
+            "武具を手入れし、力の通り道を確かめた。手元には鈴があった",
+            "指南書と稽古で、構えの意味を学んだ。手元には鈴があった",
+            "家族から受け取った鈴"
+          ]
+        }
+      ],
+      "latest": {
+        "ids": [
+          701322,
+          801232,
+          60002
+        ],
+        "kind": "crawler",
+        "elapsed": 14.47,
+        "won": true,
+        "survived": true,
+        "health": 100,
+        "enemyHp": -1.9650000000000052,
+        "connections": 0,
+        "used": [
+          701322,
+          801232
+        ]
+      },
+      "best": {
+        "ids": [
+          701322,
+          762032,
+          60002
+        ],
+        "kind": "crawler",
+        "elapsed": 7.27,
+        "won": true,
+        "survived": true,
+        "health": 100,
+        "enemyHp": -3.4612500000000024,
+        "connections": 1,
+        "used": [
+          701322,
+          762032,
+          60002
+        ]
+      }
+    }
+  ],
+  "diversity": [
+    {
+      "mode": "combat",
+      "seeds": 96,
+      "unique": 23,
+      "mean": 1.625,
+      "min": 1,
+      "max": 2,
+      "routes": {
+        "main": 135,
+        "cross": 0,
+        "deviation": 21
+      }
+    },
+    {
+      "mode": "craft",
+      "seeds": 96,
+      "unique": 30,
+      "mean": 1.625,
+      "min": 1,
+      "max": 2,
+      "routes": {
+        "main": 145,
+        "cross": 0,
+        "deviation": 11
+      }
+    },
+    {
+      "mode": "mixed",
+      "seeds": 96,
+      "unique": 95,
+      "mean": 2.5,
+      "min": 1,
+      "max": 3,
+      "routes": {
+        "main": 20,
+        "cross": 218,
+        "deviation": 2
+      }
+    }
+  ],
+  "matchups": [
+    {
+      "kind": "crawler",
+      "best": {
+        "ids": [
+          803212,
+          780102,
+          781202
+        ],
+        "kind": "crawler",
+        "elapsed": 8.33,
+        "won": true,
+        "survived": true,
+        "health": 100,
+        "enemyHp": -0.862499999999998,
+        "connections": 0,
+        "used": [
+          803212,
+          780102,
+          781202
+        ]
+      },
+      "worst": {
+        "ids": [
+          60390,
+          710110,
+          781202
+        ],
+        "kind": "crawler",
+        "elapsed": 30.1,
+        "won": false,
+        "survived": false,
+        "health": 0,
+        "enemyHp": 14.549999999999999,
+        "connections": 0,
+        "used": [
+          60390,
+          710110,
+          781202
+        ]
+      },
+      "tested": 6
+    },
+    {
+      "kind": "soldier",
+      "best": {
+        "ids": [
+          803212,
+          803220,
+          781202
+        ],
+        "kind": "soldier",
+        "elapsed": 10.03,
+        "won": true,
+        "survived": true,
+        "health": 100,
+        "enemyHp": -1.9649999999999999,
+        "connections": 2,
+        "used": [
+          803212,
+          803220,
+          781202
+        ]
+      },
+      "worst": {
+        "ids": [
+          60390,
+          803220,
+          781202
+        ],
+        "kind": "soldier",
+        "elapsed": 33.87,
+        "won": false,
+        "survived": false,
+        "health": 0,
+        "enemyHp": 7.586250000000001,
+        "connections": 0,
+        "used": [
+          60390,
+          803220,
+          781202
+        ]
+      },
+      "tested": 6
+    },
+    {
+      "kind": "elite",
+      "best": {
+        "ids": [
+          803212,
+          803220,
+          781202
+        ],
+        "kind": "elite",
+        "elapsed": 29.2,
+        "won": true,
+        "survived": true,
+        "health": 100,
+        "enemyHp": -5.9999999999999885,
+        "connections": 3,
+        "used": [
+          803212,
+          803220,
+          781202
+        ]
+      },
+      "worst": {
+        "ids": [
+          60390,
+          710110,
+          781202
+        ],
+        "kind": "elite",
+        "elapsed": 12.3,
+        "won": false,
+        "survived": false,
+        "health": 0,
+        "enemyHp": 120,
+        "connections": 0,
+        "used": [
+          60390,
+          710110
+        ]
+      },
+      "tested": 6
+    }
+  ]
+}
