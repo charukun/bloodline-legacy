@@ -4,7 +4,18 @@
 .skills .skill-tabs-row{display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:6px;min-width:0}.skills #skills-close{width:44px;height:44px;min-height:44px;padding:10px}
 .skills .panel-content{padding:6px 10px;flex:1;overflow:hidden;min-height:0}
 .skills #skills-content{height:100%;display:grid;grid-template-rows:44px minmax(130px,1fr) minmax(72px,.8fr);gap:7px;min-height:0}
-.skills .phase-tabs{grid-template-columns:repeat(4,minmax(0,1fr));margin:0;border-radius:3px;min-width:0}.skills .phase-tabs button{min-width:0;height:44px;font-size:12px}
+.skills .phase-tabs{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:0;border:0;border-radius:0;overflow:visible;min-width:0}
+.skills .phase-tabs button{--ribbon:#526b51e8;position:relative;min-width:0;height:44px;padding:0 3px 4px;font-size:12px;border:0!important;border-radius:0;background:none;box-shadow:none;color:#f0dfb6;isolation:isolate}
+.skills .phase-tabs button[data-phase="1"]{--ribbon:#886744eb}.skills .phase-tabs button[data-phase="2"]{--ribbon:#7a4c43eb}.skills .phase-tabs button[data-phase="3"]{--ribbon:#4b6670eb}
+.skills .phase-tabs button::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(110deg,var(--ribbon),#25352de8),url("asset:cloth-panel.png") center/128px;clip-path:polygon(0 0,100% 0,100% 100%,50% 88%,0 100%);box-shadow:inset 0 1px #edd59c80,inset 0 3px #19271d77}
+.skills .phase-tabs button::after{content:"";position:absolute;inset:5px 4px 8px;border:1px dashed #d0b77e66;pointer-events:none}
+.skills .phase-ribbon-label{position:relative;display:flex;align-items:center;justify-content:center;gap:3px;min-height:100%;text-shadow:0 1px 2px #17251b;font-family:var(--serif)}
+.skills .phase-tabs [data-phase="3"] .phase-ribbon-label{font-size:11px;white-space:nowrap}
+.skills .phase-tabs button[aria-selected=true]{color:#fff0bc;box-shadow:none;background:none}
+.skills .phase-tabs button[aria-selected=true]::before{box-shadow:inset 0 2px #f4daa0,inset 0 0 12px #edd28a44}
+.skills .phase-tabs button[aria-selected=true]::after{border:1px solid #f0d496;box-shadow:0 0 0 1px #e5c47e24}
+.skills .phase-tabs button:hover::before{filter:brightness(1.12)}
+.skills .phase-tabs button:focus-visible{outline:2px solid #ffe2a0;outline-offset:2px}
 .skills .skill-overview{display:grid;grid-template-columns:minmax(122px,.85fr) minmax(0,1.15fr);gap:10px;min-height:0}
 .skills .skill-balance{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;min-height:0}
 .skills #pie-wrap{width:auto;max-width:100%;height:calc(100% - 18px);aspect-ratio:208/200;flex:none;margin:0}.skills #balance-pie{height:100%;width:100%}
@@ -19,6 +30,8 @@
 .skills .skill-tile{position:relative;height:88px!important;min-height:88px!important;min-width:0;padding:8px 3px 5px;gap:2px;border-radius:2px;justify-content:flex-start}
 .skills .skill-sigil,.skills .skill-sigil .icon{width:24px;height:24px}.skills .skill-number{position:absolute;left:5px;top:3px;font-size:9px;color:var(--ink)}
 .skills .skill-name{font-size:11px;line-height:1.25;white-space:normal;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}.skills .skill-allocation{margin-top:auto;font-size:9px;color:#b5baa2;line-height:13px}.skills .enabled .skill-allocation{color:#eee1bb}
+.skills .skill-allocation{display:flex;align-items:center;justify-content:center;gap:3px;min-height:17px}
+.skills .skill-allocation .selection-seal{width:14px;height:14px}.skills .skill-allocation .selection-seal .icon{width:10px;height:10px}
 .skills .passive-emblem{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;text-align:center;color:#c9d9b2;width:100%;height:100%;background:radial-gradient(ellipse,#a7bd7330,transparent 67%)}.skills .passive-emblem .icon{width:54px;height:54px;filter:drop-shadow(0 2px 3px #192c2366)}.skills .passive-emblem strong{font-size:13px;font-weight:500}.skills .passive-emblem span{font-size:11px}.skills .passive-active{display:block;min-height:28px;color:#c8d7b2;font-size:11px}
 #modal-root.skills.has-dock .hud-bottom{position:static;transform:none;display:flex;justify-content:center;padding:4px;gap:10px;flex:none;min-height:45px;border-top:1px solid #c4b68736}
 #modal-root.skills.has-dock .hud-button{height:40px;min-height:40px;width:76px;display:flex;flex-direction:row;justify-content:center;gap:5px;padding:5px}#modal-root.skills.has-dock .hud-button .icon{width:20px;height:20px}.skills.has-dock .hud-button .ink-label{height:12px}

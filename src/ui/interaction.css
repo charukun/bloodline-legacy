@@ -42,9 +42,15 @@
 .mother-bubble p{margin:0}
 .mother-bubble::after,.speech-bubble::after{content:"";position:absolute;bottom:-7px;width:9px;height:8px;background:#eee2c5;left:7px;clip-path:polygon(0 0,100% 0,0 100%)}
 .mother-bubble[data-side="left"]::after,.speech-bubble[data-side="left"]::after{left:auto;right:7px;clip-path:polygon(0 0,100% 0,100% 100%)}
-#carry-controls{position:absolute;left:50%;bottom:calc(81px + var(--safe-bottom));transform:translateX(-50%)}
-#carry-controls #leave-arms{margin:0;background:#535c41ef}
 #world-pickup{position:absolute;left:0;top:0;pointer-events:auto;will-change:transform}
 .world-pickup{display:flex;align-items:center;gap:5px;min-width:44px;min-height:44px;padding:5px 9px;font-size:11px;line-height:1.3;border-radius:7px;background:#48573aee;box-shadow:0 2px 6px #25302066}
 .world-pickup::after{content:"";position:absolute;bottom:-6px;left:calc(50% - 5px);border:5px solid transparent;border-top-color:#48573aee;border-bottom:0}
 .world-pickup .icon{width:17px;height:17px}.world-pickup small{display:block;font-size:10px}.world-pickup:disabled{opacity:1;color:#d6c7aa}
+
+/* Leaf seals distinguish chosen / empty without a repeated status caption. */
+.selection-seal{display:inline-grid;place-items:center;flex:none;width:17px;height:17px;border:1px solid #ab976767;border-radius:50%;color:#fae3a5;box-sizing:border-box}
+.selection-seal .icon{width:12px;height:12px;opacity:0}
+.selection-seal.lit{border-color:#d7ba77;background:#b9974d2b;box-shadow:inset 0 0 0 2px #eddbab22}
+.selection-seal.lit .icon{opacity:1}
+.gear-grid button{position:relative;padding-right:22px}.gear-grid .selection-seal{position:absolute;right:4px;top:4px}
+.progress-float{left:0;top:0;will-change:transform,opacity;pointer-events:none}
