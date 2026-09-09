@@ -34,6 +34,7 @@ function uiJourneyHints(s){
  const hint=(id,glyph,title,text)=>({id,glyph,title,text});
  if(!p.alive)return [hint('death','leaf','この人生を振り返る','旅の終わりを確かめたら、次の世代へ残す技を選ぼう。')];
  if(incapacitated(p))return [hint('rescue','heart','助けを待とう',p.lifeState==='carried'?'安全な場所へ運んでもらっている。着いたら身体を休めよう。':'今は動けない。救助を待ち、安全な場所で回復しよう。')];
+ if(p.rescueTarget)return [hint('carry','hand','安全な場所へ運ぼう',s.room.kind==='village'?'村の門の内側まで運び、そこで降ろしてあげよう。':'岸辺の帰還地点まで運び、そこで降ろしてあげよう。')];
  if(p.prologue)return [hint('carried','hand','お母さんと村を歩こう','指を動かして行き先を伝えよう。さっと払うと走り、地面を触ると止まる。'),hint('tour','book','気になる建物へ','扉や設備の前へ行くと、お母さんが使い方を教えてくれるよ。')];
  const out=[],outside=s.room.kind==='front'||p.z<-26;
  const threat=s.actors.some(a=>a.alive&&enemiesOnly(a)&&!a.neutral&&dist(a,p)<10);
@@ -42,7 +43,6 @@ function uiJourneyHints(s){
  if(p.stamina<30||p.staminaCap<(p.staminaMax||100)*.65)out.push(hint('rest','rest',p.seated?'そのまま、ひと息':'座って息を整えよう','安全な地面を長押しすると座れる。減った息と、疲れた身体の余裕が戻る。'));
  const wounds=Object.values(p.wounds||{});
  if(wounds.some(w=>w.severity!=='lost')||(p.health??100)<90)out.push(hint('wounds','heart','傷を休ませよう','戦いから離れて座ると、負傷の回復も早くなる。傷ついた部位は身支度で確かめよう。'));
- if(p.rescueTarget)out.push(hint('carry','hand','安全な場所へ運ぼう',s.room.kind==='village'?'村の門の内側まで運び、そこで降ろしてあげよう。':'岸辺の帰還地点まで運び、そこで降ろしてあげよう。'));
  if(p.skillLife?.unread?.length)out.push(hint('discovery','spark','新しい技が芽生えた','意識を開き、気になる技の印を灯してみよう。'));
  if(s.room.kind==='village'){
   const school=nearbyActivity(p,{...s.room,map:s.map});

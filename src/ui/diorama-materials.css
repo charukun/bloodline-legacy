@@ -180,3 +180,5 @@
 #journey-hints p{margin:0;color:#dbd5b7;font-size:12px;line-height:1.85}
 
 .hints-button .icon{width:19px;height:19px;translate:0 -4px}.hints-button span{position:absolute;bottom:5px;font-size:8px;line-height:1;letter-spacing:0}
+/* Keep the shared menu dock below all guidance, including a three-hint page. */
+.hints .panel-content{padding-bottom:92px}

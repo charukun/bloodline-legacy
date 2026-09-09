@@ -25,7 +25,7 @@ test('station gates reject broad radii and backsides, allow reachable fronts, an
   assert.equal(g.command({type:'activity',activity:actions[s.id]}),false,s.id+' broad radius');sync();assert.equal(d.querySelector('[data-context=activity]'),null);
   Object.assign(p,{x:a.x,z:a.z-.4});assert.equal(g.command({type:'activity',activity:actions[s.id]}),false,s.id+' behind');
   Object.assign(p,{x:a.x,z:a.z+1.5});sim.bound(p,r);assert.ok(api.atFacilityStation(p,s),s.id+' collision hull permits access');
-  assert.equal(g.command({type:'activity',activity:actions[s.id]}),true,s.id);sync();assert.equal(d.querySelector('[data-context=activity]').dataset.facility,s.id);
+  assert.equal(g.command({type:'activity',activity:actions[s.id]}),true,s.id);assert.ok(Math.cos(p.dir)<-.99,s.id+' faces its equipment');sync();assert.equal(d.querySelector('[data-context=activity]').dataset.facility,s.id);
   p.x+=2.6;step(sim,1);assert.equal(p.activity,null,s.id+' moved away');
  }
  // The church facade and authored courtyard lectern have exact world anchors.
@@ -55,6 +55,7 @@ test('hints prioritize danger, fatigue and wounds, update in place, and restore 
  assert.equal(ui.modal,'hints');assert.equal(d.querySelectorAll('[data-hint]').length,3);assert.equal(JSON.stringify(sim.exportState()),before);
  Object.assign(p,{x:0,z:0,age:18,health:100,stamina:100,staminaCap:100,wounds:{},skillLife:{...p.skillLife,unread:[60000]}});sync();
  assert.equal(d.querySelector('[data-hint]').dataset.hint,'discovery');assert.equal(d.querySelector('[data-hint=young]'),null);
+ p.rescueTarget='friend';p.stamina=0;sync();assert.equal(d.querySelector('[data-hint]').dataset.hint,'carry');assert.equal(d.querySelector('[data-hint=rest]'),null);
  d.querySelector('.panel-close').click();await flush();assert.equal(d.activeElement,button);assert.equal(ui.blocksWorldInput(),false);
 });
 
