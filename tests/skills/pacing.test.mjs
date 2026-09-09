@@ -2,7 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {execFileSync} from 'node:child_process';
-import {runtime,definitions,root} from './harness.mjs';
+import {runtime,definitions as allDefinitions,root} from './harness.mjs';
+// Isolate the approved pacing revision against its original content pool.
+// Expansion-versus-authored pace has a separate comparison in composition.test.
+const definitions=allDefinitions.filter(d=>!d.composition);
 const api=runtime().BloodlineSkills;
 const plain=value=>JSON.parse(JSON.stringify(value));
 const baseline=vm.createContext({Math});

@@ -42,7 +42,7 @@ const SkillPresentation = (() => {
   if(!d||!el||!p||![...p.skills,...p.passives].includes(id))return false;
   const memory=p.skillLife?.discovered.find(x=>x.id===id);
   const connections=Object.entries(p.skillLife?.connections||{}).filter(([key])=>key.split(':').map(Number).includes(id)).slice(-3).map(([key])=>key.split(':').map(n=>skillById(+n)?.name).join(' → '));
-  el.innerHTML=`<strong>${ESC(d.names.ja)}</strong><span>${ESC(d.descriptions.ja)}</span>${d.passive?'':costMarks(skillById(id))}${memory?`<p class="skill-memory">${memory.reasons.map(ESC).join('<br>')}</p>`:''}${connections.length?`<small class="skill-memory">戦いで繋がった<br>${connections.map(ESC).join('<br>')}</small>`:''}`;
+  el.innerHTML=`<strong>${ESC(d.names.ja)}</strong><small class="skill-name-en" lang="en">${ESC(d.names.en)}</small><span>${ESC(d.descriptions.ja)}</span>${d.passive?'':costMarks(skillById(id))}${memory?`<p class="skill-memory">${memory.reasons.map(ESC).join('<br>')}</p>`:''}${connections.length?`<small class="skill-memory">戦いで繋がった<br>${connections.map(ESC).join('<br>')}</small>`:''}`;
   return true;
  }
  const CONNECTION_TEXT={offbalance:'崩した隙に、次の一手',close:'詰めた間合いを、そのままに',rhythm:'拍子が、ひとつにつながる',ringing:'余韻に、次の一手が重なる',ember:'残る火に、次の一手を'};

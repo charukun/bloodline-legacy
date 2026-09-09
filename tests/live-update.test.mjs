@@ -149,13 +149,13 @@ test('safe update gate covers combat, conversation, death, inheritance/modal, sa
   g.ui.modal='lineage';assert.equal(safeGame(g),false);
 });
 function browserHarness(fetcher){
-  const nodes=[],listeners={},timers=[];const document={hidden:false,body:{append:n=>nodes.push(n)},addEventListener:(k,fn)=>listeners[k]=fn,
+  const nodes=[],listeners={},timers=[];const document={hidden:false,querySelectorAll:()=>[],getElementById:()=>null,body:{append:n=>nodes.push(n)},addEventListener:(k,fn)=>listeners[k]=fn,
     createElement:tag=>({tag,className:'',setAttribute(){},append(...children){this.firstChild=children[0];this.lastChild=children.at(-1);},remove(){this.removed=true;}})};
   let navigations=0;
   const g={profile:{mode:'normal'},screen:'game',ui:{toast(){},modal:null},snapshot:{t:10,player:{alive:true,input:{x:0,z:0}},actors:[]},
     pendingMove:null,commandBuffer:[],renderer:{effects:[]},mapCache:new Map(),acceptSnapshot(s){this.snapshot=s;},stopInput(){},saveWorld(){return true;}};
   const context={console,document,window:{addEventListener(){}},location:{protocol:'https:',href:'https://test.invalid/',assign(){navigations++;}},
-    setInterval:fn=>{timers.push(fn);return timers.length;},setTimeout:fn=>{timers.push(fn);return timers.length;},clearTimeout(){},
+    setInterval:fn=>{timers.push(fn);return timers.length;},setTimeout:fn=>{timers.push(fn);return timers.length;},clearTimeout(){},clearInterval(){},
     fetch:fetcher,crypto:webcrypto,URL,AbortController,AbortSignal,TextDecoder,TextEncoder,performance,LiveContract,clientCompatible,safeGame,
     LIVE_BUILD:{rules:currentRules,supportedRules:[currentRules]},BUILD_INFO:{commit:'a'.repeat(40),environment:'dev'},writeStore:()=>true,gameId:()=>webcrypto.randomUUID()};
   vm.createContext(context);vm.runInContext(fs.readFileSync(new URL('../src/live/client.js',import.meta.url),'utf8')+'\nglobalThis.C=LiveUpdate;',context);
@@ -164,7 +164,7 @@ function browserHarness(fetcher){
 test('compatible update detection never reloads or changes the displayed build; network error is independent',async()=>{
   const target={application:'Bloodline Legacy',environment:'dev',mode:'game',commit:'b'.repeat(40),htmlSha256:'c'.repeat(64),live:LiveContract};
   const h=browserHarness(async()=>Response.json(target));await h.live.check();assert.equal(h.navigations(),0);assert.equal(h.live.target.commit,target.commit);
-  assert.equal(h.live.notice.lastChild.hidden,false);h.live.requested=true;h.g.snapshot.player.combo={};assert.equal(await h.live.update(),false);assert.equal(h.navigations(),0);
+  assert.equal(h.live.noticeState.update,true);h.live.requested=true;h.g.snapshot.player.combo={};assert.equal(await h.live.update(),false);assert.equal(h.navigations(),0);
 });
 test('background -> deploy -> foreground clears stale inputs and reconnects before accepting commands',async()=>{
   const h=browserHarness(async()=>Response.json({}));let joins=0;h.live.join=async()=>{joins++;};h.g.online=true;h.live.start();
@@ -234,4 +234,12 @@ test('updates defer during rescue, traversal, bequest, speech entry or pending m
  delete p.legacyChoice;p.alive=true;g.screen='game';
  for(const field of ['menu','pointer','recognition']){g.ui.talkFan={[field]:{}};assert.equal(safeGame(g),false);}
  delete g.ui.talkFan;g.pendingMove={x:1,z:0};assert.equal(safeGame(g),false);g.pendingMove={x:0,z:0};assert.equal(safeGame(g),true);
+});
+
+test('cancelling while update bytes download cannot save or navigate after completion',async()=>{
+  const bytes=new TextEncoder().encode('verified'),hash=Array.from(new Uint8Array(await webcrypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
+  const target={application:'Bloodline Legacy',environment:'dev',mode:'game',commit:'b'.repeat(40),htmlSha256:hash,live:LiveContract};
+  let h;h=browserHarness(async url=>{if(String(url).includes('version.json'))return Response.json(target);h.live.cancelUpdate();return new Response(bytes);});
+  let saves=0;h.g.saveWorld=()=>{saves++;return true;};await h.live.check();h.live.requested=true;
+  assert.equal(await h.live.update(),false);assert.equal(saves,0);assert.equal(h.navigations(),0);
 });

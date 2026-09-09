@@ -63,10 +63,11 @@ const BloodlineSkills = (() => {
  }
  class Catalog {
   constructor(defs) {
-   this.defs=defs;this.byId=new Map();this.byKey=new Map();this.families=new Map();this.index=new Map();this.metrics={events:0,evaluated:0,pools:0};
+   this.defs=defs;this.byId=new Map();this.byKey=new Map();this.families=new Map();this.index=new Map();this.conditions=new Map();this.metrics={events:0,evaluated:0,pools:0};
    for(const d of defs) {
     if(this.byId.has(d.id)||this.byKey.has(d.key)) throw Error('Duplicate skill identity');
     this.byId.set(d.id,d);this.byKey.set(d.key,d);
+    this.conditions.set(d.id,JSON.stringify(d.requiresExperience));
     if(!this.families.has(d.family)) this.families.set(d.family,[]);
     this.families.get(d.family).push(d);
     for(const tag of new Set(d.requiresExperience.flat())) { if(!this.index.has(tag))this.index.set(tag,new Set());this.index.get(tag).add(d.family); }
@@ -76,17 +77,18 @@ const BloodlineSkills = (() => {
   pool(state,event,context={}) {
    const families=new Set();
    for(const tag of event.tags) for(const family of this.index.get(tag)||[]) families.add(family);
-   const learned=new Set([...(context.known||[]),...state.discovered.map(d=>d.id)]),result=[];
+   const learned=new Set([...(context.known||[]),...state.discovered.map(d=>d.id)]),result=[],proofCache=new Map();
    for(const family of families) {
     const variants=[];
     for(const d of this.families.get(family)) {
      this.metrics.evaluated++;
-     if(learned.has(d.id)||!d.requiresExperience.every(group=>group.some(t=>(state.experience[t]||0)>=(state.memories[t]?1:1.25))))continue;
+     if(learned.has(d.id))continue;
      if(d.action?.school==='shield'&&!context.shield||d.action?.weapon>=0&&d.action.weapon!==context.weapon||(d.action?.requires||[]).some(part=>context.lost?.includes(part)))continue;
-     const proof=witnesses(d,state);if(!proof.length)continue;
+     const proofKey=this.conditions.get(d.id);let proof=proofCache.get(proofKey);
+     if(!proof){proof=d.requiresExperience.every(group=>group.some(t=>(state.experience[t]||0)>=(state.memories[t]?1:1.25)))?witnesses(d,state):[];proofCache.set(proofKey,proof);}if(!proof.length)continue;
      variants.push({def:d,proof});
     }
-    if(variants.length)result.push({family,variants});
+    if(variants.length)result.push({family,variants,anchor:this.families.get(family)[0]});
    }
    this.metrics.pools++;return result;
   }
@@ -115,7 +117,7 @@ const BloodlineSkills = (() => {
    const recentFamilies=state.discovered.slice(-5).map(d=>d.family);
    const routeFor=v=>v.def.requiresExperience.length>1?'cross':v.def.tags.some(t=>tags.includes(t)&&!['memory','patience','rhythm'].includes(t))?'main':'deviation';
    const familyWeight=f=>{
-    const d=f.variants[0].def,basis=d.requiresExperience.flat(),route=routeFor(f.variants[0]);
+    const d=f.anchor||f.variants[0].def,basis=d.requiresExperience.flat(),route=routeFor({def:d});
     const focus=basis.reduce((n,t)=>n+(state.recent[t]||0),0)/basis.length,history=basis.reduce((n,t)=>n+Math.sqrt(state.experience[t]||0),0)/basis.length;
     const inherited=basis.some(t=>state.inheritedTags.includes(t))?1+Math.min(.35,d.inheritance?.bias??.22):1;
     const affinity=(d.affinities||[]).some(t=>(state.experience[t]||0)>1)?1.25:1;
