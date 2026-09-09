@@ -237,7 +237,7 @@ VillageArt.prototype.doll=function(p,t,local){
  let visual=p;
  if(p.prologue){
   const lower=TravelerAge.sample(p,t).lower;
-  TRAVELER_PREVIOUS_DOLL.call(this,{...p,id:p.id+'parent',kind:'parent',prologue:false,age:34,gender:1,weapon:-1,skin:0,action:'carry',carryWalking:p.action==='run',wounds:{},baseY:-.34*lower},t,false);
+  TRAVELER_PREVIOUS_DOLL.call(this,{...p,id:p.id+'parent',kind:'parent',prologue:false,age:34,gender:1,weapon:-1,skin:0,action:'carry',carryWalking:['run','dash'].includes(p.action),wounds:{},baseY:-.34*lower},t,false);
   visual={...p,baseY:1.20*(1-lower)+.10*lower,x:p.x+Math.sin(p.dir)*(.32*(1-lower)),z:p.z+Math.cos(p.dir)*(.32*(1-lower)),dir:p.dir+.2*(1-lower),action:'idle',weapon:-1,shield:false};
  }
  c.update(visual,t);const root=this.root,target=this.target;this.target=r.dynamic;

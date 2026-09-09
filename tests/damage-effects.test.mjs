@@ -23,3 +23,11 @@ test('nearby enemy impacts cannot throttle local damage audio and rapid local re
  assert.equal(a.fx({type:'wound',player:'hero',x:0,z:0}),false);
  a.ctx.currentTime=1.1;assert(a.fx({type:'wound',player:'hero',x:0,z:0,severity:'light'}));
 });
+
+test('local discovery has a bounded resolving flourish while mute and remote distance still apply',()=>{
+ const a=new AudioEngine(),tones=[],noise=[];Object.assign(a,{enabled:true,ctx:{currentTime:1},listener:{id:'hero',x:0,z:0}});a.tone=(...v)=>tones.push(v);a.noise=(...v)=>noise.push(v);
+ assert.equal(a.fx({type:'insight',id:60000,player:'remote',x:100,z:0}),false);
+ assert.ok(a.fx({type:'insight',id:60000,player:'hero',x:0,z:0}));assert.equal(tones.length,12);assert.equal(noise.length,1);assert.ok(tones.some(v=>v[2]>=1.5),'bell chord has a sustained resolution');
+ assert.equal(a.fx({type:'passive',id:60900,player:'hero',x:0,z:0}),false,'one chord for simultaneous discoveries');
+ a.enabled=false;a.ctx.currentTime=3;assert.equal(a.fx({type:'insight',player:'hero'}),false);assert.equal(tones.length,12);
+});

@@ -1,0 +1,40 @@
+name: Onboarding polish verification
+on:
+  push:
+    branches: ['work/onboarding-polish-*']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: onboarding-polish-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node deploy/build.mjs dev
+      - run: node --test tests/onboarding-polish.test.mjs tests/insight-notice.test.mjs tests/facility-actions.test.mjs
+      - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
+      - run: sudo apt-get install -y --no-install-recommends fonts-noto-cjk
+      - name: Install and verify Chromium
+        run: |
+          deploy/node_modules/.bin/playwright install chromium
+          if ! node --input-type=module -e "import {chromium} from './deploy/node_modules/playwright/index.mjs'; const b=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']}); await b.close();"; then
+            deploy/node_modules/.bin/playwright install-deps chromium
+          fi
+      - run: node tests/onboarding-polish-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: onboarding-polish-${{ github.run_id }}
+          path: verification/current/onboarding-polish/
+          if-no-files-found: error
+          retention-days: 30

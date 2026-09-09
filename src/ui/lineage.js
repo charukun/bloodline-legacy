@@ -37,6 +37,7 @@ class UILineage {
    saveMotion:enabled=>{this.g.profile.lineageMotion=enabled;this.g.saveProfile();},
    resetState:()=>this.resetState(),clear:()=>this.clear(),
    recordDetails:r=>this.recordDetails(r),
+   buildTitle:typeof BUILD_INFO==='undefined'?'local / unbuilt':BUILD_INFO.environment+' · '+BUILD_INFO.commit,
    buildLabel:typeof BUILD_INFO==='undefined'?'BLOODLINE LEGACY':BUILD_INFO.displayVersion,
    start:payload=>this.start(payload,inGame),
    settings:()=>{this.focusBeforeSettings=view.scope.querySelector('#settings');this.ui.settings();},

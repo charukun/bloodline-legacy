@@ -15,8 +15,8 @@ test('the real village art builds a dedicated dojo in either layout without a co
    const roofs=r.static.get('roof');assert.ok(roofs?.some(m=>Math.abs(m[8])>5.5&&Math.abs(m[2])>3.6),'wide transverse roof silhouette');
    assert.ok(rows.every(m=>m[13]<4),'no residential chimney or dormer above the training roof');
    assert.ok(r.static.has('golden:slate'),'shares the existing village material/LOD path');
-   // All new furnishing is behind the open forecourt and its eight approach paths.
-   assert.ok(rows.every(m=>m[14]<18),'no high props in the practice approach');
+   // Only the shared lectern extends into its designated outer forecourt corner.
+   assert.ok(rows.every(m=>m[14]<18||(Math.abs(m[12]-side*8.15)<.55&&m[14]<18.25&&m[13]<1.3)),'only the low reading stand reaches the outer courtyard');
    assert.ok(rows.length<350,'bounded instanced furnishing, without a new draw pass');
   }
  }finally{Object.assign(r,original);}

@@ -29,6 +29,30 @@ function uiActiveStatuses(p, t) {
  return Object.entries(p.statuses || {}).filter(([id, s]) => STATUS_DEFS[id] && s.until > t)
   .map(([id]) => STATUS_DEFS[id].name).join('・');
 }
+function uiJourneyHints(s){
+ const p=s?.player;if(!p)return [];
+ const hint=(id,glyph,title,text)=>({id,glyph,title,text});
+ if(!p.alive)return [hint('death','leaf','この人生を振り返る','旅の終わりを確かめたら、次の世代へ残す技を選ぼう。')];
+ if(incapacitated(p))return [hint('rescue','heart','助けを待とう',p.lifeState==='carried'?'安全な場所へ運んでもらっている。着いたら身体を休めよう。':'今は動けない。救助を待ち、安全な場所で回復しよう。')];
+ if(p.prologue)return [hint('carried','hand','お母さんと村を歩こう','指を動かして行き先を伝えよう。さっと払うと走り、地面を触ると止まる。'),hint('tour','book','気になる建物へ','扉や設備の前へ行くと、お母さんが使い方を教えてくれるよ。')];
+ const out=[],outside=s.room.kind==='front'||p.z<-26;
+ const threat=s.actors.some(a=>a.alive&&enemiesOnly(a)&&!a.neutral&&dist(a,p)<10);
+ if((outside||threat)&&p.age<15)out.push(hint('young','shield','村へ戻ろう','まだ身体が小さい。敵から離れて衛兵の後ろへ。村の人形や指南書で学ぼう。'));
+ else if(threat&&((p.health??100)<45||p.stamina<20))out.push(hint('retreat','shield','まず距離をとろう','敵のそばで休むのは危険。衛兵や安全な場所まで下がろう。'));
+ if(p.stamina<30||p.staminaCap<(p.staminaMax||100)*.65)out.push(hint('rest','rest',p.seated?'そのまま、ひと息':'座って息を整えよう','安全な地面を長押しすると座れる。減った息と、疲れた身体の余裕が戻る。'));
+ const wounds=Object.values(p.wounds||{});
+ if(wounds.some(w=>w.severity!=='lost')||(p.health??100)<90)out.push(hint('wounds','heart','傷を休ませよう','戦いから離れて座ると、負傷の回復も早くなる。傷ついた部位は身支度で確かめよう。'));
+ if(p.rescueTarget)out.push(hint('carry','hand','安全な場所へ運ぼう',s.room.kind==='village'?'村の門の内側まで運び、そこで降ろしてあげよう。':'岸辺の帰還地点まで運び、そこで降ろしてあげよう。'));
+ if(p.skillLife?.unread?.length)out.push(hint('discovery','spark','新しい技が芽生えた','意識を開き、気になる技の印を灯してみよう。'));
+ if(s.room.kind==='village'){
+  const school=nearbyActivity(p,{...s.room,map:s.map});
+  if(school){const station=facilityStation(school);out.push(hint('station','book',ACTIVITY_DEFS[school.id].label,p.activity?'続けているうちに、新しい気づきが生まれる。歩くと中断できる。':`${station.name}の前に立っている。足元の「${ACTIVITY_DEFS[school.id].label}」を選ぼう。`));}
+  if(p.age>=EQUIP_AGE&&p.weapon<0)out.push(hint('gear','sword','身体に合う武具を','武器庫の外にある武具棚の前へ。借りる武器で、使える技も変わる。'));
+  out.push(hint('learn','book','道場でひとつ、覚えよう','道場の書見台で指南書を読もう。かかしのそばでは身体を使って稽古もできる。'));
+  out.push(hint('pray','sun','静かに祈ってみよう','教会の扉の前で祈れる。重ねた祈りは、信仰の心得につながる。'));
+ }else out.push(hint('front','shield','ひとりで囲まれないように','衛兵や仲間のそばで戦おう。背後の敵にも気を配り、疲れたら下がろう。'));
+ return out.slice(0,3);
+}
 /* Six bounded part pulses and one pain callout; never modifies player speech,
  * chat cooldown, wounds or saves. The confirmed wound event owns all timing. */
 class UIDamageFeedback {
