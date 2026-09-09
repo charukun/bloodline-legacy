@@ -61,7 +61,9 @@ test('presentation cache evicts absent characters',()=>{
 // life, surface and damage-mark metadata is checked by the feature suites.
 const baselineExceptions=new Set(['hitPart','hitSeverity','hitReactAt','hitReactUntil','hitDir','hitStrength','hitMotionAt','hitMotionId','hitGuard','lifeState','traversables','damageMarks','grounded','supportHeight','verticalOffset','hitRecoil','enemyForm','terrainRevision','ship','shipRevision','clinic']);
 // Enemy visual names may vary; player/NPC names and gameplay remain checked.
-const state=sim=>JSON.parse(JSON.stringify(sim.exportState(),function(k,v){if(k==='name'&&['goblin','soldier','elite','crawler','maw','wraith','boss'].includes(this.kind))return undefined;return k==='schema'?4:baselineExceptions.has(k)||k==='phaseLimitVersion'?undefined:v;}));
+// The selected opening skill is empty outside auto-combat. Older saves omit
+// this cache; normalize only an absent field to null, preserving active selections.
+const state=sim=>JSON.parse(JSON.stringify(sim.exportState(),function(k,v){if(v&&v.kind==='player'&&!Object.hasOwn(v,'autoSkill'))return {...v,autoSkill:null};if(k==='name'&&['goblin','soldier','elite','crawler','maw','wraith','boss'].includes(this.kind))return undefined;return k==='schema'?4:baselineExceptions.has(k)||k==='phaseLimitVersion'?undefined:v;}));
 test('damage, wound progression, attack interruption, hitstop and RNG match develop',()=>{
  const before=runtime(true);
  for(const seed of [13,27,48])for(const power of [.3,1,1.5,2,3])for(const part of ['head','torso','rightArm','leftLeg']){

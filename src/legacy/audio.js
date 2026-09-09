@@ -89,8 +89,8 @@ class AudioEngine {
   if(!spatial&&ev.player&&l&&ev.player!==l.id)return false;
   const d=spatial&&l?Math.hypot(ev.x-l.x,ev.z-l.z):0;
   if(d>24)return false;const gain=1/(1+(d/6)**2);
-  const localWound=type==='wound'&&ev.player===l?.id,fxKey=localWound?'wound:local':type;
-  const gap=type==='step'?.095:localWound?.09:.028;
+  const localWound=type==='wound'&&ev.player===l?.id,localDiscovery=['insight','passive'].includes(type)&&ev.player===l?.id,fxKey=localDiscovery?'discovery:local':localWound?'wound:local':type;
+  const gap=localDiscovery?.65:type==='step'?.095:localWound?.09:.028;
   if(t-(this.lastFX.get(fxKey)??-100)<gap)return false;
   const tone=(n,delay,dur,a=.2,wave='sine',end=null)=>this.tone(n,t+delay,dur,a*gain,wave,false,this.fxBus,end);
   const noise=(dur,a,hz,q=.7,delay=0)=>this.noise(t+delay,dur,a*gain,hz,q);
@@ -114,7 +114,12 @@ class AudioEngine {
    // The impact event owns the transient; this is only a soft falling-body tail.
    noise(.16,.16,210,.6,.025);tone(32,.04,.18,.15,'sine',25);
   }else if(type==='insight'||type==='passive'){
-   [74,78,81,86].forEach((n,i)=>tone(n,i*.085,.8,.22,'triangle'));
+   if(!l||ev.player===l.id){
+    // A rising harp flourish resolves into a bell chord; existing volume/mute
+    // and the limiter still own loudness. No interruption of combat or music.
+    noise(.28,.13,2600,1.2);[62,69,74,78,81,86].forEach((n,i)=>tone(n,i*.055,.72,.18,'triangle'));
+    [74,81,86].forEach((n,i)=>{tone(n,.36+i*.018,1.5,.19);tone(n+12,.38+i*.018,.85,.065,'triangle');});
+   }else [74,78,81,86].forEach((n,i)=>tone(n,i*.085,.8,.14,'triangle'));
   }else if(type==='death'){
    [62,57,50].forEach((n,i)=>tone(n,i*.23,1.4,.17,'triangle'));
   }else if(['depart','victory','returned'].includes(type)){

@@ -5,6 +5,7 @@
 </style><div id="stage"><canvas id="world"></canvas><div id="loading">稽古場を準備しています…</div><div id="readout" aria-live="polite">技を組み替えて「一技を試す」</div></div>
 <aside><h1>技の稽古帳</h1><small>血脈の系譜 · 構成式スキル</small><p>打ち方と拍子、足運びを変えて、同じ相手への届き方を試す。</p>
 <div class="row"><button id="random" class="major">技を閃く</button><button id="previous" disabled>前の技</button></div>
+<button id="flow" class="major">意識で連続戦闘</button><label><input id="rhythm" type="checkbox"> 約1秒の拍子で技を閃く</label><p>連続戦闘では、閃いた技が次の行動候補に加わります。各段3技まで同じ重みで選択。位置・負傷・戦況を保って戦います。武器・相手・距離の変更は新しい試行になります。</p><p id="flow-pool"></p><div class="row"><button id="flame">煤火の剣</button><button id="lightning">雷渡り</button></div>
 <label>持つ武器<select id="weapon"><option value="-1">素手</option><option value="0">片手剣</option><option value="1">短剣</option><option value="2">大剣</option><option value="3">槍</option><option value="4">戦斧</option><option value="5">杖</option></select></label>
 <label id="weapon-choice" hidden>この武器の技<select id="weapon-skill"></select></label>
 <label>構成技の見本<select id="preset"></select></label><fieldset id="parts" class="parts" style="border:0;padding:0;margin:0"></fieldset>
@@ -15,7 +16,7 @@
 <label>相手<select id="target"><option value="dummy">かかし</option><option value="crawler">鎌脚の蟲</option><option value="soldier">盾持ちの異形</option><option value="crowd">かかし三体</option></select></label>
 <label>開始距離 <output id="distanceText">2.5</output><input id="distance" type="range" min="1" max="5" step=".1" value="2.5"></label><button id="fit-distance">この技の間合いに合わせる</button>
 <div class="row"><label>再生速度<select id="speed"><option value="1">通常</option><option value=".5">半速</option><option value=".25">ゆっくり</option></select></label><label>カメラ<select id="view"><option value=".85">斜め</option><option value="1.57">横</option><option value="0">正面</option></select></label></div>
-<label><input id="repeat" type="checkbox" checked> 同じ条件で繰り返す</label>
+<label><input id="repeat" type="checkbox" checked> 同じ条件で繰り返す（連続戦闘は20秒ごと）</label>
 <label><input id="follow-camera" type="checkbox"> カメラを追従させる</label>
 <details><summary>構成を保存・読み込み</summary><p>この稽古帳だけに保存します。本編のセーブには触れません。</p><textarea id="recipe" aria-label="技の構成JSON"></textarea><div class="row"><button id="save">保存</button><button id="load">読み込む</button></div></details><p id="error" role="status"></p><p id="build"></p>
 </aside><script>/*__SCRIPT__*/</script></html>

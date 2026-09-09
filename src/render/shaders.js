@@ -29,6 +29,7 @@ float silkNoise(vec2 p,float seed){vec2 i=floor(p),f=fract(p),s=f*f*f*(f*(f*6.-1
 float silkFlow(float u,float clock,float seed){return .72*silkNoise(vec2(u*4.7,clock*2.2),seed)+.28*silkNoise(vec2(u*10.8,clock*4.8),seed+41.);}
 // Layered spell material; same analytic masks as SkillArcane.mask.
 float arcaneBaseMask(float mode,float u,float v,float age,float clock,float flutter){
+ if(mode>6.5){vec2 p=vec2(u,v)*2.-1.;float cloud=.72+.28*silkNoise(p*3.+vec2(clock*.5,-clock*.7),47.);return exp(-dot(p,p)*4.)*(1.-smoothstep(.5,1.,length(p)))*cloud*age;}
  float edge=smoothstep(0.,.035,v)*(1.-smoothstep(.94,1.,v)),ends=smoothstep(0.,.03,u)*(1.-smoothstep(.97,1.,u));
  float drift=flutter*silkNoise(vec2(u*6.,clock*2.1),19.)*.12;
  if(mode<.5){float lanes=pow(.5+.5*sin((u+clock*.14+drift)*PI*18.),9.);return clamp(edge*(.13+lanes*.85)*pow(1.-v,1.35)*smoothstep(0.,.05,v),0.,1.);}
@@ -55,6 +56,7 @@ float effectMist(float mode,float u,float v,float age,float clock,float base){
  return clamp((base*.19+(body+halo)*ends*support)*(1.-smoothstep(.55,1.,age)*.45),0.,1.);
 }
 float arcaneMask(float mode,float u,float v,float age,float clock,float flutter,float mist){
+ if(mode>6.5)return arcaneBaseMask(mode,u,v,age,clock,flutter);
  float border=(mode>4.5&&mode<5.5?1.:smoothstep(0.,.14,v))*(1.-smoothstep(.86,1.,v));if(mode>3.5&&mode<4.5)border*=smoothstep(0.,.14,u)*(1.-smoothstep(.86,1.,u));
  float pad=mode>4.5&&mode<5.5?0.:mist*.9;v=(v-.5)*(1.+pad)+.5;if(mode>3.5&&mode<4.5)u=(u-.5)*(1.+pad)+.5;
  float base=v<0.||v>1.||u<0.||u>1.?0.:arcaneBaseMask(mode,u,v,age,clock,flutter);
@@ -99,7 +101,7 @@ void main(){vec3 N=normalize(vNormal),L=normalize(vec3(-.48,.85,.42)),V=normaliz
   float mode=mod(floor(vInk.r),8.),palette=floor(vInk.r/8.),mist=fract(vInk.r)*2.;alpha*=arcaneMask(mode,vLocal.x,vLocal.y,vLocal.z,vInk.g,vInk.b,mist);
   if(mode<.5){vec3 face=cross(dFdx(vWorld),dFdy(vWorld));float grazing=abs(dot(face,V))/max(.000001,length(face));alpha*=mix(1.,smoothstep(.04,.55,grazing),mist);}
   if(alpha<.003)discard;
-  vec3 light=mode>4.5&&mode<5.5?vec3(.008,.014,.023):lin(effectTint(palette,vLocal.z))*2.3;
+  vec3 light=mode>6.5?lin(vec3(.57,.45,.31)):mode>4.5&&mode<5.5?vec3(.008,.014,.023):lin(effectTint(palette,vLocal.z))*2.3;
   outColor=vec4(light/(1.+light),alpha);outNormal=vec4(0.);return;
  }
  // Existing line/debris primitives get a soft local material as well. Other

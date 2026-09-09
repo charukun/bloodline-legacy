@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
-import {runtime,life,activity,definitions} from './skills/harness.mjs';
+import {station,runtime,life,activity,definitions} from './skills/harness.mjs';
 const {fixture,flush}=createRequire(import.meta.url)('./ui-fixture.cjs');
 const api=runtime(),active=w=>Object.keys(w).filter(id=>w[id]>0);
 const phaseIds=phase=>definitions.filter(d=>!d.passive&&d.phase===phase).slice(0,6).map(d=>d.id);
@@ -33,7 +33,7 @@ test('restoring oversized allocations retains learned skills and original weight
 
 test('weapon changes teach their technique without replacing a full chosen set',()=>{
  const {sim,p,room}=life(api),rack=room.map.schools.find(s=>s.id==='armory'),ids=phaseIds(0).slice(0,5);
- ids.forEach(id=>sim.learn(p,id));p.phaseWeights[0]=Object.fromEntries(ids.map(id=>[id,7]));Object.assign(p,{x:rack.x,z:rack.z+3});
+ ids.forEach(id=>sim.learn(p,id));p.phaseWeights[0]=Object.fromEntries(ids.map(id=>[id,7]));Object.assign(p,station(rack));
  assert.equal(sim.command(p.id,{type:'equip',slot:'weapon',value:0}),true);assert.ok(p.skills.includes(4001));assert.equal(p.phaseWeights[0][4001],0);assert.equal(active(p.phaseWeights[0]).length,5);
  p.phaseWeights[0][ids[0]]=0;assert.equal(sim.command(p.id,{type:'equip',slot:'weapon',value:0}),true);assert.equal(p.phaseWeights[0][4001],1);assert.equal(active(p.phaseWeights[0]).length,5);
 });

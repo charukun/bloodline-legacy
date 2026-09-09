@@ -14,6 +14,7 @@ class MotionInterpolation {
    let old=this.previous.get(e.id);
    if(!old){old={};this.previous.set(e.id,old);}
    Object.assign(old,{x:e.x,z:e.z,dir:e.dir,baseY:e.baseY,alive:e.alive,
+    traversal:e.traversal?{started:e.traversal.started,kind:e.traversal.kind,progress:e.traversal.progress}:null,
     prologue:e.prologue,supportHeight:e.supportHeight||0,verticalOffset:e.verticalOffset||0,time:sim.time});
   };
   for(const e of room.actors)remember(e);
@@ -55,7 +56,7 @@ class MotionInterpolation {
    const old=previous.get(e.id);
    // New lives, room transfers and teleports must appear at their destination.
    if(!old||old.alive!==e.alive||old.prologue!==e.prologue||
-      Math.hypot(e.x-old.x,e.z-old.z)>2)return e;
+      Math.hypot(e.x-old.x,e.z-old.z)>2||old.traversal?.started!==e.traversal?.started||old.traversal?.kind!==e.traversal?.kind)return e;
    const p={...e,x:old.x+(e.x-old.x)*alpha,z:old.z+(e.z-old.z)*alpha,
     renderPoseTime:time};
    if(Number.isFinite(old.dir)&&Number.isFinite(e.dir)){
@@ -64,6 +65,7 @@ class MotionInterpolation {
    }
    if(Number.isFinite(old.baseY)&&Number.isFinite(e.baseY))p.baseY=old.baseY+(e.baseY-old.baseY)*alpha;
    p.supportHeight=(old.supportHeight||0)+((e.supportHeight||0)-(old.supportHeight||0))*alpha;p.verticalOffset=(old.verticalOffset||0)+((e.verticalOffset||0)-(old.verticalOffset||0))*alpha;
+   if(e.traversal&&old.traversal)p.traversal={...e.traversal,progress:old.traversal.progress+(e.traversal.progress-old.traversal.progress)*alpha};
    return p;
   };
   const player=pose(snapshot.player);

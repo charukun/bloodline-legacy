@@ -65,7 +65,7 @@ test('review vitality, broken part and motion controls are independent in all po
  const result=h.run(`(()=>{
   const sim=new Simulation({seed:7349}),templates=Object.fromEntries(Object.keys(ENEMY_FORMS).map(k=>[k,sim.actor(k,0,0)])),before=JSON.stringify(templates),rows=[];
   for(const pose of ['sequence','idle','attack','run','guard','hit','death'])for(const time of [0,1.4,9.3,11])for(const vitality of [100,52,0])for(const brokenPart of ['none','rightArm','leftLeg']){
-   const p=EnemyReview.sample(templates,{form:'all',count:33,pose,time,vitality,brokenPart}).actors;
+   const p=EnemyReview.sample(templates,{form:'all',count:EnemyReview.forms.length,pose,time,vitality,brokenPart}).actors;
    rows.push(...p.map(a=>({ratio:a.hp/a.hpMax,parts:Object.keys(a.wounds),expected:vitality/100,brokenPart})));
   }
   return {rows,unchanged:before===JSON.stringify(templates)};
@@ -74,7 +74,7 @@ test('review vitality, broken part and motion controls are independent in all po
  for(const row of result.rows){assert(Math.abs(row.ratio-row.expected)<1e-12);assert.deepEqual(Array.from(row.parts),row.brokenPart==='none'?[]:[row.brokenPart]);}
 });
 
-test('all 33 forms retain finite, bounded staged marks without mutating actors',()=>{
+test('all catalog forms retain finite, bounded staged marks without mutating actors',()=>{
  for(const form of forms){h.ctx.form=form;
   for(const part of ['head','torso','rightArm','leftArm','rightLeg','leftLeg']){h.ctx.part=part;
    const clean=h.run(`damageFixture(form,'clean',part)`);assert.equal(clean.batches.filter(b=>b.type.startsWith('enemy:')&&['enemy:stain','enemy:split','enemy:break-rim'].includes(b.type)).length,0,form.id);

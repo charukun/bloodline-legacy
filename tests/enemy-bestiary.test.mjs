@@ -12,8 +12,8 @@ h.run(`function drawForm(form,time=0,extra={}){
  let rec;if(EnemySentinel.eligible(p)){rec=EnemySentinel.pose(p,time);art.sentinelEquipment(p,rec);}else{EnemyCreatures.draw(art,p,time);rec=r.enemyCreatures.get(p.id);}
  return {batches,rec,p,r};
 }`);
-test('31 hostile forms and 2 neutral creatures are available, each with a distinct uncolored construction',()=>{
- assert.equal(forms.filter(f=>!['stag','mushroom'].includes(f.kind)).length,31);assert.equal(forms.length,33);
+test('39 hostile forms and 2 neutral creatures are available, each with a distinct uncolored construction',()=>{
+ assert.equal(forms.filter(f=>!['stag','mushroom'].includes(f.kind)).length,39);assert.equal(forms.length,41);
  const signatures=new Map();
  for(const f of forms){h.ctx.form=f;const out=h.run('drawForm(form)'),scale=out.rec.config.scale;
   assert(out.batches.length>15,f.id);
@@ -68,7 +68,7 @@ test('normal front spawns reach every hostile form and new/legacy saves retain t
   const old=combatActors(Simulation.restore(legacy).getRoom(player));
   return {seen:[...seen],expected,restored,old:old.map(a=>({form:enemyForm(a).id,kind:a.kind,hasField:Object.hasOwn(a,'enemyForm')}))};
  })()`);
- assert.equal(result.seen.length,31);assert.deepEqual(result.restored,result.expected);
+ assert.equal(result.seen.length,39);assert.deepEqual(result.restored,result.expected);
  for(const a of result.old){assert.equal(a.form,a.kind);assert.equal(a.hasField,false);}
 });
 
