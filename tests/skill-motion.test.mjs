@@ -119,8 +119,11 @@ test('weapon channels have continuous nonzero velocity through contact, with dis
   assert(Math.abs(incoming)>.05,`${id} stops at contact`);
   assert(Math.abs(incoming-outgoing)<.02,`${id} changes velocity abruptly at contact`);
  }
- const early=id=>Math.abs(artPose(attack(id),1.16).rightArm-artPose(attack(id),1).rightArm);
- assert(early(60010)>early(60002)+.1,'thrust accelerates before a heavy downward strike');
+ // The sharper spacing intentionally holds the load longer. Compare the time
+ // spent cutting, not the old .16 frame which now belongs to anticipation.
+ const phrase=id=>SkillMotion.phrasing(attack(id),SkillMotion.clock(attack(id),1.43));
+ assert(phrase(60010).start>phrase(60002).start,'thrust cuts in a shorter interval than a heavy strike');
+ assert(phrase(60010).follow<phrase(60002).follow,'heavy strike retains a longer follow-through');
 });
 
 test('a different chained skill starts from the last pose and reaches its own release on time',()=>{
