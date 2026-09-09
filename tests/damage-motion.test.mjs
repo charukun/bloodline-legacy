@@ -59,7 +59,7 @@ test('presentation cache evicts absent characters',()=>{
 // its displacement, collision limits and unchanged action clocks separately.
 // The neutral frontal case retains prior damage/reaction behavior. New persisted
 // life, surface and damage-mark metadata is checked by the feature suites.
-const baselineExceptions=new Set(['hitPart','hitSeverity','hitReactAt','hitReactUntil','hitDir','hitStrength','hitMotionAt','hitMotionId','hitGuard','lifeState','traversables','damageMarks','grounded','supportHeight','verticalOffset','hitRecoil']);
+const baselineExceptions=new Set(['hitPart','hitSeverity','hitReactAt','hitReactUntil','hitDir','hitStrength','hitMotionAt','hitMotionId','hitGuard','lifeState','traversables','ship','damageMarks','grounded','supportHeight','verticalOffset','hitRecoil']);
 const state=sim=>JSON.parse(JSON.stringify(sim.exportState(),(k,v)=>k==='schema'?4:baselineExceptions.has(k)||k==='phaseLimitVersion'?undefined:v));
 test('damage, wound progression, attack interruption, hitstop and RNG match develop',()=>{
  const before=runtime(true);

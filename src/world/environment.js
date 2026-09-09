@@ -116,7 +116,7 @@ class VillageArt extends ArtDirector{
   }
   for(let j=0;j<650;j++){const x=(rng()-.5)*70,z=(rng()-.5)*65-7;if(Math.abs(x)<2.8||Math.abs(z-7)<1.6||Math.abs(z+19)<1.6||map.schools.some(s=>Math.hypot(x-s.x,z-s.z)<5)||map.houses.some(h=>Math.hypot(x-h.x,z-h.z)<3))continue;this.tuft(x,.11,z,.65+rng()*.65,j%3?'#7c8b51':'#9a9d63');}
   // Distant wooded banks hide the geometrical horizon without screen blur.
-  for(let j=0;j<32;j++){const a=j/32*TAU;this.tree(Math.sin(a)*43,Math.cos(a)*43-7,.9+rng()*.4,'#697e59',j+99);}
+  for(let j=0;j<32;j++){const a=j/32*TAU;if(map.ship&&Math.cos(a)*43-7>25&&Math.abs(Math.sin(a)*43)<11)continue;this.tree(Math.sin(a)*43,Math.cos(a)*43-7,.9+rng()*.4,'#697e59',j+99);}
  }
  // Override the old role-to-art dispatch without touching map schools or core rules.
 }

@@ -89,3 +89,5 @@
 .world-speed-settings .segments{flex-wrap:wrap}
 .world-speed-settings button{min-width:44px;min-height:44px}
 .world-speed-settings p{margin:8px 0 0;line-height:1.7;opacity:.8}
+.ship-notice{position:absolute;top:104px;left:50%;transform:translateX(-50%);margin:0;padding:.45em .9em;max-width:calc(100% - 32px);width:max-content;color:#514936;background:linear-gradient(90deg,transparent,#eee4c4e8 12%,#eee4c4e8 88%,transparent);font:12px/1.6 serif;letter-spacing:.07em;text-align:center;pointer-events:none;text-shadow:0 1px #fff7dc;}
+.ship-notice[hidden]{display:none;}

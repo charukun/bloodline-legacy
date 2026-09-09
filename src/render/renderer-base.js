@@ -9,7 +9,7 @@ class Renderer{
  setQuality(q){this.quality=q;this.scale=q==='low'?.75:1;this.lastSize='';this.resize();}
  put(type,m,c,surface=0,alpha=1,target=this.dynamic){let batch=target.get(type);if(!batch){batch=[];target.set(type,batch);}const col=Array.isArray(c)?c:rColor(c);batch.push([...m,col[0],col[1],col[2],alpha,surface]);}
  add(type,x,y,z,sx,sy,sz,c,yaw=0,rz=0,rx=0,surf=0,alpha=1,target=this.dynamic){this.put(type,rModel(x,y,z,sx,sy,sz,yaw,rz,rx),c,surf,alpha,target);}
- blob(x,z,sx,sz,a=.28,target=this.fxBatches){this.add('disk',x,.27,z,sx,1,sz,'#665b42',0,0,0,2,a,target);}
+ blob(x,z,sx,sz,a=.28,target=this.fxBatches){this.add('disk',x,.27+supportHeight(this.traversalMap,x,z),z,sx,1,sz,'#665b42',0,0,0,2,a,target);}
  geometry(type){if(this.geo.has(type))return this.geo.get(type);const gl=this.gl,g=rGeometry(type);if(!g.count)throw new Error('Unknown mesh: '+type);const vao=gl.createVertexArray();gl.bindVertexArray(vao);const data=new Float32Array(g.count*6);for(let i=0;i<g.count;i++){data.set(g.positions.subarray(i*3,i*3+3),i*6);data.set(g.normals.subarray(i*3,i*3+3),i*6+3);}const vertex=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,vertex);gl.bufferData(gl.ARRAY_BUFFER,data,gl.STATIC_DRAW);for(let i=0;i<2;i++){gl.enableVertexAttribArray(i);gl.vertexAttribPointer(i,3,gl.FLOAT,false,24,i*12);}const instance=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,instance);for(let i=0;i<4;i++){gl.enableVertexAttribArray(2+i);gl.vertexAttribPointer(2+i,4,gl.FLOAT,false,84,i*16);gl.vertexAttribDivisor(2+i,1);}gl.enableVertexAttribArray(6);gl.vertexAttribPointer(6,4,gl.FLOAT,false,84,64);gl.vertexAttribDivisor(6,1);gl.enableVertexAttribArray(7);gl.vertexAttribPointer(7,1,gl.FLOAT,false,84,80);gl.vertexAttribDivisor(7,1);gl.bindVertexArray(null);const out={...g,vao,vertex,instance};this.geo.set(type,out);return out;}
  geometryBounds(type){
   const g=rGeometry(type);
@@ -91,7 +91,7 @@ class Renderer{
  const x=c.x+Math.sin(c.yaw)*(this.panelShift||0)+Math.cos(c.yaw)*(this.panelShiftSide||0),z=c.z+Math.cos(c.yaw)*(this.panelShift||0)-Math.sin(c.yaw)*(this.panelShiftSide||0),y=c.y??1;
  this.viewCenter={x,z,y};const target=[x,y,z],distance=38,eye=[x+Math.sin(c.yaw)*Math.cos(c.pitch)*distance,y+Math.sin(c.pitch)*distance,z+Math.cos(c.yaw)*Math.cos(c.pitch)*distance];this.eye=eye;this.view=rLookAt(eye,target);this.vp=rMultiply(rOrtho(-this.viewWidth/2,this.viewWidth/2,-this.viewHeight/2,this.viewHeight/2,.1,120),this.view);this.unitsToClip=2/Math.min(this.viewWidth,this.viewHeight);const shadowCenter=[c.x,0,c.z],lightEye=[c.x-22,38,c.z+19];this.lightVP=rMultiply(rOrtho(-24,24,-24,24,.1,100),rLookAt(lightEye,shadowCenter));}
  screenToWorld(dx,dy){const y=this.camera.yaw,p=this.camera.pitch;return{x:Math.cos(y)*dx+Math.sin(y)*dy/Math.sin(p),z:-Math.sin(y)*dx+Math.cos(y)*dy/Math.sin(p)};}
- pointToWorld(x,y){const dx=(x/this.width-.5)*this.viewWidth,dy=(y/this.height-.5)*this.viewHeight;const v=this.screenToWorld(dx,dy),c=this.viewCenter||this.camera,viewY=c.y??1;return{x:c.x+v.x-viewY*Math.sin(this.camera.yaw)/Math.tan(this.camera.pitch),z:c.z+v.z-viewY*Math.cos(this.camera.yaw)/Math.tan(this.camera.pitch)};}
+ pointToWorld(x,y){const dx=(x/this.width-.5)*this.viewWidth,dy=(y/this.height-.5)*this.viewHeight;const v=this.screenToWorld(dx,dy),c=this.viewCenter||this.camera,viewY=c.y??1;const at=h=>({x:c.x+v.x+(h-viewY)*Math.sin(this.camera.yaw)/Math.tan(this.camera.pitch),z:c.z+v.z+(h-viewY)*Math.cos(this.camera.yaw)/Math.tan(this.camera.pitch)});let q=at(0);if(this.traversalMap?.ship&&q.z>27){q=at(VILLAGE_SHIP.deckY);for(let i=0;i<10;i++)q=at(shipSupport(q.x,q.z));}return q;}
  project(x,y,z){const m=this.vp;if(!m)return{x:-999,y:-999,visible:false};const xx=m[0]*x+m[4]*y+m[8]*z+m[12],yy=m[1]*x+m[5]*y+m[9]*z+m[13],zz=m[2]*x+m[6]*y+m[10]*z+m[14];return{x:(xx+1)*this.width/2,y:(1-yy)*this.height/2,visible:Math.abs(xx)<1.15&&Math.abs(yy)<1.15&&Math.abs(zz)<1};}
  effect(ev,t){if(ev.type==='skillconnection'&&ev.signal==='quiet')return;if(['hit','wound','partbreak','blocked','guard','guarded','parry','skill','death','status','release','released','learn','skillconnection'].includes(ev.type)){this.effects.push({...ev,born:t,life:ev.type==='partbreak'?1.25:ev.type==='skill'?1.1:.8});if(this.effects.length>100)this.effects.splice(0,20);}}
  combatFX(snapshot,t){const entities=[...snapshot.players||[],...snapshot.actors||[]];if(snapshot.player&&!entities.some(x=>x.id===snapshot.player.id))entities.push(snapshot.player);const find=id=>entities.find(x=>x.id===id);for(const p of entities){if(p.alive===false)continue;const sk=skillById(p.pendingSkill?.id??p.attackSkill);const pt=t;
@@ -148,7 +148,7 @@ class Renderer{
   const yawTarget=c.yaw+Math.atan2(Math.sin(yaw-c.yaw),Math.cos(yaw-c.yaw));
   damp('yaw',yawTarget,9);damp('pitch',pitch,9);damp('zoom',zoom,7);
   const height=c.zoom/aspectScale,anchor=options.anchorY??.62;
-  const ahead=((anchor-.5)*height-((c.y??1)-.18)*Math.cos(c.pitch))/Math.sin(c.pitch);
+  const ahead=((anchor-.5)*height-((c.y??1)-.18-(p.supportHeight||0))*Math.cos(c.pitch))/Math.sin(c.pitch);
   damp('x',cx-Math.sin(c.yaw)*ahead+f.leadX,12);
   damp('z',cz-Math.cos(c.yaw)*ahead+f.leadZ,12);
  }
