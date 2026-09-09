@@ -34,8 +34,8 @@ test('facility buttons hide immediately out of range, offscreen, in menus, and o
  p.alive=false;ui.positionFacilityActions(g.snapshot);assert.equal(node.style.display,'none');p.alive=true;p.prologue=true;ui.positionFacilityActions(g.snapshot);assert.equal(node.style.display,'none');
 });
 
-test('departed facilities are removed; boarding shares the foot actions while pickup remains available',t=>{
- const {p,g,d,sim,sync}=fixture(t);p.x=0;p.z=24;sync();assert.ok(d.querySelector('[data-anchor=feet] [data-context=boat]'));assert.equal(d.querySelector('#context [data-context=boat]'),null);
+test('departed facilities are removed; physical boarding has no reservation button while pickup remains available',t=>{
+ const {p,g,d,sim,sync}=fixture(t);p.x=0;p.z=24;sync();assert.equal(d.querySelector('[data-context=boat]'),null);assert.equal(d.querySelector('#context [data-context=boat]'),null);
  sim.getRoom(p).items=[{id:'near',item:'stone',x:0,z:24,ready:0}];sync();assert.ok(d.querySelector('[data-context=pickup]'));
  p.x=0;p.z=0;sync();assert.equal(d.querySelector('[data-anchor=feet]'),null);
  g.ui.showGame();sync();assert.equal(d.querySelectorAll('#facility-actions').length,1);assert.equal(g.ui.facilityGroups.size,d.querySelectorAll('[data-anchor]').length);

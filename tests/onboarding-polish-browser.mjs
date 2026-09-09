@@ -7,7 +7,7 @@ import {chromium} from '../deploy/node_modules/playwright/index.mjs';
 const root=path.resolve(import.meta.dirname,'..'),out=path.join(root,'verification/current/onboarding-polish');await fs.mkdir(out,{recursive:true});
 const html=await fs.readFile(path.join(root,'dist/index.html')),version=JSON.parse(await fs.readFile(path.join(root,'deploy/out/dev/version.json'),'utf8'));
 const server=http.createServer((req,res)=>{if(req.url.startsWith('/api/')||req.url==='/version.json'){res.setHeader('Content-Type','application/json');return res.end('{"online":false}');}res.setHeader('Content-Type','text/html; charset=utf-8');res.end(html);});await new Promise(r=>server.listen(0,'127.0.0.1',r));
-const report={head:process.env.GITHUB_SHA,checks:[],errors:[],passed:false,limitations:['Software WebGL; mobile hardware performance and speakers are not verified.','Age, locations and discovery events are prepared by fixtures; input and UI use the real game.']};let browser,page;
+const report={head:process.env.GITHUB_SHA,checks:[],errors:[],passed:false,limitations:['Software WebGL; mobile hardware performance and speakers are not verified.','Age, locations and discovery events are prepared by fixtures; input and UI use the real game. The flick clock is fixed to 80 ms to exclude software GPU/driver round-trip latency.']};let browser,page;
 try{
  browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});page=await browser.newPage({viewport:{width:1000,height:800},deviceScaleFactor:1});page.setDefaultTimeout(120000);page.on('pageerror',e=>report.errors.push(e.message));
  const check=async(name,fn)=>{const ok=await page.evaluate(fn);report.checks.push({name,pass:!!ok});assert.ok(ok,name);console.log('PASS '+name);};const shot=async name=>page.screenshot({path:path.join(out,name+'.png')});
@@ -19,7 +19,10 @@ try{
   window.polishStep=n=>{for(let i=0;i<n;i++)a.sim.tick(1/30);polishDraw();};
   window.polishStation=id=>{const s=a.snapshot.map.schools.find(s=>s.id===id),o={church:[0,.36],sword:[Math.sign(s.x)*1.65,.85],magic:[.8,.9],armory:[-2.18,1.3],forge:[-.6,-.58],hunter:[0,1.3],dance:[0,2.3]}[id];return {x:s.x+o[0],z:s.z+o[1]+1};};a.renderer.camera={x:0,z:0,zoom:16,yaw:.3,pitch:.68};polishDraw();
  });
- await page.mouse.move(420,490);await page.mouse.down();await page.mouse.move(420,570);await page.mouse.up();
+ // Driver round trips can exceed the 320 ms gesture window under software WebGL.
+ // Keep real pointer input and the production recognizer, controlling only its clock.
+ const gestureTime=new Date('2026-09-09T12:00:00Z');await page.clock.install({time:gestureTime});await page.clock.pauseAt(new Date(+gestureTime+1000));
+ await page.mouse.move(420,490);await page.mouse.down();await page.clock.runFor(80);await page.mouse.move(420,570);await page.mouse.up();await page.clock.resume();
  await check('carried flick starts dash',()=>!!AERIN_QA.player().dash);await page.evaluate(()=>polishStep(15));
  await check('carried dash moves with a running parent pose',()=>AERIN_QA.player().action==='dash'&&AERIN_QA.player().stamina<100);await shot('carried-dash');
  await page.mouse.click(420,490);await check('tap stops carried dash',()=>!AERIN_QA.player().dash);
@@ -32,7 +35,10 @@ try{
  await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();a.sim.stopActivity(p);p.x+=2.6;polishDraw();});await check('church side has no prayer action',()=>!document.querySelector('[data-context=activity]'));
  await page.setViewportSize({width:1000,height:800});await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();a.renderer.resize();Object.assign(p,polishStation('sword'));p.x-=.9;a.renderer.camera={x:p.x,z:p.z-1,zoom:18,yaw:.55,pitch:.7};polishDraw();});
  await page.locator('[data-context=activity]').click();await page.evaluate(()=>polishStep(30));await check('courtyard lectern starts study',()=>AERIN_QA.player().activity==='study'&&Math.cos(AERIN_QA.player().dir)<-.65);await shot('dojo-lectern');
- await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();a.sim.stopActivity(p);const target=a.sim.getRoom(p).actors.find(e=>e.kind==='dummy');Object.assign(p,{x:target.x,z:target.z+1.1,health:100,stamina:100});a.renderer.camera={x:p.x,z:p.z-1,zoom:16,yaw:.25,pitch:.7};polishStep(30);});
+ await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player(),s=a.sim.getRoom(p).map.ship.shrine;a.sim.stopActivity(p);Object.assign(p,{x:s.x,z:s.z+.45,supportHeight:1.2,queued:true});a.renderer.camera={x:p.x,z:p.z,zoom:17,yaw:.25,pitch:.7};polishDraw();});
+ await page.locator('[data-context=activity]').click();await page.evaluate(()=>polishStep(30));await check('merged ship shrine retains prayer at deck height',()=>AERIN_QA.player().activity==='pray'&&AERIN_QA.player().supportHeight===1.2);await shot('ship-prayer');
+ await page.locator('#hud-hints').click();await check('ship guidance refers to the deck and gangway',()=>!!document.querySelector('[data-hint=deck]')&&!!document.querySelector('[data-hint=ship-prayer]'));await page.locator('.panel-close').click();
+ await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player();a.sim.stopActivity(p);const target=a.sim.getRoom(p).actors.find(e=>e.kind==='dummy');Object.assign(p,{x:target.x,z:target.z+1.1,supportHeight:target.supportHeight||0,queued:false,health:100,stamina:100});a.renderer.camera={x:p.x,z:p.z-1,zoom:16,yaw:.25,pitch:.7};polishStep(30);});
  await check('practice combat is active before the discovery',()=>!!AERIN_QA.player().autoFight);
  for(const viewport of [{width:1000,height:800},{width:393,height:852},{width:852,height:393}]){
   await page.setViewportSize(viewport);await page.evaluate(()=>{const a=AERIN_QA.app;a.renderer.resize();polishDraw();a.ui.event({type:'insight',id:60000,player:a.playerId,t:a.snapshot.t});});

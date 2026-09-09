@@ -47,6 +47,11 @@ function uiJourneyHints(s){
  if(s.room.kind==='village'){
   const school=nearbyActivity(p,{...s.room,map:s.map});
   if(school){const station=facilityStation(school);out.push(hint('station','book',ACTIVITY_DEFS[school.id].label,p.activity?'続けているうちに、新しい気づきが生まれる。歩くと中断できる。':`${station.name}の前に立っている。足元の「${ACTIVITY_DEFS[school.id].label}」を選ぼう。`));}
+  if(s.map.ship&&onShipDeck(p)){
+   out.push(hint('deck','sword','甲板で腕を磨こう','甲板のかかしのそばで稽古ができる。出港までの時間を使おう。'));
+   out.push(hint('ship-prayer','sun','航海の無事を祈ろう','甲板の祈り台の前で祈れる。降りるときは、桟橋へ戻ろう。'));
+   return out.slice(0,3);
+  }
   if(p.age>=EQUIP_AGE&&p.weapon<0)out.push(hint('gear','sword','身体に合う武具を','武器庫の外にある武具棚の前へ。借りる武器で、使える技も変わる。'));
   out.push(hint('learn','book','道場でひとつ、覚えよう','道場の書見台で指南書を読もう。かかしのそばでは身体を使って稽古もできる。'));
   out.push(hint('pray','sun','静かに祈ってみよう','教会の扉の前で祈れる。重ねた祈りは、信仰の心得につながる。'));

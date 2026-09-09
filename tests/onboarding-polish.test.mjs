@@ -28,6 +28,9 @@ test('station gates reject broad radii and backsides, allow reachable fronts, an
   assert.equal(g.command({type:'activity',activity:actions[s.id]}),true,s.id);assert.ok(Math.cos(p.dir)<-.99,s.id+' faces its equipment');sync();assert.equal(d.querySelector('[data-context=activity]').dataset.facility,s.id);
   p.x+=2.6;step(sim,1);assert.equal(p.activity,null,s.id+' moved away');
  }
+ const shrine=r.map.ship.shrine,a=api.facilityStation(shrine);Object.assign(p,{x:a.x,z:a.z+.8,supportHeight:1.2,queued:true});
+ assert.equal(g.command({type:'activity',activity:'pray'}),true);sync();assert.equal(d.querySelector('[data-context=activity]').dataset.facility,'shipPrayer');
+ Object.assign(p,{z:a.z-.4});assert.equal(g.command({type:'activity',activity:'pray'}),false);step(sim,1);assert.equal(p.activity,null);
  // The church facade and authored courtyard lectern have exact world anchors.
  const church=api.facilityStation({id:'church',x:3,z:-10});assert.equal(church.x,3);assert.equal(church.z,-9.64);
  for(const x of [-6.5,6.5]){const a=api.facilityStation({id:'sword',x,z:17.7});assert.equal(a.x,x+Math.sign(x)*1.65);assert.equal(a.z,18.55);}

@@ -21,7 +21,7 @@ jobs:
           node-version: '24'
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: node deploy/build.mjs dev
-      - run: node --test tests/onboarding-polish.test.mjs tests/insight-notice.test.mjs tests/facility-actions.test.mjs
+      - run: node --test tests/onboarding-polish.test.mjs tests/insight-notice.test.mjs tests/facility-actions.test.mjs tests/ship-deck.test.mjs tests/ship-ui.test.mjs
       - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
       - run: sudo apt-get install -y --no-install-recommends fonts-noto-cjk
       - name: Install and verify Chromium
