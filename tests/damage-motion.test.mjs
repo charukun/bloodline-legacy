@@ -5,7 +5,7 @@ import vm from 'node:vm';
 import {execFileSync} from 'node:child_process';
 import {definitions,life} from './skills/harness.mjs';
 const read=f=>fs.readFileSync(new URL('../src/'+f,import.meta.url),'utf8');
-const base='4b9693364c5687ffc04bf57101c80394738fe59c';
+const base='b0174532818b078a9bc59dec83c11b9e06b00bad';
 function runtime(baseline=false){
  const ctx=vm.createContext({console,performance,structuredClone});
  vm.runInContext('const BL_SKILL_DEFINITIONS='+JSON.stringify(definitions)+';'+read('legacy/dialogue.js')+'\n'+(baseline?execFileSync('git',['show',base+':src/legacy/core.js'],{encoding:'utf8'}):read('legacy/core.js'))+'\n'+read('skills/engine.js')+'\n'+read('skills/runtime.js')+'\n'+read('legacy/render_math.js')+'\n'+read('legacy/motion.js')+'\nthis.API={Simulation,hitPose,DamageMotion,damageLeg};',ctx);
@@ -66,11 +66,14 @@ test('damage, wound progression, attack interruption, hitstop and RNG match deve
   assert.deepEqual(state(pair[1].sim),state(pair[0].sim),`${seed} ${power} ${part}`);
  }
 });
-test('player wounds and successful guarding retain develop combat state and event counts',()=>{
+test('approved player damage tuning preserves guarding, timers, event counts and RNG',()=>{
  const before=runtime(true);let guards=0;
  for(let seed=11;seed<20;seed++)for(const guarding of [false,true]){
   const pair=[before,api].map(a=>{const f=life(a,seed);f.sim.time=10;const e=f.sim.actor('soldier',0,6,0);Object.assign(f.p,{x:0,z:5,dir:0,guard:guarding});f.e=e;f.room.actors.push(e);return f;});
   for(const f of pair){f.sim.hitPlayer(f.p,f.e,{part:'leftLeg'});}
+  const wounded=pair[1].sim.events.some(e=>e.type==='wound');
+  assert.equal(pair[1].p.health,pair[0].p.health-(wounded?11:0));
+  if(wounded)pair[0].p.health-=11; // Explicit approved light-wound delta; compare every other field.
   assert.deepEqual(state(pair[1].sim),state(pair[0].sim));if(pair[1].p.hitGuard)guards++;
  }
  assert(guards>0,'exercise an actual guarded event');

@@ -75,7 +75,7 @@ const CM01 = (()=>{
    if(moving&&!st.moving){st.phase=duty*.5+d/stride;for(const foot of st.feet)if(foot)foot.settle=null;}
    else if(moving)st.phase+=d/stride;
    st.moving=moving;st.gaitMode=gaitMode;
-   const phase=st.phase*TAU,reaction=damagePose(r,p,t),pose=damageArtPose(r,p,t,artPose(p,t,SkillMotion.stateFor(r,p,t))),ail=ailmentPose(p,t),guard=p.guard||p.guardUntil>t||p.autoFight;
+   const phase=st.phase*TAU,reaction=damagePose(r,p,t,st.feet),pose=damageArtPose(r,p,t,artPose(p,t,SkillMotion.stateFor(r,p,t))),ail=ailmentPose(p,t),guard=p.guard||p.guardUntil>t||p.autoFight;
    const fall=!p.alive?smooth((t-(p.deathAt??t))/1.12):0;const sampledGround=this.groundAt(p.x,p.z);if(!Number.isFinite(st.ground))st.ground=sampledGround;st.ground+=(sampledGround-st.ground)*(1-Math.exp(-dt*14));const baseY=p.baseY!=null?p.baseY:st.ground-.020;
    const rootQ=Q.euler(pose.pitch+reaction.pitch+ail.pitch+fall*1.48,(p.dir||0)+pose.yaw,pose.roll+reaction.roll+ail.roll);
    const rootM=matrix([p.x+reaction.x+Math.cos(p.dir||0)*(pose.weightX||0)+Math.sin(p.dir||0)*(pose.weightZ||0),baseY+pose.y+ail.y-reaction.drop,p.z+reaction.z-Math.sin(p.dir||0)*(pose.weightX||0)+Math.cos(p.dir||0)*(pose.weightZ||0)],rootQ);
@@ -125,21 +125,18 @@ const CM01 = (()=>{
      foot.damageAnchor=null;foot.damageKey=null;
      /* Shared authored combat footwork is applied below. */
     }else if(bracing){
-     const damageKey=p.hitMotionId??p.lastImpactAt??p.hitReactAt;
-     if(foot.damageKey!==damageKey){foot.damageKey=damageKey;foot.damageAnchor=[...foot.anchor];}
-     const sx=reaction[footKey+'X'],sz=reaction[footKey+'Z'];
-     foot.anchor=[foot.damageAnchor[0]+cs*sx+sn*sz,foot.damageAnchor[1]-sn*sx+cs*sz];
-     foot.lift=reaction[footKey+'Lift'];foot.swing=foot.lift>1e-6;foot.settle=null;
+     damageFoot(p,reaction,side,foot);
     }else if(!moving){
      foot.damageAnchor=null;foot.damageKey=null;
      // Recover a stationary stance with an actual small step. Interpolating a
      // planted anchor on the floor makes both soles skate when motion stops.
      const turn=Math.atan2(Math.sin(facing-foot.yaw),Math.cos(facing-foot.yaw));
-     const needsStep=Math.hypot(...V.sub(foot.anchor,desired))>.045||Math.abs(turn)>.22;
+     const needsStep=Math.hypot(...V.sub(foot.anchor,desired))>(foot.damageSettled?.20:.045)||Math.abs(turn)>.22;
      if(!foot.settle&&(foot.swing||(needsStep&&!st.feet.some(f=>f?.settle))))foot.settle={from:[...foot.anchor],to:desired,yaw:foot.yaw,turn,lift:foot.lift,elapsed:0};
      if(foot.settle){const step=foot.settle;step.elapsed+=dt;const u=clamp(step.elapsed/.24,0,1);foot.anchor=V.lerp(step.from,step.to,smooth(u));foot.lift=step.lift*(1-u)+Math.sin(Math.PI*u)*.11;foot.yaw=step.yaw+step.turn*smooth(u);foot.swing=u<1;if(u>=1){foot.settle=null;foot.lift=0;}}
      else{foot.swing=false;foot.lift=0;}
     }else if(isSwing){
+     foot.damageSettled=false;
      foot.damageAnchor=null;foot.damageKey=null;
      if(!foot.swing){foot.start=[...foot.anchor];foot.startPhase=normalized;foot.target=toWorld(side*.18,.025+stride*(1-normalized+duty*.5));foot.swing=true;}
      const predicted=toWorld(side*.18,.025+stride*(1-normalized+duty*.5));foot.target=V.lerp(foot.target,predicted,1-Math.exp(-dt*22));
