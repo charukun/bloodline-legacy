@@ -45,7 +45,7 @@ class UI {
  }
  showClan(){SkillPresentation.clear(this);this.closeModal();this.notices=new UINoticeQueue();this.paintNotices();this.worldNodes.clear();this.hud.classList.add('hidden');document.getElementById('world-labels').innerHTML='';this.clan.classList.remove('hidden');this.renderClan();}
  renderClan(){this.lineageView.renderClan();}
- showGame(){this.lineageView.showGame();this.facilityGroups=new Map();this.lastContext=null;this.hudPortrait='';this.lastWounds=null;this.lastMother=null;this.lastGifts=null;this.pickupKey=null;this.mapSignature=null;this.worldNodes.clear();document.getElementById('world-labels').replaceChildren();this.clan.classList.add('hidden');this.hud.classList.remove('hidden');this.hud.innerHTML=`<div class="player-mark"><div class="portrait-frame" id="hud-portrait">${icon('leaf')}</div><div class="player-info"><strong id="player-name"></strong><div class="life-line"><span id="age"></span><span id="condition"></span></div></div></div><button class="wound-mark" id="wound-mark" aria-label="傷のある部位"></button><div class="orb-wrap">${orb()}</div><div class="place-mark"><div class="day-line">${icon('sun')}<span id="day"></span></div><span id="place"></span></div><button class="mini-map" id="mini-map" aria-label="地図"><canvas id="map-preview" width="200" height="200"></canvas><i>${icon('map')}</i></button><nav class="hud-bottom" aria-label="旅のメニュー"><button data-menu="skills" class="hud-button" aria-controls="game-panel" aria-expanded="false">${icon('leaf')}${label('意識')}</button><button data-menu="body" class="hud-button" aria-controls="game-panel" aria-expanded="false">${icon('bag')}${label('身支度')}</button><button data-menu="settings" class="hud-button" aria-controls="game-panel" aria-expanded="false">${icon('menu')}${label('設定')}</button></nav><div id="context" class="context"></div><div id="facility-actions"></div><button class="talk-button" id="talk-button" aria-label="話す">${icon('talk')}<span>話す</span></button><div id="mother-dialogue"></div><div id="carry-controls"></div><div id="world-pickup"></div>`;
+ showGame(){this.lineageView.showGame();this.damageFeedback=new UIDamageFeedback();this.facilityGroups=new Map();this.lastContext=null;this.hudPortrait='';this.lastWounds=null;this.lastMother=null;this.lastGifts=null;this.pickupKey=null;this.mapSignature=null;this.worldNodes.clear();document.getElementById('world-labels').replaceChildren();this.clan.classList.add('hidden');this.hud.classList.remove('hidden');this.hud.innerHTML=`<div class="player-mark"><div class="portrait-frame" id="hud-portrait">${icon('leaf')}</div><div class="player-info"><strong id="player-name"></strong><div class="life-line"><span id="age"></span><span id="condition"></span></div></div></div><button class="wound-mark" id="wound-mark" aria-label="傷のある部位"></button><div class="orb-wrap">${orb()}</div><div class="place-mark"><div class="day-line">${icon('sun')}<span id="day"></span></div><span id="place"></span></div><button class="mini-map" id="mini-map" aria-label="地図"><canvas id="map-preview" width="200" height="200"></canvas><i>${icon('map')}</i></button><nav class="hud-bottom" aria-label="旅のメニュー"><button data-menu="skills" class="hud-button" aria-controls="game-panel" aria-expanded="false">${icon('leaf')}${label('意識')}</button><button data-menu="body" class="hud-button" aria-controls="game-panel" aria-expanded="false">${icon('bag')}${label('身支度')}</button><button data-menu="settings" class="hud-button" aria-controls="game-panel" aria-expanded="false">${icon('menu')}${label('設定')}</button></nav><div id="context" class="context"></div><div id="facility-actions"></div><button class="talk-button" id="talk-button" aria-label="話す">${icon('talk')}<span>話す</span></button><div id="mother-dialogue"></div><div id="world-pickup"></div>`;
   this.hudDock=this.hud.querySelector('.hud-bottom');this.hudDock.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>this.toggleMenu(b.dataset.menu,b));document.getElementById('talk-button').onclick=()=>this.talk();document.getElementById('mini-map').onclick=()=>this.map();document.getElementById('wound-mark').onclick=()=>this.wounds();this.deathShown='';
  }
  blocksWorldInput(){return !!this.modal&&this.modal!=='skills';}
@@ -122,12 +122,12 @@ class UI {
   const colors=['#9aba8f','#d8b67c','#a8aec6','#c48d75','#86b4b0','#c7bb89','#bc9bba','#a7a286'];
   this.skillColors=Object.fromEntries(ids.map((id,i)=>[id,colors[i%colors.length]]));
   const sum=ids.reduce((n,id)=>n+(weights[id]||0),0);
-  document.getElementById('skills-content').innerHTML=`<div class="skill-tabs-row"><div class="phase-tabs" role="tablist" aria-label="技の段とパッシブ">${[...PHASES,'パッシブ'].map((name,i)=>`<button role="tab" data-phase="${i}" aria-controls="skill-page" aria-selected="${this.phase===i}" class="${this.phase===i?'chosen':''}">${i<3?label(name):'<span>パッシブ</span>'}</button>`).join('')}</div><button id="skills-close" class="panel-close" aria-label="閉じる">${icon('close')}</button></div>
+  document.getElementById('skills-content').innerHTML=`<div class="skill-tabs-row"><div class="phase-tabs" role="tablist" aria-label="技の段とパッシブ">${[...PHASES,'パッシブ'].map((name,i)=>`<button role="tab" data-phase="${i}" aria-controls="skill-page" aria-selected="${this.phase===i}" class="${this.phase===i?'chosen':''}"><span class="phase-ribbon-label">${i<3?label(name):'<span>パッシブ</span>'}</span></button>`).join('')}</div><button id="skills-close" class="panel-close" aria-label="閉じる">${icon('close')}</button></div>
    <div id="skill-page" class="skill-overview ${passive?'passive-page':''}" role="tabpanel" aria-label="${passive?'パッシブ':PHASES[this.phase]}">
-    <div class="skill-balance">${passive?`<div class="passive-emblem">${icon('leaf')}<strong>身についた心得</strong><span>常に働く力</span></div>`:'<div id="pie-wrap"></div><p class="balance-hint">輪の境目を動かして配分</p><div id="pie-legend" class="pie-legend visually-hidden"></div>'}</div>
+    <div class="skill-balance">${passive?`<div class="passive-emblem">${icon('leaf')}<strong>身についた心得</strong></div>`:'<div id="pie-wrap"></div><p class="balance-hint">輪の境目を動かして配分</p><div id="pie-legend" class="pie-legend visually-hidden"></div>'}</div>
     <div class="skill-description"><div id="skill-detail" class="skill-detail"><span>${passive?'経験から、心得が芽生える。':'この段で使う技を選ぼう。'}</span></div><div id="skill-choice"></div></div>
    </div>
-   <div class="skill-list-scroll" tabindex="0" aria-label="習得した技">${[...p.skills,...p.passives].some(id=>!skillById(id))?'<p class="skill-compatibility" role="status">この版では表示できない技があります。技の記録は保持されています。最新版で記録を開いてください。</p>':''}<div class="skill-grid">${ids.length?ids.map((id,i)=>{const sk=skillById(id),locked=!passive&&skillRestriction(p,sk),enabled=passive||weights[id]>0;return`<div class="skill-cell ${enabled?'enabled':''} ${this.detail===id?'selected':''}" style="--ink:${this.skillColors[id]}"><button ${passive?'data-passive':'data-skill'}="${id}" class="skill-tile ${locked?'restricted':''}" aria-pressed="${this.detail===id}" aria-controls="skill-detail" aria-label="${ESC(sk.name)}の説明${enabled?'・'+(passive?'常時有効':'採用中'):''}"><span class="skill-number">${passive?'常':i+1}</span><span class="skill-sigil">${icon(schoolIcon(sk.school))}</span><span class="skill-name">${ESC(sk.name)}</span><span class="skill-allocation">${passive?'常時有効':enabled?Math.round(weights[id]/sum*100)+'%':'未採用'}</span></button></div>`;}).join(''):`<div class="phase-empty">${passive?'まだ、心得は芽生えていない。':'まだ、この段の技はない。'}</div>`}</div></div>`;
+   <div class="skill-list-scroll" tabindex="0" aria-label="習得した技">${[...p.skills,...p.passives].some(id=>!skillById(id))?'<p class="skill-compatibility" role="status">この版では表示できない技があります。技の記録は保持されています。最新版で記録を開いてください。</p>':''}<div class="skill-grid">${ids.length?ids.map((id,i)=>{const sk=skillById(id),locked=!passive&&skillRestriction(p,sk),enabled=passive||weights[id]>0;return`<div class="skill-cell ${enabled?'enabled':''} ${this.detail===id?'selected':''}" style="--ink:${this.skillColors[id]}"><button ${passive?'data-passive':'data-skill'}="${id}" class="skill-tile ${locked?'restricted':''}" aria-pressed="${this.detail===id}" aria-controls="skill-detail" aria-label="${ESC(sk.name)}の説明・${passive?'常時有効':enabled?'採用中':'未採用'}">${passive?'':`<span class="skill-number">${i+1}</span>`}<span class="skill-sigil">${icon(schoolIcon(sk.school))}</span><span class="skill-name">${ESC(sk.name)}</span><span class="skill-allocation">${uiSelectionSeal(enabled)}${!passive&&enabled?`<span>${Math.round(weights[id]/sum*100)}%</span>`:''}</span></button></div>`;}).join(''):`<div class="phase-empty">${passive?'まだ、心得は芽生えていない。':'まだ、この段の技はない。'}</div>`}</div></div>`;
   document.getElementById('skills-close').onclick=()=>this.closeModal();
   this.root.querySelectorAll('[data-phase]').forEach(b=>b.onclick=()=>{this.phase=+b.dataset.phase;this.detail=null;this.root.querySelector('.skill-list-scroll').scrollTop=0;this.root.querySelector('#skill-detail').scrollTop=0;this.renderSkills();});
   this.root.querySelectorAll('[data-skill],[data-passive]').forEach(b=>b.onclick=()=>this.describeSkill(+(b.dataset.skill||b.dataset.passive)));
@@ -142,7 +142,7 @@ class UI {
   const restriction=!sk.passive&&skillRestriction(p,sk);if(restriction){const note=document.createElement('small');note.className='skill-restriction';note.textContent=restriction;el.appendChild(note);}
   this.root.querySelectorAll('[data-skill],[data-passive]').forEach(b=>{const selected=+(b.dataset.skill||b.dataset.passive)===id;b.setAttribute('aria-pressed',String(selected));b.closest('.skill-cell').classList.toggle('selected',selected);});
   const choice=document.getElementById('skill-choice');if(!choice)return;
-  if(sk.passive){choice.innerHTML='<span class="passive-active">常時有効</span>';return;}
+  if(sk.passive){choice.replaceChildren();return;}
   const enabled=(p.phaseWeights[this.phase]?.[id]||0)>0;
   choice.innerHTML=`<button id="skill-toggle" aria-pressed="${enabled}">${enabled?'編成から外す':PHASES[this.phase]+'に組み込む'}</button>`;
   choice.querySelector('button').onclick=()=>{const p=this.g.snapshot?.player;if(!p||this.phase===3||!p.skills.includes(id))return;const weights={...p.phaseWeights[this.phase]};weights[id]=weights[id]>0?0:20;this.g.command({type:'weights',phase:this.phase,weights});this.renderSkills();this.g.saveWorld();};
@@ -168,7 +168,7 @@ class UI {
  }
  bodySignature(p){return JSON.stringify([p.id,p.inventory,p.weapon,p.armor,p.shield,p.age<EQUIP_AGE,this.g.nearRack(),p.passives]);}
  wounds(){const p=this.g.snapshot?.player;if(!p)return;const hurt=Object.entries(p.wounds||{});this.open('wounds','身体の声',`<div class="wounds-figure">${anatomy(p,true)}</div><div class="wound-list">${hurt.length?hurt.map(([k,w])=>`<div><span>${BODY_NAMES[k]}</span><strong class="${w.severity}">${WOUND_NAMES[w.severity]}</strong></div>`).join(''):'<p>傷は、ない。</p>'}</div><div class="wound-key"><span>◆ 軽傷</span><span>◆ 重傷</span><span>◆ 欠損</span></div>`);}
- rack(){const p=this.g.snapshot?.player;if(!p)return;const near=this.g.nearRack(),minor=p.age<EQUIP_AGE,blocked=minor||!near;this.lastGear=[p.weapon,p.armor,p.shield,minor,near].join(':');this.open('rack','武具棚',`<p class="rack-note">${uiEquipmentNote(p,near)}</p><h3>得物</h3><div class="gear-grid">${[{name:'素手',id:-1},...WEAPONS.map((w,i)=>({...w,id:i}))].map(w=>`<button data-slot="weapon" data-value="${w.id}" aria-pressed="${p.weapon===w.id}" class="${p.weapon===w.id?'chosen':''}" ${blocked?'disabled':''}>${icon(w.id<0?'hand':w.id===4?'hammer':'sword')}<span>${w.name}</span>${p.weapon===w.id?'<small>装備中</small>':''}</button>`).join('')}</div><h3>身を包む</h3><div class="gear-grid">${ARMORS.map((a,i)=>`<button data-slot="armor" data-value="${i}" aria-pressed="${p.armor===i}" class="${p.armor===i?'chosen':''}" ${blocked?'disabled':''}>${icon(i===0?'cloth':'helm')}<span>${a.name}</span>${p.armor===i?'<small>装備中</small>':''}</button>`).join('')}</div><h3>左手</h3><div class="gear-grid">${[false,true].map(a=>`<button data-slot="shield" data-value="${a}" aria-pressed="${p.shield===a}" class="${p.shield===a?'chosen':''}" ${blocked?'disabled':''}>${icon(a?'shield':'hand')}<span>${a?'盾を持つ':'手を空ける'}</span>${p.shield===a?'<small>選択中</small>':''}</button>`).join('')}</div><p class="rack-school">今の学び · ${schoolName(gearSchool(p))}</p>`);this.root.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{const value=b.dataset.slot==='shield'?b.dataset.value==='true':+b.dataset.value;if(this.g.command({type:'equip',slot:b.dataset.slot,value})){this.rack();}});}
+ rack(){const p=this.g.snapshot?.player;if(!p)return;const near=this.g.nearRack(),minor=p.age<EQUIP_AGE,blocked=minor||!near;this.lastGear=[p.weapon,p.armor,p.shield,minor,near].join(':');this.open('rack','武具棚',`<p class="rack-note">${uiEquipmentNote(p,near)}</p><h3>得物</h3><div class="gear-grid">${[{name:'素手',id:-1},...WEAPONS.map((w,i)=>({...w,id:i}))].map(w=>`<button data-slot="weapon" data-value="${w.id}" aria-pressed="${p.weapon===w.id}" class="${p.weapon===w.id?'chosen':''}" ${blocked?'disabled':''}>${icon(w.id<0?'hand':w.id===4?'hammer':'sword')}<span>${w.name}</span>${uiSelectionSeal(p.weapon===w.id)}</button>`).join('')}</div><h3>身を包む</h3><div class="gear-grid">${ARMORS.map((a,i)=>`<button data-slot="armor" data-value="${i}" aria-pressed="${p.armor===i}" class="${p.armor===i?'chosen':''}" ${blocked?'disabled':''}>${icon(i===0?'cloth':'helm')}<span>${a.name}</span>${uiSelectionSeal(p.armor===i)}</button>`).join('')}</div><h3>左手</h3><div class="gear-grid">${[false,true].map(a=>`<button data-slot="shield" data-value="${a}" aria-pressed="${p.shield===a}" class="${p.shield===a?'chosen':''}" ${blocked?'disabled':''}>${icon(a?'shield':'hand')}<span>${a?'盾を持つ':'手を空ける'}</span>${uiSelectionSeal(p.shield===a)}</button>`).join('')}</div><p class="rack-school">今の学び · ${schoolName(gearSchool(p))}</p>`);this.root.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{const value=b.dataset.slot==='shield'?b.dataset.value==='true':+b.dataset.value;if(this.g.command({type:'equip',slot:b.dataset.slot,value})){this.rack();}});}
  queuePortrait(p,node,suffix=''){const record={id:p.id,name:p.name,appearance:{...p,prologue:false},skills:[suffix==='hud'||suffix==='wardrobe'?null:p.currentSkill||4000],idle:suffix==='hud'||suffix==='wardrobe',head:suffix==='hud'},key=JSON.stringify([suffix,p.id,p.race,Math.floor(p.age/7),p.hair,p.weapon,p.armor,p.shield,p.skin]);if(this.portraits.has(key))node.innerHTML=`<img alt="${ESC(p.name)}の姿" src="${this.portraits.get(key)}">`;else this.portraitQueue.push({key,record,node});}
  lineage(){this.lineageView.open();}
  talk(){this.g.stopInput();this.g.command({type:'talk'});const p=this.g.snapshot?.player;if(p?.prologue){this.open('chat','母の声',`<p class="chat-mother">${ESC(p.motherText).replaceAll('\n','<br>')}</p><button class="full-button" id="mother-more">もう少し教えて</button><button class="begin-button" id="mother-down">降ろして${icon('arrow')}</button>`);document.getElementById('mother-more').onclick=()=>this.talk();document.getElementById('mother-down').onclick=()=>{this.closeModal();this.g.command({type:'leaveIntro'});};return;}
@@ -186,7 +186,11 @@ class UI {
  event(e){
   if(SkillPresentation.event(this,e))return;
   const own=e.player===this.g.playerId;
-  if(['progress','speech','miracleQuiet','insight','passive'].includes(e.type)&&(!own||!['insight','passive'].includes(e.type))){const sk=skillById(e.id);this.floatLines.push({...e,born:this.g.snapshot?.t??e.t,text:e.type==='insight'?'閃き · '+(sk?.name||'新たな技'):e.type==='passive'?'心得 · '+(sk?.name||'新たな学び'):e.text});this.floatLines=this.floatLines.slice(-8);}
+  if(own&&e.type==='wound'){
+   this.damageFeedback??=new UIDamageFeedback();
+   this.damageFeedback.hit(e,this.g.snapshot?.t??e.t);
+  }
+  if(['progress','speech','miracleQuiet','insight','passive'].includes(e.type)&&(!own||!['insight','passive'].includes(e.type))){const sk=skillById(e.id);this.floatLines.push({...e,born:this.g.snapshot?.t??e.t,shown:performance.now(),text:e.type==='insight'?'閃き · '+(sk?.name||'新たな技'):e.type==='passive'?'心得 · '+(sk?.name||'新たな学び'):e.text});this.floatLines=this.floatLines.slice(-8);}
   if(e.type==='released'&&own){this.g.resetPointer?.();this.g.walkTarget=null;}
   if(!own)return;
   if(e.type==='age')this.notify({key:'age:'+e.age,parts:[e.age+'歳になった'],priority:3});
@@ -206,6 +210,7 @@ class UI {
   UIValue.attr(document.getElementById('orb-water'),'d',`M10 ${y}Q24 ${+y-2} 36 ${y}T62 ${y}V81H10Z`);UIValue.attr(document.getElementById('orb-wave'),'d',`M12 ${y}Q24 ${+y-2} 36 ${y}T60 ${y}`);UIValue.attr(document.getElementById('orb-cap'),'d',`M10 8H62V${ceiling}H10Z`);
   UIValue.text(document.getElementById('place'),s.room.kind==='front'?'最前線':p.z<-28?'村の外れ':s.room.name);UIValue.text(document.getElementById('day'),'春の月 '+(Math.floor(t/120)%28+1)+'日');
   const woundsKey=JSON.stringify(p.wounds);if(woundsKey!==this.lastWounds){this.lastWounds=woundsKey;document.getElementById('wound-mark').innerHTML=anatomy(p);UIValue.attr(document.getElementById('wound-mark'),'aria-label',Object.keys(p.wounds||{}).length?'身体の傷を確認':'身体の状態を確認');}
+  this.damageFeedback?.paint(document.getElementById('wound-mark'),t);
   const portraitKey=[p.id,Math.floor(p.age/7),p.race,p.armor,p.weapon,p.shield,p.skin,p.hair].join(':');if(portraitKey!==this.hudPortrait){this.hudPortrait=portraitKey;this.queuePortrait(p,document.getElementById('hud-portrait'),'hud');}
   const mapSignature=JSON.stringify([s.room.id,s.room.stage,Math.round(p.x*5),Math.round(p.z*5),Math.round(p.dir*10),s.actors.filter(a=>a.alive).map(a=>[a.id,Math.round(a.x),Math.round(a.z)]),this.modal==='map']);
   if(mapSignature!==this.mapSignature){this.mapSignature=mapSignature;this.paintMap(document.getElementById('map-preview'),s);if(this.modal==='map')this.paintMap(document.getElementById('large-map'),s,true);}
@@ -247,7 +252,6 @@ class UI {
   const p=s.player,t=s.t,node=document.getElementById('mother-dialogue'),parent=parentWorldPose(p,t),text=p.motherUntil>t&&parent?p.motherText:'';
   if(text!==this.lastMother){this.lastMother=text;node.innerHTML=text?`<small>母</small><p>${ESC(text).replaceAll('\n','<br>')}</p>`:'';node._speechSize=null;}
   UIValue.attr(node,'class','mother-bubble');this.positionSpeech(node,parent,3.05,text);
-  const key=!!p.prologue;if(key!==this.lastGifts){this.lastGifts=key;const controls=document.getElementById('carry-controls');controls.innerHTML=key?'<button id="leave-arms">降ろして</button>':'';const leave=document.getElementById('leave-arms');if(leave)leave.onclick=()=>{this.g.stopInput();this.g.command({type:'leaveIntro'});};}
  }
  positionSpeech(node,a,height,text){
   const r=this.g.renderer,w=r.width||innerWidth,h=r.height||innerHeight,head=a&&r.project(a.x,height,a.z),body=a&&r.project(a.x,height*.5,a.z);
@@ -257,29 +261,40 @@ class UI {
   const sizeKey=text+'|'+w+'|'+h;
   if(node._speechSize?.key!==sizeKey)node._speechSize={key:sizeKey,w:node.offsetWidth||180,h:node.offsetHeight||60};
   const size=node._speechSize,gap=13,margin=8;
-  const facing=r.project(a.x+Math.sin(a.dir||0),height,a.z+Math.cos(a.dir||0)),dx=facing.x-head.x;
-  let side=node.dataset.side||'right';
-  if(dx>6)side='right';else if(dx< -6)side='left';
-  const right=w-margin-head.x-gap,left=head.x-gap-margin;
-  if(side==='right'&&right<size.w&&left>right)side='left';else if(side==='left'&&left<size.w&&right>left)side='right';
+  // A fixed world axis responds to the camera, never to the speaker's walking direction.
+  const view=r.project(a.x+1,height,a.z),dx=view.x-head.x;
+  let side=node.dataset.side||(dx<0?'left':'right');
+  const preferred=dx>6?'right':dx< -6?'left':side,space={right:w-margin-head.x-gap,left:head.x-gap-margin},hysteresis=24;
+  if(preferred!==side&&space[preferred]>=size.w+hysteresis)side=preferred;
+  const other=side==='right'?'left':'right';
+  if(space[side]<size.w&&space[other]>space[side]+hysteresis)side=other;
   UIValue.attr(node,'data-side',side);
   const x=clamp(side==='right'?head.x+gap:head.x-gap-size.w,margin,Math.max(margin,w-size.w-margin)),y=Math.max(margin,head.y-size.h-12);
   UIValue.style(node,'transform',`translate3d(${x}px,${y}px,0)`);
  }
- updateWorldLabels(s){
+ updateWorldLabels(s,now=performance.now()){
   const p=s.player,t=s.t,r=this.g.renderer,labels=[],head=a=>((a.age??25)<10?2.2:3.15)*(a.race===2?.86:1);
   const add=(key,cls,a,h,text,html='',offset=0)=>{const pos=r.project(a.x,h,a.z);if(!pos.visible)return;labels.push({key,cls,text,html,x:Math.round(clamp(pos.x,70,innerWidth-70)),y:Math.round(clamp(pos.y+offset,115,innerHeight-155))});};
   const target=s.actors.find(a=>a.alive&&a.id===p.autoFight);
   if(p.alive&&p.combo){const band=clamp(p.combo.band,0,2),sk=skillById(p.pendingSkill?.id??p.attackSkill??p.currentSkill);add('combo','combat-callout phase-'+band,p,head(p),'',`<b class="phase-seal">${PHASES[band]}</b><span>${ESC(sk?.name||'')}</span>`,-25);}
   if(target&&Math.hypot(target.x-p.x,target.z-p.z)<15){const fill=Math.round(clamp((target.hp??50)/(target.hpMax||50),0,1)*100);add('target','target-label',target,target.elite?4.3:head(target),'',`<span>${ESC(target.name||'交戦中')}</span><i class="target-meter"><i style="width:${fill}%"></i></i>`,10);}
   const statuses=uiActiveStatuses(p,t);if(statuses)add('status','status-caption',p,head(p),statuses,'',-91);
+  const pain=this.damageFeedback?.bark;
+  if(pain&&t<pain.until)add('pain:'+p.id,'pain-callout'+(pain.level>1?' strong':''),p,head(p),pain.text,'',p.combo?-66:-22);
   for(const a of [...s.players,...s.actors])if(a.alive&&a.speechUntil>t&&a.speech&&Math.hypot(a.x-p.x,a.z-p.z)<13)labels.push({key:'speech:'+a.id,cls:'speech-bubble',a,h:head(a),text:a.speech});
-  this.floatLines=this.floatLines.filter(e=>t-e.born<4.6);
+  // Presentation time keeps the rise smooth between simulation/network ticks.
+  this.floatLines=this.floatLines.filter(e=>now-e.shown<4600);
   const latest=new Map();for(const e of this.floatLines)if(e.type!=='speech')latest.set(e.player,e);
-  for(const e of latest.values()){const a=s.players.find(a=>a.id===e.player);if(a&&Math.hypot(a.x-p.x,a.z-p.z)<14)add('progress:'+e.player,'progress-float',a,head(a)+.3,e.text,'',p.combo?-125:-40);}
+  for(const e of latest.values()){
+   const a=s.players.find(a=>a.id===e.player);if(!a?.alive||Math.hypot(a.x-p.x,a.z-p.z)>=14||(e.room&&e.room!==s.room.id))continue;
+   const pos=r.project(a.x,head(a)+.3,a.z),w=r.width||innerWidth,h=r.height||innerHeight;
+   if(!pos.visible||pos.x<0||pos.x>w||pos.y<0||pos.y>h)continue;
+   const age=Math.max(0,(now-e.shown)/1000),rise=this.reducedMotion?0:age*7;
+   labels.push({key:'progress:'+e.player,cls:'progress-float',text:e.text,x:pos.x,y:pos.y-(p.combo?125:40)-rise,opacity:clamp(Math.min(age/.2,(4.6-age)/.8),0,1),floating:true});
+  }
   if(p.activity)add('activity','activity-mark',p,head(p),'',icon(p.activity==='pray'?'sun':p.activity==='play'?'leaf':'book'));
   const root=document.getElementById('world-labels'),live=new Set();
-  for(const l of labels){live.add(l.key);let n=this.worldNodes.get(l.key);if(!n||!n.isConnected){n=document.createElement('div');this.worldNodes.set(l.key,n);root.appendChild(n);}UIValue.attr(n,'class',l.cls);if(l.html){if(n._uiHTML!==l.html){n.innerHTML=l.html;n._uiHTML=l.html;}}else{UIValue.text(n,l.text);n._uiHTML=null;}if(l.a)this.positionSpeech(n,l.a,l.h,l.text);else{UIValue.style(n,'left',l.x+'px');UIValue.style(n,'top',l.y+'px');}}
+  for(const l of labels){live.add(l.key);let n=this.worldNodes.get(l.key);if(!n||!n.isConnected){n=document.createElement('div');this.worldNodes.set(l.key,n);root.appendChild(n);}UIValue.attr(n,'class',l.cls);if(l.html){if(n._uiHTML!==l.html){n.innerHTML=l.html;n._uiHTML=l.html;}}else{UIValue.text(n,l.text);n._uiHTML=null;}if(l.a)this.positionSpeech(n,l.a,l.h,l.text);else if(l.floating){UIValue.style(n,'left','0px');UIValue.style(n,'top','0px');UIValue.style(n,'transform',`translate3d(${l.x}px,${l.y}px,0) translate(-50%,-100%)`);UIValue.style(n,'opacity',String(l.opacity));}else{UIValue.style(n,'left',l.x+'px');UIValue.style(n,'top',l.y+'px');}}
   for(const [key,n] of this.worldNodes)if(!live.has(key)){n.remove();this.worldNodes.delete(key);}
  }
 }
