@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "node build.mjs",
+    "build:review": "node tools/build-review-lab.mjs",
     "build:skill-fx-lab": "node tools/build-skill-fx-lab.mjs",
     "dev": "vite",
     "test": "npm run build && node --test tests/*.test.cjs tests/skills/*.test.mjs tests/*.test.mjs deploy/infrastructure.test.mjs",

@@ -23,6 +23,8 @@ historical化はゲーム仕様や技術上の制約の変更を意味しない�
 - [初回移行記録](historical/initial-migration/README.md): 新規作成・main搬入・35ファイル固定を含む旧手順の来歴
 - [Game skills](skills/README.md): ゲーム内スキル資料。agent用の `SKILL.md` ではない
 
+- [REVIEW_LAB.md](REVIEW_LAB.md): 開発者用の技・敵・実戦ReviewとPR Preview
+
 ## v7同期元
 
 - 原本: 新「血脈の系譜」Project Sourcesの `Bloodline_Legacy_Common_Development_Policy_v7_FINAL.md`
