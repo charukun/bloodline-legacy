@@ -8,7 +8,7 @@ export function travelerRuntime(revision=null){
  const definitions=compileCatalog(JSON.parse(read('src/skills/catalog-source.json')));
  const context=vm.createContext({console,performance,structuredClone,Float32Array,Uint8Array,Uint16Array,Uint32Array,DataView,TextDecoder,Blob,URL,atob});
  vm.runInContext(`const BL_SKILL_DEFINITIONS=${JSON.stringify(definitions)};const AssetBank={load:async()=>{}};`,context);
- for(const f of ['legacy/dialogue','legacy/core','skills/engine','skills/runtime','legacy/render_math','legacy/motion','legacy/art','render/tilt-shift','render/shaders','world/environment','character/rig','character/golden-master.runtime','character/traveler-model',...(!revision?['character/traveler-age']:[]),'character/traveler-runtime'])vm.runInContext(read('src/'+f+'.js'),context,{filename:f});
+ for(const f of ['legacy/dialogue','legacy/core','skills/engine','skills/runtime','legacy/render_math','legacy/motion','legacy/art','render/tilt-shift','render/shaders','world/environment','character/rig','character/golden-master.runtime','character/traveler-model','character/traveler-age','character/traveler-expression','character/traveler-runtime']){let source;try{source=read('src/'+f+'.js');}catch(e){if(revision&&(f.endsWith('traveler-expression')||f.endsWith('traveler-age')))continue;throw e;}vm.runInContext(source,context,{filename:f});}
  const api=vm.runInContext('({Travelers,Simulation,damagePose,damageArtPose,hitPose,DamageMotion})',context);
  const gl=new Proxy({FLOAT:5126,UNSIGNED_SHORT:5123,getUniformLocation:()=>({})},{get:(o,k)=>k in o?o[k]:k.startsWith('create')?()=>({}):()=>{}});
  api.renderer=()=>({gl,programOf:()=>({}),frame:0,sceneKey:'village-test',static:new Map(),canvas:{height:900},viewHeight:16,camera:{zoom:16}});
