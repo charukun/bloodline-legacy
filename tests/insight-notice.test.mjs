@@ -11,6 +11,7 @@ function noticeFixture(t){
 
 test('insight and passive discovery show only one noninteractive golden revelation on consciousness',t=>{
  const {ui,d,w,p,reveal}=noticeFixture(t),style=d.createElement('style');style.textContent=fs.readFileSync(new URL('../src/skills/skills.css',import.meta.url),'utf8');d.head.appendChild(style);
+ // A consecutive active + passive cluster keeps the active discovery title.
  for(const id of [60000,60900]){
   reveal(id);const badge=d.getElementById('skill-revelation'),button=d.querySelector('[data-menu="skills"]');
   assert.equal(badge.parentElement,button);assert.equal(badge.querySelector('.revelation-word').textContent,'閃き');assert.ok(badge.querySelector('.revelation-name').textContent);assert.equal(badge.getAttribute('role'),'status');

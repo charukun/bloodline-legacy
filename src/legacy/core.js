@@ -225,6 +225,11 @@ const skillPhase=sk=>sk?.band??0;
 // Resource costs, hit reactions, collision and enemy telegraphs are not sped up.
 const ACTION_TUNING=Object.freeze({move:1.10,charge:1.55,swing:2.05,recovery:1.16,recoveryTail:.14,comboGrace:.24,buffer:.16,moveCharge:.32,moveCombo:.55,moveRecovery:.85});
 function actionTiming(sk){return {charge:Math.max(.28,(sk.charge||0)*ACTION_TUNING.charge),swing:Math.max(.78,(sk.swing||.3)*ACTION_TUNING.swing),recovery:(sk.recovery||0)*ACTION_TUNING.recovery+ACTION_TUNING.recoveryTail};}
+// Shared by simulation, procedural motion and baked-clip time warping.
+function skillBeat(sk,u){const hits=sk.hits||1,cuts=sk.beatCuts;
+ const index=cuts?Math.min(hits-1,Math.max(0,cuts.findIndex((v,i)=>i>0&&u<v)-1)):Math.min(hits-1,Math.floor(u*hits));
+ const i=cuts&&u>=1?hits-1:index,start=cuts?cuts[i]:i/hits,end=cuts?cuts[i+1]:(i+1)/hits;
+ return {index:i,beat:clamp((u-start)/(end-start),0,1),start,end};}
 const ITEMS={stone:{name:'丸い小石',desc:'土の理を宿す。',icon:'stone'},net:{name:'結び糸の網',desc:'繋ぎ、絡める。',icon:'net'},bell:{name:'銀の鈴',desc:'祈りに澄む音。',icon:'bell'},charcoal:{name:'炭の欠片',desc:'火の記憶。',icon:'fire'},feather:{name:'渡り鳥の羽',desc:'風の道しるべ。',icon:'feather'}};
 const staminaTier=sk=>!sk||sk.passive?0:sk.cost<=4?1:sk.cost<=7?2:sk.cost<=10?3:sk.cost<=14?4:5;
 const book=new Map();
@@ -232,7 +237,7 @@ function art(id,name,opt={}){
  const s={id,name,weapon:-1,form:0,element:0,variant:0,trigger:'combo',school:'sword',color:'#dfc58b',cost:10,fatigue:1,charge:.22,swing:.30,recovery:.65,reach:2.0,arc:1.7,power:1,breakPower:0,targets:['torso'],requires:['rightArm'],motion:'打撃',desc:'隙を見つけて打つ。',flow:.08,chance:1,maxTargets:1,...opt};
  book.set(id,s);return s;
 }
-art(4000,'殴る',{cost:6,fatigue:.25,charge:.13,swing:.26,reach:1.3,recovery:.5,flow:.18,requires:[],targets:['torso','head'],desc:'踏み込んで拳を打つ。'});
+art(4000,'殴る',{unarmed:true,cost:6,fatigue:.25,charge:.13,swing:.26,reach:1.3,recovery:.5,flow:.18,requires:[],targets:['torso','head'],desc:'踏み込んで拳を打つ。'});
 art(4001,'斬る',{weapon:0,cost:10,charge:.22,reach:2.55,targets:['rightArm','leftArm'],motion:'横斬り',desc:'腕を狙う基本の剣技。崩れた敵には深く入る。',flow:.22});
 art(4002,'斬り裂く',{weapon:1,cost:9,charge:.10,swing:.23,reach:1.75,power:2,targets:['torso'],flow:.30,motion:'連ね斬り',desc:'懐で深く裂く。間合いは小、連携しやすさは大。'});
 art(4003,'叩き斬る',{weapon:2,cost:19,fatigue:3,charge:.56,swing:.40,reach:2.95,power:2,targets:['torso','leftArm'],recovery:1.05,motion:'袈裟斬り',desc:'重い刃で叩き斬る。消費・威力・隙は大。'});
@@ -746,12 +751,14 @@ class Simulation {
   const c=p.chain;
   if(c&&p.alive&&p.combo&&p.stun<=this.time){
    const sk=SkillSystem.active(p,c.id),r=this.getRoom(p);
-   while(c.next<c.count&&this.time>=c.start+c.next*c.interval){
+   while(c.next<c.count&&this.time>=c.start+(c.offsets?c.offsets[c.next]:c.next*c.interval)){
     const step=this.attackStepDistance(p,sk)/c.count;if(step>0)this.moveAttackStep(p,r,Math.sin(p.dir)*step,Math.cos(p.dir)*step);
     const index=c.next++;this.performStrike(p,r,sk);this.emit('skillbeat',{player:p.id,room:r.id,id:sk.id,index,x:p.x,z:p.z,dir:p.dir});
     if(!p.chain||p.stun>this.time||p.hitstopUntil>this.time||!p.alive)break;
    }
-   if(c.next>=c.count)p.chain=null;
+   if(c.next>=c.count){p.chain=null;if(sk.finishStep?.distance&&p.stun<=this.time&&canAct(p)&&!hasStatus(p,'root',this.time)){
+    p.attackStep={finishing:true,started:this.time+.04,until:p.actionUntil,distance:sk.finishStep.distance*injuryModifiers(p).move*(p.age<15?.8:1),progress:0,moved:0,dir:p.dir+sk.finishStep.angle,blocked:false,sounded:false};
+   }}
   }
   if(p.exitPending&&p.action==='attack'&&this.time>=p.actionUntil-.07){
    const distance=p.exitPending;p.exitPending=0;p.retreatUntil=this.time+.24;p.retreatSpeed=distance/.24;
@@ -946,12 +953,13 @@ class Simulation {
   p.action=moved>1e-6?(p.dash?'dash':'run'):'idle';p.zone=this.getArea(p);this.bound(p,r);
  }
  tickAttackStep(p){
-  const a=p.attackStep;if(!a||!p.alive||!p.pendingSkill||p.stun>this.time)return;if(hasStatus(p,'root',this.time)){p.attackStep=null;return;}
+  const a=p.attackStep;if(!a||!canAct(p)||(!p.pendingSkill&&!(a.finishing&&p.action==='attack'))||p.stun>this.time)return;if(hasStatus(p,'root',this.time)){p.attackStep=null;return;}
   const u=clamp((this.time-a.started)/Math.max(.001,a.until-a.started),0,1),progress=1-(1-u)**2;
   const amount=Math.max(0,(progress-a.progress)*a.distance);a.progress=progress;
   if(!amount||a.blocked)return;
   const moved=this.moveAttackStep(p,this.getRoom(p),Math.sin(a.dir)*amount,Math.cos(a.dir)*amount);
   a.moved+=moved;if(moved<amount-.00001)a.blocked=true;
+  if(a.aimTarget&&moved>0){const target=this.getRoom(p).actors.find(e=>e.id===a.aimTarget&&e.alive);if(target)p.dir=a.aimFrom+clamp(angleDiff(Math.atan2(target.x-p.x,target.z-p.z),a.aimFrom),-a.turn,a.turn)*progress;}
   if(!a.sounded&&moved>.001){a.sounded=true;this.emit('step',{player:p.id,room:p.room,x:p.x,z:p.z,kind:'lunge'});}
  }
  reactToHit(target,source,part,severity='light',strength=null,blocked=false){
@@ -1001,7 +1009,8 @@ class Simulation {
   const dummies=r.actors.filter(e=>e.kind==='dummy'&&e.alive&&dist(e,p)<4).sort((a,b)=>dist(a,p)-dist(b,p)),dummy=dummies.find(e=>e.id===p.autoFight)||dummies[0];
   const facing=target||dummy;if(facing){p.focusTarget=facing.id;p.focusUntil=this.time+4;}if(facing&&!p.flickAim)p.dir=Math.atan2(facing.x-p.x,facing.z-p.z);
   p.flickAim=false;const stepDistance=this.attackStepDistance(p,sk)/Math.max(1,sk.hits||1),timing=actionTiming(sk);
-  p.attackStep=stepDistance?{started:this.time+Math.max(0,timing.charge-.12),until:this.time+Math.max(.001,timing.charge),distance:stepDistance,progress:0,moved:0,dir:p.dir,blocked:false,sounded:false}:null;
+  const approach=sk.approach,approachDistance=approach?(hasStatus(p,'root',this.time)?0:approach.distance*injuryModifiers(p).move*(p.age<15?.8:1)):stepDistance;
+  p.attackStep=approachDistance?{started:this.time+Math.max(0,timing.charge-(approach?clamp(approachDistance/6,.16,.34):.12)),until:this.time+Math.max(.001,timing.charge),distance:approachDistance,progress:0,moved:0,dir:p.dir+(approach?.angle||0),aimFrom:p.dir,aimTarget:approach?.turn?facing?.id:null,turn:approach?.turn||0,blocked:false,sounded:false}:null;
   p.pendingSkill={id:sk.id,target:facing?.id||null,started:this.time,at:this.time+timing.charge,dir:p.dir,stage:'charge'};p.action='charge';p.motion=sk.form;p.actionStarted=this.time;p.actionUntil=this.time+timing.charge;p.attackSkill=sk.id;p.attackReach=sk.reach;p.attackArc=sk.arc;
   this.emit('charge',{player:p.id,room:p.room,id:sk.id,duration:timing.charge,x:p.x,z:p.z});
   if(timing.charge===0)this.releaseSkill(p);return true;
@@ -1017,6 +1026,7 @@ class Simulation {
   const hits=sk.hits||1;
   // Contact occurs at the visible impact pose, never at the start of the swing.
   p.chain={id:sk.id,target:p.focusTarget,start:this.time+timing.swing/hits*.43,interval:timing.swing/hits,next:0,count:hits};
+  if(sk.beatCuts){p.chain.start=this.time;p.chain.offsets=sk.beatCuts.slice(0,-1).map((v,i)=>(v+(sk.beatCuts[i+1]-v)*.43)*timing.swing);}
   p.comboQueued=!!p.autoFight||p.comboQueued;if(sk.exit)p.exitPending=sk.exit;
  }
  finishCombo(p){
@@ -1062,24 +1072,24 @@ class Simulation {
     e.counterOpportunity=this.time+1;e.action='guard';this.reactToHit(e,p,'leftArm','light',.32,true);this.emit('blocked',{room:r.id,x:e.x,z:e.z});continue;
    }
    if(e.kind==='boss'&&!(e.exposedUntil>this.time)&&!sk.magic){this.emit('blocked',{room:r.id,x:e.x,z:e.z});continue;}
-   const part=sk.targets[Math.floor(this.rng()*sk.targets.length)];this.damageActor(e,p,part,(sk.power+(e.exposedUntil>this.time?.5:0))*(hasStatus(p,'weak',this.time)?.65:1),r);if(e.alive&&sk.status&&sk.power>0)this.applyStatus(e,sk.status.id,sk.status.duration,p,r);if(e.alive&&sk.knockback&&e.kind!=='boss')this.moveAttackStep(e,r,Math.sin(p.dir)*sk.knockback,Math.cos(p.dir)*sk.knockback);SkillSystem.contact(this,p,e,sk);
+   const part=sk.targets[Math.floor(this.rng()*sk.targets.length)];const landed=this.damageActor(e,p,part,(sk.power+(e.exposedUntil>this.time?.5:0))*(hasStatus(p,'weak',this.time)?.65:1),r);if(sk.power>0&&!landed)continue;if(e.alive&&sk.status&&sk.power>0)this.applyStatus(e,sk.status.id,sk.status.duration,p,r);if(e.alive&&sk.knockback&&e.kind!=='boss')this.moveAttackStep(e,r,Math.sin(p.dir)*sk.knockback,Math.cos(p.dir)*sk.knockback);SkillSystem.contact(this,p,e,sk);
   }
   this.emit('swing',{player:p.id,room:r.id,x:p.x,z:p.z,dir:p.dir,reach:sk.reach,arc:sk.arc,skill:sk.id,weapon:p.weapon});
  }
  damageActor(e,source,part,power,r){
-  if(!e.alive||power<=0)return;const awareness=source?this.awareness(e,source):{engaged:false,unaware:false};
-  if(awareness.engaged&&this.rng()<COMBAT_AWARENESS.engagedAvoid){this.emit('evaded',{room:r.id,target:e.id,x:e.x,z:e.z});return;}
+  if(!e.alive||power<=0)return false;const awareness=source?this.awareness(e,source):{engaged:false,unaware:false};
+  if(awareness.engaged&&this.rng()<COMBAT_AWARENESS.engagedAvoid){this.emit('evaded',{room:r.id,target:e.id,x:e.x,z:e.z});return false;}
   power*=awareness.unaware?1.35:1;if(e.wounds[part]?.severity==='lost')part='torso';
   const exposed=e.exposedUntil>this.time,committed=!!e.telegraph,prev=e.wounds[part]?.severity;
   e.hp??=e.hpMax??70;e.hpMax??=e.hp;e.hp-=Math.max(3,power*9);this.recordDamage(e,part,power);
   e.aggro=true;e.sleepUntil=0;if(e.statuses)delete e.statuses.sleep;this.reactToHit(e,source,part,power>=2?'heavy':'light',clamp(.25+power*.30,.25,1.25));e.hitUntil=this.time+.1;
   this.impact(source,e,part,power>=2);this.emit('hit',{room:r.id,target:e.id,source:source?.id,x:e.x,z:e.z,part,weapon:source?.weapon,skill:source?.currentSkill});
-  if(e.hp<=0&&e.kind!=='boss'){this.killActor(e,source,r);return;}
+  if(e.hp<=0&&e.kind!=='boss'){this.killActor(e,source,r);return true;}
   if(e.kind==='boss'){
    e.seals--;e.hp=Math.max(0,e.hpMax*e.seals/4);e.exposedUntil=0;e.telegraph=null;if(source?.kind==='player'&&!['head','torso'].includes(part)&&this.rng()<.68){e.wounds[part]={severity:'lost'};this.reactToHit(e,source,part,'lost');this.emit('partbreak',{room:r.id,target:e.id,source:source.id,part,severed:true,x:e.x,z:e.z});}e.stun=this.time+.65;e.action='hit';e.actionStarted=this.time;e.actionUntil=e.stun;
-   if(e.seals<=0){this.killActor(e,source,r);r.bossDefeated=true;for(const p of this.players.values())if(p.room===r.id)p.victory=true;this.emit('victory',{room:r.id});}return;
+   if(e.seals<=0){this.killActor(e,source,r);r.bossDefeated=true;for(const p of this.players.values())if(p.room===r.id)p.victory=true;this.emit('victory',{room:r.id});}return true;
   }
-  if((['head','torso'].includes(part)&&prev==='heavy'&&exposed&&power>=3)||power>=7){this.killActor(e,source,r);return;}
+  if((['head','torso'].includes(part)&&prev==='heavy'&&exposed&&power>=3)||power>=7){this.killActor(e,source,r);return true;}
   const limb=!['head','torso'].includes(part);
   // A clean hit into a broken posture can take a limb. Light taps alone cannot
   // repeatedly cancel a committed swing; otherwise pure button spam dominates.
@@ -1090,9 +1100,10 @@ class Simulation {
   if(interrupts){e.telegraph=null;e.actionStarted=this.time;e.stun=this.time+(severity==='lost'?1.25:part.endsWith('Leg')?.95:.65);e.actionUntil=e.stun;e.action=severity==='lost'?'break':'hit';}
   if(severeBreak||severity==='lost'){
    this.impact(source,e,part,true);this.emit('partbreak',{room:r.id,target:e.id,source:source?.id,part,severed:severity==='lost',x:e.x,z:e.z});
-   if(!e.elite&&Object.values(e.wounds).filter(w=>w.severity==='lost').length>=2){this.killActor(e,source,r);return;}
+   if(!e.elite&&Object.values(e.wounds).filter(w=>w.severity==='lost').length>=2){this.killActor(e,source,r);return true;}
   }
   if(e.wounds.leftArm?.severity==='lost')e.guard=false;
+  return true;
  }
  killActor(e,source,r){if(!e.alive)return;this.releaseRescue(e);e.alive=false;e.statuses={};e.deathAt=this.time;e.action='fall';e.actionStarted=this.time;if(source?.kind==='player'){source.kills++;source.experience++;r.kills++;r.score++;}this.emit('kill',{room:r.id,player:source?.kind==='player'?source.id:undefined,target:e.id,x:e.x,z:e.z});}
  hitPlayer(p,e,tg={}){

@@ -5,7 +5,7 @@ const root = path.resolve(__dirname,'..');
 const sourceFiles = ['legacy/dialogue.js','legacy/core.js','skills/engine.js','skills/runtime.js','legacy/motion.js','ui/presentation.js','ui/lineage/theatre.js','ui/lineage.js','ui/talk-fan.js','legacy/ui.js','legacy/game.js','skills/presentation.js'];
 const flush = () => new Promise(resolve=>queueMicrotask(resolve));
 function fixture(t, uiSource) {
- const compiler=fs.readFileSync(path.join(root,'tools/skill-catalog.mjs'),'utf8').replaceAll('export ','');
+ const compiler=fs.readFileSync(path.join(root,'src/skills/composition.mjs'),'utf8').replace(/^export /gm,'')+'\n'+fs.readFileSync(path.join(root,'tools/skill-catalog.mjs'),'utf8').replace(/^import .*;$/gm,'').replace(/^export /gm,'');
  const catalog=fs.readFileSync(path.join(root,'src/skills/catalog-source.json'),'utf8');
  const view={html:fs.readFileSync(path.join(root,'src/ui/lineage/view.html'),'utf8'),css:fs.readFileSync(path.join(root,'src/ui/lineage/view.css'),'utf8'),films:[0,1,2,3].map(i=>({src:'/memory-'+i+'.mp4',poster:'/poster-'+i+'.jpg'}))};
  const code='const LINEAGE_VIEW='+JSON.stringify(view)+';\n'+compiler+'\nconst BL_SKILL_DEFINITIONS=compileCatalog('+catalog+');\n'+sourceFiles.map(n=>n==='legacy/ui.js'&&uiSource?uiSource:fs.readFileSync(path.join(root,'src',n),'utf8')).join('\n');
