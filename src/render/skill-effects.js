@@ -216,5 +216,6 @@ const SkillEffects = (() => {
   let remaining=voices.length;
   for(const [start,end,type,length] of voices){const o=ctx.createOscillator(),g=ctx.createGain();o.type=type;o.frequency.setValueAtTime(start,when);o.frequency.exponentialRampToValueAtTime(end,when+length);g.gain.setValueAtTime(.001,when);g.gain.linearRampToValueAtTime(.3/voices.length,when+.006);g.gain.exponentialRampToValueAtTime(.001,when+length);o.connect(g);g.connect(gain);o.start(when);o.stop(when+length+.01);o.onended=()=>{o.disconnect();g.disconnect();if(--remaining===0)gain.disconnect();};}
  }
- return Object.freeze({VERSION,LIMIT,colorways,colorAt,decorate,forCast,options,presets,resolve,forSkill:id=>bySkill.get(id)||null,stroke,impact,frame,beats,duration,life,transform,sound});
+ function forSkill(id){if(bySkill.has(id))return bySkill.get(id);const fx=typeof skillById==='function'?skillById(id)?.fx:null;if(!fx)return null;const value=resolve(fx);bySkill.set(id,value);return value;}
+ return Object.freeze({VERSION,LIMIT,colorways,colorAt,decorate,forCast,options,presets,resolve,forSkill,stroke,impact,frame,beats,duration,life,transform,sound});
 })();

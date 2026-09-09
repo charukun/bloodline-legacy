@@ -13,8 +13,8 @@ export async function motionRuntime(revision=null,assetPath=null,travelers=false
  const api=vm.runInContext('({Simulation,skillById,book,artPose,SkillMotion:typeof SkillMotion==="undefined"?null:SkillMotion,CM01,VillageArt,ArtDirector,RigRenderer,rModel,rColor,rGeometry,rMultiply,rOrtho,rLookAt,actionTiming})',context);
  await api.CM01.load(fs.readFileSync(assetPath||new URL('../public/assets/character/young-human-male-cm01.glb',import.meta.url)).toString('base64'));
  if(travelers){
-  for(const file of ['character/traveler-model.js','character/traveler-clip-data.js','character/traveler-clips.js','character/traveler-runtime.js']){
-   let source;try{source=revision?execFileSync('git',['show',revision+':src/'+file],{encoding:'utf8',stdio:['ignore','pipe','ignore']}):fs.readFileSync(new URL('../src/'+file,import.meta.url),'utf8');}catch(e){if(file.includes('clip'))continue;throw e;}
+  for(const file of ['character/traveler-model.js','character/traveler-clip-data.js','character/traveler-clips.js','character/traveler-age.js','character/traveler-runtime.js']){
+   let source;try{source=revision?execFileSync('git',['show',revision+':src/'+file],{encoding:'utf8',stdio:['ignore','pipe','ignore']}):fs.readFileSync(new URL('../src/'+file,import.meta.url),'utf8');}catch(e){if(file.includes('clip')||file.includes('traveler-age'))continue;throw e;}
    vm.runInContext(source,context,{filename:file});
   }
   api.Travelers=vm.runInContext('Travelers',context);

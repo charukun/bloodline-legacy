@@ -25,8 +25,10 @@ class EnemyScene(OfflineScene):
   # Binding 5 is reserved for skin palettes. Match the game's actual sampler map.
   for i,(k,tx)in enumerate([('shadowTex',self.static_depth),('dynamicShadow',self.dynamic_depth),('materialAtlas',self.textures['materialAtlas']),('detailAtlas',self.textures['detailAtlas']),('terrainMap',self.textures['terrainMap'])]):tx.use(i);self.uniform(p,k,i)
   self.textures['goldenAtlas'].use(6);self.uniform(p,'goldenAtlas',6)
+  for unit,key in [(7,'craftColor'),(8,'craftDetail')]:
+   if key in self.textures:self.textures[key].use(unit);self.uniform(p,key,unit)
   for s,tx in zip(e['skins'],self.enemy_textures):
-   tx.use(5);self.uniform(p,'enemyBones',5);self.uniform(p,'enemyCloth',s['cloth']);self.uniform(p,'enemyMetal',s['metal']);self.uniform(p,'enemyVariation',s['variation']);self.uniform(p,'enemyLoss',s['loss']);self.enemy_vaos[depth].render()
+   tx.use(5);self.uniform(p,'enemyBones',5);self.uniform(p,'enemyCloth',s['cloth']);self.uniform(p,'enemyMetal',s['metal']);self.uniform(p,'enemyVariation',s['variation']);self.uniform(p,'enemyLoss',s['loss']);self.uniform(p,'enemyDamageBody',s.get('damageBody',[0,0,0]));self.uniform(p,'enemyDamageLimbs',s.get('damageLimbs',[0,0,0,0]));self.enemy_vaos[depth].render()
   # Restore the regular scene texture units consumed by subsequent effects.
   for i,(k,tx)in enumerate([('shadowTex',self.static_depth),('dynamicShadow',self.dynamic_depth),*self.textures.items()]):tx.use(i);self.uniform(self.main,k,i)
 if __name__=='__main__':

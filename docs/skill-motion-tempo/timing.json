@@ -1,0 +1,84 @@
+{
+  "baseline": "c53f9b2c918ff71525b76ea4b20c8b530429a26e",
+  "kind": "render-only spacing; no action clock changes",
+  "skills": [
+    {
+      "id": 4001,
+      "name": "斬る",
+      "timing": {
+        "charge": 0.341,
+        "swing": 0.78,
+        "recovery": 0.894
+      },
+      "strokeSeconds": 0.14359999999999998,
+      "followSeconds": 0.17049999999999996
+    },
+    {
+      "id": 4004,
+      "name": "突く",
+      "timing": {
+        "charge": 0.43400000000000005,
+        "swing": 0.78,
+        "recovery": 0.894
+      },
+      "strokeSeconds": 0.12360000000000003,
+      "followSeconds": 0.17049999999999996
+    },
+    {
+      "id": 4003,
+      "name": "叩き斬る",
+      "timing": {
+        "charge": 0.8680000000000001,
+        "swing": 0.82,
+        "recovery": 1.358
+      },
+      "strokeSeconds": 0.18519999999999998,
+      "followSeconds": 0.21999999999999995
+    },
+    {
+      "id": 60070,
+      "name": "羽先払い",
+      "timing": {
+        "charge": 0.341,
+        "swing": 0.82,
+        "recovery": 0.7896000000000001
+      },
+      "strokeSeconds": 0.14623999999999998,
+      "followSeconds": 0.1736
+    },
+    {
+      "id": 60051,
+      "name": "息継ぎ打ち",
+      "timing": {
+        "charge": 0.28,
+        "swing": 0.78,
+        "recovery": 0.7896000000000001
+      },
+      "strokeSeconds": 0.14571199999999998,
+      "followSeconds": 0.17298000000000002
+    },
+    {
+      "id": 60032,
+      "name": "獣道断ち",
+      "timing": {
+        "charge": 0.341,
+        "swing": 0.82,
+        "recovery": 1.1376
+      },
+      "strokeSeconds": 0.151056,
+      "followSeconds": 0.17703999999999992
+    }
+  ],
+  "sameCombatEvents": true,
+  "sameFinalSave": true,
+  "connections": [
+    [
+      60070,
+      60121
+    ],
+    [
+      60121,
+      60032
+    ]
+  ]
+}

@@ -187,14 +187,45 @@ const SkillMotion=(()=>{
  }
  function clock(p,t,sk=skillById(p.pendingSkill?.id??p.attackSkill??p.currentSkill)){
   if(!sk||p.alive===false)return null;
+  // Consume the cast that Simulation actually accepted, including connection
+  // bonuses. Never infer a successful link from catalog tags or combo position.
+  if(p.skillCast?.id===sk.id)sk={...sk,...p.skillCast};
   if(p.pendingSkill){const q=p.pendingSkill;return {sk,shape:shape(sk),stage:'charge',u:clamp((t-q.started)/Math.max(.001,q.at-q.started),0,1),beat:0,index:0,hits:sk.hits||1};}
-  if(p.action!=='attack'||t>p.actionUntil)return null;
+  if(p.action!=='attack'||(t>p.actionUntil&&!(p.combo?.awaitUntil>=t)))return null;
   const hits=sk.hits||1,duration=Math.max(.001,p.actionUntil-p.actionStarted),u=clamp((t-p.actionStarted)/duration,0,1);
-  const index=Math.min(hits-1,Math.floor(u*hits));return {sk,shape:shape(sk),stage:'attack',u,beat:Math.min(1,u*hits-index),index,hits,duration:duration/hits};
+  const b=skillBeat(sk,u);return {sk,shape:shape(sk),stage:'attack',u,beat:b.beat,index:b.index,hits,duration:duration*(b.end-b.start)};
  }
  // Every beat has a wind-up, contact, overshoot and return. The end of an
  // internal beat IS the next wind-up; there is no modulo snap at a hit boundary.
  function family(a){return ['double','cross'].includes(a)?'slash':a==='eclipse'?'spin':['dash','zigzag','slide'].includes(a)?'thrust':['leap','judgement'].includes(a)?'slam':a==='roar'?'cast':a;}
+ // Presentation spacing inside the unchanged Simulation beat. Short actions
+ // spend fewer seconds cutting; heavy actions retain a longer follow-through.
+ // The contact key remains .43, independent of frame rate and world speed.
+ function phrasing(p,c){
+  const sk=c.sk,base=family(c.shape),duration=c.duration||actionTiming(sk).swing/(sk.hits||1);
+  const value=(key,fallback)=>Number.isFinite(sk[key])?Math.max(0,sk[key]):fallback;
+  const swing=value('swing',.3),recovery=value('recovery',.6),weight=clamp(value('power',.5)*.16,0,.5);
+  const heavy=base==='slam',linked=p.skillCast?.id===sk.id&&p.skillCast.linked===true;
+  const strike=(base==='thrust'?.10:heavy?.15:.12)+swing*.06+weight*.035;
+  const tail=(heavy?.19:.15)+swing*.055+weight*.025;
+  const start=.43-clamp(strike/duration,.14,.34),follow=.43+clamp(tail/duration,.12,.28);
+  const original=skillById(sk.id),chargeRatio=linked&&original?.charge>0?clamp(value('charge',0)/original.charge,.25,1):1;
+  return {start,follow,settleAt:Math.min(.96,follow+.22+clamp(recovery,0,1.5)*.08),
+   settle:p.combo?clamp(.38+recovery*.24,.4,.70):.82,
+   linked,chargeEnd:linked?.62+.24*chargeRatio:.86,
+   entryEnd:linked?.78:.48};
+ }
+ // Carry the displayed skeleton, not a procedural approximation of a baked
+ // clip. This also covers consecutive casts which reuse the very same clip.
+ function chargeTransition(st,p,c){
+  if(c?.stage!=='charge'){st.chargeKey=null;st.chargeFrom=null;return null;}
+  const key=c.sk.id+':'+(p.combo?.total||0);
+  if(st.chargeKey!==key||c.u<(st.chargeU??0)-1e-5){
+   st.chargeKey=key;st.chargeFrom=st.lastQ&&st.lastRootQ?{q:st.lastQ,offset:st.lastOffset,rootQ:st.lastRootQ,rootOffset:st.lastRootOffset}:null;
+  }
+  st.chargeU=c.u;
+  return {from:st.chargeFrom,amount:ease(c.u/phrasing(p,c).entryEnd)};
+ }
  function keypose(c,kind,index){
   const a=c.shape,base=family(a);
   const pose={...guard,...(profiles[base]||profiles.slash)[kind]};
@@ -209,6 +240,7 @@ const SkillMotion=(()=>{
    if(a!=='zigzag')pose.rightArmZ=-pose.rightArmZ;
   }
   if(a==='slide'){pose.y-=.17;pose.torso+=.13;pose.rightArm+=.18;}
+  if(a==='kick'&&c.sk.motionPath==='orbit'){pose.y-=.13;pose.yaw+=(kind===0?-.35:kind===1?.6:1);pose.torsoYaw-=.2;}
   if(a==='leap'&&kind===0)pose.y=-.12;
   if(a==='spin'||a==='eclipse'){
    pose.yaw=(index+(kind===0?0:kind===1?.43:.62))*TAU;
@@ -223,11 +255,12 @@ const SkillMotion=(()=>{
  // Monotone Hermite slopes carry momentum THROUGH contact. A smoothstep for
  // each interval would stop the weapon at the hit key, before its follow-through.
  function tangent(a,b,c,ab,bc){const x=(b-a)/ab,y=(c-b)/bc;return x*y<=0?0:2*x*y/(x+y);}
- function curve(a,b,c,d,v,start,follow){
-  const times=[start,.43,follow,1],values=[a,b,c,d];
+ function curve(a,b,c,d,v,start,follow,end=1){
+  const times=[start,.43,follow,end],values=[a,b,c,d];
   if(v<=start)return a;
+  if(v>=end)return d;
   const i=v<.43?0:v<follow?1:2,h=times[i+1]-times[i],u=clamp((v-times[i])/h,0,1),u2=u*u,u3=u2*u;
-  const slopes=[0,tangent(a,b,c,.43-start,follow-.43),tangent(b,c,d,follow-.43,1-follow),0];
+  const slopes=[0,tangent(a,b,c,.43-start,follow-.43),tangent(b,c,d,follow-.43,end-follow),0];
   return (2*u3-3*u2+1)*values[i]+(u3-2*u2+u)*h*slopes[i]+(-2*u3+3*u2)*values[i+1]+(u3-u2)*h*slopes[i+1];
  }
  function sample(p,t,out,state){
@@ -242,29 +275,28 @@ const SkillMotion=(()=>{
    return out;
   }
   out.active=true;out.skillMotion=true;out.motionClock=c;
-  const load=keypose(c,0,c.index);
+  const load=keypose(c,0,c.index),phrase=phrasing(p,c);
   if(c.stage==='charge'){
    if(state&&state.stage!=='charge'){
     state.carry=state.lastPose?{...state.lastPose}:null;
     if(state.carry)state.carry.yaw=Math.atan2(Math.sin(state.carry.yaw),Math.cos(state.carry.yaw));
    }
-   blend(out,state?.carry||(p.autoFight||p.combo?.total>1?guard:{}),load,ease(c.u));
+   blend(out,state?.carry||(p.autoFight||p.combo?.total>1?guard:{}),load,ease(c.u/phrase.chargeEnd));
   }
   else{
    const v=c.beat,hit=keypose(c,1,c.index),follow=keypose(c,2,c.index);
    // Leave an economical ready position in the direction of the last cut.
    // The renderer carries this into the next charge or the real recovery state.
-   const next=c.index+1<c.hits?keypose(c,0,c.index+1):blend({},follow,guard,p.combo?.55:.78);
+   const next=c.index+1<c.hits?keypose(c,0,c.index+1):blend({},follow,guard,phrase.settle);
    if(['spin','eclipse'].includes(c.shape)&&c.index+1===c.hits)next.yaw=c.hits*TAU;
-   const base=family(c.shape),heavy=base==='slam',spin=base==='spin',phase=skillPhase(c.sk);
-   const start=c.index>0?0:heavy?.17+phase*.015:base==='thrust'?.055:base==='cast'?.12:.09;
-   const end=heavy?.73:base==='thrust'?.57:.65;
+   const spin=family(c.shape)==='spin';
+   const start=c.index>0?0:phrase.start,end=phrase.follow;
    for(const k of keys){
     // Pelvis initiates, chest follows, the hand arrives last at the fixed hit.
     const lead=['yaw','weightX','weightZ'].includes(k)?.07:k==='torsoYaw'?.035:0;
-    out[k]=curve(load[k],hit[k],follow[k],next[k],v,Math.max(0,start-lead),end);
+    out[k]=curve(load[k],hit[k],follow[k],next[k],v,Math.max(0,start-lead),end,c.index+1<c.hits?1:phrase.settleAt);
    }
-   if(spin){out.yaw=(c.index+ease(v))*TAU;out.footTurn=out.yaw;}
+   if(spin){out.yaw=(c.index+curve(0,.43,.62,1,v,start,end))*TAU;out.footTurn=out.yaw;}
    if(c.shape==='leap'){
     // Jump and landing fit BEFORE contact, followed by grounded compression.
     const jump=v<.12?0:v<.43?Math.sin(Math.PI*(v-.12)/.31):0;
@@ -389,7 +421,7 @@ const SkillMotion=(()=>{
    if(edge<.50)y=Math.max(y,m[13]+Math.abs(m[5])*.5-.014*(1-ease((.50-edge)/.09)));
   }return Math.max(y,supportHeight(r.traversalMap,x,z));
  }
- return {sample,clock,shape,foot,groundAt,stateFor,twoHanded,grip};
+ return {sample,clock,shape,phrasing,curve,chargeTransition,foot,groundAt,stateFor,twoHanded,grip};
 })();
 
 // Collision stays with the rescuer; the body lies across the supporting arms.
