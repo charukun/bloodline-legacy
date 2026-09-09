@@ -106,6 +106,10 @@ class ArtDirector{
  shield(x,y,z,s=1){this.S(x,y,z,.37*s,.45*s,.09*s,'#b4976e',0,0,0,8);this.p('torus',x,y,z+.07,.39*s,.48*s,.48*s,'#d0ba89',0,0,0,10);this.S(x,y,z+.15,.12*s,.13*s,.07*s,'#b6c0b2',0,0,0,10);for(const side of [-1,1])this.B(x+side*.14*s,y,z+.09,.035*s,.69*s,.025*s,'#987d5b',0,0,0,8);}
  weapon(id,s=1){this.with(rModel(0,0,0,s,s,s),()=>{
   if(id<0)return;
+  const owner=this.r.rigs?.pending?.p;if(owner&&this.r.weaponTips){
+   const y=id<=2?.12+1.22*(id===2?1.4:id===1?.62:1):id===3?1.60:id===4?.98:1.50,x=id===4?-.35:0,m=this.root;
+   this.r.weaponTips.set(owner.id,[m[12]+m[0]*x+m[4]*y,m[13]+m[1]*x+m[5]*y,m[14]+m[2]*x+m[6]*y]);
+  }
   if(id<=2){const length=id===2?1.4:id===1?.62:1.0;this.C(0,-.1,0,.055,.35,.055,'#836c50');this.S(0,-.29,0,.075,.075,.075,'#c9b27b',0,0,0,10);this.B(0,.08,0,id===2?.50:.40,.07,.12,'#cbb17c',0,0,0,10);this.p('blade',0,.12,0,id===2?1.2:.82,length,1,'#d4dbcb',0,0,0,10);this.B(0,.64*length,0,.018,.7*length,.06,'#eef2e0',0,0,0,10);}
   else if(id===3){this.C(0,.25,0,.045,2.0,.045,'#9e825b');this.p('leaf',0,1.41,0,.13,.39,.09,'#d6deca',0,0,0,10);this.C(0,1.06,0,.068,.15,.068,'#c6ad79',0,0,0,10);}
   else if(id===4){this.C(0,.28,0,.067,1.35,.067,'#9f8057');this.B(.1,.85,0,.68,.38,.14,'#98a79b',0,0,.07,10);this.p('leaf',-.27,.86,0,.24,.35,.12,'#c4cdba',0,-1.1,0,10);this.B(0,.58,0,.2,.2,.19,'#baab84',0,0,0,10);}
@@ -173,7 +177,7 @@ class ArtDirector{
   const race=(p.race||0)%4,stage=appearanceStage(p),seed=p.appearanceSeed||4,age=p.age??25,child=age<10;
   let scale=p.scaleOverride??(age<4?.46:age<10?.64+(age-4)*.022:age<18?.78+(age-10)*.027:age>72?.96:1);
   const width=race===2?1.23:race===1?.88:1;scale*=race===2?.86:race===1?1.07:race===3?.95:1;
-  const run=p.action==='run'||p.action==='guardWalk'||(p.action==='carry'&&p.carryWalking),walk=this.gait?this.gait(p,t):Math.sin(t*8.2),reaction=damagePose(r,p,t),pose=damageArtPose(r,p,t,artPose(p,t)),ail=ailmentPose(p,t),fall=!p.alive?clamp((t-(p.deathAt??t))/1.12,0,1):0;
+  const run=p.action==='run'||p.action==='guardWalk'||(p.action==='carry'&&p.carryWalking),walk=this.gait?this.gait(p,t):Math.sin(t*8.2),reaction=damagePose(r,p,t,this.skillFeet?.get(p.id)?.feet),pose=damageArtPose(r,p,t,artPose(p,t,SkillMotion.stateFor(r,p,t))),ail=ailmentPose(p,t),fall=!p.alive?clamp((t-(p.deathAt??t))/1.12,0,1):0;
   // Keep the established floor anchors through recovery/idle. Returning to the
   // old short-leg rest matrices here would pop both soles above the ground.
   const groundedMotion=p.alive!==false&&!run&&!p.seated&&!p.activity&&(pose.skillMotion||reaction.amount>0||this.skillFeet?.has(p.id));
@@ -203,20 +207,31 @@ class ArtDirector{
    this.with(rModel(side*.21,1.08,0,1,1,1,0,0,rx),()=>{this.S(0,-.23,0,.16,.29,.17,pants);this.with(rModel(0,-.45,0,1,1,1,0,0,knee),()=>{this.S(0,-.13,0,.14,.25,.14,pants);this.B(0,-.28,.075,.29,.29,.44,'#9b886b',0,0,0,8);this.B(0,-.14,.025,.3,.12,.30,'#c1aa82',0,0,0,0);this.B(0,-.43,.07,.31,.045,.45,'#7f755b');});});
   }
   this.root=upperRoot;
-  // Arms use elbow pivots, not a single rigid rod. Equipment follows the hand.
-  for(const side of [-1,1]){const key=side===1?'rightArm':'leftArm';if(loss(key))continue;let rx=(run?-walk*side*.38:0)+(pose.active?pose[key]:0)+reaction[key]+ail.arm,rz=(pose.active?pose[key+'Z']:side*-.08);
+  // Assemble both chains before drawing, so a supporting hand can grip the
+  // existing weapon shaft using the same analytic solve as the skinned rig.
+  const chains={};
+  for(const side of [-1,1]){const key=side===1?'rightArm':'leftArm';let rx=(run?-walk*side*.38:0)+(pose.active?pose[key]:0)+reaction[key]+ail.arm,rz=(pose.active?pose[key+'Z']:side*-.08);
    if(p.action==='carry'){rx=-1.12;rz=-side*.26;}if(p.action==='wave'&&side===1){rx=-2.3;rz=.15+Math.sin(t*5)*.18;}if(guard&&side===-1)rx=-1.08+reaction[key];rz+=reaction[key+'Z'];
-   const arm=rMultiply(this.root,rModel(side*.45,1.78,0,1,1,1,0,rz,rx));
-   const root=this.root;this.root=arm;this.S(0,-.13,0,.20,.25,.20,cloth);if(p.armor===2)this.S(side*.02,.02,0,.24,.16,.24,'#b7c0b0',0,0,0,10);
-   const elbow=rMultiply(arm,rModel(0,-.28,0,1,1,1,0,0,pose[side===1?'rightElbow':'leftElbow']??0));this.root=elbow;
-   this.S(0,-.07,.01,.125,.22,.14,cloth);this.B(0,-.18,.015,.25,.10,.26,'#d9c7a4',0,0,0,0);
-   const hand=rMultiply(elbow,rModel(0,-.27,.07,1,1,1,0,0,pose[side===1?'rightWrist':'leftWrist']??-.12));this.root=hand;this.S(0,0,0,.12,.14,.125,skin);
+   // Protract the shoulder girdle for a two-hand grip, including broad races.
+   const shoulder=.45-(SkillMotion.twoHanded(p)?(pose.grip||0)*.07:0);
+   const arm=rMultiply(upperRoot,rModel(side*shoulder,1.78,0,1,1,1,0,rz,rx));
+   const elbow=rMultiply(arm,rModel(0,-.28,0,1,1,1,0,0,pose[side===1?'rightElbow':'leftElbow']??0));
+   const hand=rMultiply(elbow,rModel(0,-.27,.07,1,1,1,0,0,pose[side===1?'rightWrist':'leftWrist']??-.12));
+   chains[side===1?'right':'left']={arm,elbow,hand};
+  }
+  const gripping=SkillMotion.grip(p,pose,chains.right,chains.left);if(gripping){chains.right=gripping.right;chains.left=gripping.left;}
+  this.skillGripDebug=gripping;
+  for(const side of [-1,1]){if(loss(side===1?'rightArm':'leftArm'))continue;
+   const {arm,elbow,hand}=chains[side===1?'right':'left'];this.root=arm;
+   this.S(0,-.13,0,.20,.25,.20,cloth);if(p.armor===2)this.S(side*.02,.02,0,.24,.16,.24,'#b7c0b0',0,0,0,10);
+   this.root=elbow;this.S(0,-.07,.01,.125,.22,.14,cloth);this.B(0,-.18,.015,.25,.10,.26,'#d9c7a4',0,0,0,0);
+   this.root=hand;this.S(0,0,0,.12,.14,.125,skin);
    if(side===1&&p.weapon>=0&&age>=7)this.with(rModel(0,-.035,.03,1,1,1,0,-.06,Math.PI-.12),()=>this.weapon(p.weapon,.84));
    if(side===-1&&(p.shield||p.kind==='guard')&&age>=7)this.shield(-.08,.09,.19,.94);
-   this.root=root;
   }
+  this.root=upperRoot;
   // Head is a smooth sculpted mesh. Facial features are actual geometry at close range.
-  this.with(rModel(0,2.30,0,1,1,1,0,reaction.headRoll,pose.head+reaction.head+ail.head),()=>{
+  this.with(rModel(0,2.30,0,1,1,1,pose.headYaw||0,reaction.headRoll,pose.head+reaction.head+ail.head),()=>{
    this.p('head',0,0,0,.51,.53,.5,skin,0,0,0,0);this.S(0,-.09,.424,.062,.064,.061,skin);
    for(const side of [-1,1]){if(race!==3)this.p(race===1?'leaf':'sphere',side*.48,-.01,0,race===1?.21:.085,race===1?.34:.135,.079,skin,0,-side*(race===1?1.06:.2),0,0);
     const blink=hasStatus(p,'sleep',t)||p.action==='sleep'||Math.sin(t*.9+seed)>.996,eyeH=blink?.019:.118*(seed%7===0?.81:1),eyeX=side*(seed%5===1?.218:.19),brow=hasStatus(p,'stun',t)||reaction.amount>.2?.14:0;
