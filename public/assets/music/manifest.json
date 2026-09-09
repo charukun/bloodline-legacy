@@ -1,0 +1,170 @@
+{
+  "version": 1,
+  "composer": "Bloodline Legacy original score",
+  "source": "Original written modal phrases and arrangement; GeneralUser GS 2.0.3 instrument samples",
+  "sampleRate": 44100,
+  "channels": 2,
+  "codec": "MP3 128 kbps",
+  "tracks": [
+    {
+      "id": "hearth",
+      "title": "風待ちの広場",
+      "mood": "村 · 笛とハープ、弦が広がる祝祭",
+      "bpm": 82,
+      "file": "hearth.mp3",
+      "duration": 72.644,
+      "sections": [
+        {
+          "section": "intro",
+          "time": 0.0
+        },
+        {
+          "section": "A",
+          "time": 5.854
+        },
+        {
+          "section": "answer",
+          "time": 17.561
+        },
+        {
+          "section": "B",
+          "time": 29.268
+        },
+        {
+          "section": "bridge",
+          "time": 40.976
+        },
+        {
+          "section": "return",
+          "time": 52.683
+        },
+        {
+          "section": "coda",
+          "time": 64.39
+        }
+      ],
+      "bytes": 1163224,
+      "sha256": "900838e0557d9e98eecded303269ba2f6b6f623d73a4b147e1c699e0e2d6028c"
+    },
+    {
+      "id": "road",
+      "title": "遥かな丘を越えて",
+      "mood": "旅路 · フィドル、ホルンと大きな弦の旋律",
+      "bpm": 72,
+      "file": "road.mp3",
+      "duration": 82.4,
+      "sections": [
+        {
+          "section": "intro",
+          "time": 0.0
+        },
+        {
+          "section": "A",
+          "time": 6.667
+        },
+        {
+          "section": "answer",
+          "time": 20.0
+        },
+        {
+          "section": "B",
+          "time": 33.333
+        },
+        {
+          "section": "bridge",
+          "time": 46.667
+        },
+        {
+          "section": "return",
+          "time": 60.0
+        },
+        {
+          "section": "coda",
+          "time": 73.333
+        }
+      ],
+      "bytes": 1319541,
+      "sha256": "b201744f1a2d30245d99202e9b92a4dc552cfd2090efe9751b86aab97f12f2e8"
+    },
+    {
+      "id": "legacy",
+      "title": "受け継がれる灯",
+      "mood": "静謐 · ハープと低い笛から、弦の祈りへ",
+      "bpm": 60,
+      "file": "legacy.mp3",
+      "duration": 98.4,
+      "sections": [
+        {
+          "section": "intro",
+          "time": 0.0
+        },
+        {
+          "section": "A",
+          "time": 8.0
+        },
+        {
+          "section": "answer",
+          "time": 24.0
+        },
+        {
+          "section": "B",
+          "time": 40.0
+        },
+        {
+          "section": "bridge",
+          "time": 56.0
+        },
+        {
+          "section": "return",
+          "time": 72.0
+        },
+        {
+          "section": "coda",
+          "time": 88.0
+        }
+      ],
+      "bytes": 1575332,
+      "sha256": "daf69fb98876f9dcec1f9d8f18b69d3aa1b46053f7d87df4f2b2d30e288b82a1"
+    },
+    {
+      "id": "battle",
+      "title": "血脈の旗のもとに",
+      "mood": "戦地 · 力強い拍動、フィドルと管弦の応答",
+      "bpm": 98,
+      "file": "battle.mp3",
+      "duration": 61.176,
+      "sections": [
+        {
+          "section": "intro",
+          "time": 0.0
+        },
+        {
+          "section": "A",
+          "time": 4.898
+        },
+        {
+          "section": "answer",
+          "time": 14.694
+        },
+        {
+          "section": "B",
+          "time": 24.49
+        },
+        {
+          "section": "bridge",
+          "time": 34.286
+        },
+        {
+          "section": "return",
+          "time": 44.082
+        },
+        {
+          "section": "coda",
+          "time": 53.878
+        }
+      ],
+      "bytes": 979740,
+      "sha256": "77a176b7ed7b834f921c67aff069605c92f0a524a38a0521fc6c5cce2d29de90"
+    }
+  ]
+}

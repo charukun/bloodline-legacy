@@ -24,7 +24,7 @@ const server=http.createServer((req,res)=>{
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const origin='http://127.0.0.1:'+server.address().port;
-const report={mode,base:'f94513ed65342de1674a716b33c2ebb4a9c523d1',head:process.env.GITHUB_SHA||null,checks:[],versions:{},passed:false,
+const report={mode,base:process.env.CHARACTER_BASE_SHA||'f94513ed65342de1674a716b33c2ebb4a9c523d1',head:process.env.GITHUB_SHA||null,checks:[],versions:{},passed:false,
   limitations:['SwiftShader is software rendering, not Desktop GPU or Pixel Fold performance approval.','Screenshots and videos require visual review; numeric success is not Golden Master approval.']};
 const flush=()=>writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));
 const check=(name,ok,details)=>{report.checks.push({name,pass:!!ok,details});flush();assert(ok,name+' '+JSON.stringify(details||''));console.log('PASS '+name);};
@@ -45,19 +45,24 @@ async function fixture(page,{close=false}={}){
     if(a.renderer.characterMaster)a.renderer.characterMaster.state=null;
     a.renderer.render(a.snapshot,1/30,{freezeCamera:true});a.ui.update(a.snapshot);
     window.characterTrace=[];
+    // Bound queued software-GPU frames; recording must not leave hundreds of
+    // draws outstanding when Playwright asks the compositor for a screenshot.
+    const syncPixel=new Uint8Array(4);
+    window.characterDrain=()=>{const g=a.renderer.gl;g.readPixels(0,0,1,1,g.RGBA,g.UNSIGNED_BYTE,syncPixel);};
     window.characterStep=(n,draw=true)=>{for(let i=0;i<n;i++){a.updateMove();a.sim.tick(1/30);a.snapshot=a.decorate(a.sim.snapshot(a.playerId,a.seq));
       if(draw){a.renderer.render(a.snapshot,1/30,{freezeCamera:true});const cm=a.renderer.characterMaster;
-        if(a.renderer.stats.characterMaster)window.characterTrace.push({t:a.sim.time,x:p.x,z:p.z,action:p.action,metrics:{...cm.metrics},finite:cm.palette.every(Number.isFinite),feet:structuredClone(cm.footDebug)});}
+        if(a.renderer.stats.characterMaster)window.characterTrace.push({t:a.sim.time,x:p.x,z:p.z,action:p.action,metrics:{...cm.metrics},finite:cm.palette.every(Number.isFinite),feet:structuredClone(cm.footDebug)});
+        if(i%4===3||i===n-1)characterDrain();}
     }a.ui.update(a.snapshot);};
   },{close});
   // Drain the old, now-closed frame callback before starting a new live loop.
   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
 }
-async function shot(name){await page.screenshot({path:path.join(out,name+'.png')});report.lastScreenshot=name;flush();}
+async function shot(name){await page.evaluate(()=>window.characterDrain?.());await page.screenshot({path:path.join(out,name+'.png')});report.lastScreenshot=name;flush();}
 try{
-  browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
-  for(const version of mode==='motion'?['after']:['before','after']){
-    const context=await browser.newContext({viewport:{width:1000,height:900},deviceScaleFactor:1,...(mode==='performance'?{}:{recordVideo:{dir:out,size:{width:1000,height:900}}})});
+  browser=await chromium.launch({executablePath:process.env.CHROMIUM_EXECUTABLE||undefined,headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+  for(const version of mode==='motion'||process.env.CHARACTER_AFTER_ONLY==='1'?['after']:['before','after']){
+    const context=await browser.newContext({viewport:{width:1000,height:900},deviceScaleFactor:1,...(mode==='performance'||process.env.CHARACTER_NO_VIDEO==='1'?{}:{recordVideo:{dir:out,size:{width:1000,height:900}}})});
     page=await context.newPage();page.setDefaultTimeout(120000);
     const record=report.versions[version]={errors:[],consoleErrors:[],states:[],performance:[]};
     page.on('pageerror',e=>record.errors.push(e.message));
@@ -66,7 +71,9 @@ try{
     await page.waitForFunction('window.AERIN_QA && AERIN_QA.app.renderer.frame>2');
     record.backend=await page.evaluate(()=>{const r=AERIN_QA.app.renderer,g=r.gl,e=g.getExtension('WEBGL_debug_renderer_info');return {userAgent:navigator.userAgent,gpu:e?g.getParameter(e.UNMASKED_RENDERER_WEBGL):g.getParameter(g.RENDERER),dpr:devicePixelRatio,viewport:[innerWidth,innerHeight]};});
     await page.locator('#begin-life').click();
-    for(let i=0;i<3;i++)await page.locator('#guide-next').click();
+    const guidePages=await page.locator('.guide-pages i').count();
+    assert(guidePages>0&&guidePages<=10,'native onboarding pages are available');
+    for(let i=0;i<guidePages;i++)await page.locator('#guide-next').click();
     await page.waitForFunction('AERIN_QA.app.screen==="game"');
     check(version+' native onboarding',await page.evaluate(()=>AERIN_QA.player().prologue));
     if(mode==='motion'){
@@ -95,7 +102,7 @@ try{
     record.stats=await page.evaluate(()=>AERIN_QA.stats());
     check(version+' WebGL has no error',await page.evaluate(()=>AERIN_QA.app.renderer.gl.getError()===0));
     check(version+' comparison has no diorama blur',await page.evaluate(()=>AERIN_QA.app.renderer.diorama.mode==='normal'&&!AERIN_QA.app.renderer.diorama.active));
-    check(version+' target renderer dispatch',!!record.stats.characterMaster===(version==='after'));
+    check(version+' target renderer dispatch',(record.stats.characterMaster?.character==='TRAVELER')===(version==='after'));
     await fixture(page,{close:true});await shot(version+'-close');
     if(version==='after'){
       for(const [label,yaw]of [['quarter',1.1],['side',1.82],['back',3.2]]){
@@ -130,7 +137,14 @@ try{
     await fixture(page);
     await page.mouse.move(550,470);await page.mouse.down();await page.waitForTimeout(600);await page.mouse.up();
     check(version+' long press rests',await page.evaluate(()=>AERIN_QA.player().seated));await page.evaluate(()=>characterStep(15));await shot(version+'-rest');
-    await page.keyboard.press('t');check(version+' talk wakes',await page.evaluate(()=>!AERIN_QA.player().seated));
+    await page.keyboard.press('t');
+    // Speaking now requires an explicit phrase selection in the shared talk fan.
+    // All clipped wedges share a rectangular box. Click the visible phrase,
+    // not that box's center, which belongs to a different wedge.
+    const phrase=await page.locator('[data-talk="0"] > span:not(.visually-hidden)').boundingBox();
+    assert(phrase&&phrase.width>0&&phrase.height>0,'talk phrase is visible');
+    await page.mouse.click(phrase.x+phrase.width/2,phrase.y+phrase.height/2);
+    check(version+' talk wakes',await page.evaluate(()=>!AERIN_QA.player().seated));
     await fixture(page);
     // Move into the existing dummy with native keyboard; no attack command is fabricated.
     await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player(),d=a.sim.getRoom(p).actors.find(e=>e.kind==='dummy');p.x=d.x;p.z=d.z+2.1;p.dir=Math.PI;a.snapshot=a.decorate(a.sim.snapshot(p.id,a.seq));a.renderer.camera={x:d.x,z:d.z+.5,zoom:16,yaw:0,pitch:.68};a.renderer.render(a.snapshot,0,{freezeCamera:true});});
@@ -141,7 +155,7 @@ try{
     const combat={charged:false,attack:false,states:[],animations:[]};
     for(let i=0;i<150;i++){
       const state=await page.evaluate(({draw,capturedCharge,capturedPeak})=>{characterStep(1,false);const a=AERIN_QA.app,p=AERIN_QA.player(),u=(a.sim.time-p.actionStarted)/Math.max(.001,p.actionUntil-p.actionStarted),peak=p.action==='attack'&&u>=.3&&u<=.65;
-        if(draw||p.pendingSkill&&!capturedCharge||peak&&!capturedPeak)a.renderer.render(a.snapshot,1/30,{freezeCamera:true});
+        if(draw||p.pendingSkill&&!capturedCharge||peak&&!capturedPeak){a.renderer.render(a.snapshot,1/30,{freezeCamera:true});characterDrain();}
         return {action:p.action,charged:!!p.pendingSkill,target:p.autoFight,peak,animation:AERIN_QA.stats().characterMaster?.animation};
       },{draw:i%3===0,capturedCharge:combat.charged,capturedPeak:combat.peak});
       if(state.charged&&!combat.charged)await shot(version+'-combat-charge');
@@ -158,7 +172,7 @@ try{
       check('hit is consumed from simulation',await page.evaluate(()=>AERIN_QA.player().health<100&&AERIN_QA.stats().characterMaster.animation==='hit'));await shot('after-hit');
       await fixture(page);
       check('renderer is simulation immutable',await page.evaluate(()=>{const a=AERIN_QA.app,b=JSON.stringify(a.sim.exportState());a.renderer.render(a.snapshot,.016,{freezeCamera:true});return b===JSON.stringify(a.sim.exportState());}));
-      const scope=await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player(),rows=[];for(const [age,gender,race,kind,prologue,expected]of [[17,0,0,'player',false,false],[18,0,0,'player',false,true],[34,0,0,'player',false,true],[35,0,0,'player',false,false],[24,1,0,'player',false,false],[24,0,1,'player',false,false],[24,0,0,'portrait',false,false],[1,0,0,'player',true,false]]){Object.assign(p,{age,gender,race,kind,prologue});a.snapshot=a.decorate(a.sim.snapshot(p.id,a.seq));a.renderer.render(a.snapshot,.016,{freezeCamera:true});rows.push({age,gender,race,kind,prologue,expected,actual:!!a.renderer.stats.characterMaster});}return rows;});
+      const scope=await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player(),rows=[];for(const [age,gender,race,kind,prologue,expected]of [[17,0,0,'player',false,false],[18,0,0,'player',false,true],[34,0,0,'player',false,true],[35,0,0,'player',false,false],[24,1,0,'player',false,false],[24,0,1,'player',false,false],[24,1,1,'player',false,true],[24,0,2,'player',false,true],[24,1,3,'player',false,true],[24,1,2,'player',false,false],[24,0,3,'player',false,false],[24,0,0,'portrait',false,false],[1,0,0,'player',true,false]]){Object.assign(p,{age,gender,race,kind,prologue});a.snapshot=a.decorate(a.sim.snapshot(p.id,a.seq));a.renderer.render(a.snapshot,.016,{freezeCamera:true});rows.push({age,gender,race,kind,prologue,expected,actual:!!a.renderer.stats.characterMaster});}return rows;});
       check('scope dispatch all boundaries',scope.every(s=>s.expected===s.actual),scope);
       await fixture(page,{close:true});
       const equipment=await page.evaluate(()=>{const a=AERIN_QA.app,p=AERIN_QA.player(),rack=a.snapshot.map.schools.find(s=>s.id==='armory');p.x=rack.x;p.z=rack.z+3;const ok=[a.command({type:'equip',slot:'weapon',value:0}),a.command({type:'equip',slot:'armor',value:2}),a.command({type:'equip',slot:'shield',value:true})];a.renderer.camera.x=p.x;a.renderer.camera.z=p.z;a.renderer.render(a.snapshot,.016,{freezeCamera:true});return {ok,weapon:p.weapon,armor:p.armor,shield:p.shield,tip:a.renderer.weaponTips.has(p.id)};});
