@@ -225,3 +225,7 @@ dialog.dialog-launched,
 /* Chosen memories use the same leaf motif as in-game choices. */
 .index-choose .icon{width:20px;height:20px;opacity:.38}.index-choose[aria-pressed=true]{color:#f5e3ad;background:#4c6545;box-shadow:inset 0 0 0 2px #c2a25f}.index-choose[aria-pressed=true] .icon{opacity:1}
 .selected-stamp{display:grid;place-items:center;width:30px;height:30px;border:1px solid #927343;border-radius:50%;background:#e8d4a899;color:#655131;box-shadow:inset 0 0 0 3px #fff1c444}
+
+/* Same quiet Settings marker as the gameplay HUD. */
+button[data-live-notice]{position:relative;overflow:visible}
+button[data-live-notice]::after{content:attr(data-live-notice);position:absolute;right:-5px;top:-9px;min-width:24px;padding:2px 5px;border:1px solid #a78b52;border-radius:4px;background:#ead7a3;color:#392f20;box-shadow:0 2px 4px #17251b40;font:600 10px/1.3 sans-serif;white-space:nowrap;pointer-events:none}
