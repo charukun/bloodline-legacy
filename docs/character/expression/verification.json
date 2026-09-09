@@ -1,0 +1,28 @@
+{
+  "base": "10fb501e635f953c529dfbfc6898d8c0fd21e66c",
+  "branch": "work/traveler-expression-injury-20260909-v2",
+  "unitTests": {
+    "passed": 508,
+    "failed": 0
+  },
+  "nativeBrowser": {
+    "passed": 35,
+    "failed": 0,
+    "backend": "Chromium / SwiftShader"
+  },
+  "nativeShaderPrograms": 12,
+  "build": "PASS",
+  "deploymentIntegrity": "PASS",
+  "sourceSha256": {
+    "src/character/traveler-model.js": "2ad417751acd08fb7650b84b4f85ce16fcccf1cb8de6177f6889e2dfc26370ab",
+    "src/character/traveler-runtime.js": "5a70e1ccc9cb5940527a53b1489d1b4e50b25ca139612a9b6ae9393d66055be9",
+    "src/character/traveler-expression.js": "74783fcffdc100e1d201846ae92c20817c3321aba12567cca1684ba5338e0d92"
+  },
+  "notVerified": [
+    "Pixel Fold / native GPU performance"
+  ],
+  "fixesDuringVerification": [
+    "Reset facial region before the next ear so only actual facial parts deform.",
+    "Reapply on age/terrain develop; compose expression before age deformation and retain both normal transforms and age beard visibility."
+  ]
+}

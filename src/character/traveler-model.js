@@ -158,16 +158,21 @@ const TravelerModel = (()=>{
  const headRows=[[1.005,.055,.05,0,.01],[1.03,.20,.18,0,.01],[1.11,.355,.285,0,.009],[1.25,.463,.363,0,.008],[1.43,.515,.408,0,0],[1.62,.511,.409,0,-.014],[1.8,.437,.352,0,-.025],[1.96,.277,.224,0,-.025],[2.015,.025,.022,0,-.025]];
  rings(headRows,40,skin,1,.73);
  for(const side of [-1,1]){
+  regionOverride=null;
   if(id!=='elf'&&id!=='fox'){oval([side*.502,1.40,-.007],[.073,.105,.054],skin,1,.76,0,16,10);
   oval([side*.528,1.402,.039],[.030,.051,.007],'#d99a76',1,.9,0,12,8);}
   // Button eyes with very small highlights; no separate white eyeballs.
+  regionOverride=side===1?20:21;
   oval([side*.168,1.491,.397],[.039,.057,.022],'#38291f',1,.48,0,20,12);
+  regionOverride=side===1?22:23;
   oval([side*.168-.011,1.515,.417],[.0085,.010,.003],'#fff0d4',1,.34,0,10,8);
+  regionOverride=side===1?24:25;
   const x=side*.168;
   lock([[x-.048,1.581,.391],[x-.020,1.601,.407],[x+.020,1.601,.407],[x+.048,1.584,.391]],.012,.007,'#774c32',1,.84);
  }
+ regionOverride=null;
  oval([0,1.414,.411],[.025,.024,.024],'#edb487',1,.81,0,16,10);
- smile();
+ regionOverride=26;smile();regionOverride=null;
 
  // Species silhouettes use curved volumes, not texture-only recolors.
  if(id==='elf')for(const s of [-1,1]){
