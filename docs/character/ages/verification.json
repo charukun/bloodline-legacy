@@ -1,0 +1,37 @@
+{
+  "base": "eabe0cba5577949350058b1e1e3bd41bc6c7c5f3",
+  "branch": "work/character-age-continuity-20260909-v2",
+  "build": "PASS",
+  "deploymentIntegrity": "PASS",
+  "unitRegression": {
+    "passed": 457,
+    "failed": 0
+  },
+  "shaderProgramsCompiled": 12,
+  "testCorrections": [
+    "Native movement assertion uses traveled distance because world x sign depends on gameplay camera yaw.",
+    "Turnaround capture rotates the fixture character under the same clear camera, avoiding a house roof that occluded the original side view."
+  ],
+  "runtimeSha256": {
+    "src/character/traveler-model.js": "c37b54fcd244af04cbbc249c8f458f2786d8725c6f3d9538c8dabe28a4787c85",
+    "src/character/traveler-runtime.js": "4ae577de96563764d9f34ffb32d07bbe76be291f38d71fb7fa18f0a37e94eb0f",
+    "src/character/traveler-age.js": "6f70e783b14165f0c53dac4f9b4b531cc399ee8b7e1f9b3834f522213dcd39a8"
+  },
+  "notVerified": [
+    "Native Pixel Fold performance",
+    "Every individual skill animation and age/equipment combination"
+  ],
+  "previousBase": "957362cc74bcb6a9d8d03791dfb3dcf74f37e111",
+  "previousPR": 55,
+  "overlapResolution": "Preserve PR #50 authored motion selector/data and scale only translation deltas to the age-dependent bind pose; replacement branch avoids force push and develop merge.",
+  "nativeBrowser": {
+    "passed": 49,
+    "failed": 0,
+    "backend": "Chromium / SwiftShader"
+  },
+  "performanceReview": {
+    "pairedCompletedRenderRatio": 0.9541108986597195,
+    "additionalDrawCalls": 0,
+    "note": "Sequential timing was noisy; largest slowdown did not reproduce in 15 alternating pairs. Native device performance unverified."
+  }
+}

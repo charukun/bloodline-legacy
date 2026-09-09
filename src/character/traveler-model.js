@@ -183,6 +183,7 @@ const TravelerModel = (()=>{
   surface((u,v)=>{const t=.12+.76*v,w=.061*Math.sin(Math.PI*v);return [s*(.47+.37*t),1.39+.25*t+(u-.5)*2*w,.039-.20*t+.01*Math.sin(Math.PI*v)];},6,10,'#c89977',1,.9,0,false);
  }
  if(id==='dwarf'&&!female){
+  regionOverride=13;
   // A single rounded beard shell hugs the jaw; the mouth remains visible.
   rings([[.998,.045,.035,0,.19],[1.03,.17,.073,0,.23],[1.12,.30,.108,0,.28],[1.23,.39,.110,0,.31],[1.30,.375,.086,0,.345]],28,hair,1,.84,0,(a,t)=>.09*Math.sin(a)**2*t*t);
   for(const s of [-1,1]){
@@ -190,6 +191,7 @@ const TravelerModel = (()=>{
    lock([[s*.055,1.40,.41],[s*.14,1.42,.445],[s*.21,1.365,.447],[s*.27,1.37,.40]],.040,.035,hair,1,.8);
   }
  }
+ regionOverride=null;
  if(id==='fox')for(const s of [-1,1]){
   rings([[1.88,.11,.083,s*.36,-.003],[2.015,.133,.098,s*.405,0],[2.20,.080,.057,s*.455,-.012],[2.33,.002,.002,s*.465,-.025]],18,hair,1,.81);
   surface((u,v)=>{const y=1.985+.29*v,w=.084*Math.pow(Math.sin(Math.PI*v),.65);return [s*(.40+.065*v)+(u-.5)*2*w,y,.090-.10*v];},8,12,'#ead4ae',1,.93,0,false);

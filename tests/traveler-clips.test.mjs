@@ -42,3 +42,11 @@ test('unsupported skills clear old clips; guard, damage, loss and activity retai
   const r=renderer(),c=new Travelers.Character(r,race),p={...player(),race,gender:[0,1,0,1][race],action:'attack',attackSkill:4001,actionStarted:1,actionUntil:2};r.frame++;c.update(p,1.1);assert(c.clipDebug);r.frame++;c.update({...p,...change},1.2);assert.equal(c.clipDebug,null);r.frame++;c.update({...p,...change,action:'recover',actionStarted:2,actionUntil:3},2.1);assert.equal(c.clipDebug,null);assert(c.palette.every(Number.isFinite));
  }
 });
+
+test('child and elder proportions retain the authored three-hit clock and reachable joints',()=>{
+ for(let race=0;race<4;race++)for(const age of [7,10,17,55,80])for(let total=1;total<=3;total++){
+  const r=renderer(),c=new Travelers.Character(r,race),p={...player(),race,gender:[0,1,0,1][race],age,combo:{total},action:'attack',attackSkill:4001,actionStarted:1,actionUntil:2},saved=JSON.stringify(p);
+  for(const t of [1,1.2,1.43,1.6,1.9]){r.frame++;c.update(Object.freeze(p),t);assert(c.palette.every(Number.isFinite));assert(c.metrics.contactError<.035);assert(c.clipDebug);if(t===1.43)assert(Math.abs(c.clipDebug.u-c.clipDebug.contact)<1e-6);}
+  assert.equal(JSON.stringify(p),saved);
+ }
+});

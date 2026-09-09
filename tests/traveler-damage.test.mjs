@@ -65,3 +65,14 @@ test('four traveler rigs catch real recoil with stable soles, finite joints and 
   t.diagnostic(JSON.stringify({race,part,maxSlip,maxError,maxDrop,maxJump}));assert(maxSlip<.012,'planted sole slide');assert(maxError<.035,'foot target');assert(maxDrop<.38,'leg reach');assert(maxJump<.13,'pose continuity');
  }
 });
+
+test('child and elder proportions retain bounded recoil, planted soles and finite joints',()=>{
+ for(let race=0;race<4;race++)for(const age of [7,10,55,80]){
+  const {sim,p,source}=api.fixture(race);p.age=age;const r=api.renderer(),cm=new api.Travelers.Character(r,race);
+  for(let i=0;i<80;i++){
+   if(i===10)sim.inflictWound(p,'torso','light',source,1);
+   sim.tick(1/60);r.frame++;cm.update(freeze(structuredClone(p)),sim.time);
+   assert(cm.palette.every(Number.isFinite));assert(cm.metrics.contactError<.035,race+' age '+age+' contact');assert(cm.metrics.pelvisDrop<.38,race+' age '+age+' drop');
+  }
+ }
+});
