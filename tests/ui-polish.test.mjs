@@ -78,9 +78,9 @@ test('equipment and lineage choices use symbols while retaining the actual selec
  ui.closeModal();sim.removePlayer(p.id);g.playerId=null;g.snapshot=null;g.screen='clan';g.profile.race=0;ui.showClan();
  let root=ui.lineageView.home.scope;root.querySelector('[data-origin-race="2"]').click();assert.equal(g.profile.race,2);assert.equal(root.querySelector('[data-origin-race="2"]').getAttribute('aria-pressed'),'true');
  const legacy=sim.legacy(g.profile.owner);legacy.archive=[4000,4001];legacy.records=[{id:'old',gen:1,name:'先人',skills:[4000],appearance:{race:0}}];ui.renderClan();root=ui.lineageView.home.scope;
- root.querySelector('#library-open').click();let choice=root.querySelector('[data-choose-id="4000"]');assert.equal(choice.getAttribute('aria-pressed'),'false');assert.equal(choice.textContent,'');assert.ok(choice.querySelector('svg'));choice.click();
+ root.querySelector('#find-memory').click();let choice=root.querySelector('[data-choose-id="4000"]');assert.equal(choice.getAttribute('aria-pressed'),'false');assert.equal(choice.textContent,'');assert.ok(choice.querySelector('svg'));choice.click();
  assert.equal(g.profile.inherit[0],4000);const stamp=root.querySelector('#selected-stamp');assert.equal(stamp.hidden,false);assert.equal(stamp.textContent,'');assert.ok(stamp.getAttribute('aria-label'));
- root.querySelector('#library-open').click();choice=root.querySelector('[data-choose-id="4000"]');assert.equal(choice.getAttribute('aria-pressed'),'true');assert.doesNotMatch(root.querySelector('#library-results').textContent,/選択中/);
+ root.querySelector('#close-dialog').click();root.querySelector('#find-memory').click();choice=root.querySelector('[data-choose-id="4000"]');assert.equal(choice.getAttribute('aria-pressed'),'true');assert.doesNotMatch(root.querySelector('#library-results').textContent,/選択中/);
 });
 
 test('projection and selection presentation leave the simulation and saved records intact',t=>{
