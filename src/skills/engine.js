@@ -1,7 +1,7 @@
 /* Event-driven life experience. Uses its own saved RNG; never the combat/world RNG. */
 const BloodlineSkills = (() => {
  'use strict';
- const REVISION = 3, MAX_JOURNAL = 96, MAX_CONTEXTS = 192;
+ const REVISION = 4, MAX_JOURNAL = 96, MAX_CONTEXTS = 192;
  const ACTIVE_PACING = Object.freeze({gain:.4,threshold:3.65,perKnown:.25,maxThreshold:9.5,cooldown:105,perKnownSeconds:15,maxCooldown:300,cost:4.6,perKnownCost:.35});
  const TAGS = new Set(['weight','rhythm','craft','care','patience','play','light','explore','track','precision','combat','tension','observe','rest','study','pray','read','memory','bell','feather','stone','charcoal','net','cross','family','defeat','weapon']);
  const finite = (v, fallback = 0) => Number.isFinite(v) ? v : fallback;
@@ -18,7 +18,7 @@ const BloodlineSkills = (() => {
   return items.at(-1);
  }
  function create(seed, life) {
-  return {version:1,revision:REVISION,life:String(life),lifeSeed:hash(seed+':'+life),rng:hash(seed+':'+life),experience:{},recent:{},contexts:{},acceptedAt:{},journal:[],discovered:[],memories:{},charge:0,lastDiscovery:-100,lastOpportunity:-100,activeInspiration:{charge:0,lastDiscovery:-100,rng:hash(seed+':'+life+':active')},lastEvent:-100,serial:0,unread:[],seenRegions:[],sampleAt:0,sampleX:null,sampleZ:null,connections:{},equipmentSeen:[],inheritedTags:[],inspiration:{route:null,sourceSerials:[]}};
+  return {version:1,revision:REVISION,life:String(life),lifeSeed:hash(seed+':'+life),rng:hash(seed+':'+life),experience:{},recent:{},contexts:{},acceptedAt:{},journal:[],discovered:[],memories:{},charge:0,lastDiscovery:-100,lastOpportunity:-100,activeInspiration:{charge:0,lastDiscovery:-100,rng:hash(seed+':'+life+':active')},lastEvent:-100,serial:0,unread:[],seenRegions:[],sampleAt:0,sampleX:null,sampleZ:null,connections:{},glimpses:{lastAt:-100,seen:[]},equipmentSeen:[],inheritedTags:[],inspiration:{route:null,sourceSerials:[]}};
  }
  function restore(raw,seed,life) {
   const s=create(seed,life);
@@ -40,6 +40,7 @@ const BloodlineSkills = (() => {
   s.seenRegions=list(raw.seenRegions).filter(x=>typeof x==='string').slice(-96);
   s.inheritedTags=validTags(raw.inheritedTags).slice(0,6);s.equipmentSeen=list(raw.equipmentSeen).filter(x=>typeof x==='string').slice(0,64);
   s.connections=Object.fromEntries(Object.entries(object(raw.connections)).filter(([k,v])=>/^\d+:\d+$/.test(k)&&Number.isFinite(v)&&v>0).slice(-256).map(([k,v])=>[k,Math.min(10000,v)]));
+  s.glimpses={lastAt:finite(raw.glimpses?.lastAt,-100),seen:list(raw.glimpses?.seen).filter(k=>GLIMPSES.some(g=>g.key===k)).slice(-16)};
   s.inspiration={route:['main','cross','deviation'].includes(raw.inspiration?.route)?raw.inspiration.route:null,sourceSerials:list(raw.inspiration?.sourceSerials).filter(Number.isInteger).slice(0,4)};
   return s;
  }
@@ -147,6 +148,29 @@ const BloodlineSkills = (() => {
    state.inspiration={route:discovery.route,sourceSerials:discovery.sourceSerials};return discovery;
   }
  }
+ // These are observations about lived contrasts, not recipes or pending skill IDs.
+ const GLIMPSES = [
+  {key:'craft-combat',groups:[['craft'],['combat']],text:'道具を扱う手つきが、戦いの手応えと重なる……'},
+  {key:'rest-tension',groups:[['rest'],['tension','defeat']],text:'息を整えると、あの張りつめた一瞬が浮かぶ……'},
+  {key:'explore-precision',groups:[['explore'],['precision']],text:'歩いて覚えた間合いが、狙いを定める感覚に重なる……'},
+  {key:'play-rhythm',groups:[['play'],['rhythm']],text:'遊びの拍子が、別の動きの中にも聞こえる……'},
+  {key:'family-patience',groups:[['family'],['patience']],text:'待つ静けさの中に、あの人と過ごした時間がよみがえる……'},
+  {key:'memento-rhythm',groups:[['bell','stone','feather','charcoal','net'],['rhythm']],text:'手元の小さな思い出が、今日の動きに結びつきかける……'}
+ ];
+ function glimpse(state,at) {
+  const seen=state.glimpses;
+  if(state.serial<8||at-seen.lastAt<120||at-state.lastDiscovery<30)return null;
+  const recent=state.journal.filter(r=>at-r.at<=180);
+  const choices=GLIMPSES.filter(g=>!seen.seen.includes(g.key)&&g.groups.some(tags=>tags.some(t=>recent.at(-1)?.tags.includes(t))))
+   .sort((a,b)=>hash(state.lifeSeed+':'+a.key)-hash(state.lifeSeed+':'+b.key));
+  for(const g of choices) {
+   const proof=witnesses({requiresExperience:g.groups},{journal:recent,memories:state.memories});
+   if(proof.length!==g.groups.length)continue;
+   seen.lastAt=at;seen.seen.push(g.key);
+   return {text:g.text,sources:proof.map(r=>r.serial||0)};
+  }
+  return null;
+ }
  function connection(def,link,target,time,band) { return !!(def&&link&&link.target===target&&link.until>=time&&link.band<band&&def.entry.some(tag=>link.tags.includes(tag))); }
- return {Catalog,create,restore,hash,next,connection,witnesses,REVISION};
+ return {Catalog,create,restore,hash,next,connection,witnesses,glimpse,REVISION};
 })();

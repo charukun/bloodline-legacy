@@ -185,7 +185,7 @@ class UI {
  death(p){
   const key=p.id+':'+(p.legacyChoice?.state||'recorded');if(this.deathShown===key)return;this.deathShown=key;this.g.stopInput();
   const pending=p.legacyChoice?.state==='pending',sk=skillById(p.bankedSkills?.[0]);
-  this.open('death','命の灯',`<div class="death-leaf">${icon('leaf')}</div><h3 class="death-name">${ESC(p.name)}</h3><p class="death-age">享年 ${Math.floor(p.age)}歳</p>${pending?`<p>この人生で学んだ技を、ひとつ遺す。</p><div class="legacy-bequest" role="group" aria-label="後世へ遺す技">${p.legacyChoice.candidates.map(id=>{const sk=skillById(id);return `<button class="full-button" data-bequest="${id}"><strong>${ESC(sk?.name||'')}</strong><small>${ESC(sk?.desc||'')}</small></button>`;}).join('')}</div>`:`<p>${sk?`「${ESC(sk.name)}」を、系譜に刻んだ。`:'静かな灯が、系譜に残った。'}</p><button id="next-life" class="begin-button">次の人生へ${icon('arrow')}</button><button class="full-button" id="view-lineage">系譜をひらく</button>`}`);
+  this.open('death','命の灯',`<div class="death-leaf">${icon('leaf')}</div><h3 class="death-name">${ESC(p.name)}</h3><p class="death-age">享年 ${Math.floor(p.age)}歳</p>${SkillPresentation.recap(p)}${pending?`<p>この人生で学んだ技を、ひとつ遺す。</p><div class="legacy-bequest" role="group" aria-label="後世へ遺す技">${p.legacyChoice.candidates.map(id=>{const sk=skillById(id);return `<button class="full-button" data-bequest="${id}"><strong>${ESC(sk?.name||'')}</strong><small>${ESC(sk?.desc||'')}</small></button>`;}).join('')}</div>`:`<p>${sk?`「${ESC(sk.name)}」を、系譜に刻んだ。`:'静かな灯が、系譜に残った。'}</p><button id="next-life" class="begin-button">次の人生へ${icon('arrow')}</button><button class="full-button" id="view-lineage">系譜をひらく</button>`}`);
   this.root.querySelectorAll('[data-bequest]').forEach(b=>b.onclick=()=>{if(this.g.command({type:'choose-legacy',skill:Number(b.dataset.bequest)})){b.disabled=true;if(!this.g.online)this.death(this.g.snapshot.player);}});
   const next=this.root.querySelector('#next-life');if(next)next.onclick=()=>this.g.toClan();const view=this.root.querySelector('#view-lineage');if(view)view.onclick=()=>this.lineage();
  }
@@ -298,14 +298,14 @@ class UI {
   if(pain&&t<pain.until)add('pain:'+p.id,'pain-callout'+(pain.level>1?' strong':''),p,head(p),pain.text,'',p.combo?-66:-22);
   for(const a of [...s.players,...s.actors])if(a.alive&&a.speechUntil>t&&a.speech&&Math.hypot(a.x-p.x,a.z-p.z)<13)labels.push({key:'speech:'+a.id,cls:'speech-bubble',a,h:head(a),text:a.speech});
   // Presentation time keeps the rise smooth between simulation/network ticks.
-  this.floatLines=this.floatLines.filter(e=>now-e.shown<4600);
+  this.floatLines=this.floatLines.filter(e=>now-e.shown<(e.life??4.6)*1000);
   const latest=new Map();for(const e of this.floatLines)if(e.type!=='speech')latest.set(e.player,e);
   for(const e of latest.values()){
    const a=s.players.find(a=>a.id===e.player);if(!a?.alive||Math.hypot(a.x-p.x,a.z-p.z)>=14||(e.room&&e.room!==s.room.id))continue;
    const pos=r.project(a.x,head(a)+.3,a.z),w=r.width||innerWidth,h=r.height||innerHeight;
    if(!pos.visible||pos.x<0||pos.x>w||pos.y<0||pos.y>h)continue;
    const age=Math.max(0,(now-e.shown)/1000),rise=this.reducedMotion?0:age*7;
-   labels.push({key:'progress:'+e.player,cls:'progress-float',text:e.text,x:pos.x,y:pos.y-(p.combo?125:40)-rise,opacity:clamp(Math.min(age/.2,(4.6-age)/.8),0,1),floating:true});
+   labels.push({key:'progress:'+e.player,cls:'progress-float'+(e.type==='skillconnection'?' skill-connection':e.type==='skillglimpse'?' skill-glimpse':''),text:e.text,x:pos.x,y:pos.y-(p.combo?125:40)-rise,opacity:clamp(Math.min(age/.2,((e.life??4.6)-age)/.8),0,1),floating:true});
   }
   if(p.activity)add('activity','activity-mark',p,head(p),'',icon(p.activity==='pray'?'sun':p.activity==='play'?'leaf':'book'));
   const root=document.getElementById('world-labels'),live=new Set();
