@@ -1,5 +1,7 @@
 # Sentinel pilot performance evidence
 
+> **HISTORICAL — 過去WORKの実装・検証記録。** 以下の旧ポリシー、命令形の統合手順、PR/branch状態、SHA、検証条件・結果は当時の記録であり、現行命令や現在headの成功証拠ではありません。担当調査に必要な場合だけ参照してください。[現行の文書案内](../README.md)。
+
 Target: Desktop 60 fps / Pixel Fold-class mobile 30 fps. **Neither target is verified in this environment.** Browser security blocked the permitted browser route; native EGL uses llvmpipe software rendering on a shared host. These measurements cannot qualify a device or establish a statistically controlled speedup/regression result.
 
 ## Asset and rendering budget

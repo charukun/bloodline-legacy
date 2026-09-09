@@ -99,3 +99,5 @@
 @keyframes stamina-breath{0%,100%{filter:drop-shadow(0 0 2px #c98c43)}50%{filter:drop-shadow(0 0 6px #efb66a);opacity:.65}}
 .breath-callout{position:absolute;transform:translate(-50%,-100%);font-size:11px;color:#f7e2be;text-shadow:0 1px 3px #342a20,0 0 5px #342a20;pointer-events:none;white-space:nowrap}
 @media(prefers-reduced-motion:reduce){.stamina-orb[data-fatigue="1"],.stamina-orb[data-fatigue="2"]{animation:none;filter:drop-shadow(0 0 4px #e4a666)}}
+.ship-notice{position:absolute;top:104px;left:50%;transform:translateX(-50%);margin:0;padding:.45em .9em;max-width:calc(100% - 32px);width:max-content;color:#514936;background:linear-gradient(90deg,transparent,#eee4c4e8 12%,#eee4c4e8 88%,transparent);font:12px/1.6 serif;letter-spacing:.07em;text-align:center;pointer-events:none;text-shadow:0 1px #fff7dc;}
+.ship-notice[hidden]{display:none;}

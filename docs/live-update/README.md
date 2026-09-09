@@ -1,5 +1,7 @@
 # Live Update / Multiplayer Compatibility
 
+> **REFERENCE — この領域の技術・実装資料。** ゲームの確定仕様の正本を置き換える文書ではありません。本文の旧ポリシー、WORK固有の指示、PR依存・SHA・検証結果はhistoricalな来歴で、現在の共通運用やGitHub状態には適用しません。[現行の文書案内](../README.md)。
+
 ## Audit and sources
 
 - Project Sources: Common Development Policy **v5** and Implementation Prompt **v2 (2026-09-08)**, supplied with this WORK. The explicit WORK request and policy v5 supersede the prompt's older handoff-only GitHub restrictions.
@@ -28,13 +30,13 @@ When any Simulation input changes, run `node tools/archive-simulation.mjs` and c
 
 ## Playing through deployment
 
-- Compatible visual/build changes coexist indefinitely. A small parchment notice offers **記録して更新**. There is no automatic reload.
+- Compatible visual/build changes coexist indefinitely. The Settings gear (and clan Options) carries a small **更新** marker; the scrollable Settings panel offers **保存して更新する** and **あとで**. Routine updates never cover the gameplay HUD. There is no automatic reload.
 - Poll `/version.json` every 90–105 seconds while visible, and on foreground/network restoration. Failed or incomplete manifests never interrupt gameplay.
 - Different game rules remain pinned to the existing saved runtime. A new client retains compatibility with the registered old runtime and can join immediately after deployment.
 - A changed rules runtime starts a **five-minute grace period**. Activation waits for all world actors to be safe and active clients' conversation/menu/save presence to be clear. The grace deadline never overrides combat safety.
 - Before the deadline, all active clients must support the target rules. After the deadline, an old client may be disconnected **only at the safe world checkpoint** and receives update/resync guidance; stale commands cannot enter the new epoch. A final old-contract safe snapshot is sent before closing the old stream.
 - Safety excludes attacks, combos, pending skills, injury reactions, nearby hostile actors, movement, dash, prologue, speech, queued boarding, rescue and facility activity. Death must be recorded. Client presence also excludes conversation, inheritance/menu selection, start, import and save processing.
-- The notice's update request waits for safety. It downloads and SHA-256 verifies the complete candidate HTML, rechecks safety **after** download, obtains a durable checkpoint (or an explicit protected-progress compatibility rejection), then navigates. A failed save or wrong asset hash leaves the current page intact.
+- Requesting an update closes Settings through its normal UI lifecycle, then waits for safety. A queued update can be cancelled in Settings, including while assets download. Version polls do not overwrite mandatory-update, waiting or failure explanations. It downloads and SHA-256 verifies the complete candidate HTML, rechecks safety **after** download, obtains a durable checkpoint (or an explicit protected-progress compatibility rejection), then navigates. A failed save or wrong asset hash leaves the current page intact.
 - JS, textures and models remain embedded in one HTML document. Document and metadata responses revalidate; an explicit `?build=<SHA>` navigation is rejected if the release changed again. No service worker or mixed external asset cache was introduced.
 
 ## Reconnect, sessions and commands

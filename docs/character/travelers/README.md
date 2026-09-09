@@ -1,5 +1,7 @@
 # Four travelers in the existing game
 
+> **REFERENCE — この領域の技術・実装資料。** ゲームの確定仕様の正本を置き換える文書ではありません。本文の旧ポリシー、WORK固有の指示、PR依存・SHA・検証結果はhistoricalな来歴で、現在の共通運用やGitHub状態には適用しません。[現行の文書案内](../../README.md)。
+
 The accepted compact character designs now render inside the current village, using its existing lighting, shadows, terrain and camera. This is the game integration of the approved prototypes, not a new commercial Golden Master certification.
 
 Implementation base: `717931fd92271104b89a9c5645ed4792bbf06c2e` (latest `develop` fetched for this work). Branch: `work/character-four-travelers-20260909`.

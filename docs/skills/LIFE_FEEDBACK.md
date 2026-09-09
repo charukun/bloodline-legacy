@@ -1,5 +1,7 @@
 # Skill life feedback
 
+> **REFERENCE — この領域の技術・実装資料。** ゲームの確定仕様の正本を置き換える文書ではありません。本文の旧ポリシー、WORK固有の指示、PR依存・SHA・検証結果はhistoricalな来歴で、現在の共通運用やGitHub状態には適用しません。[現行の文書案内](../README.md)。
+
 BASE_BRANCH: develop
 BASE_COMMIT: 57bc1b36b15bce4b5cc3ff86bedea89dba38dfaf
 WORK_BRANCH: work/skill-system-life-feedback-20260909

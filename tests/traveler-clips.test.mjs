@@ -4,6 +4,15 @@ import {motionRuntime} from './skill-motion-harness.mjs';
 const api=await motionRuntime(null,null,true),{Travelers,renderer,player,review}=api;
 const pos=m=>Array.from(m.slice(12,15));
 const distance=(a,b)=>Math.hypot(...a.map((v,i)=>v-b[i]));
+test('unarmed composition stows all six weapons without changing equipment or borrowing sword clips and trails',()=>{
+ for(let weapon=0;weapon<6;weapon++){
+  const r=renderer(),art=new api.VillageArt(r);r.rigs=new api.RigRenderer(r);r.weaponTips=new Map();r.put=(type,m,color,surf,alpha)=>r.rigs.pending&&r.rigs.capture(type,m,color,surf,alpha);
+  const p={...player(),weapon,action:'attack',attackSkill:800011,actionStarted:1,actionUntil:2},before=JSON.stringify(p);
+  r.frame++;art.doll(p,1.43,true);const c=r.characterMaster;assert.equal(c.clipDebug,null);assert.equal(c.skillGripDebug,null);assert.equal(r.weaponTips.has(p.id),false);assert(c.palette.every(Number.isFinite));assert.equal(JSON.stringify(p),before);
+  assert.ok(r.rigs.active.length,'stowed equipment remains rendered');
+  const sk=[...api.book.values()].find(s=>s.weapon===weapon&&!s.passive&&!s.magic);p.attackSkill=sk.id;r.frame++;art.doll(p,1.43,true);assert(r.weaponTips.get(p.id)?.every(Number.isFinite),'weapon attack restores the actual held tip');
+ }
+});
 function trace(race,hz,blocked,visit){
  const r=renderer(),c=new Travelers.Character(r,race);c.groundAt=()=>0;
  for(let i=0;i<review.sequence('golden').duration*hz;i++){
