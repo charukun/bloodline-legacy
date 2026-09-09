@@ -50,7 +50,8 @@ jobs:
       - name: Prepare native GLSL ES validation
         run: |
           if ! python3 -c "import ctypes; ctypes.CDLL('libEGL.so.1'); ctypes.CDLL('libEGL_mesa.so.0')"; then
-            sudo apt-get update -qq
+            # Hosted runners include an apt index. Install the Ubuntu EGL
+            # packages without refreshing unrelated third-party repositories.
             sudo apt-get install -y --no-install-recommends libegl1 libegl-mesa0
           fi
       - name: Verify UI, skill and simulation regression
