@@ -138,6 +138,7 @@ class GoldenArt extends VillageArt{
   });
  }
  tree(x,z,scale=1,tint,seed=1){
+  if(this.goldenActive&&terrainFootprint(this.r.traversalMap,x,z,1))return;
   if(!this.local(x,0,z))return super.tree(x,z,scale,tint,seed);
   // Asymmetric boughs, exposed forks and a planted root skirt. Existing wind only.
   this.with(rModel(x,0,z,scale,scale,scale,seed%6),()=>{
@@ -156,7 +157,7 @@ class GoldenArt extends VillageArt{
   this.craftHouse=map.schools.find(s=>s.id==='hunter');this.goldenActive=true;super.village(map);this.target=this.r.static;this.root=rModel();
   const well=map.schools.find(s=>s.id==='dance'),rng=random(map.seed+8301),stone=['#a29a85','#b3a68e','#beb095','#a69e89','#c0b39b'];
   // Connected, irregular coursed paving. Low relief stays below the existing foot plane.
-  const paved=(x,z)=>inGoldenDistrict(x,z)&&((Math.abs(x)<2.35&&z<20)||(x*x/42+(z-well.z)**2/31<1)||(Math.abs(z-7)<1.45&&Math.abs(x)<15)||map.schools.some(s=>s.id!=='dance'&&Math.abs(z-(s.z+3.6))<1.40&&x>=Math.min(0,s.x)-.5&&x<=Math.max(0,s.x)+.5));
+  const paved=(x,z)=>!terrainFootprint(map,x,z,.1)&&inGoldenDistrict(x,z)&&((Math.abs(x)<2.35&&z<20)||(x*x/42+(z-well.z)**2/31<1)||(Math.abs(z-7)<1.45&&Math.abs(x)<15)||map.schools.some(s=>s.id!=='dance'&&Math.abs(z-(s.z+3.6))<1.40&&x>=Math.min(0,s.x)-.5&&x<=Math.max(0,s.x)+.5));
   const grout=[];
   for(let row=0,z=-13.7;z<21.7;row++){
    const depth=.49+rng()*.24;
@@ -188,6 +189,7 @@ class GoldenArt extends VillageArt{
   }
   for(const side of [-1,1]){
    const x=side*(side<0?5.7:6.0),z=well.z+(side<0?.2:1.3);
+   if(terrainFootprint(map,x,z,2.5))continue;
    this.g('gltf:stone-sculpt',x+side*.6,.08,z-.3,1.1,.26,2.7,'#73774e',.12,0,0,16);
    for(let j=0;j<7;j++){this.g('golden:stone',x+side*Math.sin(j*.45)*.45,.23,z-2.2+j*.65,.75,.38,.64,stone[j%5],j*.22);this.g('golden:canopy',x+side*.5,.37,z-2.2+j*.65,.85,.53+(j%3)*.14,.78,j%2?'#667b45':'#899252',j,0,0,13);
     if(j%2===0){this.flower(x+side*.22,z-2.1+j*.65,'#e6d8ae',.53);this.tuft(x-side*.25,.12,z-2+j*.65,.7,'#859453');}}

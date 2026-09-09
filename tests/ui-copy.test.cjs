@@ -64,3 +64,18 @@ test('equipment hints and old memories are readable without altering requirement
  ui.describeSkill(60000);assert.match(d.querySelector('.skill-memory').textContent,/鍛冶場で、槌を打つリズムを覚えた。手元には鈴があった/);
  assert.equal(JSON.stringify(sim.exportState()),before);
 });
+
+test('material notices keep one live region, do not repaint while idle, and coalesce without replaying motion',t=>{
+ const {p,ui,d,w,sim}=fixture(t);let now=1000;w.performance.now=()=>now;
+ const root=d.getElementById('toasts'),before=JSON.stringify(sim.exportState());
+ ui.event({type:'insight',player:p.id,id:4001,t:0});const ribbon=root.firstElementChild;
+ const observer=new w.MutationObserver(()=>{});observer.observe(root,{subtree:true,childList:true,attributes:true,characterData:true});
+ for(let i=0;i<100;i++)ui.paintNotices();assert.equal(observer.takeRecords().length,0);
+ ui.event({type:'insight',player:p.id,id:60000,t:0});assert.equal(root.firstElementChild,ribbon,'coalescing must not restart entrance or extend display time');
+ ui.event({type:'age',player:p.id,age:18});assert.notEqual(root.firstElementChild,ribbon);assert.equal(root.textContent,'18歳になった');
+ assert.equal(root.dataset.noticeKind,'life');assert.equal(root.querySelectorAll('.notice-ribbon').length,1);
+ assert.equal(root.querySelector('button,a,input,[tabindex]'),null);assert.equal(root.querySelector('.notice-seal').getAttribute('aria-hidden'),'true');
+ now=5201;ui.paintNotices();assert.match(root.textContent,/を閃いた$/);
+ now=9402;ui.paintNotices();assert.equal(root.childNodes.length,0);assert.equal(root.hasAttribute('data-notice-kind'),false);
+ assert.equal(JSON.stringify(sim.exportState()),before);observer.disconnect();
+});

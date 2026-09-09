@@ -117,6 +117,23 @@ class UIDamageFeedback {
   }
  }
 }
+/* A small cloth pennant, rather than a second interactive panel. Reuse its DOM
+ * while discoveries coalesce; replay the entrance only for a new visible event. */
+function uiPaintNotice(node,notice,text) {
+ if(!node)return;
+ if(!notice||!text){
+  if(node.firstChild)node.replaceChildren();
+  if(node.hasAttribute('data-notice-key')){node.removeAttribute('data-notice-key');node.removeAttribute('data-notice-kind');}
+  return;
+ }
+ if(node.dataset.noticeKey!==notice.key||!node.firstChild){
+  const kind=notice.priority>=4?'critical':notice.key.startsWith('age:')||notice.key==='released'?'life':notice.discoveryKind?'discovery':'message';
+  const ribbon=document.createElement('div');ribbon.className='notice-ribbon';
+  const seal=document.createElement('span');seal.className='notice-seal';seal.setAttribute('aria-hidden','true');seal.innerHTML=icon(kind==='critical'?'heart':kind==='discovery'?'spark':'leaf');
+  const copy=document.createElement('span');copy.className='notice-copy';copy.textContent=text;
+  ribbon.append(seal,copy);node.dataset.noticeKey=notice.key;node.dataset.noticeKind=kind;node.replaceChildren(ribbon);
+ }else UIValue.text(node.querySelector('.notice-copy'),text);
+}
 /* One visible notice, bounded pending queue. Life events preempt small discoveries. */
 class UINoticeQueue {
  constructor() { this.active = null; this.pending = []; }
