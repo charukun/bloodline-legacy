@@ -44,7 +44,7 @@ test('limb loss removes articulated creature sockets and guard/damage/death stat
  }
 });
 test('form assignment preserves develop combat stats, RNG, AI and spawn quotas',()=>{
- const source=execFileSync('git',['show','e3502f519dbaea1d399d3a69b274f72f57494059:src/legacy/core.js'],{encoding:'utf8'}),ctx=vm.createContext({console});
+ const source=execFileSync('git',['show','c53f9b2c918ff71525b76ea4b20c8b530429a26e:src/legacy/core.js'],{encoding:'utf8'}),ctx=vm.createContext({console});
  vm.runInContext(fs.readFileSync(new URL('../src/legacy/dialogue.js',import.meta.url),'utf8')+'\n'+source,ctx);
  const baseline=vm.runInContext('new Simulation({seed:7349})',ctx),current=h.run('new Simulation({seed:7349})');
  for(const kind of ['goblin','soldier','elite','crawler','maw','wraith','boss','stag','mushroom','guard','dummy'])for(let i=0;i<9;i++){
