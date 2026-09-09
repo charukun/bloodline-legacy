@@ -59,7 +59,6 @@ jobs:
         env:
           CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           CHARACTER_FULL_REVIEW: ${{ inputs.full_review }}
         run: node tools/ci/character-plan.mjs
       # General CI remains the sole owner of unit/regression/shader tests.
@@ -100,7 +99,6 @@ jobs:
           CHARACTER_MODE: ${{ steps.plan.outputs.mode }}
           CHARACTER_BASELINE: /tmp/character-baseline/dist/index.html
           CHARACTER_BASE_SHA: ${{ steps.baseline.outputs.sha }}
-          GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: node tests/character-browser.mjs
       - name: Compare sustained software performance without video
         if: steps.plan.outputs.full == 'true'
@@ -109,7 +107,6 @@ jobs:
           CHARACTER_MODE: performance
           CHARACTER_BASELINE: /tmp/character-baseline/dist/index.html
           CHARACTER_BASE_SHA: ${{ steps.baseline.outputs.sha }}
-          GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: node tests/character-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always() && steps.current.outputs.current == 'true'

@@ -7,6 +7,7 @@ import {writeFileSync} from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
 import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {chromium} from '../deploy/node_modules/playwright/index.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
@@ -28,7 +29,7 @@ const server=http.createServer((req,res)=>{
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const origin='http://127.0.0.1:'+server.address().port;
-const report={mode,base:afterOnly?null:process.env.CHARACTER_BASE_SHA||null,head:process.env.GITHUB_SHA||null,checks:[],versions:{},passed:false,
+const report={mode,base:afterOnly?null:process.env.CHARACTER_BASE_SHA||null,head:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),checks:[],versions:{},passed:false,
   limitations:['SwiftShader is software rendering, not Desktop GPU or Pixel Fold performance approval.','Screenshots and videos require visual review; numeric success is not Golden Master approval.']};
 report.rasterization=gate?'Native renderer and every animation sample; fragment shading at gameplay/attack/equipment/mobile checkpoints':'Every rendered frame';
 const flush=()=>{report.elapsedMs=Date.now()-started;writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));};
