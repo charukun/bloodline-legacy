@@ -98,8 +98,12 @@ const Travelers = (()=>{
    const fall=!p.alive?(p.wasDownedOnDeath?1:smooth((t-(p.deathAt??t))/1.12)):0;
    const sampledGround=p.traversal?Math.max(.10,p.supportHeight||0):this.groundAt(p.x,p.z);if(!Number.isFinite(st.ground))st.ground=sampledGround;st.ground+=(sampledGround-st.ground)*(1-Math.exp(-dt*14));
    const authored=asset.clips?CM01.selectClip(p,t,st,phase,moving||['run','guardWalk','dash'].includes(p.action),run,reaction,asset.clips):null;
-   const rootQ=Q.euler((authored?0:pose.pitch)+reaction.pitch+ail.pitch+fall*1.48,(p.dir||0)+(authored?0:pose.yaw),(authored?0:pose.roll)+reaction.roll+ail.roll);
-   const rootM=matrix([p.x+reaction.x+Math.cos(p.dir||0)*(authored?0:pose.weightX||0)+Math.sin(p.dir||0)*(authored?0:pose.weightZ||0),(p.baseY??st.ground)+(p.verticalOffset||0)+(authored?0:pose.y)+ail.y-reaction.drop,p.z+reaction.z-Math.sin(p.dir||0)*(authored?0:pose.weightX||0)+Math.cos(p.dir||0)*(authored?0:pose.weightZ||0)],rootQ);
+   const transition=SkillMotion.chargeTransition(st,p,reaction.amount>.02?null:pose.motionClock);
+   let rootQ=Q.euler((authored?0:pose.pitch)+reaction.pitch+ail.pitch+fall*1.48,(p.dir||0)+(authored?0:pose.yaw),(authored?0:pose.roll)+reaction.roll+ail.roll);
+   let rootOffset=[reaction.x+Math.cos(p.dir||0)*(authored?0:pose.weightX||0)+Math.sin(p.dir||0)*(authored?0:pose.weightZ||0),(authored?0:pose.y)+ail.y-reaction.drop,reaction.z-Math.sin(p.dir||0)*(authored?0:pose.weightX||0)+Math.cos(p.dir||0)*(authored?0:pose.weightZ||0)];
+   if(transition?.from){rootQ=Q.slerp(transition.from.rootQ,rootQ,transition.amount);rootOffset=V.lerp(transition.from.rootOffset,rootOffset,transition.amount);}
+   st.lastRootQ=rootQ;st.lastRootOffset=rootOffset;
+   const rootM=matrix([p.x+rootOffset[0],(p.baseY??st.ground)+(p.verticalOffset||0)+rootOffset[1],p.z+rootOffset[2]],rootQ);
    const q=asset.bind.map(()=>Q.identity()),offset=asset.bind.map(()=>[0,0,0]),qi=(i,x=0,y=0,z=0)=>q[i]=Q.euler(x,y,z),wave=Math.cos(phase);
    qi(1,(authored?0:pose.torso)+reaction.torso+(run?.035:0)*gaitWeight,(authored?0:pose.torsoYaw||0)+reaction.yaw,reaction.torsoRoll);
    qi(2,pose.head+reaction.head+ail.head,pose.headYaw||0,reaction.headRoll);
@@ -115,10 +119,11 @@ const Travelers = (()=>{
    if(authored){
     if(st.clipName!==authored.name){st.clipFrom=st.lastQ;st.clipFromOffset=st.lastOffset;st.clipChanged=motionT;st.clipName=authored.name;}
     TravelerClips.sample(authored.clip,authored.u,q,offset,Q);
-    const entry=authored.stage==='charge'?authored.entry:authored.stage==='ready'?smooth((motionT-st.clipChanged)/.14):1;
+    const entry=authored.stage==='ready'?smooth((motionT-st.clipChanged)/.14):1;
     if(st.clipFrom&&entry<1)for(let i=0;i<q.length;i++){q[i]=Q.slerp(st.clipFrom[i],q[i],entry);if(st.clipFromOffset)offset[i]=V.lerp(st.clipFromOffset[i],offset[i],entry);}
     this.clipDebug={name:authored.name,stage:authored.stage,u:authored.u,contact:authored.clip.contact};
    }else{st.clipName=null;this.clipDebug=null;for(const foot of st.feet)if(foot)foot.clipStep=null;}
+   if(transition?.from&&transition.amount<1)for(let i=0;i<q.length;i++){q[i]=Q.slerp(transition.from.q[i],q[i],transition.amount);offset[i]=V.lerp(transition.from.offset[i],offset[i],transition.amount);}
    const blend=authored||(pose.active&&!moving)||reaction.amount>.1||fall>0?1:1-Math.exp(-dt*18);
    if(st.lastQ)for(let i=0;i<q.length;i++){q[i]=Q.slerp(st.lastQ[i],q[i],blend);if(st.lastOffset)offset[i]=V.lerp(st.lastOffset[i],offset[i],blend);}
    st.lastQ=q;st.lastOffset=offset;
@@ -171,7 +176,7 @@ const Travelers = (()=>{
    let requiredDrop=0;
    if(useGroundIK){
     for(const {ti,ki,fi,worldAnkle,lost,hip}of targets){if(lost)continue;const target=Q.rotate(Q.inv(rootQ),V.sub(worldAnkle,[rootM[12],rootM[13],rootM[14]])),H=hip,L=V.sub(asset.bind[ki],asset.bind[ti]),S=V.sub(asset.bind[fi],asset.bind[ki]),reach=Math.hypot(...L)+Math.hypot(...S)-.003,xz=Math.hypot(target[0]-H[0],target[2]-H[2]);requiredDrop=Math.max(requiredDrop,H[1]-target[1]-Math.sqrt(Math.max(.005,reach*reach-xz*xz)));}
-    st.pelvisDrop=Math.max(requiredDrop,(st.pelvisDrop||0)*Math.exp(-dt*14));
+    st.pelvisDrop=Math.max(requiredDrop,(st.pelvisDrop||0)*Math.exp(-(p.hitstopUntil>t?0:dt)*14));
     for(let i=0;i<globalM.length;i++)globalM[i][13]-=st.pelvisDrop;
    }else st.pelvisDrop=0;
    for(const {side,si,ti,ki,fi,foot,floor,soleOffset,worldAnkle,lost,hip,knee}of targets){
