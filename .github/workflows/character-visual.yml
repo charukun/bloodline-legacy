@@ -50,7 +50,9 @@ jobs:
           git worktree add --detach /tmp/character-baseline "$CHARACTER_BASE_SHA"
           node /tmp/character-baseline/build.mjs
       - name: Verify character input, equipment and save integration
-        timeout-minutes: 20
+        # Software rendering of the integrated village needs several seconds
+        # per frame; retain the complete functional coverage and evidence.
+        timeout-minutes: 35
         env:
           CHARACTER_BASELINE: /tmp/character-baseline/dist/index.html
           CHARACTER_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '717931fd92271104b89a9c5645ed4792bbf06c2e' }}

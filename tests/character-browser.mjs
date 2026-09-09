@@ -139,7 +139,11 @@ try{
     check(version+' long press rests',await page.evaluate(()=>AERIN_QA.player().seated));await page.evaluate(()=>characterStep(15));await shot(version+'-rest');
     await page.keyboard.press('t');
     // Speaking now requires an explicit phrase selection in the shared talk fan.
-    await page.locator('[data-talk="0"]').click();
+    // All clipped wedges share a rectangular box. Click the visible phrase,
+    // not that box's center, which belongs to a different wedge.
+    const phrase=await page.locator('[data-talk="0"] > span:not(.visually-hidden)').boundingBox();
+    assert(phrase&&phrase.width>0&&phrase.height>0,'talk phrase is visible');
+    await page.mouse.click(phrase.x+phrase.width/2,phrase.y+phrase.height/2);
     check(version+' talk wakes',await page.evaluate(()=>!AERIN_QA.player().seated));
     await fixture(page);
     // Move into the existing dummy with native keyboard; no attack command is fabricated.
