@@ -35,6 +35,15 @@ try{
    const unexpected=network.filter(url=>/^https?:/.test(url)&&(new URL(url).pathname.startsWith('/api/')||new URL(url).origin!==base));
    assert.deepEqual(unexpected,[],'no game API or external HTTP requests; local blob/data decodes are allowed');
    await page.locator('#pause').click();await page.waitForFunction(()=>document.getElementById('readout').textContent.includes('停止中'),null,{timeout:20000});
+   // The app is paused, but SwiftShader may still have queued GPU work. Drain
+   // that work before the compositor captures the unchanged rendered scene.
+   await page.evaluate(async()=>{
+    await document.fonts.ready;
+    const gl=document.getElementById('world').getContext('webgl2');
+    if(!gl||gl.isContextLost())throw Error('Review WebGL unavailable before screenshot');
+    gl.readPixels(0,0,1,1,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array(4));
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+   });
    await page.screenshot({path:path.join(evidence,`${mode}-${viewport.width}.png`),fullPage:true,timeout:15000});console.log(`Review browser passed: ${mode} at ${viewport.width}px`);results.push({mode,viewport,...state});
   }
   if(viewport.width===1280){

@@ -34,6 +34,8 @@ jobs:
       - run: node --test tests/review-lab.test.mjs tests/review-worker.test.mjs tests/review-ui.test.mjs
       - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
       - run: bash tools/ci/prepare-linux-deps.sh browser
+      - name: Install Japanese fonts for readable Review evidence
+        run: sudo apt-get install -y --no-install-recommends fonts-noto-cjk
       - name: Verify exact-head Review in desktop and mobile browsers
         run: node tests/review-browser.mjs
       - uses: actions/upload-artifact@v4
