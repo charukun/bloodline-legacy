@@ -17,7 +17,7 @@ def camera(yaw,pitch,height,aspect,focus):
  return (o@v).astype('f4').T.tobytes()
 class Render:
  def __init__(self,capture,glb,size=640):
-  self.cap=json.loads(Path(capture).read_text());self.glb=GLB(glb);self.size=size
+  self.cap=json.loads(Path(capture).read_text());self.glb=GLB(glb) if glb!="-" else None;self.size=size
   c=self.c=moderngl.create_standalone_context(backend='egl');self.fbo=c.simple_framebuffer((size,size),components=4,samples=4);self.out=c.simple_framebuffer((size,size),components=4)
   vertex='''#version 330
 in vec3 pos;in vec3 nor;in vec2 uv;in vec4 color;in vec4 joints;in vec4 weights;in float region;
@@ -29,9 +29,13 @@ in vec3 N;in vec3 W;in vec2 U;in vec4 C;flat in int R;uniform sampler2D atlas;un
 void main(){if(R>=10)discard;vec3 p=C.rgb;if(textured)p*=texture(atlas,U).rgb;float light=.48+.50*max(0.,dot(normalize(N),normalize(vec3(-.48,.85,.42))));if(R==9){float grid=step(.965,fract(W.x))+step(.965,fract(W.z));p*=1.-.15*min(1.,grid);float shadow=exp(-dot(W.xz-focusXZ,W.xz-focusXZ)*1.8);p*=1.-.15*shadow;}frag=vec4(silhouette&&R!=9?vec3(.06):p*light,1.);}
 '''
   self.prog=c.program(vertex_shader=vertex,fragment_shader=fragment);self.prog['atlas'].value=0
-  g=self.glb.g;prim=g['meshes'][0]['primitives'][0];a={k:self.glb.read(i) for k,i in prim['attributes'].items()}
-  self.mesh=self.vao(a['POSITION'],a['NORMAL'],a['TEXCOORD_0'],a['COLOR_0'],a['JOINTS_0'],a['WEIGHTS_0'],a['_REGION'],self.glb.read(prim['indices']).astype('u4').tobytes())
-  im=g['images'][0];v=g['bufferViews'][im['bufferView']];img=Image.open(io.BytesIO(self.glb.data[v['byteOffset']:v['byteOffset']+v['byteLength']])).convert('RGBA')
+  if self.glb:
+   g=self.glb.g;prim=g['meshes'][0]['primitives'][0];a={k:self.glb.read(i) for k,i in prim['attributes'].items()};indices=self.glb.read(prim['indices'])
+   im=g['images'][0];v=g['bufferViews'][im['bufferView']];img=Image.open(io.BytesIO(self.glb.data[v['byteOffset']:v['byteOffset']+v['byteLength']])).convert('RGBA')
+  else:
+   widths={'POSITION':3,'NORMAL':3,'TEXCOORD_0':2,'COLOR_0':4,'JOINTS_0':4,'WEIGHTS_0':4,'_REGION':1}
+   a={k:np.array(self.cap['asset']['attrs'][k]).reshape(-1,w) for k,w in widths.items()};indices=np.array(self.cap['asset']['indices']);img=Image.new('RGBA',(1,1),'white')
+  self.mesh=self.vao(a['POSITION'],a['NORMAL'],a['TEXCOORD_0'],a['COLOR_0'],a['JOINTS_0'],a['WEIGHTS_0'],a['_REGION'],indices.astype('u4').tobytes())
   self.tex=c.texture(img.size,4,img.tobytes());self.tex.filter=(moderngl.LINEAR,moderngl.LINEAR)
   self.parts={}
   for key,geo in self.cap['geometry'].items():
@@ -47,7 +51,7 @@ void main(){if(R>=10)discard;vec3 p=C.rgb;if(textured)p*=texture(atlas,U).rgb;fl
   self.fbo.use();self.c.enable(moderngl.DEPTH_TEST);self.fbo.clear(.23,.28,.26,1,depth=1)
   frame=self.cap['frames'][index];x,z=frame['p']['x'],frame['p']['z'];self.prog['vp'].write(camera(yaw,pitch,height,1,[x,1.25,z+.1]));self.prog['silhouette'].value=silhouette;self.prog['focusXZ'].value=(x,z)
   identity=np.tile(np.eye(4,dtype='f4').flatten(),31);self.prog['bones'].write(identity.tobytes());self.prog['textured'].value=False;self.floor.render()
-  self.prog['bones'].write(np.array(frame['palette'],dtype='f4').tobytes());self.prog['textured'].value=True;self.tex.use();self.mesh.render()
+  body_palette=identity.copy();body_palette[:len(frame['palette'])]=frame['palette'];self.prog['bones'].write(body_palette.tobytes());self.prog['textured'].value=True;self.tex.use();self.mesh.render()
   self.prog['textured'].value=False
   for part in frame['parts']:
    matrix=np.array(part['m'],dtype='f4');identity[:16]=matrix;self.prog['bones'].write(identity.tobytes())
