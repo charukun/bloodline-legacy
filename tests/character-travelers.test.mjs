@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import {compileCatalog} from '../tools/skill-catalog.mjs';
-const sources=['legacy/dialogue.js','legacy/core.js','skills/engine.js','skills/runtime.js','legacy/render_math.js','legacy/motion.js','legacy/art.js','render/tilt-shift.js','render/shaders.js','character/rig.js','character/golden-master.runtime.js','character/traveler-model.js','character/traveler-clip-data.js','character/traveler-clips.js','character/traveler-runtime.js'];
+const sources=['legacy/dialogue.js','legacy/core.js','skills/engine.js','skills/runtime.js','legacy/render_math.js','legacy/motion.js','legacy/art.js','render/tilt-shift.js','render/shaders.js','character/rig.js','character/golden-master.runtime.js','character/traveler-model.js','character/traveler-clip-data.js','character/traveler-clips.js','character/traveler-age.js','character/traveler-runtime.js'];
 const gl=new Proxy({FLOAT:5126,UNSIGNED_SHORT:5123,getUniformLocation:()=>({})},{get:(o,k)=>k in o?o[k]:k.startsWith('create')?()=>({}):()=>{}});
 const ctx=vm.createContext({console,performance,Float32Array,Uint8Array,Uint16Array,Uint32Array,DataView,TextDecoder,Blob,URL,atob});
 const defs=compileCatalog(JSON.parse(fs.readFileSync(new URL('../src/skills/catalog-source.json',import.meta.url),'utf8')));
@@ -14,8 +14,8 @@ const renderer=()=>({gl,programOf:()=>({}),frame:0,sceneKey:'village-test',stati
 const player=(race=0)=>({id:'hero',kind:'player',race,gender:[0,1,0,1][race],age:24,prologue:false,alive:true,x:0,z:4,dir:0,weapon:-1,armor:0,action:'idle',wounds:{},statuses:{}});
 const freeze=o=>{for(const v of Object.values(o))if(v&&typeof v==='object')freeze(v);return Object.freeze(o);};
 
-test('four approved age/gender samples only; other characters retain their renderer',()=>{
- for(let race=0;race<4;race++){const p=player(race);assert(T.eligible(p,true));assert(!T.eligible(p,false));for(const change of [{age:17},{age:35},{gender:1-p.gender},{prologue:true},{kind:'guard'},{kind:'portrait'}])assert(!T.eligible({...p,...change},true));}
+test('four approved identities extend across ages; other characters retain their renderer',()=>{
+ for(let race=0;race<4;race++){const p=player(race);assert(T.eligible(p,true));assert(!T.eligible(p,false));for(const age of [0,1,4,9,10,17,18,34,35,55,72,100])assert(T.eligible({...p,age},true));assert(T.eligible({...p,age:1,prologue:true},true));for(const change of [{age:-1},{age:NaN},{gender:1-p.gender},{kind:'guard'},{kind:'portrait'}])assert(!T.eligible({...p,...change},true));}
 });
 test('two LODs preserve seams, valid four weights, limb regions and a bounded model cache',()=>{
  for(let race=0;race<4;race++){const a=T.prepare(race);assert(a.bind.length<=17);assert(a.lods[1].indices.length<a.lods[0].indices.length*.70);for(const lod of a.lods){const d=lod.attrs,n=d.POSITION.length/3;assert(n<65536);assert(lod.indices.every(i=>i<n));for(const ar of Object.values(d))assert(ar.every(Number.isFinite));for(let i=0;i<n;i++){const w=d.WEIGHTS_0.slice(i*4,i*4+4);assert(Math.abs(w.reduce((a,b)=>a+b,0)-1)<1e-5);assert(w.every(x=>x>=0&&x<=1));assert(d.JOINTS_0.slice(i*4,i*4+4).every(j=>j<a.bind.length));}for(const region of [2,3,4,5,10])assert(d._REGION.includes(region));}}
@@ -52,5 +52,62 @@ test('confirmed damage follows the active traveler skeleton rather than CM01 ind
    const hit=Array.from(fx.contact({part},p,p.x,p.z,0)),m=c.transforms[index];
    assert.deepEqual(hit,[m[12],m[13],m[14]-.12]);
   }
+ }
+});
+
+test('all four new models follow an actual climb, landing and descent without ground IK pinning them in midair',()=>{
+ const Simulation=vm.runInContext('Simulation',ctx);
+ for(let race=0;race<4;race++)for(const age of [4,24,80]){
+  const sim=new Simulation({seed:13}),p=sim.addPlayer('terrain-'+race,{owner:'terrain-'+race,race}),room=sim.getRoom(p),o=room.map.traversables.find(o=>o.id==='north:lower');room.actors=[];room.waveAt=1e8;
+  Object.assign(p,{prologue:false,age,ageFraction:0,gender:[0,1,0,1][race],introUntil:-100,releaseAt:-100,farewellStage:3,stun:0,cooldown:0,x:o.x,z:-18.7,supportHeight:0});
+  const r=renderer();r.traversalMap=room.map;const c=new T.Character(r,race);let direction=1,climbed=false,air=0,landed=0;
+  for(let i=0;i<600;i++){
+   sim.command(p.id,{type:'move',x:0,z:direction});sim.tick(1/60);const snapshot=freeze(JSON.parse(JSON.stringify(p))),saved=JSON.stringify(p);r.frame++;c.update(snapshot,sim.time);
+   assert(c.palette.every(Number.isFinite));assert.equal(JSON.stringify(p),saved);
+   if(p.traversal){air++;assert.equal(c.footDebug.length,0);assert(Math.abs(c.transforms[0][13]-(Math.max(.1,p.supportHeight)+(p.verticalOffset||0)))<1e-5);}
+   else {for(const f of c.footDebug)assert(f.soleY>=f.floor-.035);if(p.action==='land')landed++;}
+   if(!p.traversal&&p.supportHeight===1.2){climbed=true;direction=-1;}
+   if(climbed&&!p.traversal&&p.supportHeight===0&&p.z<-18.55)break;
+  }
+  assert(climbed&&air>60&&landed>=4);assert.equal(p.supportHeight,0);assert.equal(p.traversal,null);
+ }
+});
+
+const Age=vm.runInContext('TravelerAge',ctx);
+test('age landmarks are continuous, young adult geometry stays exact and dwarf beard grows after childhood',()=>{
+ for(let race=0;race<4;race++){
+  const asset=T.prepare(race),p=player(race),points=[[.1,.2,.1],[.2,.8,.1],[.1,2,.3]];
+  for(const boundary of [4,10,18,35,55,72]){
+   const before=Age.sample({...p,age:boundary-1,ageFraction:.999999}),after=Age.sample({...p,age:boundary});
+   for(const head of [false,true])for(const v of points){const a=Age.point(v,head,before,asset),b=Age.point(v,head,after,asset);assert(Math.hypot(...a.map((x,i)=>x-b[i]))<1e-6);}
+  }
+  for(const v of points)for(const head of [false,true])assert(Age.point(v,head,Age.sample(p),asset).every((x,i)=>Math.abs(x-v[i])<1e-12));
+  const child=Age.sample({...p,age:4}),adult=Age.sample(p),elder=Age.sample({...p,age:80});
+  assert(child.head[0]/child.body[0]>adult.head[0]/adult.body[0]);assert(child.body[0]!==child.body[1]);assert(elder.gray>.9);assert(elder.posture>0);assert.equal(child.beard,0);assert.equal(adult.beard,1);
+ }
+});
+test('each age uses the same GPU geometry and keeps the small feet grounded while moving and stopping',()=>{
+ for(let race=0;race<4;race++){
+  const r=renderer(),c=new T.Character(r,race),gpu=c.lods,rest=c.restAsset;let previous=[];
+  for(const age of [4,10,17.99,35,55,72,99])for(const speed of [1.2,4.5,6.8]){
+   c.state=null;previous=[];
+   for(let i=0;i<70;i++){
+    const p=freeze({...player(race),age,action:i<45?'run':'idle',z:4+Math.min(i,44)*speed/30,dash:speed>6?{}:null});r.frame++;c.update(p,i/30);
+    assert.strictEqual(c.lods,gpu);assert.strictEqual(c.restAsset,rest);assert(c.palette.every(Number.isFinite));assert(c.metrics.contactError<.035);assert(c.metrics.pelvisDrop<.38);
+    for(let k=0;k<c.footDebug.length;k++){const a=c.footDebug[k],b=previous[k];if(!a.swing&&b&&!b.swing)assert(Math.hypot(a.actual[0]-b.actual[0],a.actual[2]-b.actual[2])<.012);}
+    previous=structuredClone(c.footDebug);
+   }
+  }
+ }
+});
+test('cradle, lowering and existing release transition keep simulation and GPU allocation intact',()=>{
+ for(let race=0;race<4;race++){
+  const r=renderer(),c=new T.Character(r,race),gpu=c.lods;
+  for(const t of [0,9,27,28.55,29,29.99,30,30.01]){
+   const p=freeze({...player(race),age:t<30?Math.min(3,Math.floor(t/9)):4,prologue:t<30,born:0,releaseAt:30}),before=JSON.stringify(p);r.frame++;c.update(p,t);
+   assert(c.palette.every(Number.isFinite));assert.equal(JSON.stringify(p),before);assert.strictEqual(c.lods,gpu);
+  }
+  const a=Age.sample({...player(race),age:3,prologue:true,born:0,releaseAt:30},29.99999),b=Age.sample({...player(race),age:4},30);
+  assert(Math.abs(a.visual-b.visual)<1e-6);
  }
 });

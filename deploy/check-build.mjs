@@ -31,7 +31,7 @@ if (manifest.mode === 'game') {
   assert(assets, 'Embedded assets missing');
   assert.deepEqual(Object.keys(assets).sort(), ['village-kit.glb','material-atlas.png',
     'detail-atlas.png','parchment.png','cloth-panel.png','golden-surfaces.png','character/young-human-male-cm01.glb',
-    'plaza-craft.glb','plaza-craft-color.png','plaza-craft-detail.png'].sort(),
+    'enemies/sentinel.glb','plaza-craft.glb','plaza-craft-color.png','plaza-craft-detail.png'].sort(),
     'Embedded asset contract changed');
   for (const [name, data] of Object.entries(assets)) assert.deepEqual(Buffer.from(data,'base64'), await fs.readFile(path.join(root,'public/assets',name)), name);
   const glb = Buffer.from(assets['village-kit.glb'],'base64');

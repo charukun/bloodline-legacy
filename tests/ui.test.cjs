@@ -6,18 +6,39 @@ test('lineage stays still on irrelevant age and equipment changes; history remai
  const observer=new w.MutationObserver(()=>{});observer.observe(root,{subtree:true,childList:true,attributes:true,characterData:true});for(let i=0;i<10;i++)ui.update(g.snapshot);assert.equal(observer.takeRecords().length,0);
  p.age=18;p.weapon=2;sync();assert.equal(observer.takeRecords().length,0);assert.equal(root.querySelector('#dialog').open,true);observer.disconnect();
 });
-test('bottom dock contains exactly consciousness, wardrobe and settings in order; map stays available',async t=>{
+test('bottom dock contains consciousness and wardrobe; settings lives beside the map',async t=>{
  const {ui,d,g}=fixture(t),buttons=[...d.querySelectorAll('.hud-bottom button')];
- assert.deepEqual(buttons.map(b=>b.dataset.menu),['skills','body','settings']);
- assert.deepEqual(buttons.map(b=>b.textContent),['意識','身支度','設定']);
- for(const b of buttons){b.click();await flush();assert.equal(ui.modal,b.dataset.menu);assert.equal(b.getAttribute('aria-expanded'),'true');assert.ok(d.querySelector('[role=dialog]').contains(b));assert.equal(b.closest('[inert]'),null);assert.equal(g.renderer.canvas.inert,b.dataset.menu!=='skills');b.click();assert.equal(ui.modal,null);assert.equal(b.getAttribute('aria-expanded'),'false');assert.equal(d.activeElement,b);assert.ok(ui.hud.contains(b));}
+ assert.deepEqual(buttons.map(b=>b.dataset.menu),['skills','body']);
+ assert.deepEqual(buttons.map(b=>b.textContent),['意識','身支度']);
+ const gear=d.getElementById('hud-settings');assert.equal(gear.getAttribute('aria-label'),'設定');assert.equal(gear.closest('nav'),null);
+ for(const b of [...buttons,gear]){b.click();await flush();assert.equal(ui.modal,b.dataset.menu);assert.equal(b.getAttribute('aria-expanded'),'true');assert.ok(d.querySelector('[role=dialog]').contains(b));assert.equal(b.closest('[inert]'),null);assert.equal(g.renderer.canvas.inert,b.dataset.menu!=='skills');b.click();assert.equal(ui.modal,null);assert.equal(b.getAttribute('aria-expanded'),'false');assert.equal(d.activeElement,b);assert.ok(ui.hud.contains(b));}
  d.getElementById('mini-map').click();assert.equal(ui.modal,'map');assert.ok(d.getElementById('large-map'));
 });
 test('dock switches sections without stacking; active parent also closes a nested page',async t=>{
- const {ui,d}=fixture(t),dock=ui.hudDock,body=dock.querySelector('[data-menu=body]'),settings=dock.querySelector('[data-menu=settings]');
- settings.click();d.getElementById('lineage-nav').click();assert.equal(ui.modal,'lineage');assert.equal(ui.navigation.length,1);settings.click();assert.equal(ui.modal,null);
- for(let i=0;i<8;i++){body.click();settings.click();assert.equal(ui.modal,'settings');assert.equal(ui.navigation.length,0);d.getElementById('lineage-nav').click();assert.equal(ui.modal,'lineage');settings.click();assert.equal(ui.modal,null);}
+ const {ui,d}=fixture(t),dock=ui.hudDock,body=dock.querySelector('[data-menu=body]'),skills=dock.querySelector('[data-menu=skills]'),settings=d.getElementById('hud-settings');
+ settings.click();d.getElementById('lineage-nav').click();assert.equal(ui.modal,'lineage');assert.equal(ui.navigation.length,1);ui.back();settings.click();assert.equal(ui.modal,null);
+ for(let i=0;i<8;i++){body.click();skills.click();assert.equal(ui.modal,'skills');assert.equal(ui.navigation.length,0);skills.click();settings.click();assert.equal(ui.modal,'settings');assert.equal(ui.navigation.length,0);d.getElementById('lineage-nav').click();assert.equal(ui.modal,'lineage');ui.back();assert.equal(ui.modal,'settings');settings.click();assert.equal(ui.modal,null);}
  assert.equal(d.querySelectorAll('.hud-bottom').length,1);assert.equal(ui.hudDock,dock);await flush();assert.equal(d.activeElement,settings);
+});
+test('grouped identity keeps live wounds and stamina without rebuilding its frame',t=>{
+ const {ui,d,p,g,sync}=fixture(t),group=d.querySelector('.player-vitals'),frame=group.querySelector('.vitals-frame');
+ for(const selector of ['#player-name','#age','#condition','#wound-mark','#orb-water'])assert.ok(group.querySelector(selector));
+ p.stamina=20;p.wounds={head:{severity:'heavy'}};sync();
+ assert.equal(group.querySelector('.vitals-frame'),frame);assert.equal(group.querySelector('#condition').textContent,'重傷');
+ assert.equal(group.querySelector('#wound-mark [data-part="head"]').getAttribute('fill'),'#ce7459');
+ assert.ok(group.querySelector('#orb-water').getAttribute('d'));assert.equal(group.querySelector('.stamina-orb').textContent,'');
+ group.querySelector('#wound-mark').click();assert.equal(ui.modal,'wounds');assert.equal(g.renderer.canvas.inert,true);
+ ui.closeModal();assert.equal(group.querySelector('.vitals-frame'),frame);
+});
+test('settings gear survives rerender, help and repeated lives, and stops background input',async t=>{
+ const {ui,d,g,w,p}=fixture(t);g.installInput();const gear=d.getElementById('hud-settings');gear.focus();gear.click();await flush();
+ assert.equal(d.getElementById('hud').inert,true);assert.equal(gear.closest('[inert]'),null);assert.equal(gear.closest('.panel-head')!==null,true);
+ const x=p.x;gear.dispatchEvent(new w.KeyboardEvent('keydown',{code:'KeyW',key:'w',bubbles:true}));assert.equal(g.keys.size,0);assert.equal(p.x,x);
+ d.getElementById('sound-toggle').click();await flush();assert.equal(d.getElementById('hud-settings'),gear);assert.equal(gear.getAttribute('aria-expanded'),'true');
+ d.getElementById('help-nav').click();await flush();d.querySelector('.panel-back').click();await flush();assert.equal(ui.modal,'settings');
+ gear.click();assert.equal(ui.modal,null);assert.equal(d.activeElement,gear);assert.equal(gear.getAttribute('aria-label'),'設定');
+ gear.click();assert.equal(ui.modal,'settings');gear.click();assert.equal(ui.modal,null);
+ ui.showGame();ui.update(g.snapshot);assert.equal(d.querySelectorAll('#hud-settings').length,1);assert.equal(gear.isConnected,false);
 });
 test('first life opens without invented ancestors; native race, name and settings work',async t=>{
  const {ui,g,d,p,sim,w}=fixture(t);sim.players.delete(p.id);g.playerId=null;g.snapshot=null;g.screen='clan';g.profile.race=0;g.profile.name='';ui.showClan();const root=ui.lineageView.home.scope;
@@ -29,7 +50,7 @@ test('first life opens without invented ancestors; native race, name and setting
 test('new life still starts through Game.start with one actual inherited skill',async t=>{
  const {g,sim,p,ui,d}=fixture(t);sim.die(p,'老衰');assert.ok(sim.command(p.id,{type:'choose-legacy',skill:4000}));g.screen='clan';g.profile.uiExplained=true;g.profile.race=1;g.profile.name='次の灯';g.renderer.effects=[];g.renderer.camera={};
  sim.legacy(p.owner).archive=[4000];g.profile.inherit=[4000];ui.showClan();await g.start();
- const next=g.snapshot.player;assert.equal(g.screen,'game');assert.notEqual(next.id,p.id);assert.equal(next.race,1);assert.equal(next.name,'次の灯');assert.deepEqual(Array.from(next.inherit),[4000]);assert.equal(next.gen,2);assert.equal(d.querySelectorAll('.hud-bottom button').length,3);
+ const next=g.snapshot.player;assert.equal(g.screen,'game');assert.notEqual(next.id,p.id);assert.equal(next.race,1);assert.equal(next.name,'次の灯');assert.deepEqual(Array.from(next.inherit),[4000]);assert.equal(next.gen,2);assert.equal(d.querySelectorAll('.hud-bottom button').length,2);
 });
 test('historical equipment is shown in details; gameplay inventory is absent from lineage',t=>{
  const {ui,sim,p}=fixture(t),legacy=sim.legacy(p.owner);p.inventory=['stone','bell'];legacy.archive=[4000];legacy.records=[{id:'old',name:'先人',gen:1,age:42,skills:[4000],uses:19,appearance:{race:2,age:42,weapon:2,armor:2,shield:true}},{id:'unknown',name:'記録のみ',skills:[]}];ui.lineage();const root=ui.lineageView.modalView.scope;
@@ -98,7 +119,7 @@ test('modal navigation restores parent, scroll and focus and isolates the backgr
 test('Escape returns one level; Tab stays inside modal; rerender does not grow navigation',async t=>{
  const {ui,d,w}=fixture(t);ui.settings();await flush();const button=d.getElementById('lineage-nav');button.focus();button.click();await flush();
  d.activeElement.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));await flush();assert.equal(ui.modal,'settings');assert.equal(d.activeElement.id,'lineage-nav');
- d.querySelector('.panel-back').focus();d.activeElement.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Tab',shiftKey:true,bubbles:true,cancelable:true}));assert.equal(d.activeElement.dataset.menu,'settings');
+ d.querySelector('.panel-back').focus();d.activeElement.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Tab',shiftKey:true,bubbles:true,cancelable:true}));assert.equal(d.activeElement.dataset.menu,'body');
  const toggle=d.getElementById('sound-toggle');toggle.focus();toggle.click();await flush();assert.equal(ui.navigation.length,0);assert.equal(d.activeElement.id,'sound-toggle');
 });
 test('keyboard and pointer down during the talk fan cannot begin movement or rest',t=>{

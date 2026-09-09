@@ -114,7 +114,7 @@ class VillageArt extends ArtDirector{
    if(s.id==='forge'){this.sources.push({x:s.x+2.9,y:.8,z:s.z+.7,kind:'fire'});for(let j=0;j<9;j++)this.C(s.x-3.4+(j%3)*.25,.18+Math.floor(j/3)*.19,s.z+1.7,.105,.9,.105,'#987144',0,0,Math.PI/2);}
    for(const side of [-1,1]){for(let j=0;j<10;j++){const xx=s.x+side*(3.9+rng()),zz=s.z-1+rng()*5;this.tuft(xx,.1,zz,.8+rng()*.65,j%2?'#75884c':'#8c995c');}}
   }
-  for(let j=0;j<650;j++){const x=(rng()-.5)*70,z=(rng()-.5)*65-7;if(Math.abs(x)<2.8||Math.abs(z-7)<1.6||Math.abs(z+19)<1.6||map.schools.some(s=>Math.hypot(x-s.x,z-s.z)<5)||map.houses.some(h=>Math.hypot(x-h.x,z-h.z)<3))continue;this.tuft(x,.11,z,.65+rng()*.65,j%3?'#7c8b51':'#9a9d63');}
+  for(let j=0;j<650;j++){const x=(rng()-.5)*70,z=(rng()-.5)*65-7;if(terrainFootprint(map,x,z,.6)||Math.abs(x)<2.8||Math.abs(z-7)<1.6||Math.abs(z+19)<1.6||map.schools.some(s=>Math.hypot(x-s.x,z-s.z)<5)||map.houses.some(h=>Math.hypot(x-h.x,z-h.z)<3))continue;this.tuft(x,.11,z,.65+rng()*.65,j%3?'#7c8b51':'#9a9d63');}
   // Distant wooded banks hide the geometrical horizon without screen blur.
   for(let j=0;j<32;j++){const a=j/32*TAU;this.tree(Math.sin(a)*43,Math.cos(a)*43-7,.9+rng()*.4,'#697e59',j+99);}
  }
