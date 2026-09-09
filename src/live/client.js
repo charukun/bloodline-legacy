@@ -79,7 +79,7 @@ class LiveUpdate {
     const r=await fetch('/api/join',{method:'POST',headers:this.headers(),cache:'no-store',signal:AbortSignal.timeout(8000),
       body:JSON.stringify({config:this.g.profile,beginLife,busy:!safeGame(this.g)})});
     const body=await this.response(r);if(generation!==this.generation)return false;
-    this.g.token=body.token;this.g.playerId=body.playerId;
+    this.g.token=body.token;this.g.playerId=body.playerId;this.g.account?.joined(body.token);
     if(!writeStore('online.token.'+this.g.profile.mode,body.token))throw Error('村への合図を保存できません。端末の保存先を確認してください。');
     this.compatibilityBlocked=false;this.lastPresence=null;this.apply(body,generation);this.stream(generation);return true;
   }
@@ -100,7 +100,7 @@ class LiveUpdate {
           const event=buffer.slice(0,end);buffer=buffer.slice(end+2);if(!event.startsWith('data: '))continue;
           const packet=JSON.parse(event.slice(6));
           if(packet.control){
-            if(packet.control==='SESSION_REPLACED'){this.disconnect();this.show('別の画面で旅を再開しました。');return;}
+            if(packet.control==='SESSION_REPLACED'){this.disconnect();this.g.account?.sessionLost();this.show('別の画面で旅を再開しました。');return;}
             throw Error(packet.control);
           }
           this.apply(packet,generation);

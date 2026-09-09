@@ -45,6 +45,7 @@ jobs:
           fs.appendFileSync(process.env.GITHUB_OUTPUT,`target=${target}\nsuffix=${target.toUpperCase()}\n`);
           JS
       - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
+      - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm test --prefix deploy
       - run: node --test tests/tilt-shift.test.mjs
       - name: Prepare native GLSL ES validation
@@ -59,7 +60,6 @@ jobs:
           fi
       - name: Verify UI, skill and simulation regression
         run: |
-          npm ci --ignore-scripts --no-audit --no-fund
           npm test
           node tests/skills/lives.mjs
       - name: Build deployment
@@ -129,6 +129,7 @@ jobs:
           name: deploy-${{ github.sha }}
           path: deploy/out/
       - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
+      - run: npm ci --omit=dev --ignore-scripts --no-audit --no-fund
       - name: Install and verify Chromium
         run: |
           deploy/node_modules/.bin/playwright install chromium

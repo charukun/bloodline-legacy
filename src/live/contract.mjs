@@ -1,5 +1,5 @@
 // Wire, save and session lifetimes are independent of the displayed build SHA.
-export const LiveContract = Object.freeze({protocol:1, snapshot:1, session:1, save:4, minSave:3, graceMs:300000});
+export const LiveContract = Object.freeze({protocol:1, snapshot:1, session:1, save:4, minSave:3, account:1, graceMs:300000});
 export function clientCompatible(client, server) {
   return !!client && client.protocol===server.protocol && client.snapshot===server.snapshot &&
     client.session===server.session && client.minSave<=server.save && client.save>=server.minSave;

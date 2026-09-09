@@ -22,5 +22,8 @@
     "@napi-rs/canvas": "0.1.100",
     "jsdom": "30.0.1",
     "vite": "7.3.6"
+  },
+  "dependencies": {
+    "@simplewebauthn/server": "14.0.1"
   }
 }

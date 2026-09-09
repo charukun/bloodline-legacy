@@ -80,6 +80,15 @@ test('SSE reconnect begins with a full recovery snapshot and confirmed command c
   assert.equal(packet.recovery,true);assert.equal(packet.snapshot.player.id,a.playerId);assert.equal(packet.ack,0);
   await reader.cancel();f.world.closeStreams('TEST_END');
 });
+
+test('cancelling an old SSE reader cannot stop movement on the replacement lease',async()=>{
+  const f=fixture(),a=await join(f);makeSafe(f);
+  const old=await call(f,'events',{session:a}),oldReader=old.body.body.getReader();await oldReader.read();
+  const b=await join(f,a),fresh=await call(f,'events',{session:b}),freshReader=fresh.body.body.getReader();await freshReader.read();
+  await call(f,'command',{session:b,body:command(b,1,{type:'move',x:1,z:0})});
+  await oldReader.cancel();await f.world.tail;
+  assert.equal(f.world.sim.players.get(b.playerId).input.x,1);await freshReader.cancel();f.world.closeStreams('TEST_END');
+});
 test('combat-time redeploy retains in-flight attacks and RNG exactly; no forced rules switch',async()=>{
   const f=fixture(),a=await join(f),p=f.world.sim.players.get(a.playerId);
   p.prologue=false;p.pendingSkill={id:4000,at:7};p.combo={band:0,total:1};p.wounds={head:{severity:1}};
