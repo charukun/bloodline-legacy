@@ -10,7 +10,7 @@ export async function motionRuntime(revision=null){
  vm.runInContext(`const BL_SKILL_DEFINITIONS=${JSON.stringify(definitions)};const AssetBank={load:async()=>{}};`,context);
  for(const file of ['legacy/dialogue.js','legacy/core.js','skills/engine.js','skills/runtime.js','legacy/render_math.js','legacy/motion.js','legacy/art.js','render/tilt-shift.js','render/shaders.js','world/environment.js','character/rig.js','character/golden-master.runtime.js'])
   vm.runInContext(revision?execFileSync('git',['show',revision+':src/'+file],{encoding:'utf8'}):fs.readFileSync(new URL('../src/'+file,import.meta.url),'utf8'),context,{filename:file});
- const api=vm.runInContext('({Simulation,skillById,book,artPose,SkillMotion:typeof SkillMotion==="undefined"?null:SkillMotion,CM01,VillageArt,RigRenderer,rModel,rGeometry,actionTiming})',context);
+ const api=vm.runInContext('({Simulation,skillById,book,artPose,SkillMotion:typeof SkillMotion==="undefined"?null:SkillMotion,CM01,VillageArt,ArtDirector,RigRenderer,rModel,rColor,rGeometry,rMultiply,rOrtho,rLookAt,actionTiming})',context);
  await api.CM01.load(fs.readFileSync(new URL('../public/assets/character/young-human-male-cm01.glb',import.meta.url)).toString('base64'));
  const gl=new Proxy({FLOAT:5126,UNSIGNED_SHORT:5123,UNSIGNED_INT:5125,getUniformLocation:()=>({})},{get:(o,k)=>k in o?o[k]:k.startsWith('create')?()=>({}):()=>{}});
  const renderer=()=>({gl,programOf:()=>({u:new Map()}),frame:0,sceneKey:'village-test',static:new Map(),canvas:{height:900},viewHeight:16,camera:{zoom:16},dynamic:new Map(),fxBatches:new Map(),blob(){},add(){},put(type,m,c){this.parts.push({type,m:[...m],c});},parts:[]});

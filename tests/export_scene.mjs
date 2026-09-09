@@ -60,9 +60,11 @@ export async function loadScene(root = repository, options = {}) {
     r.put=Renderer.prototype.put;
     r.art=new (typeof GoldenArt==='undefined'?VillageArt:GoldenArt)(r);
     const artStart=performance.now();r.art.village(snapshot.map);const artMs=performance.now()-artStart;
+    if(options.isolatedMaterials){r.static.clear();r.art.root=rModel();r.art.target=r.static;r.art.B(0,-.20,options.z,20,.4,16,'#424a3d');}
     // Existing poses are flattened into rigid instance matrices for this offline
     // environment review; browser bone-palette crossfades are not verified here.
-    if(options.characters!==false){r.art.doll(player,options.time,true);
+    if(options.actorCases){snapshot.actors=options.actorCases.map((fixture,i)=>Object.assign(sim.actor(fixture.kind,fixture.x,fixture.z),fixture));}
+    if(options.characters!==false){if(!options.actorCases)r.art.doll(player,options.time,true);
       for(const actor of snapshot.actors||[])if(Math.hypot(actor.x-options.x,actor.z-options.z)<33)r.art.doll(actor,options.time,false);}
     if(options.gameplayCamera)r.updateCamera(snapshot,1/60);
     r.matrix();r.weather.setOverride(options.weather);r.weatherState=r.weather.sample(options.time,snapshot.map.seed);
