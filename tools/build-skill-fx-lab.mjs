@@ -1,0 +1,11 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {execFileSync} from 'node:child_process';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const read=name=>fs.readFile(path.join(root,name),'utf8');
+const build=process.env.BLOODLINE_BUILD_COMMIT||execFileSync('git',['rev-parse','--short','HEAD'],{cwd:root,encoding:'utf8'}).trim();
+const code=`'use strict';\nconst FX_LAB_BUILD=${JSON.stringify(build.slice(0,7))};\n`+(await Promise.all(['src/render/skill-effects.js','tools/skill-fx-lab/renderer.js','tools/skill-fx-lab/app.js'].map(read))).join('\n');
+const html=(await read('tools/skill-fx-lab/index.html')).replace('/*__STYLE__*/',await read('tools/skill-fx-lab/style.css')).replace('/*__SCRIPT__*/',code.replace(/<\/script/gi,'<\\/script'));
+await fs.mkdir(path.join(root,'dist'),{recursive:true});await fs.writeFile(path.join(root,'dist/skill-fx-lab.html'),html);
+console.log(`Built independent effect lab: ${Buffer.byteLength(html)} bytes, no external assets`);

@@ -11,7 +11,7 @@ const COMBAT_FX = Object.freeze({
  parry:{life:.24,count:9,color:'#d8eee8'}
 });
 class CombatPresentation{
- constructor(r){this.r=r;this.trails=new Map();this.room=null;}
+ constructor(r){this.r=r;this.trails=new Map();this.room=null;this.compositionBudget=512;}
  contact(e,target,x,z,dir){
   const r=this.r,cm=r.characterMaster,part=e.part||'torso';
   if(cm?.owner?.id===target?.id&&cm.lastFrame===r.frame){
@@ -38,6 +38,12 @@ class CombatPresentation{
  }
  cut(a,skill,beat,duration,full){
   const r=this.r,shape=SkillMotion.shape(skill),age=(beat-.43)*duration;
+  const recipe=typeof SkillEffects==='undefined'?null:SkillEffects.forSkill(skill.id);
+  if(recipe){
+   const dir=a.dir||0,reach=clamp((a.attackReach||skill.reach||1.5)/1.85,.5,1.5),ground=a.baseY??SkillMotion.groundAt(r,a.x,a.z);
+   const point=v=>[a.x+(Math.cos(dir)*v[0]+Math.sin(dir)*v[2])*reach,ground+v[1],a.z+(-Math.sin(dir)*v[0]+Math.cos(dir)*v[2])*reach];
+   this.composition(SkillEffects.stroke(recipe,(beat-.20)/.30,r.quality),point);return;
+  }
   // The pose cuts from .25 to .43 of each beat; no luminous arc in recovery.
   if(beat<.27||age>.085)return;
   const sweep=clamp((beat-.27)/.16,0,1),fade=age<0?.35+sweep*.65:(1-age/.085)**2;
@@ -69,11 +75,20 @@ class CombatPresentation{
   const head=(-(spin?2.3:1.12)+(spin?4.6:2.25)*sweep)*odd;
   r.add(key,a.x,shape==='kick'?.6:1.13,a.z,reach,reach,reach,color,dir+head,spin?.08:.25*odd,0,4,fade*.88,r.fxBatches);
  }
+ composition(primitives,point){
+  for(const p of primitives){
+   if(this.compositionBudget<=0)break;
+   this.compositionBudget--;
+   if(p.kind==='line')this.needle(point(p.a),point(p.b),p.width,p.color,p.alpha);
+   else this.r.add('rbox',...point(p.p),...p.size,p.color,p.turn,p.turn*.7,0,4,p.alpha,this.r.fxBatches);
+  }
+ }
  forget(id){
   this.trails.delete(id);const key='trail:'+id,r=this.r,g=r.geo?.get(key);
   if(g){r.gl.deleteBuffer(g.vertex);r.gl.deleteBuffer(g.instance);r.gl.deleteVertexArray(g.vao);r.geo.delete(key);}RG_CACHE.delete(key);
  }
  update(s){const r=this.r,t=s.t,p=s.player,list=[...s.actors||[],...s.players||[]];if(p&&!list.some(e=>e.id===p.id))list.push(p);const byId=new Map(list.map(e=>[e.id,e]));
+  this.compositionBudget=r.quality==='low'?256:512;
   const room=s.room?.id??p?.room;if(this.room!==room){for(const id of this.trails.keys())this.forget(id);this.room=room;}
   const visible=new Set();
   for(const a of list){if(!a.alive||Math.hypot(a.x-r.camera.x,a.z-r.camera.z)>20)continue;visible.add(a.id);
@@ -111,7 +126,10 @@ class CombatPresentation{
    }
   }
   for(const id of this.trails.keys())if(!visible.has(id))this.forget(id);
-  r.effects=r.effects.filter(e=>t-e.born<(COMBAT_FX[e.type]?.life??e.life));
+  r.effects=r.effects.filter(e=>{
+   const composed=e.type==='hit'&&typeof SkillEffects!=='undefined'&&SkillEffects.forSkill(e.skill);
+   return t-e.born<(composed ? .55 : (COMBAT_FX[e.type]?.life??e.life));
+  });
   for(const e of r.effects){
    const profile=COMBAT_FX[e.type];if(!profile||typeof profile!=='object')continue;
    const age=t-e.born;if(age<0)continue;
@@ -125,6 +143,13 @@ class CombatPresentation{
    // Fix the contact position on the first rendered frame; sparks then travel
    // independently of the body's recoil. Attack VFX retain their existing path.
    const center=hurt||e.type==='guarded'?(e.contact??=this.contact(e,target,x,z,dir)):[x-Math.sin(dir)*.22,1.18,z-Math.cos(dir)*.22];
+   const recipe=e.type==='hit'&&typeof SkillEffects!=='undefined'?SkillEffects.forSkill(e.skill):null;
+   if(recipe){
+    // A confirmed contact owns its effect; a miss never invents an impact.
+    const origin=e.skillContact??=this.contact(e,target,x,z,dir);
+    this.composition(SkillEffects.impact(recipe,age,r.quality),v=>[origin[0]+Math.cos(dir)*v[0]+Math.sin(dir)*v[2],origin[1]+v[1],origin[2]-Math.sin(dir)*v[0]+Math.cos(dir)*v[2]]);
+    continue;
+   }
    for(let j=0;j<count;j++){
     const angle=j*2.399963+(e.seq||0)*.13,speed=3.2+(j%3)*1.1;
     const v=[Math.sin(angle)*.8+Math.sin(dir)*.7,Math.cos(angle*1.3)*.65,Math.cos(angle)*.8+Math.cos(dir)*.7];
