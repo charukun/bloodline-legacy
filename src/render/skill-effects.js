@@ -59,6 +59,12 @@ const SkillEffects = (() => {
  };
  Object.assign(bindings,{4320:['pillar','fall','single','ripple','drift'],4311:['vortex','orbit','double','pinch','recoil'],4310:['nova','pierce','single','fracture','vanish'],4303:['lotus','sweep','single','ripple','drift'],4312:['gate','pierce','double','cleave','recoil'],4030:['comet','fall','single','cleave','drift'],4304:['cage','orbit','triplet','pinch','recoil'],4031:['tide','sweep','single','ripple','drift'],4302:['thorn','fall','triplet','fracture','vanish'],4330:['eclipse','orbit','single','pinch','recoil'],4301:['wings','sweep','double','cleave','drift'],4313:['fulgur','pierce','triplet','fracture','vanish']});
  for(const id of Object.keys(bindings))if(!Object.hasOwn(options.family,bindings[id][0]))delete bindings[id];
+ Object.assign(bindings,{
+  4001:['blade','sweep','single','cleave','vanish'],4002:['blade','sweep','single','cleave','recoil'],
+  4003:['blade','fall','single','fracture','drift'],4004:['thread','pierce','single','pinch','vanish'],
+  4005:['stone','fall','single','fracture','drift'],4006:['bell','sweep','single','ripple','recoil'],
+  4016:['blade','orbit','single','ripple','recoil'],4017:['stone','fall','single','cleave','drift'],4019:['blade','sweep','single','pinch','vanish']
+ });
  const bySkill=new Map(Object.entries(bindings).map(([id,v])=>[Number(id),resolve({family:v[0],path:v[1],rhythm:v[2],impact:v[3],release:v[4],seed:Number(id),variation:.65,...signature(v[0])})]));
  const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)),mix=(a,b,t)=>a+(b-a)*t;
  const hash=(seed,i)=>{let x=(seed^Math.imul(i+1,0x9e3779b1))>>>0;x=Math.imul(x^(x>>>16),0x85ebca6b);return ((x^(x>>>13))>>>0)/4294967296;};

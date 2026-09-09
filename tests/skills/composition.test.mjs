@@ -44,6 +44,14 @@ test('composed definitions restore learned IDs, weights, witnesses and next insp
  for(let i=0;i<180;i++)for(const [s,a]of [[sim,p],[restored,q]]){s.time+=5;api.SkillSystem.record(s,a,{kind:i%2?'care':'contact',context:i%2?'care':'contact',tags:i%2?['craft','care','patience']:['combat','rhythm','tension'],text:i%2?'手仕事':'実戦'});}
  assert.equal(JSON.stringify(p.skillLife),JSON.stringify(q.skillLife));assert.ok(p.skillLife.discovered.some(d=>d.id>=700000));
 });
+test('large approaches use real movement, respect restraint and smoothly face the target on a sidestep',()=>{
+ const forward=setup({footwork:'drive',ending:'settle'},8);while(forward.p.pendingSkill)forward.sim.tick(1/120);assert.ok(forward.p.z>1.85&&forward.p.z<1.95);
+ const rooted=setup({footwork:'drive'},8);rooted.p.statuses.root={until:100};for(let i=0;i<90;i++)rooted.sim.tick(1/120);assert.equal(rooted.p.z,0);
+ const side=setup({footwork:'side',ending:'settle'},1.8);let dir=side.p.dir;while(side.p.pendingSkill){side.sim.tick(1/120);assert.ok(Math.abs(side.p.dir-dir)<.22,'turn must be distributed over the approach');dir=side.p.dir;}
+ assert.ok(side.p.x>1.2);assert.ok(Math.abs(side.p.dir-Math.atan2(side.target.x-side.p.x,side.target.z-side.p.z))<.03);
+ for(let i=0;i<130;i++)side.sim.tick(1/120);assert.ok(side.sim.events.some(e=>e.type==='hit'&&e.source===side.p.id));
+ const close=setup({footwork:'drive'},1.5);while(close.p.pendingSkill)close.sim.tick(1/120);assert.ok(Math.hypot(close.p.x-close.target.x,close.p.z-close.target.z)>=close.sim.contactSpacing(close.p,close.target)-1e-6);
+});
 test('expanded pool preserves slow active pace and passive frequency across different lives',()=>{
  const events=[{kind:'observe',tags:['craft','weight','rhythm']},{kind:'contact',tags:['combat','rhythm','tension']},{kind:'rest',tags:['rest','patience']},{kind:'care',tags:['care','craft','patience']},{kind:'explore',tags:['explore','light','precision']},{kind:'pray',tags:['pray','rest','patience']}];
  const catalogs=[new api.BloodlineSkills.Catalog(authored),new api.BloodlineSkills.Catalog(definitions)],counts=[{active:0,passive:0},{active:0,passive:0}],sets=new Set();let worst=0;

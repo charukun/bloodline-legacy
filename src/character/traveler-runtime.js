@@ -243,8 +243,9 @@ VillageArt.prototype.doll=function(p,t,local){
  c.update(visual,t);const root=this.root,target=this.target;this.target=r.dynamic;
  const armed=p.age>=7&&!p.prologue&&!(p.rescueTarget||incapacitated(p)||p.traversal);
  r.rigs.begin(p,t);try{
-  if(armed&&p.weapon>=0&&p.wounds?.rightArm?.severity!=='lost'){this.root=c.transforms[5];this.with(rModel(0,-.035,.03,1,1,1,0,-.06,Math.PI-.12),()=>this.weapon(p.weapon,.84*Math.min(1,c.ageProfile.body[1])));}
-  if(armed&&p.shield&&p.wounds?.leftArm?.severity!=='lost'){this.root=c.transforms[8];this.shield(-.08,.09,.19,.94*Math.min(1,c.ageProfile.body[1]));}
+  const stowed=SkillMotion.unarmed(p);
+  if(armed&&p.weapon>=0&&p.wounds?.rightArm?.severity!=='lost'){this.root=c.transforms[stowed?1:5];this.with(stowed?rModel(.32,.06,-.34,1,1,1,0,0,-.6):rModel(0,-.035,.03,1,1,1,0,-.06,Math.PI-.12),()=>this.weapon(p.weapon,.84*Math.min(1,c.ageProfile.body[1])));if(stowed)r.weaponTips?.delete(p.id);}
+  if(armed&&p.shield&&p.wounds?.leftArm?.severity!=='lost'){this.root=c.transforms[stowed?1:8];this.shield(stowed?-.22:-.08,.09,stowed?-.32:.19,.94*Math.min(1,c.ageProfile.body[1]));}
  }finally{if(r.rigs.pending.parts.length)r.rigs.end();else r.rigs.pending=null;this.root=root;this.target=target;}
  r.blob(p.x,p.z,.55,.39,.32,r.fxBatches);if(local&&p.alive)r.add('ring:6.283',p.x,.23,p.z,.58,1,.58,'#f5e3b2',0,0,0,4,.62,r.fxBatches);
 };

@@ -23,9 +23,9 @@ export function createSkillComposition(){
  ];
  const feet=[
   {code:0,key:'plant',name:'据える',distance:0,angle:0,text:'足場を保つ。'},
-  {code:1,key:'drive',name:'踏み込む',distance:.85,angle:0,text:'深く踏み込む。'},
-  {code:2,key:'side',name:'横へ回る',distance:.6,angle:Math.PI/2,text:'横へ足を運び、攻める軸をずらす。'},
-  {code:3,key:'draw',name:'半歩引く',distance:.45,angle:Math.PI,text:'半歩引いて間合いを測る。'}
+  {code:1,key:'drive',name:'踏み込む',distance:1.9,angle:0,text:'大きく踏み込んで間合いを詰める。'},
+  {code:2,key:'side',name:'横へ回る',distance:1.25,angle:Math.PI/2,text:'横へ大きく足を運び、攻める軸をずらす。'},
+  {code:3,key:'draw',name:'引き足',distance:.9,angle:Math.PI,text:'一歩引いて間合いを測る。'}
  ];
  const reactions=[
   {code:0,key:'break',name:'姿勢崩し',action:{stagger:.65},entry:'offbalance',fx:'fracture',text:'姿勢を崩す。'},
@@ -34,9 +34,9 @@ export function createSkillComposition(){
   {code:3,key:'push',name:'押し離す',action:{knockback:.48},entry:'offbalance',fx:'ripple',text:'打点から相手を押し離す。'}
  ];
  const endings=[
-  {code:0,key:'follow',name:'間合いを詰める',phase:0,distance:.35,angle:0,exit:'close',recovery:.55,text:'打ち終わりに詰め、近さを残す。'},
+  {code:0,key:'follow',name:'間合いを詰める',phase:0,distance:.8,angle:0,exit:'close',recovery:.55,text:'打ち終わりに踏み出し、近さを残す。'},
   {code:1,key:'settle',name:'構えを整える',phase:1,distance:0,angle:0,exit:'rhythm',recovery:.28,text:'その場で構えを整え、次の拍子へ渡す。'},
-  {code:2,key:'withdraw',name:'間合いを開ける',phase:2,distance:.65,angle:Math.PI,exit:'rhythm',recovery:.65,text:'打ち終わりに引き、間合いを開ける。'}
+  {code:2,key:'withdraw',name:'間合いを開ける',phase:2,distance:1.35,angle:Math.PI,exit:'rhythm',recovery:.65,text:'打ち終わりに大きく引き、間合いを開ける。'}
  ];
  const tables={form:forms,cadence:cadences,footwork:feet,reaction:reactions,ending:endings};
  // Display-only vocabulary, indexed by permanent recipe codes. Each entry is
@@ -96,11 +96,11 @@ export function createSkillComposition(){
   // already have two groups and retain their provenance requirements.
   if(requiresExperience.length===1)requiresExperience.push(['combat','play','rest','care','explore']);
   const desc=f.text+c.text+w.text+r.text+e.text;
-  const action={weapon:-1,school:'life',anim:f.anim,requires:f.requires,targets:f.targets,
+  const action={weapon:-1,unarmed:true,school:'life',anim:f.anim,requires:f.requires,targets:f.targets,
    reach:f.reach,arc:f.arc,maxTargets:f.maxTargets||1,charge:f.anim==='slam'||f.anim==='leap'?.36:.2,
    swing:hits===1?.4:hits===2?.58:.76,recovery:e.recovery,cost:7+hits*3+(w.distance>0?2:0)+(r.key==='break'?2:0),
    fatigue:.45+hits*.2,power:(f.maxTargets?.8:1.05)/hits,hits,step:0,beatCuts:c.cuts,motionPath:f.path,
-   approach:{distance:w.distance,angle:w.angle},finishStep:{distance:e.distance,angle:e.angle},...r.action,
+   approach:{distance:w.distance,angle:w.angle,turn:w.key==='side'?.9:0},finishStep:{distance:e.distance,angle:e.angle},...r.action,
    fx:{version:1,family:motif[f.family],path:f.path,rhythm:hits===1?'single':hits===2?'double':'triplet',impact:r.fx,release:e.key==='withdraw'?'recoil':e.key==='settle'?'vanish':'drift',seed:skillId,mist:.85,thickness:2.2,variation:.65,layers:{sigil:false,body:true,motes:true}}};
   return {id:skillId,key:`bl.skill.v1.${f.key}.${c.key}.${w.key}.${r.key}.${e.key}`,family:f.family,phase,
    names:names(f,c,w,r,e),

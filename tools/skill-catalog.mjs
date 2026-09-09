@@ -29,7 +29,8 @@ export function validateCatalog(defs){
    if(SkillComposition.id(d.composition)!==d.id)throw Error('Unstable composition identity');
    const a=d.action,cuts=a.beatCuts;
    if(!Array.isArray(cuts)||cuts.length!==a.hits+1||cuts[0]!==0||cuts.at(-1)!==1||cuts.some((n,i)=>!Number.isFinite(n)||(i&&n-cuts[i-1]<.2)))throw Error('Invalid beat timeline');
-   for(const step of [a.approach,a.finishStep])if(!step||!Number.isFinite(step.distance)||step.distance<0||step.distance>1||!Number.isFinite(step.angle)||Math.abs(step.angle)>Math.PI)throw Error('Invalid composed step');
+   for(const step of [a.approach,a.finishStep])if(!step||!Number.isFinite(step.distance)||step.distance<0||step.distance>2.25||!Number.isFinite(step.angle)||Math.abs(step.angle)>Math.PI)throw Error('Invalid composed step');
+   if(!Number.isFinite(a.approach.turn)||a.approach.turn<0||a.approach.turn>1)throw Error('Invalid approach turn');
   }
   for(const key of ['stagger','knockback','tracking'])if(d.action?.[key]!==undefined&&(!Number.isFinite(d.action[key])||d.action[key]<0||d.action[key]>1.5))throw Error('Invalid motion effect '+d.key);
   if(!d.passive){for(const k of ['cost','charge','swing','recovery','reach','arc','power'])if(!Number.isFinite(d.action[k])||d.action[k]<0)throw Error('Invalid '+k+' '+d.key);

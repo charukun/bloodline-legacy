@@ -48,6 +48,7 @@ const CM01 = (()=>{
  }
  function selectClip(p,t,st,phase,moving,run,reaction,clips=asset?.clips){
   if(incapacitated(p)||p.traversal||p.rescueTarget||!clips?.size||p.weapon!==0||!p.alive||p.seated||p.activity||p.guard||p.guardUntil>t||reaction.amount>.02||Object.keys(p.statuses||{}).length||Object.values(p.wounds||{}).some(w=>w.severity==='lost')||['carry','wave','sleep','sit','interact'].includes(p.action)){st.clipCut=null;return null;}
+  if(SkillMotion.unarmed(p)){st.clipCut=null;return null;}
   const clock=SkillMotion.clock(p,t);
   if(clock){
    if(clock.shape!=='slash'||clock.hits!==1){st.clipCut=null;return null;}

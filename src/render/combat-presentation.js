@@ -63,12 +63,12 @@ class CombatPresentation{
   r.add('skillfx:needle',...from.map((v,i)=>(v+to[i])*.5),width*(1+mist),len,width*(1+mist),color,
    Math.atan2(d[0],d[2]),0,Math.atan2(Math.hypot(d[0],d[2]),d[1]),mist?26+mist*.49:4,alpha,r.fxBatches);
  }
- cut(a,skill,beat,duration,full){
+ cut(a,skill,beat,duration,full,tip=null){
   const r=this.r,shape=SkillMotion.shape(skill),age=(beat-.43)*duration;
   const sample=this.castSamples.get(a.id),recipe=sample?.id===skill.id?sample.recipe:(typeof SkillEffects==='undefined'?null:SkillEffects.forSkill(skill.id));
   if(recipe){
    const dir=a.dir||0,reach=clamp((a.attackReach||skill.reach||1.5)/1.85,.5,1.5),ground=a.baseY??SkillMotion.groundAt(r,a.x,a.z);
-   const point=v=>[a.x+(Math.cos(dir)*v[0]+Math.sin(dir)*v[2])*reach,ground+v[1],a.z+(-Math.sin(dir)*v[0]+Math.cos(dir)*v[2])*reach];
+   const point=tip?v=>[tip[0]+(Math.cos(dir)*v[0]+Math.sin(dir)*(v[2]-.9))*.28,tip[1]+(v[1]-1.1)*.28,tip[2]+(-Math.sin(dir)*v[0]+Math.cos(dir)*(v[2]-.9))*.28]:v=>[a.x+(Math.cos(dir)*v[0]+Math.sin(dir)*v[2])*reach,ground+v[1],a.z+(-Math.sin(dir)*v[0]+Math.cos(dir)*v[2])*reach];
    this.composition(SkillEffects.stroke(recipe,(beat-.20)/.30,r.quality),point);return;
   }
   // The pose cuts from .25 to .43 of each beat; no luminous arc in recovery.
@@ -134,7 +134,7 @@ class CombatPresentation{
   this.trails.delete(id);const key='trail:'+id,r=this.r,g=r.geo?.get(key);
   if(g){r.gl.deleteBuffer(g.vertex);r.gl.deleteBuffer(g.instance);r.gl.deleteVertexArray(g.vao);r.geo.delete(key);}RG_CACHE.delete(key);
  }
- update(s){const r=this.r,t=s.t,p=s.player,list=[...s.actors||[],...s.players||[]];if(p&&!list.some(e=>e.id===p.id))list.push(p);const byId=new Map(list.map(e=>[e.id,e]));
+ update(s){if(this.previewEnabled===false)return;const r=this.r,t=s.t,p=s.player,list=[...s.actors||[],...s.players||[]];if(p&&!list.some(e=>e.id===p.id))list.push(p);const byId=new Map(list.map(e=>[e.id,e]));
   this.compositionBudget=r.quality==='low'?256:512;
   this.silkSlot=0;
   const room=s.room?.id??p?.room;if(this.room!==room){for(const id of this.trails.keys())this.forget(id);this.clearSilk();this.castSamples.clear();this.room=room;}
@@ -151,10 +151,10 @@ class CombatPresentation{
    if(attacking){
     const clock=SkillMotion.clock(a,t,skill);
     const duration=clock.duration,beat=clock.beat,full=clock.index+beat;
-    const weaponStrike=!['kick','cast','roar','counter','backflip','bow'].includes(clock.shape)&&!skill.magic;
+    const weaponStrike=!skill.unarmed&&!['kick','cast','roar','counter','backflip','bow'].includes(clock.shape)&&!skill.magic;
     const tip=weaponStrike?r.weaponTips?.get(a.id):null;
     // A real blade/shaft uses its own path instead of a second, unrelated arc.
-    if(!tip)this.cut(a,skill,beat,duration,full);
+    if(!tip||silkRecipe&&silkRecipe.family!=='blade')this.cut(a,skill,beat,duration,full,tip);
     if(tip&&beat>=.18&&beat<=.57){
      if(!trail){trail=[];this.trails.set(a.id,trail);}
      // Sample genuine weapon motion only; a hitstop cannot add more geometry.

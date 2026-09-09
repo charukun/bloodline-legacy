@@ -12,7 +12,19 @@ test('trial controls compose real skills, execute single/combo combat and round-
    const names=definitions.find(d=>d.id===id).names;assert.equal(d.getElementById('name').textContent,names.ja);assert.equal(d.getElementById('name-en').textContent,names.en);assert.match(d.getElementById('phase').textContent,/^編成する段：[序破急]$/);
    for(let i=0;i<480;i++)lab.step(1/120);assert.ok(sim.events.some(e=>e.type==='skillbeat'&&e.id===id));}
   d.getElementById('combo').click();const {sim,p}=lab.getTrial();for(let i=0;i<900;i++)lab.step(1/120);const used=sim.events.filter(e=>e.type==='skill'&&e.player===p.id).map(e=>e.id);assert.ok(new Set(used).size>=3,JSON.stringify(used));
+  const draws=new Set();for(let i=0;i<12;i++){d.getElementById('random').click();draws.add(JSON.stringify(lab.getRecipe()));assert.ok(lab.getTrial().p.pendingSkill);}
+  assert.ok(draws.size>=10);const prior=JSON.stringify(lab.getRecipe());d.getElementById('random').click();d.getElementById('previous').click();assert.equal(JSON.stringify(lab.getRecipe()),prior);
+  for(let weapon=0;weapon<6;weapon++){
+   d.getElementById('weapon').value=weapon;d.getElementById('weapon').dispatchEvent(new w.Event('change'));
+   const select=d.getElementById('weapon-skill');assert.ok(select.options.length>1);select.value=select.options[1].value;select.dispatchEvent(new w.Event('change'));
+   const id=lab.getRecipe().skillId;assert.equal(lab.getTrial().p.weapon,weapon);assert.equal(lab.getTrial().p.pendingSkill.id,id);assert.equal(d.getElementById('parts').disabled,true);
+   for(let i=0;i<700;i++)lab.step(1/120);assert.ok(lab.getTrial().sim.events.some(e=>e.type==='skill'&&e.id===id));
+   d.getElementById('random-combo').click();assert.equal(lab.getSlots().length,3);for(const r of lab.getSlots())if(r.skillId)assert.ok([...select.options].some(o=>+o.value===r.skillId));
+  }
+  d.getElementById('effects').checked=false;d.getElementById('effects').dispatchEvent(new w.Event('change'));const without=JSON.stringify(lab.getTrial().sim.exportState());assert.equal(lab.getRenderer().combatPresentation.previewEnabled,false);
+  d.getElementById('effects').checked=true;d.getElementById('effects').dispatchEvent(new w.Event('change'));assert.equal(JSON.stringify(lab.getTrial().sim.exportState()),without,'VFX toggle cannot change combat');
   d.getElementById('save').click();const saved=w.localStorage.getItem('bloodline-skill-composition-lab-v1');assert.ok(saved);assert.equal(w.localStorage.length,1);d.getElementById('load').click();assert.equal(JSON.stringify(lab.getRecipe()),JSON.stringify(JSON.parse(saved).selected));
   d.getElementById('recipe').value='{"version":999}';d.getElementById('load').click();assert.ok(d.getElementById('error').textContent);assert.equal(w.localStorage.getItem('bloodline-skill-composition-lab-v1'),saved);
+  d.getElementById('recipe').value=JSON.stringify({version:1,selected:definitions.find(d=>d.composition).composition,slots:[0,1,2].map(p=>definitions.find(d=>d.composition&&d.phase===p).composition)});d.getElementById('load').click();assert.equal(lab.getTrial().p.weapon,-1,'old recipe files remain usable');
  }finally{dom.window.close();}
 });
