@@ -27,7 +27,7 @@ test('first life opens without invented ancestors; native race, name and setting
  const settings=root.querySelector('#settings');settings.focus();settings.click();await flush();assert.equal(ui.modal,'settings');ui.closeModal();await flush();assert.equal(root.activeElement,settings);assert.equal(ui.clan.inert,false);
 });
 test('new life still starts through Game.start with one actual inherited skill',async t=>{
- const {g,sim,p,ui,d}=fixture(t);sim.die(p,'老衰');g.screen='clan';g.profile.uiExplained=true;g.profile.race=1;g.profile.name='次の灯';g.renderer.effects=[];g.renderer.camera={};
+ const {g,sim,p,ui,d}=fixture(t);sim.die(p,'老衰');assert.ok(sim.command(p.id,{type:'choose-legacy',skill:4000}));g.screen='clan';g.profile.uiExplained=true;g.profile.race=1;g.profile.name='次の灯';g.renderer.effects=[];g.renderer.camera={};
  sim.legacy(p.owner).archive=[4000];g.profile.inherit=[4000];ui.showClan();await g.start();
  const next=g.snapshot.player;assert.equal(g.screen,'game');assert.notEqual(next.id,p.id);assert.equal(next.race,1);assert.equal(next.name,'次の灯');assert.deepEqual(Array.from(next.inherit),[4000]);assert.equal(next.gen,2);assert.equal(d.querySelectorAll('.hud-bottom button').length,3);
 });
