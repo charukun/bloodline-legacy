@@ -22,6 +22,18 @@ test('trial controls compose real skills, execute single/combo combat and round-
    for(let i=0;i<700;i++)lab.step(1/120);assert.ok(lab.getTrial().sim.events.some(e=>e.type==='skill'&&e.id===id));
    d.getElementById('random-combo').click();assert.equal(lab.getSlots().length,3);for(const r of lab.getSlots())if(r.skillId)assert.ok([...select.options].some(o=>+o.value===r.skillId));
   }
+  d.getElementById('target').value='crawler';d.getElementById('flow').click();
+  const flowing=lab.getTrial();for(let i=0;i<60;i++)lab.step(1/60);
+  const beforeSpark={x:flowing.p.x,z:flowing.p.z,health:flowing.p.health,hp:flowing.room.actors[0].hp,pending:flowing.p.pendingSkill,time:flowing.sim.time};
+  d.getElementById('random').click();assert.equal(lab.getTrial(),flowing,'discovery must not reset a fight');
+  for(const key of ['x','z','health','pending'])assert.equal(key==='pending'?flowing.p.pendingSkill:flowing.p[key],beforeSpark[key]);
+  assert.equal(flowing.room.actors[0].hp,beforeSpark.hp);assert.equal(flowing.sim.time,beforeSpark.time);
+  assert.ok(lab.getFlowPool().every(pool=>pool.length===3));
+  d.getElementById('rhythm').checked=true;const seedBefore=JSON.parse(d.getElementById('recipe').value).drawSeed;
+  for(let i=0;i<180;i++)lab.step(1/60);assert.equal(lab.getTrial(),flowing);assert.notEqual(JSON.parse(d.getElementById('recipe').value).drawSeed,seedBefore);
+  d.getElementById('rhythm').checked=false;
+  d.getElementById('cast').click();d.getElementById('flame').click();assert.equal(lab.getTrial().p.weapon,0);assert.equal(lab.getTrial().p.pendingSkill.id,60093);
+  d.getElementById('lightning').click();assert.equal(lab.getTrial().p.pendingSkill.id,60073);assert.equal(d.getElementById('name-en').textContent,'Storm Swallow');
   d.getElementById('effects').checked=false;d.getElementById('effects').dispatchEvent(new w.Event('change'));const without=JSON.stringify(lab.getTrial().sim.exportState());assert.equal(lab.getRenderer().combatPresentation.previewEnabled,false);
   d.getElementById('effects').checked=true;d.getElementById('effects').dispatchEvent(new w.Event('change'));assert.equal(JSON.stringify(lab.getTrial().sim.exportState()),without,'VFX toggle cannot change combat');
   d.getElementById('save').click();const saved=w.localStorage.getItem('bloodline-skill-composition-lab-v1');assert.ok(saved);assert.equal(w.localStorage.length,1);d.getElementById('load').click();assert.equal(JSON.stringify(lab.getRecipe()),JSON.stringify(JSON.parse(saved).selected));

@@ -138,3 +138,13 @@ test('Game hands the same rendered pose to camera, world UI and building visibil
   assert.equal(labels,20);assert.equal(world,20);
  }
 });
+
+test('clamber poses share position interpolation and never blend a landing with airborne state',()=>{
+ const {sim,p,motion}=fixture();sim.getRoom(p).actors=[];Object.assign(p,{x:12,z:-27.2,stun:0,cooldown:0});assert(sim.tryTraversal(p,sim.getRoom(p),0,-1));
+ sim.tick(STEP);motion.capture(sim,p.id);const before=p.traversal.progress;sim.tick(STEP);const end=p.traversal.progress,s=sim.snapshot(p.id),saved=copy(sim.exportState()),a=motion.sample(s,.5);
+ assert(Math.abs(a.player.traversal.progress-(before+end)/2)<1e-10);assert.notEqual(a.player.traversal,p.traversal);assert.deepEqual(copy(sim.exportState()),saved);
+ const remote=new MotionInterpolation(),old=copy(s);remote.receiveRemote(old,0);sim.tick(STEP);const next=copy(sim.snapshot(p.id));remote.receiveRemote(next,100/3);const middle=remote.sampleRemote(next,50);
+ assert(Math.abs(middle.player.traversal.progress-(old.player.traversal.progress+next.player.traversal.progress)/2)<1e-10);
+ motion.capture(sim,p.id);sim.time=p.traversal.started+p.traversal.duration;sim.tickTraversal(p,sim.getRoom(p));sim.time=motion.time+STEP;
+ const landed=sim.snapshot(p.id);assert.strictEqual(motion.sample(landed,0).player,landed.player);assert.equal(landed.player.traversal,null);assert.equal(landed.player.verticalOffset,0);
+});

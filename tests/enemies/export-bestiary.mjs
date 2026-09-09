@@ -4,8 +4,9 @@ import path from 'node:path';
 import {loadScene,writeScene,repository} from '../export_scene.mjs';
 const out=process.argv[2]||'verification/current/bestiary',family=process.argv[3]||'goblin',time=Number(process.argv[4]??'1.35'),pose=process.argv[5]||'idle';
 const scene=await loadScene(repository,{enemyReview:true,characters:false,width:1800,height:600,x:0,z:-34,y:family==='other'?3.1:family==='elite'?2.4:family==='soldier'?1.9:1.4,zoom:process.argv[6]==='weakness'?10.5:family==='other'?13:family==='elite'?10:8.3,yaw:.10,pitch:.40,time,weather:'clear',quality:'medium',isolatedMaterials:true});
+const galleries={'fauna-forest':['root-treant','mire-toad','ash-raptor','mourning-bloom'],'fauna-ruins':['reliquary-mimic','rubble-crab','iron-centipede','cairn-idol']};
 const damage=process.argv[6]||'auto',part=process.argv[7]||'torso';
-const r=scene.r,api=r.enemyAPI,stages=['clean','light','medium','heavy','depleted'],cases=[{hp:100,broken:'none'},{hp:50,broken:'none'},{hp:20,broken:'none'},{hp:100,broken:'rightArm'},{hp:100,broken:'rightLeg'},{hp:100,broken:'bothLegs'}],selected=Object.values(api.forms).flat().find(f=>f.id===family),forms=damage==='weakness'?cases.map(()=>selected):damage==='stages'?stages.map(()=>selected):family==='other'?[...api.forms.boss,...api.forms.stag,...api.forms.mushroom]:api.forms[family];
+const r=scene.r,api=r.enemyAPI,stages=['clean','light','medium','heavy','depleted'],cases=[{hp:100,broken:'none'},{hp:50,broken:'none'},{hp:20,broken:'none'},{hp:100,broken:'rightArm'},{hp:100,broken:'rightLeg'},{hp:100,broken:'bothLegs'}],selected=Object.values(api.forms).flat().find(f=>f.id===family),forms=damage==='weakness'?cases.map(()=>selected):damage==='stages'?stages.map(()=>selected):family==='other'?[...api.forms.boss,...api.forms.stag,...api.forms.mushroom]:galleries[family]?galleries[family].map(id=>Object.values(api.forms).flat().find(f=>f.id===id)):api.forms[family];
 if(!forms)throw Error('Unknown family '+family);
 const skins=[],stats=[];
 for(const[fIndex,form]of forms.entries()){

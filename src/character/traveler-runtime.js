@@ -229,6 +229,21 @@ const Travelers = (()=>{
    for(let i=0;i<q.length;i++){const par=asset.parents[i];localM[i]=matrix(V.add(V.sub(asset.bind[i],par>=0?asset.bind[par]:[0,0,0]),offset[i]),q[i]);globalM[i]=par>=0?rMultiply(globalM[par],localM[i]):localM[i];}
    const gripping=authored?null:SkillMotion.grip(p,pose,{arm:globalM[3],elbow:globalM[4],hand:globalM[5]},{arm:globalM[6],elbow:globalM[7],hand:globalM[8]},-.035);
    this.skillGripDebug=gripping;if(gripping)for(const [i,c]of [[3,gripping.right],[6,gripping.left]]){globalM[i]=c.arm;globalM[i+1]=c.elbow;globalM[i+2]=c.hand;}
+   // Plant the hands on the Simulation's fixed edge while it is reachable.
+   // Solve with this race/age's limb lengths; never stretch a child's arms.
+   this.traversalHandDebug=[];
+   if(p.traversal?.grip&&pose.traversalGrip>0){
+    const hold=p.traversal.grip,dir=p.dir||0;
+    for(const [side,i]of [[1,3],[-1,6]]){
+     const width=side*Math.abs(asset.bind[i][0])*.85,world=[hold.x+Math.cos(dir)*width,hold.y+.045,hold.z-Math.sin(dir)*width];
+     const target=Q.rotate(Q.inv(rootQ),V.sub(world,[rootM[12],rootM[13],rootM[14]])),H=Array.from(globalM[i].slice(12,15)),old=Array.from(globalM[i+2].slice(12,15));
+     const upper=V.sub(asset.bind[i+1],asset.bind[i]),lower=V.sub(asset.bind[i+2],asset.bind[i+1]),L1=Math.hypot(...upper),L2=Math.hypot(...lower),distance=Math.hypot(...V.sub(target,H));
+     const amount=pose.traversalGrip*(1-smooth((distance-L1-L2+.04)/.22))*smooth((distance-Math.abs(L1-L2)-.002)/.05),goal=V.lerp(old,target,amount),diff=V.sub(goal,H),D=V.norm(diff),length=clamp(Math.hypot(...diff),Math.abs(L1-L2)+.001,L1+L2-.001);
+     const along=(L1*L1-L2*L2+length*length)/(2*length),height=Math.sqrt(Math.max(0,L1*L1-along*along)),bend=[side,-.5,-.4],pole=V.norm(V.sub(bend,V.mul(D,V.dot(bend,D)))),K=V.add(H,V.add(V.mul(D,along),V.mul(pole,height))),F=V.add(H,V.mul(D,length));
+     if(amount>0){globalM[i]=matrix(H,Q.fromTo(upper,V.sub(K,H)));globalM[i+1]=matrix(K,Q.fromTo(lower,V.sub(F,K)));globalM[i+2]=matrix(F,Q.mul(Q.inv(rootQ),Q.euler(-Math.PI/2,dir,0)));}
+     this.traversalHandDebug.push({side,amount,target:world,actual:point(rootM,amount>0?F:old)});
+    }
+   }
    const useGroundIK=!p.prologue&&!incapacitated(p)&&!p.traversal&&!p.seated&&!p.activity&&fall===0&&!pose.air&&Math.abs(pose.pitch+reaction.pitch)<.8;
    if(pose.skillMotion&&!st.skillFeet)st.skillFeet=st.feet.map(f=>f?{anchor:[...f.anchor],yaw:f.yaw,t,motionT,rootX:p.x,rootZ:p.z,lift:0}:null);if(!pose.skillMotion)st.skillFeet=null;
    const targets=[];this.footDebug=[];
@@ -358,7 +373,7 @@ VillageArt.prototype.doll=function(p,t,local){
  let visual=p;
  if(p.prologue){
   const lower=TravelerAge.sample(p,t).lower;
-  TRAVELER_PREVIOUS_DOLL.call(this,{...p,id:p.id+'parent',kind:'parent',prologue:false,age:34,gender:1,weapon:-1,skin:0,action:'carry',carryWalking:p.action==='run',wounds:{},baseY:-.34*lower},t,false);
+  TRAVELER_PREVIOUS_DOLL.call(this,{...p,id:p.id+'parent',kind:'parent',prologue:false,age:34,gender:1,weapon:-1,skin:0,action:'carry',carryWalking:['run','dash'].includes(p.action),wounds:{},baseY:-.34*lower},t,false);
   visual={...p,baseY:1.20*(1-lower)+.10*lower,x:p.x+Math.sin(p.dir)*(.32*(1-lower)),z:p.z+Math.cos(p.dir)*(.32*(1-lower)),dir:p.dir+.2*(1-lower),action:'idle',weapon:-1,shield:false};
  }
  c.update(visual,t);const root=this.root,target=this.target;this.target=r.dynamic;

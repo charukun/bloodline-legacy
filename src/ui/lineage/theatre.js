@@ -368,7 +368,7 @@ launchControls=function(disabled){oldLaunchControls(disabled);$('#dialog').class
  scope.addEventListener('keyup',e=>e.stopPropagation());
  $('#return-game').hidden=!options.inGame;
  $('#return-game').onclick=()=>options.back();
- $('#lineage-build').textContent=options.buildLabel;
+ $('#lineage-build').textContent=options.buildLabel;$('#lineage-build').title=options.buildTitle||options.buildLabel;
  load(options.source());enterStage();
  return {
   scope,

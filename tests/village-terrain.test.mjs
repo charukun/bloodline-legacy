@@ -35,11 +35,11 @@ test('walking stairs reach both high landings and return without vaulting for in
   assert.equal(s.p.supportHeight,0);assert(s.p.x*s.m>=-4.2);assert(!s.p.traversal);
  }
 });
-test('southern terrace has a walking exit and the stone wall uses a real vault',()=>{
+test('southern terrace has a walking exit and the stone wall uses a supported clamber',()=>{
  const s=setup();Object.assign(s.p,{x:-2.6*s.m,z:9.8,supportHeight:0});
  move(s,-s.m,0,p=>p.x*s.m<-6.4&&!p.traversal);assert(Math.abs(s.p.supportHeight-.9)<1e-8);
  move(s,s.m,0,p=>p.x*s.m>-2.7&&!p.traversal);assert.equal(s.p.supportHeight,0);
- Object.assign(s.p,{x:9*s.m,z:14.8,supportHeight:0});move(s,0,1,p=>p.z>16.9&&!p.traversal);assert(s.sim.events.some(e=>e.type==='traverse'&&e.kind==='vault'));
+ Object.assign(s.p,{x:9*s.m,z:14.8,supportHeight:0});move(s,0,1,p=>p.z>16.9&&!p.traversal);assert(s.sim.events.some(e=>e.type==='traverse'&&e.kind==='climb'));
 });
 test('unavailable parkour and attack steps stop at ledges; high drops and hidden higher corridors are rejected',()=>{
  const s=setup();Object.assign(s.p,{x:-11.5*s.m,z:-14.2,supportHeight:1.2,wounds:{leftLeg:{severity:'heavy'}}});
@@ -62,7 +62,7 @@ test('saved positions and downed lives move onto the new ground without losing t
 });
 test('a traversal survives live restart and ordinary reload returns to a supported side',()=>{
  const s=setup();Object.assign(s.p,{x:-10.5*s.m,z:-18.55,supportHeight:0});assert(s.sim.tryTraversal(s.p,s.room,0,1));s.sim.tick(.1);const data=s.sim.exportState({live:true});
- const live=api.Simulation.restoreLive(data),p=live.players.get(s.p.id);assert(p.traversal);for(let i=0;i<25;i++)live.tick(1/30);assert.equal(p.supportHeight,.6);assert.equal(p.traversal,null);
+ const live=api.Simulation.restoreLive(data),p=live.players.get(s.p.id);assert(p.traversal);for(let i=0;i<45;i++)live.tick(1/30);assert.equal(p.supportHeight,.6);assert.equal(p.traversal,null);
  const offline=api.Simulation.restore(data),q=offline.players.get(s.p.id);assert.equal(q.traversal,null);assert.equal(q.supportHeight,0);assert.equal(q.z,-18.55);
 });
 test('combat can cross a flat upper landing, while attacks and rescue cannot reach through a tall wall',()=>{

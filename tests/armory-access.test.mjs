@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {fixture,flush} from './ui-fixture.cjs';
-function atRack(f){const rack=f.g.snapshot.map.schools.find(s=>s.id==='armory');f.p.x=rack.x;f.p.z=rack.z+3;f.sync();return rack;}
+function atRack(f){const rack=f.g.snapshot.map.schools.find(s=>s.id==='armory');Object.assign(f.p,f.g.station(rack));f.sync();return rack;}
 
 test('wardrobe only inspects physical gear and belongings, with no rack shortcut even at the armory',t=>{
  const f=fixture(t);for(const nearby of [false,true]){

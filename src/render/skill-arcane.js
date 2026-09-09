@@ -37,6 +37,7 @@ const SkillArcane=(()=>{
  });
  function field(mode,strips,age,clock,alpha,recipe){return {kind:'field',mode,strips,age,clock,alpha,flutter:recipe.flutter??.65,color:'#c8efff',seed:recipe.seed};}
  function baseMask(mode,u,v,age,clock,flutter=.65){
+  if(mode===7){const x=u*2-1,y=v*2-1,r=Math.hypot(x,y),cloud=.72+.28*SkillSilk.noise(x*3+clock*.5,y*3-clock*.7,47);return Math.exp(-r*r*4)*(1-smooth(.5,1,r))*cloud*age;}
   const edge=smooth(0,.035,v)*(1-smooth(.94,1,v)),ends=smooth(0,.03,u)*(1-smooth(.97,1,u));
   const drift=flutter*SkillSilk.noise(u*6,clock*2.1,19)*.12;
   if(mode===0){const lanes=Math.pow(.5+.5*Math.sin((u+clock*.14+drift)*TAU*9),9);return clamp(edge*(.13+lanes*.85)*Math.pow(1-v,1.35)*smooth(0,.05,v));}
@@ -48,6 +49,7 @@ const SkillArcane=(()=>{
   return clamp(edge*ends*(Math.exp(-Math.pow((v-.5)*6,2))+.2)*(.72+.28*Math.sin(clock*35+u*12)));
  }
  function mask(mode,u,v,age,clock,flutter=.65,mist=.85){
+  if(mode===7)return baseMask(mode,u,v,age,clock,flutter);
   const border=(mode===5?1:smooth(0,.14,v))*(1-smooth(.86,1,v))*(mode===4?smooth(0,.14,u)*(1-smooth(.86,1,u)):1),pad=mode===5?0:mist*.9;
   v=(v-.5)*(1+pad)+.5;if(mode===4)u=(u-.5)*(1+pad)+.5;
   // Clamp only the old mask input: its fractional power is undefined below 0.
