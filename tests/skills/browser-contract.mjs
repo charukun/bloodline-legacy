@@ -22,7 +22,7 @@ export async function verifySkillSlice(page,evidence,viewport) {
  const id=report.discovery.id,active=await page.evaluate(id=>window.AERIN_QA.player().skills.includes(id),id);
  if(active) {
   const tile=page.locator(`[data-skill="${id}"]`);await tile.click();assert.equal(await tile.getAttribute('aria-pressed'),'true');
-  await page.locator(`[data-detail="${id}"]`).click();
+  assert.equal(await page.locator('#skill-toggle').count(),0);
  } else await page.locator(`[data-passive="${id}"]`).click();
  assert.ok((await page.locator('#skill-detail').innerText()).includes('鍛冶'),'Discovery cause remains available in details');
  await page.screenshot({path:prefix+'-loadout.png'});

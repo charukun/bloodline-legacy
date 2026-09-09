@@ -64,8 +64,8 @@ test('skill adoption and passive state use leaf seals while retaining names, all
  const {p,g,sim,ui,d}=fixture(t);sim.learn(p,4001);sim.learn(p,4060);p.phaseWeights[0]={4000:1,4001:0};ui.skills();
  const off=d.querySelector('[data-skill="4001"]'),on=d.querySelector('[data-skill="4000"]');
  assert.doesNotMatch(d.getElementById('skills-content').textContent,/未採用|採用中|常時有効/);
- assert.match(off.getAttribute('aria-label'),/未採用/);assert.ok(off.querySelector('.selection-seal:not(.lit)'));assert.ok(on.querySelector('.selection-seal.lit'));assert.match(on.textContent,/100%/);
- off.click();d.getElementById('skill-toggle').click();assert.ok(p.phaseWeights[0][4001]>0);assert.ok(d.querySelector('[data-skill="4001"] .selection-seal.lit'));
+ assert.equal(off.getAttribute('aria-label'),'斬る');assert.equal(off.getAttribute('aria-pressed'),'false');assert.equal(on.getAttribute('aria-pressed'),'true');assert.ok(off.querySelector('.selection-seal:not(.lit)'));assert.ok(on.querySelector('.selection-seal.lit'));assert.match(on.textContent,/100%/);
+ off.click();assert.ok(p.phaseWeights[0][4001]>0);assert.ok(d.querySelector('[data-skill="4001"] .selection-seal.lit'));
  d.querySelector('[data-phase="3"]').click();assert.equal(ui.phase,3);assert.equal(d.querySelector('#balance-pie'),null);
  assert.ok(d.querySelector('[data-passive="4060"] .selection-seal.lit'));assert.doesNotMatch(d.getElementById('skills-content').textContent,/常時有効|常に働く力/);assert.equal(d.getElementById('skill-toggle'),null);
  const tabs=[...d.querySelectorAll('[role="tab"]')];assert.equal(tabs.length,4);assert.equal(tabs.filter(b=>b.getAttribute('aria-selected')==='true').length,1);assert.ok(tabs.every(b=>b.querySelector('.phase-ribbon-label')));
