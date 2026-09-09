@@ -1,0 +1,26 @@
+/* The same cloth, framed view and compact object inspection as the consciousness panel. */
+#modal-root.body{pointer-events:auto;background:#14261e24}
+.body .panel-content{padding:6px 10px;flex:1;overflow:hidden;min-height:0}
+.body #wardrobe-content{height:100%;display:grid;grid-template-rows:44px minmax(120px,1fr) 100px;gap:10px;min-height:0}
+.wardrobe-heading{display:flex;align-items:center;justify-content:space-between;border-bottom:1px dashed #c6b48070;padding-bottom:4px}
+.wardrobe-heading h2{display:flex;align-items:center;gap:9px;font-size:16px;font-weight:500;letter-spacing:.16em;color:#eee0ba}
+.wardrobe-heading h2 .icon{width:22px;height:22px}.wardrobe-heading .ink-label{height:18px}
+.wardrobe-heading .panel-close{width:44px;min-height:44px;padding:10px}
+.wardrobe-overview{display:grid;grid-template-columns:minmax(110px,.85fr) minmax(0,1.15fr);gap:10px;min-height:0}
+.body .wardrobe-figure{width:100%;height:100%;min-height:0;margin:0;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 70%,#b3b27c28,transparent 68%)}
+.body .wardrobe-figure img{width:100%;height:100%;min-height:0;object-fit:contain}
+.wardrobe-description{border-left:1px solid #c6b48050;padding-left:10px;display:flex;flex-direction:column;min-height:0;min-width:0}
+#wardrobe-detail{flex:1;overflow:auto;overscroll-behavior:contain;padding:4px 3px 6px 0;overflow-wrap:anywhere;color:#ded4b5;font-size:12px;line-height:1.7}
+#wardrobe-detail>small{font-size:10px;color:#bfb693;letter-spacing:.14em}#wardrobe-detail h3{margin:5px 0 10px;color:#f0dfb9;font-size:16px;font-weight:500}
+#wardrobe-detail p{margin:0 0 8px}.wardrobe-affinity{color:#c6d3aa}.wardrobe-affinity .icon{width:16px;height:16px;vertical-align:middle;margin-right:4px}
+#wardrobe-choice{flex:none;padding-top:4px}#wardrobe-choice button{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;min-height:44px;padding:5px 8px;font-size:12px;border-radius:3px;background:linear-gradient(135deg,#777b5755,#4e624844);border:1px solid #c4b082;box-shadow:inset 0 0 0 3px #26382e44}
+#wardrobe-choice .icon{width:18px;height:18px}
+.wardrobe-slots{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;min-height:0;border-top:1px solid #c4b68760;padding:7px 0 1px}
+.body .belonging-slot{position:relative;min-width:0;min-height:0;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:5px 2px;border:1px solid #c4b08266;border-radius:3px;background:linear-gradient(135deg,#18291e66,#35402b33);box-shadow:inset 0 0 0 3px #26382e44;color:#e8dcb8}
+.body .belonging-slot:after{content:'';position:absolute;inset:4px;border:1px dashed #c5b17b33;pointer-events:none}
+.body .belonging-slot[aria-pressed=true]{border-color:#e9d3a0;box-shadow:inset 0 0 0 2px #cdb47766;background:#899e6133}
+.body .belonging-slot .icon{width:26px;height:26px;margin:0;color:#d8c99a}.body .belonging-slot small{font-size:9px;line-height:1.2;color:#b9b69a}.body .belonging-slot strong{font-size:11px;font-weight:500;line-height:1.2;overflow-wrap:anywhere}
+.phase-capacity{display:flex;justify-content:center;gap:8px;height:12px;flex:none;align-items:center}.phase-capacity i{width:5px;height:7px;transform:rotate(35deg);border:1px solid #bfbc9366;border-radius:60% 10%}.phase-capacity i.lit{background:#d4c58e;border-color:#eddda8;box-shadow:0 0 5px #d4c58e66}
+.skills #pie-wrap{height:calc(100% - 32px)}#phase-limit-hint{display:block;font-size:10px;line-height:1.5;padding-top:3px;color:#d4c8a7}
+@media(max-height:560px){.body #wardrobe-content{grid-template-rows:36px minmax(90px,1fr) 78px;gap:5px}.wardrobe-heading .panel-close{min-height:36px;height:36px;padding:6px}.wardrobe-heading h2{font-size:14px}#wardrobe-detail{font-size:11px}#wardrobe-detail h3{font-size:14px;margin:2px 0 4px}#wardrobe-choice button{min-height:36px}.body .belonging-slot{gap:3px}.body .belonging-slot .icon{width:22px;height:22px}.skills #pie-wrap{height:calc(100% - 12px)}}
+@media(max-height:360px) and (orientation:portrait){.body .panel-content{overflow-y:auto}.body #wardrobe-content{height:auto;grid-template-rows:36px 110px 78px}}

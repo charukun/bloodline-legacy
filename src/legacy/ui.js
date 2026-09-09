@@ -74,11 +74,11 @@ class UI {
   for(const n of [this.hud,this.clan])n.inert=true;this.g.renderer.canvas.inert=type!=='skills';
   this.root.className='modal-root visible '+type;
   if(this.hudDock)this.hud.appendChild(this.hudDock);
-  this.root.innerHTML=`<section id="game-panel" class="game-panel ${['body','lineage','onboarding','wounds'].includes(type)?'parchment':''}" role="dialog" aria-modal="${type!=='skills'}" aria-label="${ESC(title)}">${type==='skills'?'':`<header class="panel-head"><button class="panel-back" aria-label="戻る">${icon('back')}</button><h2>${label(title)}</h2><button class="panel-close" aria-label="閉じる">${icon('close')}</button></header>`}<div class="panel-content">${html}</div></section>`;
-  if(type==='skills'){
+  this.root.innerHTML=`<section id="game-panel" class="game-panel ${['lineage','onboarding','wounds'].includes(type)?'parchment':''}" role="dialog" aria-modal="${type!=='skills'}" aria-label="${ESC(title)}">${['skills','body'].includes(type)?'':`<header class="panel-head"><button class="panel-back" aria-label="戻る">${icon('back')}</button><h2>${label(title)}</h2><button class="panel-close" aria-label="閉じる">${icon('close')}</button></header>`}<div class="panel-content">${html}</div></section>`;
+  if(['skills','body'].includes(type)){
    const panel=this.root.querySelector('.game-panel');
    const measure=()=>{
-    if(this.modal!=='skills')return;const canvas=this.g.renderer.canvas,w=canvas.clientWidth||innerWidth,h=canvas.clientHeight||innerHeight,style=getComputedStyle(this.root);
+    if(this.modal!==type)return;const canvas=this.g.renderer.canvas,w=canvas.clientWidth||innerWidth,h=canvas.clientHeight||innerHeight,style=getComputedStyle(this.root);
     if(w>h){const left=panel.offsetWidth?w-panel.offsetWidth-(parseFloat(style.paddingRight)||0):0;this.skillPanelLeft=left>0?clamp(left/w,.25,.88):.54;this.skillPanelTop=null;}
     else{const top=panel.offsetHeight?h-panel.offsetHeight-(parseFloat(style.paddingBottom)||0):0;this.skillPanelTop=top>0?clamp(top/h,.25,.8):.40;this.skillPanelLeft=null;}
    };
@@ -121,10 +121,10 @@ class UI {
   if(!ids.includes(this.detail))this.detail=ids.find(id=>weights[id]>0)??ids[0]??null;
   const colors=['#9aba8f','#d8b67c','#a8aec6','#c48d75','#86b4b0','#c7bb89','#bc9bba','#a7a286'];
   this.skillColors=Object.fromEntries(ids.map((id,i)=>[id,colors[i%colors.length]]));
-  const sum=ids.reduce((n,id)=>n+(weights[id]||0),0);
+  const sum=ids.reduce((n,id)=>n+(weights[id]||0),0),count=phaseSkillCount(weights);
   document.getElementById('skills-content').innerHTML=`<div class="skill-tabs-row"><div class="phase-tabs" role="tablist" aria-label="技の段とパッシブ">${[...PHASES,'パッシブ'].map((name,i)=>`<button role="tab" data-phase="${i}" aria-controls="skill-page" aria-selected="${this.phase===i}" class="${this.phase===i?'chosen':''}"><span class="phase-ribbon-label">${i<3?label(name):'<span>パッシブ</span>'}</span></button>`).join('')}</div><button id="skills-close" class="panel-close" aria-label="閉じる">${icon('close')}</button></div>
    <div id="skill-page" class="skill-overview ${passive?'passive-page':''}" role="tabpanel" aria-label="${passive?'パッシブ':PHASES[this.phase]}">
-    <div class="skill-balance">${passive?`<div class="passive-emblem">${icon('leaf')}<strong>身についた心得</strong></div>`:'<div id="pie-wrap"></div><p class="balance-hint">輪の境目を動かして配分</p><div id="pie-legend" class="pie-legend visually-hidden"></div>'}</div>
+    <div class="skill-balance">${passive?`<div class="passive-emblem">${icon('leaf')}<strong>身についた心得</strong></div>`:`<div id="pie-wrap"></div><div class="phase-capacity" role="img" aria-label="${PHASES[this.phase]}の技 ${count} / ${MAX_PHASE_SKILLS}">${Array.from({length:MAX_PHASE_SKILLS},(_,i)=>`<i class="${i<count?'lit':''}"></i>`).join('')}</div><p class="balance-hint">輪の境目を動かして配分</p><div id="pie-legend" class="pie-legend visually-hidden"></div>`}</div>
     <div class="skill-description"><div id="skill-detail" class="skill-detail"><span>${passive?'経験から、心得が芽生える。':'この段で使う技を選ぼう。'}</span></div><div id="skill-choice"></div></div>
    </div>
    <div class="skill-list-scroll" tabindex="0" aria-label="習得した技">${[...p.skills,...p.passives].some(id=>!skillById(id))?'<p class="skill-compatibility" role="status">この版では表示できない技があります。技の記録は保持されています。最新版で記録を開いてください。</p>':''}<div class="skill-grid">${ids.length?ids.map((id,i)=>{const sk=skillById(id),locked=!passive&&skillRestriction(p,sk),enabled=passive||weights[id]>0;return`<div class="skill-cell ${enabled?'enabled':''} ${this.detail===id?'selected':''}" style="--ink:${this.skillColors[id]}"><button ${passive?'data-passive':'data-skill'}="${id}" class="skill-tile ${locked?'restricted':''}" aria-pressed="${this.detail===id}" aria-controls="skill-detail" aria-label="${ESC(sk.name)}の説明・${passive?'常時有効':enabled?'採用中':'未採用'}">${passive?'':`<span class="skill-number">${i+1}</span>`}<span class="skill-sigil">${icon(schoolIcon(sk.school))}</span><span class="skill-name">${ESC(sk.name)}</span><span class="skill-allocation">${uiSelectionSeal(enabled)}${!passive&&enabled?`<span>${Math.round(weights[id]/sum*100)}%</span>`:''}</span></button></div>`;}).join(''):`<div class="phase-empty">${passive?'まだ、心得は芽生えていない。':'まだ、この段の技はない。'}</div>`}</div></div>`;
@@ -143,8 +143,8 @@ class UI {
   this.root.querySelectorAll('[data-skill],[data-passive]').forEach(b=>{const selected=+(b.dataset.skill||b.dataset.passive)===id;b.setAttribute('aria-pressed',String(selected));b.closest('.skill-cell').classList.toggle('selected',selected);});
   const choice=document.getElementById('skill-choice');if(!choice)return;
   if(sk.passive){choice.replaceChildren();return;}
-  const enabled=(p.phaseWeights[this.phase]?.[id]||0)>0;
-  choice.innerHTML=`<button id="skill-toggle" aria-pressed="${enabled}">${enabled?'編成から外す':PHASES[this.phase]+'に組み込む'}</button>`;
+  const enabled=(p.phaseWeights[this.phase]?.[id]||0)>0,full=phaseSkillCount(p.phaseWeights[this.phase])>=MAX_PHASE_SKILLS;
+  choice.innerHTML=`<button id="skill-toggle" aria-pressed="${enabled}" ${!enabled&&full?'disabled aria-describedby="phase-limit-hint"':''}>${enabled?'編成から外す':PHASES[this.phase]+'に組み込む'}</button>${!enabled&&full?'<small id="phase-limit-hint">ひとつ外すと、新たな技を込められる。</small>':''}`;
   choice.querySelector('button').onclick=()=>{const p=this.g.snapshot?.player;if(!p||this.phase===3||!p.skills.includes(id))return;const weights={...p.phaseWeights[this.phase]};weights[id]=weights[id]>0?0:20;this.g.command({type:'weights',phase:this.phase,weights});this.renderSkills();this.g.saveWorld();};
  }
  pieMarkup(ids,weights){const entries=ids.filter(id=>weights[id]>0),sum=entries.reduce((n,id)=>n+weights[id],0);this.pieEntries=entries;this.pieAngles=[];let end=-Math.PI/2,paths='',handles='',marks='';const pos=(a,r=67)=>[104+Math.cos(a)*r,100+Math.sin(a)*r];
@@ -162,9 +162,24 @@ class UI {
  }
  body(){
   const p=this.g.snapshot?.player;if(!p)return;this.lastBody=this.bodySignature(p);
-  this.open('body','身支度',`<h3 class="section-label first-label">現在の装備</h3><div class="wardrobe"><div class="wardrobe-figure" id="wardrobe-figure"></div><dl class="equipped-list"><div><dt>得物</dt><dd>${p.weapon<0?'素手':ESC(WEAPONS[p.weapon]?.name)}</dd></div><div><dt>防具</dt><dd>${ESC(ARMORS[p.armor]?.name)}</dd></div><div><dt>左手</dt><dd>${p.shield?'木鉄の盾':'装備なし'}</dd></div></dl></div><h3 class="section-label">手荷物 <small>${p.inventory.length} / ${MAX_ITEMS}枠</small></h3><div class="inventory two-slots">${[0,1].map(i=>{const id=p.inventory[i];return `<div class="inventory-slot ${id?'filled':''}"><small>手荷物 ${i+1}</small>${id?`${itemIcon(id)}<strong>${ESC(ITEMS[id].name)}</strong><span>${ESC(ITEMS[id].desc)}</span><button data-discard="${i}" aria-label="${ESC(ITEMS[id].name)}を手放す">手放す</button>`:`${icon('bag')}<strong>空き</strong><span>あと1つ持てる</span>`}</div>`;}).join('')}</div>${p.inventory.length===MAX_ITEMS&&p.passives.includes(4060)?`<div class="affinity-note">${icon('spark')}${itemAffinity(p).some(s=>s.items.length===2)?'ふたつの理が、響き合う。':'ふたつの品を、見比べる。'}</div>`:''}<p class="equipment-note">${uiEquipmentNote(p,this.g.nearRack())}</p><button class="full-button" id="open-rack">${icon('sword')}武具棚${icon('arrow')}</button>`);
-  this.queuePortrait(p,document.getElementById('wardrobe-figure'),'wardrobe');document.getElementById('open-rack').onclick=()=>this.rack();
-  this.root.querySelectorAll('[data-discard]').forEach(b=>b.onclick=()=>{this.g.command({type:'discard',slot:+b.dataset.discard});this.body();});
+  this.open('body','身支度',`<div id="wardrobe-content"><div class="wardrobe-heading"><h2>${icon('bag')}${label('身支度')}</h2><button class="panel-close" aria-label="閉じる">${icon('close')}</button></div><div class="wardrobe-overview"><div class="wardrobe-figure" id="wardrobe-figure"></div><div class="wardrobe-description"><div id="wardrobe-detail"></div><div id="wardrobe-choice"></div></div></div><div class="wardrobe-slots" aria-label="装備と手荷物"></div></div>`);
+  this.queuePortrait(p,document.getElementById('wardrobe-figure'),'wardrobe');this.describeBelonging(this.bodySlot||'weapon');
+ }
+ describeBelonging(slot){
+  const p=this.g.snapshot?.player;if(!p||this.modal!=='body')return;
+  const note=uiEquipmentNote(p,this.g.nearRack()),slots=[
+   {id:'weapon',label:'得物',name:p.weapon<0?'素手':WEAPONS[p.weapon]?.name,glyph:p.weapon<0?'hand':'sword',desc:note},
+   {id:'armor',label:'防具',name:ARMORS[p.armor]?.name,glyph:'cloth',desc:note},
+   {id:'shield',label:'左手',name:p.shield?'木鉄の盾':'空いた手',glyph:'shield',desc:note},
+   ...[0,1].map(i=>{const id=p.inventory[i],item=ITEMS[id];return {id:'item'+i,label:'手荷物 '+(i+1),name:item?.name||'空き',glyph:item?.icon||'bag',desc:item?.desc||'旅で見つけた小さな品を、ここにしまえる。',item:i,filled:!!item};})
+  ];
+  const selected=slots.find(x=>x.id===slot)||slots[0];this.bodySlot=selected.id;
+  this.root.querySelector('.wardrobe-slots').innerHTML=slots.map(x=>`<button data-body-slot="${x.id}" class="belonging-slot ${x.item!==undefined?'inventory-slot '+(x.filled?'filled':''):''}" aria-label="${ESC(x.label+'・'+x.name)}" aria-pressed="${selected.id===x.id}" aria-controls="wardrobe-detail"><small>${ESC(x.label)}</small>${icon(x.glyph)}<strong>${ESC(x.name)}</strong></button>`).join('');
+  this.root.querySelectorAll('[data-body-slot]').forEach(b=>b.onclick=()=>{this.describeBelonging(b.dataset.bodySlot);this.root.querySelector(`[data-body-slot="${b.dataset.bodySlot}"]`)?.focus({preventScroll:true});});
+  document.getElementById('wardrobe-detail').innerHTML=`<small>${ESC(selected.label)}</small><h3>${ESC(selected.name)}</h3><p>${ESC(selected.desc)}</p>${selected.item!==undefined&&p.inventory.length===MAX_ITEMS&&p.passives.includes(4060)?`<p class="wardrobe-affinity">${icon('spark')}${itemAffinity(p).some(s=>s.items.length===2)?'ふたつの理が、響き合う。':'ふたつの品を、見比べる。'}</p>`:''}`;
+  document.getElementById('wardrobe-choice').innerHTML=selected.item!==undefined?selected.filled?`<button data-discard="${selected.item}" aria-label="${ESC(selected.name)}を手放す">${icon('hand')}手放す</button>`:'':`<button id="open-rack">${icon('sword')}武具棚${icon('arrow')}</button>`;
+  document.getElementById('open-rack')?.addEventListener('click',()=>this.rack());
+  this.root.querySelector('[data-discard]')?.addEventListener('click',()=>{this.g.command({type:'discard',slot:selected.item});this.body();queueMicrotask(()=>this.root.querySelector(`[data-body-slot="${selected.id}"]`)?.focus({preventScroll:true}));});
  }
  bodySignature(p){return JSON.stringify([p.id,p.inventory,p.weapon,p.armor,p.shield,p.age<EQUIP_AGE,this.g.nearRack(),p.passives]);}
  wounds(){const p=this.g.snapshot?.player;if(!p)return;const hurt=Object.entries(p.wounds||{});this.open('wounds','身体の声',`<div class="wounds-figure">${anatomy(p,true)}</div><div class="wound-list">${hurt.length?hurt.map(([k,w])=>`<div><span>${BODY_NAMES[k]}</span><strong class="${w.severity}">${WOUND_NAMES[w.severity]}</strong></div>`).join(''):'<p>傷は、ない。</p>'}</div><div class="wound-key"><span>◆ 軽傷</span><span>◆ 重傷</span><span>◆ 欠損</span></div>`);}

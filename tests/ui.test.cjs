@@ -80,8 +80,8 @@ test('pickup presents item name, then sends the existing command and respects tw
  r.items[0].ready=0;p.inventory.push('bell');sync();b=d.querySelector('[data-context="pickup"]');assert.equal(b.disabled,true);assert.match(b.textContent,/満杯/);b.click();assert.equal(p.inventory.length,2);assert.equal(g.command({type:'pickup',id:'near-item'}),false);
 });
 test('inventory shows two stable slots, current equipment in text, and discard updates only one slot',t=>{
- const {p,ui,d}=fixture(t);p.inventory=['stone','bell'];ui.body();assert.equal(d.querySelectorAll('.inventory-slot').length,2);assert.match(d.querySelector('.equipped-list').textContent,/素手/);
- d.querySelector('[data-discard="0"]').click();assert.deepEqual(Array.from(p.inventory),['bell']);assert.equal(d.querySelectorAll('.inventory-slot.filled').length,1);
+ const {p,ui,d}=fixture(t);p.inventory=['stone','bell'];ui.body();assert.equal(d.querySelectorAll('.inventory-slot').length,2);assert.match(d.querySelector('.wardrobe-slots').textContent,/素手/);
+ d.querySelector('[data-body-slot="item0"]').click();d.querySelector('[data-discard="0"]').click();assert.deepEqual(Array.from(p.inventory),['bell']);assert.equal(d.querySelectorAll('.inventory-slot.filled').length,1);
 });
 test('equipment age and rack-distance rules are enforced by real Simulation commands',t=>{
  const {p,sim,g,ui,d,sync}=fixture(t),rack=g.snapshot.map.schools.find(a=>a.id==='armory');p.x=rack.x;p.z=rack.z+3;p.age=6;sync();ui.rack();
