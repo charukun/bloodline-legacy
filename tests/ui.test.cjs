@@ -2,7 +2,7 @@ const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const {fixture,flush} = require('./ui-fixture.cjs');
 test('lineage stays still on irrelevant age and equipment changes; history remains readable',async t=>{
- const {ui,p,g,w,sync,sim}=fixture(t);sim.legacy(p.owner).records=[{id:'old',name:'先人',skills:[4000]}];ui.lineage();await flush();const root=ui.lineageView.modalView.scope;root.querySelector('#life-details').click();
+ const {ui,p,g,w,sync,sim}=fixture(t);sim.legacy(p.owner).records=[{id:'old',name:'先人',skills:[4000]}];ui.lineage();await flush();const root=ui.lineageView.modalView.scope;root.querySelector('#open-index').click();root.querySelector('[data-record="old"]')?.click();root.querySelector('#life-details').click();
  const observer=new w.MutationObserver(()=>{});observer.observe(root,{subtree:true,childList:true,attributes:true,characterData:true});for(let i=0;i<10;i++)ui.update(g.snapshot);assert.equal(observer.takeRecords().length,0);
  p.age=18;p.weapon=2;sync();assert.equal(observer.takeRecords().length,0);assert.equal(root.querySelector('#dialog').open,true);observer.disconnect();
 });
@@ -24,7 +24,7 @@ test('first life opens without invented ancestors; native race, name and setting
  assert.equal(root.querySelectorAll('[data-origin-race]').length,4);assert.equal(root.querySelector('#history-controls').hidden,true);assert.equal(root.querySelector('#begin-life').textContent,'人生を始める');
  const before=JSON.stringify(sim.exportState());root.querySelector('[data-origin-race="2"]').click();assert.equal(g.profile.race,2);assert.equal(g.previewCharacter.race,2);assert.equal(JSON.stringify(sim.exportState()),before);
  const name=root.querySelector('#origin-name');name.value='新しい名';name.dispatchEvent(new w.Event('input',{bubbles:true}));assert.equal(g.profile.name,'新しい名');
- const settings=root.querySelector('#settings');settings.focus();settings.click();await flush();assert.equal(ui.modal,'settings');ui.closeModal();await flush();assert.equal(root.activeElement,settings);assert.equal(ui.clan.inert,false);
+ const settings=root.querySelector('#settings');settings.focus();settings.click();root.querySelector('#game-settings').click();await flush();assert.equal(ui.modal,'settings');ui.closeModal();await flush();assert.equal(root.activeElement,settings);assert.equal(ui.clan.inert,false);
 });
 test('new life still starts through Game.start with one actual inherited skill',async t=>{
  const {g,sim,p,ui,d}=fixture(t);sim.die(p,'老衰');assert.ok(sim.command(p.id,{type:'choose-legacy',skill:4000}));g.screen='clan';g.profile.uiExplained=true;g.profile.race=1;g.profile.name='次の灯';g.renderer.effects=[];g.renderer.camera={};
@@ -33,18 +33,18 @@ test('new life still starts through Game.start with one actual inherited skill',
 });
 test('historical equipment is shown in details; gameplay inventory is absent from lineage',t=>{
  const {ui,sim,p}=fixture(t),legacy=sim.legacy(p.owner);p.inventory=['stone','bell'];legacy.archive=[4000];legacy.records=[{id:'old',name:'先人',gen:1,age:42,skills:[4000],uses:19,appearance:{race:2,age:42,weapon:2,armor:2,shield:true}},{id:'unknown',name:'記録のみ',skills:[]}];ui.lineage();const root=ui.lineageView.modalView.scope;
- assert.equal(root.querySelectorAll('.ancestor').length,2);assert.equal(root.querySelector('.book-inventory'),null);assert.ok(root.querySelector('[data-record="unknown"] .missing-portrait'));
+ assert.equal(root.querySelectorAll('.ancestor').length,2);assert.equal(root.querySelector('.book-inventory'),null);assert.ok(root.querySelector('[data-record="unknown"] .record-seal'));root.querySelector('#open-index').click();root.querySelector('[data-record="old"]').click();
  root.querySelector('#life-details').click();assert.match(root.querySelector('#dialog-content').textContent,/大剣.*重鎧/s);assert.equal(root.querySelector('#detail-choose'),null);
 });
 test('living character browsing never edits inheritance or creates another life',async t=>{
  const {ui,sim,p,g}=fixture(t),legacy=sim.legacy(p.owner);legacy.archive=[4000,4001];legacy.records=[{id:'a',name:'一',gen:1,skills:[4000]},{id:'b',name:'二',gen:2,skills:[4001]}];ui.lineage();const root=ui.lineageView.modalView.scope,before=JSON.stringify(sim.exportState());
- root.querySelector('[data-record="a"]').click();root.querySelector('#open-index').click();assert.equal(root.querySelectorAll('[data-choose-id]').length,0);root.querySelector('#close-dialog').click();root.querySelector('#begin-life').click();await flush();
+ root.querySelector('#open-index').click();root.querySelector('[data-record="a"]').click();root.querySelector('#library-open').click();assert.equal(root.querySelectorAll('[data-choose-id]').length,0);root.querySelector('#close-dialog').click();root.querySelector('#begin-life').click();assert.equal(root.querySelector('#person-name').textContent,p.name);root.querySelector('#begin-life').click();await flush();
  assert.equal(ui.modal,null);assert.equal(JSON.stringify(sim.exportState()),before);assert.equal(g.profile.inherit.length,0);
 });
 test('1000 generations remain reachable with bounded DOM and disposable views',t=>{
  const {ui,sim,p}=fixture(t),legacy=sim.legacy(p.owner);legacy.archive=[4000];legacy.records=Array.from({length:1000},(_,i)=>({id:'past'+i,name:'先人'+i,gen:i+1,skills:[4000],appearance:{race:i%4}}));ui.lineage();let root=ui.lineageView.modalView.scope;
- assert.equal(root.querySelectorAll('.ancestor').length,3);const dial=root.querySelector('#time-dial');dial.value='0';dial.dispatchEvent(new root.ownerDocument.defaultView.Event('input'));assert.match(root.querySelector('#generation').textContent,/第1代/);
- root.querySelector('#open-index').click();assert.equal(root.querySelectorAll('.index-row').length,6);const search=root.querySelector('#legacy-search');search.value='１０００代';search.dispatchEvent(new root.ownerDocument.defaultView.Event('input'));assert.equal(root.querySelectorAll('.index-row').length,1);assert.match(root.querySelector('#library-results').textContent,/先人999/);
+ root.querySelector('#open-index').click();assert.equal(root.querySelectorAll('.ancestor').length,1);const dial=root.querySelector('#time-dial');dial.value='0';dial.dispatchEvent(new root.ownerDocument.defaultView.Event('input'));assert.match(root.querySelector('#generation').textContent,/第1代/);
+ root.querySelector('#library-open').click();assert.equal(root.querySelectorAll('.index-row').length,6);const search=root.querySelector('#legacy-search');search.value='１０００代';search.dispatchEvent(new root.ownerDocument.defaultView.Event('input'));assert.equal(root.querySelectorAll('.index-row').length,1);assert.match(root.querySelector('#library-results').textContent,/先人999/);
  for(let i=0;i<6;i++){const old=root;ui.lineage();root=ui.lineageView.modalView.scope;assert.equal(old.childNodes.length,0);}ui.closeModal();assert.equal(root.childNodes.length,0);assert.ok(ui.portraitQueue.every(q=>q.node.isConnected));
 });
 test('lineage help opens on demand and closing it returns focus',t=>{
@@ -80,8 +80,8 @@ test('pickup presents item name, then sends the existing command and respects tw
  r.items[0].ready=0;p.inventory.push('bell');sync();b=d.querySelector('[data-context="pickup"]');assert.equal(b.disabled,true);assert.match(b.textContent,/満杯/);b.click();assert.equal(p.inventory.length,2);assert.equal(g.command({type:'pickup',id:'near-item'}),false);
 });
 test('inventory shows two stable slots, current equipment in text, and discard updates only one slot',t=>{
- const {p,ui,d}=fixture(t);p.inventory=['stone','bell'];ui.body();assert.equal(d.querySelectorAll('.inventory-slot').length,2);assert.match(d.querySelector('.equipped-list').textContent,/素手/);
- d.querySelector('[data-discard="0"]').click();assert.deepEqual(Array.from(p.inventory),['bell']);assert.equal(d.querySelectorAll('.inventory-slot.filled').length,1);
+ const {p,ui,d}=fixture(t);p.inventory=['stone','bell'];ui.body();assert.equal(d.querySelectorAll('.inventory-slot').length,2);assert.match(d.querySelector('.wardrobe-slots').textContent,/素手/);
+ d.querySelector('[data-body-slot="item0"]').click();d.querySelector('[data-discard="0"]').click();assert.deepEqual(Array.from(p.inventory),['bell']);assert.equal(d.querySelectorAll('.inventory-slot.filled').length,1);
 });
 test('equipment age and rack-distance rules are enforced by real Simulation commands',t=>{
  const {p,sim,g,ui,d,sync}=fixture(t),rack=g.snapshot.map.schools.find(a=>a.id==='armory');p.x=rack.x;p.z=rack.z+3;p.age=6;sync();ui.rack();
@@ -101,14 +101,14 @@ test('Escape returns one level; Tab stays inside modal; rerender does not grow n
  d.querySelector('.panel-back').focus();d.activeElement.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Tab',shiftKey:true,bubbles:true,cancelable:true}));assert.equal(d.activeElement.dataset.menu,'settings');
  const toggle=d.getElementById('sound-toggle');toggle.focus();toggle.click();await flush();assert.equal(ui.navigation.length,0);assert.equal(d.activeElement.id,'sound-toggle');
 });
-test('keyboard typing and pointer down during modal cannot begin game movement or rest',t=>{
- const {g,ui,d,w,p}=fixture(t);g.installInput();ui.talk();const input=d.getElementById('chat-text');input.focus();
+test('keyboard and pointer down during the talk fan cannot begin movement or rest',t=>{
+ const {g,ui,d,w,p}=fixture(t);g.installInput();ui.talk();const input=d.querySelector('[data-talk]');input.focus();
  for(const code of ['KeyW','KeyR','Space','KeyD']){input.dispatchEvent(new w.KeyboardEvent('keydown',{key:code.slice(-1),code,bubbles:true}));input.dispatchEvent(new w.KeyboardEvent('keyup',{key:code.slice(-1),code,bubbles:true}));}
  g.renderer.canvas.dispatchEvent(new w.MouseEvent('pointerdown',{button:0,bubbles:true}));assert.equal(g.keys.size,0);assert.ok(!g.pointer);assert.equal(p.seated,false);assert.equal(p.input.x,0);assert.equal(p.input.z,0);
 });
 test('talk uses surrounding speech and preserves the existing wake behavior',t=>{
- const {g,p,ui,d,sim}=fixture(t);g.command({type:'sit',active:true});assert.equal(p.seated,true);ui.talk();assert.equal(p.seated,false);assert.match(d.querySelector('[role="dialog"]').getAttribute('aria-label'),/周囲/);
- d.querySelector('[data-say="ありがとう"]').click();assert.equal(p.speech,'ありがとう');assert.equal(ui.modal,null);assert.ok(sim.events.some(e=>e.type==='speech'&&e.text==='ありがとう'));
+ const {g,p,ui,d,sim}=fixture(t);g.command({type:'sit',active:true});assert.equal(p.seated,true);ui.talk();assert.equal(p.seated,false);assert.match(d.querySelector('[role="menu"]').getAttribute('aria-label'),/周囲/);
+ d.querySelector('[data-talk="2"]').click();assert.equal(p.speech,'ありがとう');assert.equal(ui.modal,null);assert.ok(sim.events.some(e=>e.type==='speech'&&e.text==='ありがとう'));
 });
 test('world labels show only the engaged target and are removed after disengagement',t=>{
  const {g,p,ui,d,sim,sync}=fixture(t),r=sim.getRoom(p);const a=sim.actor('goblin',1,0),b=sim.actor('goblin',2,0);r.actors=[a,b];sync();assert.equal(d.querySelectorAll('.target-label').length,0);
@@ -128,13 +128,13 @@ test('presentation updates cannot mutate game state or save payload',t=>{
 });
 test('skill toggle and keyboard pie adjustment use existing weight commands and preserve focus',async t=>{
  const {sim,p,ui,g,d,w}=fixture(t);sim.learn(p,4001);p.phaseWeights[0]={4000:1,4001:1};ui.skills();await flush();
- const detail=d.querySelector('[data-skill="4000"]');detail.focus();detail.click();assert.match(d.getElementById('skill-detail').textContent,/殴る/);
+ const detail=d.querySelector('[data-skill="4000"]');detail.focus();assert.match(d.getElementById('skill-detail').textContent,/殴る/);
  const handle=d.querySelector('[data-handle="0"]');assert.ok(handle);handle.focus();handle.dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true,cancelable:true}));assert.equal(p.phaseWeights[0][4000],51);assert.equal(p.phaseWeights[0][4001],49);assert.equal(d.activeElement.dataset.handle,'0');
- const btn=d.querySelector('[data-skill="4001"]');btn.focus();btn.click();assert.equal(p.phaseWeights[0][4001],49,'reading the description does not change the build');const toggle=d.getElementById('skill-toggle');toggle.focus();toggle.click();assert.equal(p.phaseWeights[0][4001],0);assert.equal(d.activeElement.id,'skill-toggle');
+ const btn=d.querySelector('[data-skill="4001"]');btn.focus();btn.click();assert.equal(p.phaseWeights[0][4001],0);assert.equal(d.activeElement.dataset.skill,'4001');assert.equal(d.activeElement.getAttribute('aria-pressed'),'false');assert.equal(d.getElementById('skill-toggle'),null);
 });
 test('lineage renders only actual lives and safely escapes imported names',t=>{
  const {sim,p,ui}=fixture(t),legacy=sim.legacy(p.owner);legacy.archive=[4000];legacy.records=[{id:'past',gen:2,age:42,name:'<script>unsafe</script>',skills:[4000],cause:'老衰'},{id:'unknown',name:'記録だけ',skills:[]}];ui.lineage();const root=ui.lineageView.modalView.scope;
- assert.equal(root.querySelectorAll('.ancestor').length,2);assert.equal(root.querySelectorAll('script').length,0);assert.match(root.querySelector('#archive').textContent,/世代未記録/);assert.match(root.querySelector('#archive').textContent,/第2代/);root.querySelector('#life-details').click();assert.match(root.querySelector('#dialog-content').textContent,/老衰/);
+ assert.equal(root.querySelectorAll('.ancestor').length,2);assert.equal(root.querySelectorAll('script').length,0);assert.match(root.querySelector('#archive').textContent,/世代未記録/);assert.match(root.querySelector('#archive').textContent,/第2代/);root.querySelector('#open-index').click();root.querySelector('[data-record="past"]').click();root.querySelector('#life-details').click();assert.match(root.querySelector('#dialog-content').textContent,/老衰/);
 });
 test('real save/restore retains inventory, equipment, wounds, age and recorded lineage',t=>{
  const {sim,p,g,api}=fixture(t);p.inventory=['stone','bell'];p.weapon=0;p.armor=1;p.shield=true;p.wounds={head:{severity:'light',healsAt:25}};sim.legacy(p.owner).records.push({id:'ancestor',name:'前の命',gen:1,age:60,skills:[4000]});sim.legacy(p.owner).archive=[4000];

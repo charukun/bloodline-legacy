@@ -6,11 +6,11 @@ import {JSDOM} from 'jsdom';
 import {motionRuntime} from './skill-motion-harness.mjs';
 const api=await motionRuntime();
 const runtime=fs.readFileSync(new URL('../tools/skill-motion-review-runtime.js',import.meta.url),'utf8');
-const review=vm.runInNewContext(runtime+';MotionReview',{skillById:api.skillById,actionTiming:api.actionTiming,clamp:(v,a,b)=>Math.min(b,Math.max(a,v))});
+const review=vm.runInNewContext(runtime+';MotionReview',{Simulation:api.Simulation,skillById:api.skillById,actionTiming:api.actionTiming,clamp:(v,a,b)=>Math.min(b,Math.max(a,v))});
 
 test('review snapshots exercise the six shipped skills and each authoritative contact without changing a player',()=>{
  const p=api.player(),before=JSON.stringify(p);
- for(const key of ['slash','thrust','slam','kick','spin','cast','chain']){
+ for(const key of ['golden','slash','thrust','slam','kick','spin','cast','chain']){
   const seq=review.sequence(key);
   for(const s of seq.segments){
    assert.deepEqual({...s.timing},{...api.actionTiming(api.skillById(s.id))});
@@ -36,7 +36,7 @@ test('review chain preserves pose history at skill boundaries and can replay a s
 
 test('review controls preserve seek on A/B and send speed, pose, age and FX changes to the isolated renderer',async t=>{
  const template=fs.readFileSync(new URL('../tools/skill-motion-review.html',import.meta.url),'utf8');
- const payload={code:'// SOURCE MODULE: legacy/motion.js\nconst pose="after";\n// SOURCE MODULE: end.js\n',before:{'legacy/motion.js':'const pose="before";'},beforeSha:'a'.repeat(40),afterSha:'b'.repeat(40)};
+ const payload={code:'const VISUAL_ASSETS={};\n// SOURCE MODULE: legacy/dialogue.js\nconst asset=VISUAL_ASSETS["character/young-human-male-cm01.glb"];\n// SOURCE MODULE: legacy/motion.js\nconst pose="after";\n// SOURCE MODULE: end.js\n',before:{'legacy/motion.js':'const pose="before";'},beforeAsset:'before-model-base64',beforeSha:'a'.repeat(40),afterSha:'b'.repeat(40)};
  const html=template.replace('/*__PAYLOAD__*/',JSON.stringify(payload)),dom=new JSDOM(html,{runScripts:'outside-only',url:'https://review.test'}),w=dom.window;
  t.after(()=>w.close());w.eval(w.document.querySelector('script').textContent);
  await new Promise(resolve=>setTimeout(resolve,10));
@@ -47,7 +47,7 @@ test('review controls preserve seek on A/B and send speed, pose, age and FX chan
  change('clip','chain');change('age','14');change('speed','0.25');change('fx',true);change('seek','630');
  assert.equal(messages.at(-1).seek,.63);assert.equal(messages.at(-1).config.paused,true);assert.equal(messages.at(-1).config.speed,.25);assert.equal(messages.at(-1).config.fx,true);assert.equal(messages.at(-1).config.age,14);
  w.document.querySelector('[data-version="before"]').click();session++;await new Promise(resolve=>setTimeout(resolve,10));ready();
- assert.match(frame.srcdoc,/const pose="before"/);assert.equal(messages.at(-1).seek,.63);assert.equal(w.document.querySelector('[data-version="before"]').getAttribute('aria-pressed'),'true');
+ assert.match(frame.srcdoc,/const pose="before"/);assert.match(frame.srcdoc,/before-model-base64/);assert.equal(messages.at(-1).seek,.63);assert.equal(w.document.querySelector('[data-version="before"]').getAttribute('aria-pressed'),'true');
  w.document.getElementById('restart').click();assert.equal(messages.at(-1).seek,0);
  assert(!runtime.includes('new Game('));assert(!runtime.includes('localStorage'));assert(!runtime.includes('fetch('));
 });
