@@ -38,6 +38,7 @@ Replace the example with real existing test files. Keep fixtures, built assets, 
 - Infrastructure and tilt-shift tests run once through the selected/full suite, not individually and again globally.
 - Character evidence is uploaded once at the end, including functional/performance output and failure evidence.
 - npm download caches use lockfiles/runtime; dependency installation still respects the lockfile.
+- Native EGL and Playwright system dependencies use the hosted runner's signed Ubuntu sources through a temporary per-command APT configuration. Unrelated third-party package indexes cannot block these checks; signature/hash verification and dependency failures remain enforced.
 - At workflow start, outdated develop pushes are recorded as superseded and skip expensive validation/deployment. PRs, current develop and release/manual runs retain their gates. Running deployments are not cancelled.
 
 Workflow event counts are not guaranteed to be one per integration batch. The early revision check reduces wasted work on superseded queued commits; skipped verification is not reported as a test pass. Updates arriving later remain subject to the existing deployment-head guard.

@@ -45,7 +45,7 @@ jobs:
           python -m pip install -r tools/requirements-character.txt
           python tests/character_asset_validation.py
       - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
-      - run: deploy/node_modules/.bin/playwright install --with-deps chromium
+      - run: bash tools/ci/prepare-linux-deps.sh browser
       - name: Build the pull request implementation baseline
         env:
           CHARACTER_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '717931fd92271104b89a9c5645ed4792bbf06c2e' }}
