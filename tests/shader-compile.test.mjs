@@ -29,7 +29,7 @@ function programs(){
 }
 function compile(input){
  const r=spawnSync('python3',[new URL('../tools/check-gles-shaders.py',import.meta.url).pathname],{input:JSON.stringify(input),encoding:'utf8',timeout:20000});
- assert.ifError(r.error);assert.ok(r.stdout,r.stderr);return {status:r.status,...JSON.parse(r.stdout)};
+ assert.ifError(r.error);assert.ok(r.stdout,r.stderr);const result=JSON.parse(r.stdout);assert.ok(Array.isArray(result.programs),JSON.stringify(result));return {status:r.status,...result};
 }
 test('all shipped renderer programs compile and link as original GLSL ES 300',nativeOptions,()=>{
  const r=compile(programs());assert.equal(r.status,0,JSON.stringify(r));assert.equal(r.ok,true);assert.equal(r.programs.length,10);
