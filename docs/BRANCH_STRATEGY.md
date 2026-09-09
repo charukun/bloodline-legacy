@@ -1,3 +1,5 @@
+> 通常運用は [共通ポリシーv6](COMMON_DEVELOPMENT_POLICY.txt) と [CI検証責任](CI_VALIDATION.md) を優先する。以下の初回搬入・移行手順や過去実績を、毎回の作業として再実行しない。
+
 # Bloodline Legacy — 正式Branch Strategy
 
 指定方針: 2026-09-08 JST。**develop移行・全35ファイルread-back完了。正式Source of Truthはdevelop**。

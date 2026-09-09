@@ -1,7 +1,7 @@
 name: Bloodline Legacy CI and deployment
 on:
   push:
-    branches: [develop, staging, main, 'feature/**', 'work/skill-system-*']
+    branches: [develop, staging, main]
   pull_request:
     branches: [develop, staging, main]
   workflow_dispatch:
@@ -16,8 +16,32 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  revision:
+    name: Select current revision
+    runs-on: ubuntu-latest
+    outputs:
+      current: ${{ steps.current.outputs.current }}
+    steps:
+      - name: Avoid expensive work for superseded develop pushes
+        id: current
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          current=true
+          if [ "$EVENT_NAME" = "push" ] && [ "$REF_NAME" = "develop" ]; then
+            latest_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/develop" --jq .object.sha)"
+            if [ "$latest_sha" != "$GITHUB_SHA" ]; then
+              current=false
+              echo 'Superseded develop commit: validation and deployment were not run. Follow the latest develop SHA.' >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
+          echo "current=$current" >> "$GITHUB_OUTPUT"
   build:
     name: Build and verify
+    needs: revision
+    if: needs.revision.outputs.current == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     outputs:
@@ -31,6 +55,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            deploy/package-lock.json
       - name: Select environment
         id: target
         env:
@@ -45,15 +73,23 @@ jobs:
           fs.appendFileSync(process.env.GITHUB_OUTPUT,`target=${target}\nsuffix=${target.toUpperCase()}\n`);
           JS
       - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
-      - run: npm test --prefix deploy
-      - run: node --test tests/tilt-shift.test.mjs
+      - name: Select validation for this change
+        id: validation
+        env:
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CI_HEAD_SHA: ${{ github.sha }}
+        run: node tools/ci/validation-plan.mjs
       - name: Prepare native GLSL ES validation
-        run: bash tools/ci-prepare-gles.sh
-      - name: Verify UI, skill and simulation regression
+        if: steps.validation.outputs.glsl == 'true'
+        run: bash tools/ci/prepare-linux-deps.sh glsl
+      - name: Build and run selected regression
         run: |
           npm ci --ignore-scripts --no-audit --no-fund
-          npm test
-          node tests/skills/lives.mjs
+          node build.mjs
+          node tools/ci/run-validation.mjs
+      - name: Verify lifetime simulation
+        if: steps.validation.outputs.lives == 'true'
+        run: node tests/skills/lives.mjs
       - name: Build deployment
         env:
           TARGET: ${{ steps.target.outputs.target }}
@@ -63,19 +99,12 @@ jobs:
           TARGET: ${{ steps.target.outputs.target }}
         run: node deploy/check-build.mjs "$TARGET"
       - name: Multiplayer durability through the Workers runtime
-        if: steps.target.outputs.target != 'production'
+        if: steps.target.outputs.target != 'production' && steps.validation.outputs.runtime == 'true'
         timeout-minutes: 2
         env:
           TARGET: ${{ steps.target.outputs.target }}
         run: node deploy/live-runtime.test.mjs "$TARGET"
-      - name: Install and verify Chromium
-        run: |
-          deploy/node_modules/.bin/playwright install chromium
-          # Hosted runners may already have the required native libraries.
-          # Probe the actual browser before requesting an OS dependency refresh.
-          if ! node --input-type=module -e "import {chromium} from './deploy/node_modules/playwright/index.mjs'; const browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']}); await browser.close();"; then
-            deploy/node_modules/.bin/playwright install-deps chromium
-          fi
+      - run: bash tools/ci/prepare-linux-deps.sh browser
         if: steps.target.outputs.target != 'dev'
       - name: Smoke test through local Workers runtime
         if: steps.target.outputs.target != 'dev'
@@ -116,19 +145,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            deploy/package-lock.json
       - uses: actions/download-artifact@v4
         with:
           name: deploy-${{ github.sha }}
           path: deploy/out/
       - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
-      - name: Install and verify Chromium
-        run: |
-          deploy/node_modules/.bin/playwright install chromium
-          # Hosted runners may already have the required native libraries.
-          # Probe the actual browser before requesting an OS dependency refresh.
-          if ! node --input-type=module -e "import {chromium} from './deploy/node_modules/playwright/index.mjs'; const browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']}); await browser.close();"; then
-            deploy/node_modules/.bin/playwright install-deps chromium
-          fi
+      - run: bash tools/ci/prepare-linux-deps.sh browser
         if: env.TARGET != 'dev'
       - name: Validate branch, URL and current remote head
         env:
