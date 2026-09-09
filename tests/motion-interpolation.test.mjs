@@ -83,3 +83,58 @@ test('catch-up frames use the final tick pair; removed actors are pruned and onl
  f.game.screen='clan';f.game.clanScene={};f.game.previewCharacter=f.p;f.game.frame(1240);
  assert.equal(f.game.motionInterpolation.previous.size,0);
 });
+
+test('real online Game frames interpolate 100ms packets at 30/60/120Hz, retaining authoritative state',()=>{
+ for(const hz of [30,60,120]){
+  const f=fixture();f.game.online=true;f.game.nextNetwork=Infinity;f.game.updateMove=()=>{};
+  const original=copy(f.game.snapshot);let packet;
+  for(let i=0;i<=hz*2;i++){
+   if(i%(hz/10)===0){
+    packet=copy(original);packet.t=i/hz;packet.player.x=i/hz*3;
+    packet.players=packet.players.map(p=>p.id===packet.player.id?packet.player:p);
+    f.game.snapshot=packet;
+   }
+   const saved=JSON.stringify(packet);f.game.frame(1000+i*1000/hz);
+   assert.equal(f.game.frameError,undefined);assert.equal(JSON.stringify(packet),saved);
+   assert.equal(f.game.snapshot,packet);assert.ok(f.frames.at(-1).x<=packet.player.x+1e-9);
+  }
+  const rows=f.frames.slice(hz/2),dx=rows.slice(1).map((p,i)=>p.x-rows[i].x);
+  assert.ok(dx.every(d=>d>0),'no 100ms position plateaus while receiving steady packets');
+  assert.ok(Math.max(...dx)-Math.min(...dx)<1e-8,'equal movement per display frame');
+ }
+});
+
+test('online acknowledgements, jitter, loss and discontinuities stay bounded without delaying game state',()=>{
+ const f=fixture(),motion=f.motion,s=copy(f.game.snapshot);s.t=1;
+ motion.receiveRemote(s,1000);
+ const next=copy(s);next.t=1.1;next.player.x+=.3;next.player.action='attack';next.events=[{type:'hit'}];
+ motion.receiveRemote(next,1100);const middle=motion.sampleRemote(next,1150);
+ assert.ok(Math.abs(middle.player.x-(s.player.x+.15))<1e-8);
+ assert.equal(middle.player.action,'attack');assert.equal(middle.events,next.events);assert.equal(middle.t,next.t);
+ const ack=copy(next);motion.receiveRemote(ack,1150);
+ assert.ok(Math.abs(motion.sampleRemote(ack,1175).player.x-(s.player.x+.225))<1e-8,'same-tick ack does not restart movement');
+ for(const now of [1200,1250,1600])assert.ok(Math.abs(motion.sampleRemote(ack,now).player.x-ack.player.x)<1e-9,'never predict beyond latest packet');
+ const late=copy(ack);late.t+=.1;late.player.x+=.3;motion.receiveRemote(late,1700);
+ assert.equal(motion.sampleRemote(late,1700).player.x,late.player.x,'resume after long stall resets safely');
+ for(const change of [p=>p.player.x+=20,p=>p.player.alive=false,p=>p.room.id='other',p=>p.player.id='new-life',p=>p.t-=1]){
+  motion.reset();motion.receiveRemote(s,1000);const dest=copy(s);dest.t+=.1;change(dest);motion.receiveRemote(dest,1100);
+  assert.equal(motion.sampleRemote(dest,1120).player.x,dest.player.x);assert.equal(motion.sampleRemote(dest,1120).player.id,dest.player.id);
+ }
+ motion.reset();assert.equal(motion.remote,null);
+});
+
+test('Game hands the same rendered pose to camera, world UI and building visibility on every frame',()=>{
+ for(const online of [false,true]){
+  const f=fixture();let drawn=null,labels=0,world=0;
+  f.game.renderer.render=s=>{drawn=s;};
+  f.game.ui.updateWorld=s=>{assert.equal(s,drawn);world++;};
+  f.game.buildingLabels.update=s=>{assert.equal(s,drawn);labels++;};
+  f.game.online=online;f.game.nextNetwork=Infinity;
+  if(online)f.game.updateMove=()=>{};
+  for(let i=1;i<=20;i++){
+   if(online&&i%6===0){const s=copy(f.game.snapshot);s.t+=.1;s.player.x+=.3;f.game.snapshot=s;}
+   f.game.frame(1000+i*1000/60);assert.equal(f.game.frameError,undefined);
+  }
+  assert.equal(labels,20);assert.equal(world,20);
+ }
+});

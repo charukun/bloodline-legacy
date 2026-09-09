@@ -1,4 +1,5 @@
 /* Battle stays visible above the portrait panel or left of the landscape panel. */
+.skills .skill-detail .skill-name-en{display:block;font-size:11px;line-height:1.4;color:#d7d5bd;overflow-wrap:anywhere}
 #modal-root:is(.skills,.body){align-items:flex-end;justify-content:center;padding:0 max(6px,var(--safe-right)) max(6px,var(--safe-bottom)) max(6px,var(--safe-left));background:none;pointer-events:none}
 #modal-root:is(.skills,.body) .game-panel{width:min(740px,100%);height:clamp(380px,62dvh,540px);max-height:calc(100dvh - 128px - var(--safe-top));display:flex;flex-direction:column;pointer-events:auto;border-radius:8px 8px 3px 3px;border-top:2px solid #d9c58d;box-shadow:0 -6px 25px #17251b40;animation:skill-panel-arrive .22s ease-out}
 .skills .skill-tabs-row{display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:6px;min-width:0}.skills #skills-close{width:44px;height:44px;min-height:44px;padding:10px}

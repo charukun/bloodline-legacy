@@ -1,0 +1,19 @@
+{
+  "kind": "Node VM CPU poses and collision queries; GL stubbed, not device FPS",
+  "baseline": "10fb501e635f953c529dfbfc6898d8c0fd21e66c",
+  "node": "v24.19.0",
+  "results": [
+    {
+      "label": "before",
+      "samples": 1200,
+      "medianMs": 0.4227920000002996,
+      "p95Ms": 1.5379589999997734
+    },
+    {
+      "label": "after",
+      "samples": 1200,
+      "medianMs": 0.8926609999998618,
+      "p95Ms": 4.04960600000004
+    }
+  ]
+}

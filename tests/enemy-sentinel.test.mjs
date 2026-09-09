@@ -51,7 +51,7 @@ test('authored weapon has completed its downstroke at gameplay impact',()=>{
  }
 });
 test('damaged replacement body still submits persistent wound marks',()=>{
- const result=run(`(()=>{let calls=0;const r={dynamic:new Map(),put(){calls++;}},art=new VillageArt(r),p={id:'scar',kind:'soldier',x:0,z:0,dir:0,alive:true,wounds:{head:{severity:'heavy'}},statuses:{}};const rec=EnemySentinel.pose(p,0);art.sentinelScars(p,rec);return calls;})()`);assert(result>=4);
+ const result=run(`(()=>{let calls=0;const r={dynamic:new Map(),put(){calls++;}},art=new VillageArt(r),p={id:'scar',hp:22,hpMax:100,kind:'soldier',x:0,z:0,dir:0,alive:true,wounds:{head:{severity:'heavy'}},statuses:{}};const rec=EnemySentinel.pose(p,0);art.sentinelScars(p,rec);return calls;})()`);assert(result>=4);
 });
 test('lost-right-arm attack strikes with the surviving left hand at contact',()=>{
  const p=freeze({...actor(),wounds:{rightArm:{severity:'lost'}},telegraph:{started:0,at:1.35}}),before=api.pose(p,1.08),impact=api.pose(p,1.35);

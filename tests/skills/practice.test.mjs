@@ -23,7 +23,7 @@ test('old saves relocate the existing dummy without replacing it or resetting th
  Object.assign(dummy,{x:15.2,z:10.9,homeX:12,homeZ:8.65});dummy.wounds={torso:{severity:'light'}};
  sim.learn(p,60010);p.phaseWeights[0][60010]=1;const saved=structuredClone(sim.exportState());
  const restored=api.Simulation.restore(saved),r=restored.rooms.get(room.id),d=r.actors.find(a=>a.id===dummy.id);
- assert.equal(r.actors.filter(a=>a.kind==='dummy').length,1);assert.notEqual(d.x,15.2);assert.equal(d.x,d.homeX);assert.equal(d.z,d.homeZ);
+ assert.equal(r.actors.filter(a=>a.kind==='dummy'&&a.shipStation==null).length,1);assert.notEqual(d.x,15.2);assert.equal(d.x,d.homeX);assert.equal(d.z,d.homeZ);
  assert.deepEqual(d.wounds,dummy.wounds);assert.equal(restored.getArea({...d,room:r.id}),'sword');
  const q=restored.players.get(p.id);assert.deepEqual(structuredClone(q.skills),structuredClone(p.skills));assert.deepEqual(structuredClone(q.phaseWeights),structuredClone(p.phaseWeights));assert.equal(q.age,p.age);
  const twice=api.Simulation.restore(structuredClone(restored.exportState())).rooms.get(room.id).actors.find(a=>a.id===dummy.id);
