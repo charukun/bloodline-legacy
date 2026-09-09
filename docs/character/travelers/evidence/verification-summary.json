@@ -1,0 +1,311 @@
+{
+  "base": "717931fd92271104b89a9c5645ed4792bbf06c2e",
+  "unit": {
+    "passed": 263,
+    "failed": 0
+  },
+  "deploymentBuild": "PASS; final commit rebuilt by PR CI",
+  "nativeBrowser": {
+    "passed": true,
+    "checkCount": 23,
+    "checks": [
+      {
+        "name": "after native onboarding",
+        "pass": true
+      },
+      {
+        "name": "after WebGL has no error",
+        "pass": true
+      },
+      {
+        "name": "after comparison has no diorama blur",
+        "pass": true
+      },
+      {
+        "name": "after target renderer dispatch",
+        "pass": true
+      },
+      {
+        "name": "after keyboard movement",
+        "pass": true,
+        "details": {
+          "x": 3.4484325645794764,
+          "z": 2.4600246889450137,
+          "animation": "run"
+        }
+      },
+      {
+        "name": "run joints and support reach",
+        "pass": true
+      },
+      {
+        "name": "acceleration preserves grounded soles",
+        "pass": true,
+        "details": {
+          "maxSlip": 4.8071770907542746e-09
+        }
+      },
+      {
+        "name": "turn keeps finite joints and plausible pelvis height",
+        "pass": true
+      },
+      {
+        "name": "stopping preserves grounded soles",
+        "pass": true,
+        "details": {
+          "maxSlip": 0
+        }
+      },
+      {
+        "name": "after pointer walk",
+        "pass": true,
+        "details": {
+          "x": 1.5517946540607683,
+          "z": 3.3070111100252575,
+          "animation": "walk"
+        }
+      },
+      {
+        "name": "walk joints and support reach",
+        "pass": true
+      },
+      {
+        "name": "after long press rests",
+        "pass": true
+      },
+      {
+        "name": "after talk wakes",
+        "pass": true
+      },
+      {
+        "name": "after real contact combat",
+        "pass": true,
+        "details": {
+          "charged": true,
+          "attack": true,
+          "states": [
+            "charge",
+            "attack",
+            "recover"
+          ],
+          "animations": [
+            "attack",
+            "combat_idle"
+          ],
+          "peak": true,
+          "target": "e11"
+        }
+      },
+      {
+        "name": "hit is consumed from simulation",
+        "pass": true
+      },
+      {
+        "name": "renderer is simulation immutable",
+        "pass": true
+      },
+      {
+        "name": "scope dispatch all boundaries",
+        "pass": true,
+        "details": [
+          {
+            "age": 17,
+            "gender": 0,
+            "race": 0,
+            "kind": "player",
+            "prologue": false,
+            "expected": false,
+            "actual": false
+          },
+          {
+            "age": 18,
+            "gender": 0,
+            "race": 0,
+            "kind": "player",
+            "prologue": false,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "age": 34,
+            "gender": 0,
+            "race": 0,
+            "kind": "player",
+            "prologue": false,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "age": 35,
+            "gender": 0,
+            "race": 0,
+            "kind": "player",
+            "prologue": false,
+            "expected": false,
+            "actual": false
+          },
+          {
+            "age": 24,
+            "gender": 1,
+            "race": 0,
+            "kind": "player",
+            "prologue": false,
+            "expected": false,
+            "actual": false
+          },
+          {
+            "age": 24,
+            "gender": 0,
+            "race": 1,
+            "kind": "player",
+            "prologue": false,
+            "expected": false,
+            "actual": false
+          },
+          {
+            "age": 24,
+            "gender": 1,
+            "race": 1,
+            "kind": "player",
+            "prologue": false,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "age": 24,
+            "gender": 0,
+            "race": 2,
+            "kind": "player",
+            "prologue": false,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "age": 24,
+            "gender": 1,
+            "race": 3,
+            "kind": "player",
+            "prologue": false,
+            "expected": true,
+            "actual": true
+          },
+          {
+            "age": 24,
+            "gender": 1,
+            "race": 2,
+            "kind": "player",
+            "prologue": false,
+            "expected": false,
+            "actual": false
+          },
+          {
+            "age": 24,
+            "gender": 0,
+            "race": 3,
+            "kind": "player",
+            "prologue": false,
+            "expected": false,
+            "actual": false
+          },
+          {
+            "age": 24,
+            "gender": 0,
+            "race": 0,
+            "kind": "portrait",
+            "prologue": false,
+            "expected": false,
+            "actual": false
+          },
+          {
+            "age": 1,
+            "gender": 0,
+            "race": 0,
+            "kind": "player",
+            "prologue": true,
+            "expected": false,
+            "actual": false
+          }
+        ]
+      },
+      {
+        "name": "equipment commands and attachments",
+        "pass": true,
+        "details": {
+          "ok": [
+            true,
+            true,
+            true
+          ],
+          "weapon": 0,
+          "armor": 2,
+          "shield": true,
+          "tip": true
+        }
+      },
+      {
+        "name": "lost arm removes attachment",
+        "pass": true
+      },
+      {
+        "name": "after native save reload",
+        "pass": true,
+        "details": {
+          "saved": {
+            "id": "15aa573d-e6ca-44f6-b811-8113ff473b06",
+            "name": "Character QA",
+            "age": 24,
+            "gender": 0,
+            "race": 0,
+            "legacy": "{\"archive\":[],\"records\":[],\"generation\":1}",
+            "keys": [
+              "aerin.tactics.v3.profile",
+              "aerin.tactics.v3.world.normal"
+            ]
+          },
+          "restored": {
+            "id": "15aa573d-e6ca-44f6-b811-8113ff473b06",
+            "name": "Character QA",
+            "age": 24,
+            "gender": 0,
+            "race": 0,
+            "legacy": "{\"archive\":[],\"records\":[],\"generation\":1}",
+            "keys": [
+              "aerin.tactics.v3.profile",
+              "aerin.tactics.v3.world.normal"
+            ]
+          }
+        }
+      },
+      {
+        "name": "after mobile layout",
+        "pass": true
+      },
+      {
+        "name": "after no page exception",
+        "pass": true,
+        "details": []
+      },
+      {
+        "name": "after no game frame exception",
+        "pass": true
+      }
+    ],
+    "backend": {
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.7977.0 Safari/537.36",
+      "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "dpr": 1,
+      "viewport": [
+        1000,
+        900
+      ]
+    }
+  },
+  "finalSourceSha256": {
+    "src/character/traveler-model.js": "794adf482bf3af2f489d594bad8570fe0937c9d122cc029444bb14f52f6078ec",
+    "src/character/traveler-runtime.js": "dd9c67631ef594fd4f5896bc8fbb6314a3fd98155aaefcd9ff74501221207ae0"
+  },
+  "limits": [
+    "Pixel Fold / native GPU performance remains unverified.",
+    "Not every individual skill motion has received a visual review."
+  ]
+}
