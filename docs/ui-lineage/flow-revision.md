@@ -65,3 +65,11 @@ are not browser layout, video-decoder or device performance evidence.
 Integration contacts: `src/ui/lineage.js`, `src/ui/lineage/theatre.js`,
 `src/ui/lineage/view.html`, `src/ui/lineage/view.css`, and their UI/lineage tests.
 No changes to shared Game, Simulation, input, or server modules.
+
+## Concurrent develop integration
+
+Merged develop `7c7924345c4e27266b31e811864cb8c0acc50592` into the work
+branch to retain concurrent UI-polish/canopy changes. Resolved overlapping
+lineage edits by retaining symbol-only selection seals and `aria-pressed`,
+while keeping the new chronology and separated resume/inheritance flows.
+The UI-polish test now enters inheritance through the visible skill search.

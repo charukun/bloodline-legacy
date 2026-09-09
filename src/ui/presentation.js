@@ -5,6 +5,8 @@ const UIValue = {
  attr(node, name, value) { const next = String(value); if (node && node.getAttribute(name) !== next) node.setAttribute(name, next); },
  style(node, name, value) { if (node && node.style[name] !== value) node.style[name] = value; }
 };
+// The same leaf seal marks a choice throughout the game; controls expose state via ARIA.
+function uiSelectionSeal(active){return `<span class="selection-seal${active?' lit':''}" aria-hidden="true">${icon('leaf')}</span>`;}
 function uiCondition(p, t) {
  const wounds = Object.values(p.wounds || {}), health = p.health ?? 100;
  if (!p.alive) return {text:'命の終わり', tone:'hurt'};

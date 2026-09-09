@@ -86,7 +86,7 @@ test('inventory shows two stable slots, current equipment in text, and discard u
 test('equipment age and rack-distance rules are enforced by real Simulation commands',t=>{
  const {p,sim,g,ui,d,sync}=fixture(t),rack=g.snapshot.map.schools.find(a=>a.id==='armory');p.x=rack.x;p.z=rack.z+3;p.age=6;sync();ui.rack();
  assert.equal(d.querySelector('[data-slot="weapon"]').disabled,true);assert.equal(g.command({type:'equip',slot:'weapon',value:0}),false);
- p.age=7;sync();assert.equal(d.querySelector('[data-slot="weapon"][data-value="0"]').disabled,false);d.querySelector('[data-slot="weapon"][data-value="0"]').click();assert.equal(p.weapon,0);assert.match(d.querySelector('[data-slot="weapon"][data-value="0"]').textContent,/装備中/);
+ p.age=7;sync();assert.equal(d.querySelector('[data-slot="weapon"][data-value="0"]').disabled,false);d.querySelector('[data-slot="weapon"][data-value="0"]').click();assert.equal(p.weapon,0);assert.equal(d.querySelector('[data-slot="weapon"][data-value="0"]').getAttribute('aria-pressed'),'true');assert.ok(d.querySelector('[data-slot="weapon"][data-value="0"] .selection-seal.lit'));
  p.x+=50;sync();assert.equal(d.querySelector('[data-slot="weapon"][data-value="1"]').disabled,true);assert.equal(g.command({type:'equip',slot:'weapon',value:1}),false);assert.equal(p.weapon,0);
 });
 test('modal navigation restores parent, scroll and focus and isolates the background',async t=>{
