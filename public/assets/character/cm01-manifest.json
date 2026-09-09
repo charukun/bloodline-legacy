@@ -18,6 +18,44 @@
       "parts": 100
     }
   ],
-  "bytes": 2315212,
-  "sha256": "e524a572eca8a4872d808fbb558a1c3cf371457cb8059fcb8077279526bab9be"
+  "bytes": 2498492,
+  "sha256": "02ff20db85d09d37c603e156a6ca891cf63392f8b819a4877540e74db80ae874",
+  "clips": [
+    {
+      "name": "chop",
+      "duration": 1.0666667222976685,
+      "contact": 0.573,
+      "frames": 33
+    },
+    {
+      "name": "diagonal",
+      "duration": 1.0,
+      "contact": 0.39,
+      "frames": 31
+    },
+    {
+      "name": "horizontal",
+      "duration": 1.0666667222976685,
+      "contact": 0.226,
+      "frames": 33
+    },
+    {
+      "name": "ready",
+      "duration": 1.0666667222976685,
+      "contact": 0,
+      "frames": 33
+    },
+    {
+      "name": "run",
+      "duration": 0.800000011920929,
+      "contact": 0,
+      "frames": 25
+    },
+    {
+      "name": "walk",
+      "duration": 1.0666667222976685,
+      "contact": 0,
+      "frames": 33
+    }
+  ]
 }

@@ -13,6 +13,57 @@ const CM01 = (()=>{
  function point(m,p){return [m[0]*p[0]+m[4]*p[1]+m[8]*p[2]+m[12],m[1]*p[0]+m[5]*p[1]+m[9]*p[2]+m[13],m[2]*p[0]+m[6]*p[1]+m[10]*p[2]+m[14]];}
  const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
  let asset=null;
+ function readClips(g,access){
+  const clips=new Map();
+  for(const animation of g.animations||[]){
+   if(!animation.name?.startsWith('cm01/'))continue;
+   const tracks=animation.channels.map(channel=>{
+    const sampler=animation.samplers[channel.sampler],path=channel.target.path,node=channel.target.node;
+    if(!['rotation','translation'].includes(path)||!g.extras.boneNames[node]||!['LINEAR','STEP'].includes(sampler.interpolation||'LINEAR'))throw Error('CM01: unsupported motion channel');
+    const times=access(sampler.input),values=access(sampler.output),width=path==='rotation'?4:3;
+    if(times.length<1||values.length!==times.length*width||!times.every((v,i)=>Number.isFinite(v)&&(i===0||v>times[i-1]))||!values.every(Number.isFinite))throw Error('CM01: invalid motion sampler');
+    if(path==='rotation')for(let i=0;i<values.length;i+=4)if(Math.abs(Math.hypot(...values.subarray(i,i+4))-1)>.001)throw Error('CM01: non-unit motion rotation');
+    const parent=g.extras.parents[node],bind=g.extras.bindWorldPositions;
+    const keys=Array.from(times,(_,i)=>Array.from(values.subarray(i*width,(i+1)*width),(v,k)=>path==='translation'?v-(bind[node][k]-(parent>=0?bind[parent][k]:0)):v));
+    const constant=keys.every(key=>key.every((v,k)=>Math.abs(v-keys[0][k])<1e-7));
+    return {node,path,times,keys,constant,step:sampler.interpolation==='STEP'};
+   });
+   const duration=Math.max(...tracks.map(track=>track.times.at(-1)));
+   if(!Number.isFinite(duration)||duration<=0||clips.has(animation.name.slice(5)))throw Error('CM01: invalid motion duration/name');
+   const {release,contact,follow}=animation.extras||{};if(![release,contact,follow].every(Number.isFinite)||contact>0&&!(0<=release&&release<contact&&contact<follow&&follow<=1))throw Error('CM01: invalid motion markers');
+   clips.set(animation.name.slice(5),{tracks,duration,...animation.extras});
+  }
+  return clips;
+ }
+ function sampleClip(clip,u,q,offset){
+  const time=clamp(u,0,1)*clip.duration;
+  for(const {node,path,times,keys,constant,step}of clip.tracks){
+   if(constant){if(path==='rotation')q[node]=keys[0];else offset[node]=keys[0];continue;}
+   let lo=0,hi=times.length-1;
+   while(lo+1<hi){const mid=(lo+hi)>>1;if(times[mid]<=time)lo=mid;else hi=mid;}
+   const b=Math.min(lo+1,times.length-1),mix=step?0:clamp((time-times[lo])/Math.max(1e-7,times[b]-times[lo]),0,1);
+   if(path==='rotation')q[node]=Q.slerp(keys[lo],keys[b],mix);
+   else offset[node]=V.lerp(keys[lo],keys[b],mix);
+  }
+ }
+ function selectClip(p,t,st,phase,moving,run,reaction){
+  if(!asset.clips?.size||p.weapon!==0||!p.alive||p.seated||p.activity||p.guard||p.guardUntil>t||reaction.amount>.02||Object.keys(p.statuses||{}).length||Object.values(p.wounds||{}).some(w=>w.severity==='lost')||['carry','wave','sleep','sit','interact'].includes(p.action)){st.clipCut=null;return null;}
+  const clock=SkillMotion.clock(p,t);
+  if(clock){
+   if(clock.shape!=='slash'||clock.hits!==1){st.clipCut=null;return null;}
+   const name=['diagonal','horizontal','chop'][Math.max(0,(p.combo?.total||1)-1)%3],clip=asset.clips.get(name);if(!clip)return null;
+   st.clipCut=name;
+   // A Hermite time warp keeps a fast, continuous strike through the fixed .43 hit.
+   const hermite=(a,b,ma,mb,u)=>{const u2=u*u,u3=u2*u;return (2*u3-3*u2+1)*a+(u3-2*u2+u)*ma+(-2*u3+3*u2)*b+(u3-u2)*mb;};
+   const velocity=Math.min(3*(clip.contact-clip.release)/.43,3*(clip.follow-clip.contact)/.57)*.85;
+   const u=clock.stage==='charge'?clip.release*smooth(clock.u):clock.beat<.43?hermite(clip.release,clip.contact,0,velocity*.43,clock.beat/.43):hermite(clip.contact,clip.follow,velocity*.57,0,(clock.beat-.43)/.57);
+   return {name,clip,u,stage:clock.stage,entry:clock.stage==='charge'?smooth(clock.u/.3):1};
+  }
+  if(p.action==='recover'){if(!st.clipCut)return null;const clip=asset.clips.get(st.clipCut),u=smooth((t-p.actionStarted)/Math.max(.001,p.actionUntil-p.actionStarted));return {name:st.clipCut,clip,u:clip.follow+(1-clip.follow)*u,stage:'recover',entry:1};}
+  if(!['idle','run','guardWalk','dash','recover'].includes(p.action)){st.clipCut=null;return null;}
+  const name=moving?(run?'run':'walk'):'ready',clip=asset.clips.get(name);if(!clip)return null;
+  return {name,clip,u:moving?((phase/TAU)%1+1)%1:(t/clip.duration)%1,stage:name,entry:1};
+ }
  async function load(base64){const bytes=Uint8Array.from(atob(base64),c=>c.charCodeAt(0)),dv=new DataView(bytes.buffer);
   if(bytes.length<28||dv.getUint32(0,true)!==0x46546c67||dv.getUint32(4,true)!==2||dv.getUint32(8,true)!==bytes.length||dv.getUint32(16,true)!==0x4e4f534a)throw new Error('CM01: invalid glTF 2.0 header');
   const jl=dv.getUint32(12,true),bo=28+jl;
@@ -23,7 +74,7 @@ const CM01 = (()=>{
   for(const v of g.bufferViews){if(v.buffer!==0||!Number.isInteger(v.byteLength)||v.byteLength<0||(v.byteOffset||0)<0||bo+(v.byteOffset||0)+v.byteLength>bytes.length)throw new Error('CM01: buffer view bounds');}
   function access(i){const a=g.accessors[i],v=g.bufferViews[a?.bufferView],T=types[a?.componentType];if(!T||!v||v.byteStride||a.sparse||!sizes[a.type]||!Number.isInteger(a.count)||a.count<0)throw new Error('CM01: unsupported accessor');const offset=a.byteOffset||0,off=bo+(v.byteOffset||0)+offset,length=a.count*sizes[a.type];if(offset<0||offset+length*T.BYTES_PER_ELEMENT>v.byteLength)throw new Error('CM01: accessor bounds');return new T(bytes.buffer.slice(off,off+length*T.BYTES_PER_ELEMENT));}
   const images=await Promise.all(g.images.map(im=>new Promise((ok,fail)=>{const v=g.bufferViews[im.bufferView],blob=new Blob([bytes.subarray(bo+(v.byteOffset||0),bo+(v.byteOffset||0)+v.byteLength)],{type:im.mimeType}),url=URL.createObjectURL(blob),i=new Image();i.onload=()=>{URL.revokeObjectURL(url);ok(i);};i.onerror=()=>{URL.revokeObjectURL(url);fail(new Error('CM01: atlas decode failed'));};i.src=url;})));
-  asset={g,images,bind:g.extras.bindWorldPositions,parents:g.extras.parents,names:g.extras.boneNames,lods:g.meshes.map(m=>{const p=m.primitives[0];return {attrs:Object.fromEntries(Object.entries(p.attributes).map(([k,v])=>[k,access(v)])),indices:access(p.indices)};}),ibm:access(g.skins[0].inverseBindMatrices)};return asset;
+  asset={g,images,bind:g.extras.bindWorldPositions,parents:g.extras.parents,names:g.extras.boneNames,clips:readClips(g,access),lods:g.meshes.map(m=>{const p=m.primitives[0];return {attrs:Object.fromEntries(Object.entries(p.attributes).map(([k,v])=>[k,access(v)])),indices:access(p.indices)};}),ibm:access(g.skins[0].inverseBindMatrices)};return asset;
  }
  const VS=`#version 300 es
  precision highp float;
@@ -77,20 +128,23 @@ const CM01 = (()=>{
    st.moving=moving;st.gaitMode=gaitMode;
    const phase=st.phase*TAU,reaction=damagePose(r,p,t,st.feet),pose=damageArtPose(r,p,t,artPose(p,t,SkillMotion.stateFor(r,p,t))),ail=ailmentPose(p,t),guard=p.guard||p.guardUntil>t||p.autoFight;
    const fall=!p.alive?smooth((t-(p.deathAt??t))/1.12):0;const sampledGround=this.groundAt(p.x,p.z);if(!Number.isFinite(st.ground))st.ground=sampledGround;st.ground+=(sampledGround-st.ground)*(1-Math.exp(-dt*14));const baseY=p.baseY!=null?p.baseY:st.ground-.020;
-   const rootQ=Q.euler(pose.pitch+reaction.pitch+ail.pitch+fall*1.48,(p.dir||0)+pose.yaw,pose.roll+reaction.roll+ail.roll);
-   const rootM=matrix([p.x+reaction.x+Math.cos(p.dir||0)*(pose.weightX||0)+Math.sin(p.dir||0)*(pose.weightZ||0),baseY+pose.y+ail.y-reaction.drop,p.z+reaction.z-Math.sin(p.dir||0)*(pose.weightX||0)+Math.cos(p.dir||0)*(pose.weightZ||0)],rootQ);
+   const authored=selectClip(p,t,st,phase,moving,run,reaction);
+   const rootQ=Q.euler((authored?0:pose.pitch)+reaction.pitch+ail.pitch+fall*1.48,(p.dir||0)+(authored?0:pose.yaw),(authored?0:pose.roll)+reaction.roll+ail.roll);
+   const rootM=matrix([p.x+reaction.x+(authored?0:Math.cos(p.dir||0)*(pose.weightX||0)+Math.sin(p.dir||0)*(pose.weightZ||0)),baseY+(authored?0:pose.y)+ail.y-reaction.drop,p.z+reaction.z+(authored?0:-Math.sin(p.dir||0)*(pose.weightX||0)+Math.cos(p.dir||0)*(pose.weightZ||0))],rootQ);
    const q=asset.bind.map(()=>Q.identity()),offset=asset.bind.map(()=>[0,0,0]),scale=asset.bind.map(()=>[1,1,1]);
    const qi=(name,x=0,y=0,z=0)=>q[asset.names.indexOf(name)]=Q.euler(x,y,z);
    const sway=Math.sin(phase),breathe=Math.sin(t*1.8+1.1);
+   if(!authored){
    offset[1]=[.011*Math.sin(t*.7)*(1-gaitWeight),-.030-gaitWeight*(run?.106:.072)+Math.cos(phase*2)*.016*gaitWeight,0];
    qi('pelvis',0,Math.sin(phase)*.055*gaitWeight+reaction.yaw*.3,.018*Math.sin(phase)*gaitWeight);
    qi('spine',pose.torso+reaction.torso*.65+(run?.10:.035)*gaitWeight+breathe*.007,(pose.torsoYaw||0)-sway*.068*gaitWeight+reaction.yaw*.7,reaction.torsoRoll*.5);
    qi('chest',reaction.torso*.35,-sway*.028*gaitWeight,.015*Math.sin(t*.9)*(1-gaitWeight)+reaction.torsoRoll*.5);
    qi('neck',-.02+pose.head*.3+reaction.head*.3+ail.head*.3,pose.skillMotion?(pose.headYaw||0):-(pose.torsoYaw||0)*.65+Math.sin(t*.41)*.023*(1-gaitWeight));
    qi('head',pose.head*.7+reaction.head*.7+ail.head*.7,-sway*.024*gaitWeight,Math.sin(t*.73)*.008+reaction.headRoll);
+   }
    scale[3]=[1+breathe*.0025,1+breathe*.003,1+breathe*.005];
    const blinkU=(t+1.73)%4.73,blink=hasStatus(p,'sleep',t)||p.action==='sleep'?0.08:blinkU<.15?Math.max(.06,Math.abs(blinkU/.075-1)):1;scale[7]=[1,blink,1];scale[8]=[1,blink,1];
-   for(const side of [1,-1]){const s=side===1?'R':'L',key=side===1?'rightArm':'leftArm';let ax=-.055-sway*side*(run?.61:.36)*gaitWeight+reaction[key]+ail.arm,az=-side*.13;
+   if(!authored)for(const side of [1,-1]){const s=side===1?'R':'L',key=side===1?'rightArm':'leftArm';let ax=-.055-sway*side*(run?.61:.36)*gaitWeight+reaction[key]+ail.arm,az=-side*.13;
     if(pose.active){ax=pose[key]+reaction[key]+ail.arm;az=pose[key+'Z']-side*.10;}else if(guard){ax=-.66-sway*side*.10*gaitWeight;az=-side*.16;ax+=reaction[key];}
     az+=reaction[key+'Z'];
     if(p.action==='carry'){ax=-1.12;az=-side*.26;}if(p.action==='wave'&&side===1){ax=-2.3;az=.15+Math.sin(t*5)*.18;}
@@ -99,11 +153,21 @@ const CM01 = (()=>{
    qi('hair',Math.sin(t*4)*.008+gaitWeight*Math.sin(phase-1)*.025,0,0);
    qi('mantle',-.04-gaitWeight*.16+Math.sin(t*2)*.015,Math.sin(phase-.5)*gaitWeight*.06,0);qi('mantle.tip',-.07+Math.sin(phase-1)*gaitWeight*.12,0,Math.sin(t*2.3)*.025);qi('coat.R',Math.sin(phase-.6)*gaitWeight*.06);qi('coat.L',-Math.sin(phase-.6)*gaitWeight*.06);
    // Rotational blending preserves orthonormal transforms, unlike matrix-entry lerp.
-   const amount=pose.skillMotion||reaction.amount>.1||fall>0?1:1-Math.exp(-dt*22);
+   if(authored){
+    // A charge and its release share the same baked pose. Blend only entry,
+    // never filter the contact frame or drive the weapon on another clock.
+    if(st.clipName!==authored.name){st.clipFrom=st.lastQ?.map(v=>[...v]);st.clipFromOffset=st.lastOffset?.map(v=>[...v]);st.clipChanged=t;st.clipName=authored.name;}
+    sampleClip(authored.clip,authored.u,q,offset);
+    const entry=authored.stage==='charge'?authored.entry:['ready','walk','run'].includes(authored.stage)?smooth((t-st.clipChanged)/.14):1;
+    if(st.clipFrom&&entry<1)for(let i=0;i<q.length;i++){q[i]=Q.slerp(st.clipFrom[i],q[i],entry);if(st.clipFromOffset)offset[i]=V.lerp(st.clipFromOffset[i],offset[i],entry);}
+    this.clipDebug={name:authored.name,stage:authored.stage,u:authored.u,contact:authored.clip.contact};
+   }else{st.clipName=null;for(const foot of st.feet)if(foot)foot.clipStep=null;this.clipDebug=null;}
+   const amount=authored||pose.skillMotion||reaction.amount>.1||fall>0?1:1-Math.exp(-dt*22);
    if(st.lastQ)for(let i=1;i<q.length;i++)q[i]=Q.slerp(st.lastQ[i],q[i],amount);st.lastQ=q.map(v=>[...v]);
+   st.lastOffset=offset.map(v=>[...v]);
    const localM=asset.bind.map(()=>rModel()),globalM=asset.bind.map(()=>rModel());
    for(let i=0;i<q.length;i++){const par=asset.parents[i],translation=V.add(V.sub(asset.bind[i],par>=0?asset.bind[par]:[0,0,0]),offset[i]);localM[i]=matrix(translation,q[i],scale[i]);globalM[i]=par>=0?rMultiply(globalM[par],localM[i]):localM[i];this.globalQ[i]=par>=0?Q.mul(this.globalQ[par],q[i]):q[i];}
-   const gripping=SkillMotion.grip(p,pose,{arm:globalM[9],elbow:globalM[10],hand:globalM[11]},{arm:globalM[14],elbow:globalM[15],hand:globalM[16]},-.075);
+   const gripping=authored?null:SkillMotion.grip(p,pose,{arm:globalM[9],elbow:globalM[10],hand:globalM[11]},{arm:globalM[14],elbow:globalM[15],hand:globalM[16]},-.075);
    this.skillGripDebug=gripping;
    if(gripping){
     for(const [start,chain]of [[9,gripping.right],[14,gripping.left]]){
@@ -121,7 +185,18 @@ const CM01 = (()=>{
     let desired=toWorld(side*.177,.025+(guard?side*.08:0));
     const bracing=useGroundIK&&!moving&&reaction.amount>0&&!pose.skillMotion;
     const footKey=side===1?'rightFoot':'leftFoot';
-    if(pose.skillMotion){
+    if(authored){
+     const baked=point(rootM,[globalM[fi][12],globalM[fi][13],globalM[fi][14]]),lift=Math.max(0,baked[1]-baseY-.125);
+     const airborne=lift>.028,reach=Math.hypot(foot.anchor[0]-baked[0],foot.anchor[1]-baked[2]);
+     // Keep world-space soles across charge/release and clip boundaries. A
+     // collision or changed stance releases into a visible step, never a snap.
+     if(!foot.clipStep&&!foot.swing&&(airborne||reach>.32))foot.clipStep={from:[...foot.anchor],started:motionT,lift:foot.lift};
+     if(foot.clipStep&&p.hitstopUntil>t)foot.clipStep.started+=dt;
+     if(foot.clipStep){const step=foot.clipStep,u=clamp((motionT-step.started)/.12,0,1);foot.anchor=V.lerp(step.from,[baked[0],baked[2]],smooth(u));foot.lift=Math.max(lift,step.lift*(1-u)+Math.sin(Math.PI*u)*.085);foot.swing=true;if(u===1){foot.clipStep=null;foot.swing=airborne;if(!airborne)foot.lift=0;}}
+     else if(foot.swing){foot.anchor=[baked[0],baked[2]];foot.lift=airborne?lift:0;foot.swing=airborne;}
+     else foot.lift=0;
+     foot.yaw=facing+Math.atan2(globalM[fi][8],globalM[fi][10]);foot.settle=null;foot.damageAnchor=null;foot.damageKey=null;
+    }else if(pose.skillMotion){
      foot.damageAnchor=null;foot.damageKey=null;
      /* Shared authored combat footwork is applied below. */
     }else if(bracing){
@@ -149,8 +224,8 @@ const CM01 = (()=>{
     // that foot into a short recovery swing instead of pulling the pelvis down
     // toward an unreachable old anchor. Only an airborne foot is repositioned.
     const reach=Math.hypot(foot.anchor[0]-desired[0],foot.anchor[1]-desired[1]);
-    if(moving&&reach>.60){foot.swing=true;foot.lift=Math.max(foot.lift,.055);foot.anchor=desired.map((v,i)=>v+(foot.anchor[i]-v)*.60/reach);}
-    if(pose.skillMotion){const planted=SkillMotion.foot(p,pose,motionT,side,st.skillFeet);Object.assign(foot,planted,{target:[...planted.anchor],settle:null});}
+    if(!authored&&moving&&reach>.60){foot.swing=true;foot.lift=Math.max(foot.lift,.055);foot.anchor=desired.map((v,i)=>v+(foot.anchor[i]-v)*.60/reach);}
+    if(!authored&&pose.skillMotion){const planted=SkillMotion.foot(p,pose,motionT,side,st.skillFeet);Object.assign(foot,planted,{target:[...planted.anchor],settle:null});}
     const floor=Math.max(this.groundAt(foot.anchor[0],foot.anchor[1]),this.groundAt(foot.anchor[0]+Math.sin(foot.yaw)*.15,foot.anchor[1]+Math.cos(foot.yaw)*.15));
     const worldAnkle=[foot.anchor[0],floor+.125+foot.lift,foot.anchor[1]];
     targets.push({side,si,s,ti,ki,fi,toi,foot,floor,worldAnkle});
@@ -163,7 +238,7 @@ const CM01 = (()=>{
     for(let i=1;i<globalM.length;i++)globalM[i][13]-=st.pelvisDrop;
    }else st.pelvisDrop=0;
    for(const {side,si,s,ti,ki,fi,toi,foot,floor,worldAnkle}of targets){
-    if(useGroundIK){const rootPos=[rootM[12],rootM[13],rootM[14]],target=Q.rotate(Q.inv(rootQ),V.sub(worldAnkle,rootPos));const H=point(globalM[1],V.sub(asset.bind[ti],asset.bind[1]));const L1=.505,L2=Math.hypot(.520,.025);const diff=V.sub(target,H),len=Math.hypot(...diff),dist=Math.min(L1+L2-.001,Math.max(.10,len)),D=V.norm(diff);const a=(L1*L1-L2*L2+dist*dist)/(2*dist),h=Math.sqrt(Math.max(0,L1*L1-a*a));let pole=V.sub([0,0,1],V.mul(D,V.dot([0,0,1],D)));pole=V.norm(pole);const K=V.add(H,V.add(V.mul(D,a),V.mul(pole,h))),F=V.add(H,V.mul(D,dist));
+    if(useGroundIK){const rootPos=[rootM[12],rootM[13],rootM[14]],target=Q.rotate(Q.inv(rootQ),V.sub(worldAnkle,rootPos));const H=point(globalM[1],V.sub(asset.bind[ti],asset.bind[1]));const L1=.505,L2=Math.hypot(.520,.025);const diff=V.sub(target,H),len=Math.hypot(...diff),dist=Math.min(L1+L2-.001,Math.max(.10,len)),D=V.norm(diff);const a=(L1*L1-L2*L2+dist*dist)/(2*dist),h=Math.sqrt(Math.max(0,L1*L1-a*a));const authoredPole=authored?V.sub([globalM[ki][12],globalM[ki][13],globalM[ki][14]],H):[0,0,1];let pole=V.sub(authoredPole,V.mul(D,V.dot(authoredPole,D)));if(Math.hypot(...pole)<1e-6)pole=V.sub([0,0,1],V.mul(D,D[2]));pole=V.norm(pole);const K=V.add(H,V.add(V.mul(D,a),V.mul(pole,h))),F=V.add(H,V.mul(D,dist));
      const thighQ=Q.fromTo([0,-.505,0],V.sub(K,H)),shinQ=Q.fromTo([0,-.520,.025],V.sub(F,K)),flatQ=Q.mul(Q.inv(rootQ),Q.euler(0,foot.yaw,0));globalM[ti]=matrix(H,thighQ);globalM[ki]=matrix(K,shinQ);globalM[fi]=matrix(F,flatQ);globalM[toi]=rMultiply(globalM[fi],matrix(V.sub(asset.bind[toi],asset.bind[fi]),Q.identity()));
      const actual=point(rootM,F);if(!foot.swing&&moving){contactError=Math.max(contactError,Math.hypot(...V.sub(actual,worldAnkle)));contacts++;}this.footDebug.push({side,swing:foot.swing,floor,soleY:actual[1]-.125,target:worldAnkle,actual,error:Math.hypot(...V.sub(actual,worldAnkle))});
     }else{let leg=pose[side===1?'rightLeg':'leftLeg']+reaction[side===1?'rightLeg':'leftLeg'],knee=pose[side===1?'rightKnee':'leftKnee']+reaction[side===1?'rightKnee':'leftKnee']+ail.knee;

@@ -1,0 +1,60 @@
+{
+  "date": "2026-09-09",
+  "startedFrom": "cd5f0344a176802dbfbfd3e9d28edadcd98a9907",
+  "integratedDevelop": "b8c3183a681c8eb01911c8123e16ee1e21153856",
+  "build": "npm test includes npm run build: PASS",
+  "tests": {
+    "command": "npm test",
+    "passed": 226,
+    "failed": 0
+  },
+  "assetValidation": {
+    "command": "python3 tests/character_asset_validation.py",
+    "passed": 22,
+    "total": 22
+  },
+  "asset": {
+    "sha256": "02ff20db85d09d37c603e156a6ca891cf63392f8b819a4877540e74db80ae874",
+    "bytes": 2498492,
+    "baselineBytes": 2315212,
+    "deterministicRegeneration": true,
+    "bones": 31,
+    "bodyDrawsPerPass": 1,
+    "lodTriangles": [
+      24431,
+      11230
+    ]
+  },
+  "regressionCoverage": [
+    "120 Hz chain forearm/chest clearance and limb lengths",
+    "120 Hz world plants with full and collision-shortened lunge",
+    "30/60/120 Hz existing .43 contact clock",
+    "240 Hz elbow-extension wrist continuity",
+    "guard, hit, activities, statuses, other weapons and ages fallback",
+    "simulation state/events unchanged by pose sampling",
+    "damage feedback/recovery changes in latest develop",
+    "review controls and source-model A/B replacement"
+  ],
+  "offlineReview": {
+    "kind": "EGL rendered runtime bone palettes and game equipment, simplified lighting, not browser capture",
+    "framesPerView": 341,
+    "hz": 60,
+    "views": [
+      "close",
+      "game scale",
+      "side"
+    ],
+    "effects": false,
+    "baselinePaletteChangeAfterDevelopUpdate": 0,
+    "finalPaletteDifferenceFromVideoMaximum": 1.1920928955078125e-07
+  },
+  "browser": {
+    "status": "blocked",
+    "error": "net::ERR_BLOCKED_BY_CLIENT",
+    "attempted": "http://127.0.0.1:8020/dist/index.html",
+    "webglVisualVerified": false
+  },
+  "mobileDeviceFPS": "not measured",
+  "blender": "not available; system install lacked permissions; alternate download/install paths were blocked or cancelled",
+  "qualityApproval": "Representative implementation candidate; reference-equivalent commercial quality remains unapproved"
+}
