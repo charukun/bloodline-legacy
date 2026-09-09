@@ -7,6 +7,7 @@ const MAX_ITEMS=2;
 // Approved damage-feedback follow-up: 3–4 clean ordinary hits are dangerous.
 // Armor, resistance, wound escalation and the existing death rules still apply.
 const PLAYER_WOUND_DAMAGE=Object.freeze({light:30,heavy:46,lost:56});
+const MAX_PHASE_SKILLS=5;
 const DASH={speed:1.72,cost:9,start:3};
 const TAU = Math.PI * 2;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -97,7 +98,7 @@ function skillRestriction(p,sk){
  if(sk.resource&&((p.ammo||{})[sk.resource]||0)<(sk.amount||1))return '残数が足りない';
  if(sk.item&&!(p.inventory||[]).includes(sk.item))return '小物が必要';
  if(sk.items&&!sk.items.every(item=>(p.inventory||[]).includes(item)))return '小物の組み合わせが違う';
- if(sk.requiresPassive&&!p.passives?.includes(sk.requiresPassive))return 'まだ理を知らない';
+ if(sk.requiresPassive&&!p.passives?.includes(sk.requiresPassive)&&!(sk.requiresPassive===4061&&effectsOf(p,'faith')>0))return 'まだ理を知らない';
  if((p.skillReady?.[sk.id]||0)>(p.age+p.ageFraction))return '今は使えない';
  return '';
 }
@@ -310,6 +311,8 @@ const LIFE_RULES=Object.freeze({rescueRange:2.2,safeRecovery:12,fieldRecovery:40
 const COMBAT_AWARENESS=Object.freeze({engagedAvoid:.48,unawareFatal:.32,unawareHeavy:.55,lureRange:8,lureDuration:5,lureCooldown:12});
 function legacyCandidates(p){return [...new Set(p.skills||[])].filter(id=>{const s=skillById(id);return s&&!s.passive;});}
 const effectsOf=(p,effect)=>(p.passives||[]).reduce((n,id)=>n+(skillById(id)?.effect===effect?(skillById(id).value||0):0),0);
+const phaseSkillCount=weights=>Object.values(weights||{}).filter(n=>Number(n)>0).length;
+const miracleChance=(p,sk)=>clamp(sk.procChance+.06*Math.max(0,effectsOf(p,'faith')-1),0,.9);
 const v3Weights=(ids,raw)=>{const out={};for(const id of ids){const n=Number(raw?.[id]);out[id]=Number.isFinite(n)?clamp(n,0,100):0;}if(!Object.values(out).some(x=>x>0)&&!ids.some(id=>Object.hasOwn(raw||{},id)&&Number.isFinite(+raw[id]))){const fallback=ids.includes(4000)?4000:ids[0];if(fallback!==undefined)out[fallback]=1;}return out;};
 
 class Simulation {
@@ -534,6 +537,14 @@ class Simulation {
    p.weights=p.phaseWeights[0];p.bindings=null;p.loadoutVersion=5;p.gestureKit=false;p.autoFight=null;p.chain=null;p.seated=false;
    p.race=(p.race||0)%4;if(p.weapon>=WEAPONS.length)p.weapon=-1;if(p.age<EQUIP_AGE){p.weapon=-1;p.armor=0;p.shield=false;}
   }
+  if(p.phaseLimitVersion!==1){
+   // Keep every learned technique and the original allocation; only the active set is bounded.
+   for(const weights of p.phaseWeights){
+    const active=Object.keys(weights).filter(id=>weights[id]>0).sort((a,b)=>weights[b]-weights[a]||Number(a)-Number(b));
+    if(active.length>MAX_PHASE_SKILLS){p.phaseWeightsBeforeLimit??=p.phaseWeights.map(w=>({...w}));for(const id of active.slice(MAX_PHASE_SKILLS))weights[id]=0;}
+   }
+   p.weights=p.phaseWeights[0];p.phaseLimitVersion=1;
+  }
   SkillSystem.prepare(this,p);
  }
  stopDash(p){p.dash=null;}
@@ -575,7 +586,9 @@ class Simulation {
   if(p.autoFight||p.pendingSkill||p.stun>this.time||p.hitstopUntil>this.time)return false;
   const value=Number(cmd.value);
   if(cmd.slot==='weapon'&&Number.isInteger(value)&&value>=-1&&value<WEAPONS.length){
-   p.weapon=value;const id=value<0?4000:4001+value;this.learn(p,id);p.phaseWeights[skillPhase(skillById(id))][id]=1;
+   p.weapon=value;const id=value<0?4000:4001+value;this.learn(p,id);const weights=p.phaseWeights[skillPhase(skillById(id))];
+   if(weights[id]>0||phaseSkillCount(weights)<MAX_PHASE_SKILLS)weights[id]=weights[id]||1;
+   else this.notice(p,'新しい得物の技は、意識から入れ替えよう');
   }else if(cmd.slot==='armor'&&Number.isInteger(value)&&value>=0&&value<=2)p.armor=value;
   else if(cmd.slot==='shield'&&typeof cmd.value==='boolean')p.shield=cmd.value;
   else return false;
@@ -718,7 +731,12 @@ class Simulation {
   }
   if(cmd.type==='cancel-buffer'){p.attackBufferedUntil=0;return true;}
   if(cmd.type==='skill-read'){p.skillLife.unread=[];return true;}
-  if(cmd.type==='weights'){const phase=clamp(Math.trunc(+cmd.phase||0),0,2);p.phaseWeights[phase]=v3Weights(p.skills,cmd.weights);for(const key of Object.keys(p.phaseWeights[phase]))if(skillPhase(skillById(key))!==phase)p.phaseWeights[phase][key]=0;p.weights=p.phaseWeights[0];return true;}
+  if(cmd.type==='weights'){
+   const phase=clamp(Math.trunc(+cmd.phase||0),0,2),weights=v3Weights(p.skills,cmd.weights);
+   for(const key of Object.keys(weights))if(skillPhase(skillById(key))!==phase)weights[key]=0;
+   if(phaseSkillCount(weights)>MAX_PHASE_SKILLS){this.notice(p,'ひとつの段に込める技は、五つまで');return false;}
+   p.phaseWeights[phase]=weights;p.weights=p.phaseWeights[0];return true;
+  }
   if(cmd.type==='chat'){const text=cleanText(cmd.text,60);if(!text||this.time-p.lastChat<2.5)return false;this.wake(p);this.stopDash(p);p.input={x:0,z:0};p.speech=text;p.speechUntil=this.time+6;p.lastChat=this.time;this.emit('speech',{player:id,room:r.id,text,x:p.x,z:p.z});return true;}
   if(cmd.type==='board'){if(r.kind!=='village'||p.age<15||Math.hypot(p.x,p.z-28)>5)return false;p.queued=!p.queued;p.activity=null;this.emit('board',{player:id,room:r.id,queued:p.queued});return true;}
   if(cmd.type==='return'){if(r.kind!=='front'||p.rescueAt)return false;p.rescueAt=this.time+this.yearSeconds;this.emit('rescue',{player:id,room:r.id,x:p.x,z:p.z});return true;}
@@ -869,7 +887,7 @@ class Simulation {
   if(!canAct(p)||p.rescueTarget||p.traversal)return;
   if(sk.lure){this.performLure(p,r);return;}
   const retreat=sk.retreat;
-  if(sk.miracle&&this.rng()>=sk.procChance){this.emit('miracleQuiet',{player:p.id,room:r.id,x:p.x,z:p.z,text:'祈りは、静かにほどけた。'});return;}
+  if(sk.miracle&&this.rng()>=miracleChance(p,sk)){this.emit('miracleQuiet',{player:p.id,room:r.id,x:p.x,z:p.z,text:'祈りは、静かにほどけた。'});return;}
   if(sk.selfCost){p.health=Math.max(1,(p.health??100)-sk.selfCost);p.lastHurtAt=this.time;}
   if(retreat){const swing=actionTiming(sk).swing;p.retreatUntil=this.time+swing;p.retreatSpeed=retreat/swing;p.guard=sk.id===4011&&injuryModifiers(p).guard;return;}
   if(sk.counter){p.counterUntil=this.time+2.8;p.guard=injuryModifiers(p).guard;return;}
@@ -1096,7 +1114,13 @@ inflictWound(p,part,severity,source=null,strength=null){
   if(e.kind==='guard'&&this.time>=(e.nextSpeechAt||0)){
    e.nextSpeechAt=this.time+10+this.rng()*10;
    const helper=ps.filter(p=>p.alive&&dist(p,e)<9).sort((a,b)=>dist(a,e)-dist(b,e))[0];
-   if(helper){const type=(helper.health??100)<55?'hurt':helper.age<10?'young':helper.experience>30?'veteran':'helper',lines=GUARD_LINES[type];e.speech=lines[Math.floor(this.rng()*lines.length)];e.speechUntil=this.time+4.6;this.emit('guardline',{room:r.id,target:e.id,text:e.speech,x:e.x,z:e.z});}
+   if(helper){
+    const type=(helper.health??100)<55?'hurt':helper.age<10?'young':helper.experience>30?'veteran':'helper',lines=GUARD_LINES[type],speech=lines[Math.floor(this.rng()*lines.length)];
+    // Keep the normal retry time and RNG draws even when another guard has the floor.
+    if(!r.actors.some(g=>g!==e&&g.alive&&g.kind==='guard'&&g.speech&&g.speechUntil>this.time)){
+     e.speech=speech;e.speechUntil=this.time+4.6;this.emit('guardline',{room:r.id,target:e.id,text:e.speech,x:e.x,z:e.z});
+    }
+   }
   }
   const ranged=false,reach=ranged?11:e.wounds.rightArm?.severity==='lost'?1.2:e.kind==='boss'?5:e.elite?3.4:2.3;
   if(e.telegraph){
@@ -1144,5 +1168,5 @@ inflictWound(p,part,severity,source=null,strength=null){
  }
  snapshot(id,after=0){const p=this.players.get(id);if(!p)return null;const r=this.getRoom(p);return {version:VERSION,t:this.time,seq:this.seq,mode:this.mode,player:p,room:{id:r.id,kind:r.kind,seed:r.seed,code:r.code,name:r.name,stage:r.stage,kills:r.kills,quota:r.quota,cleared:r.cleared,clans:r.clans,bossDefeated:r.bossDefeated,partySize:r.partySize,fields:r.fields||[],items:r.items||[],abandoned:r.abandoned},actors:r.actors,players:[...this.players.values()].filter(q=>q.room===r.id),boatIn:this.boatInterval-this.time%this.boatInterval,yearSeconds:this.yearSeconds,legacy:this.legacy(p.owner),events:this.events.filter(e=>e.seq>after&&(e.room===r.id||e.player===id))};}
  exportState(){const data={schema:3,version:VERSION,seed:this.seed,rngState:this.rng.getState(),mode:this.mode,time:this.time,seq:this.seq,eid:this.eid,roomSeq:this.roomSeq,rooms:[...this.rooms],players:[...this.players].map(([id,p])=>[id,{...p,speech:'',speechUntil:0}]),legacies:this.legacies,abandoned:this.abandoned};return JSON.parse(JSON.stringify(data));}
- static restore(data){if(data?.schema!==3||!Array.isArray(data.players)||!Array.isArray(data.rooms)||data.players.length>200)throw Error('この改修より前の進行中データは別保管されています。');const s=new Simulation({seed:data.seed,mode:data.mode});s.time=+data.time||0;s.seq=+data.seq||0;s.eid=+data.eid||0;s.roomSeq=+data.roomSeq||1;s.rooms=new Map(data.rooms);s.players=new Map(data.players);s.legacies=data.legacies||{};s.abandoned=data.abandoned||[];if(Number.isInteger(data.rngState))s.rng.setState(data.rngState);for(const p of s.players.values()){if(!s.rooms.has(p.room))throw Error('村の記録がありません。');p.attackBufferedUntil=0;p.attackStep??=null;p.hitReactAt??=0;p.hitReactUntil??=0;p.hitDir??=0;p.hitSeverity??=null;p.input={x:0,z:0};p.guard=false;p.guardPending=false;p.speech='';p.speechUntil=0;s.preparePlayer(p);p.dash=null;p.autoFight=null;p.chain=null;p.pendingSkill=null;p.combo=null;p.attackStep=null;s.stopTraversal(p);p.action=incapacitated(p)?p.lifeState:p.alive?(p.seated?'sit':'idle'):'fall';SkillSystem.restore(s,p);}for(const r of s.rooms.values()){if(r.kind==='village'){r.map=makeVillage(r.seed);const spot=villagePracticePosition(r.map);for(const a of r.actors)if(a.kind==='dummy'){a.x=a.homeX=spot.x;a.z=a.homeZ=spot.z;}}r.actors=r.actors.filter(a=>a.kind!=='villager');for(const a of r.actors){if(a.kind==='archer')a.kind='soldier';if(a.kind==='mage')a.kind='goblin';a.statuses??={};a.hp??=a.kind==='guard'?130:a.elite?120:70;a.hpMax??=a.hp;a.npcResolveMax??=a.kind==='guard'?18:14;if(data.version!==VERSION)a.npcResolve=a.npcResolveMax;}}for(const l of Object.values(s.legacies))l.archive=l.archive.filter(id=>skillById(id));return s;}
+ static restore(data){if(data?.schema!==3||!Array.isArray(data.players)||!Array.isArray(data.rooms)||data.players.length>200)throw Error('この改修より前の進行中データは別保管されています。');const s=new Simulation({seed:data.seed,mode:data.mode});s.time=+data.time||0;s.seq=+data.seq||0;s.eid=+data.eid||0;s.roomSeq=+data.roomSeq||1;s.rooms=new Map(data.rooms);s.players=new Map(data.players);s.legacies=data.legacies||{};s.abandoned=data.abandoned||[];if(Number.isInteger(data.rngState))s.rng.setState(data.rngState);for(const p of s.players.values()){if(!s.rooms.has(p.room))throw Error('村の記録がありません。');p.attackBufferedUntil=0;p.attackStep??=null;p.hitReactAt??=0;p.hitReactUntil??=0;p.hitDir??=0;p.hitSeverity??=null;p.input={x:0,z:0};p.guard=false;p.guardPending=false;p.speech='';p.speechUntil=0;p.phaseLimitVersion=0;s.preparePlayer(p);p.dash=null;p.autoFight=null;p.chain=null;p.pendingSkill=null;p.combo=null;p.attackStep=null;s.stopTraversal(p);p.action=incapacitated(p)?p.lifeState:p.alive?(p.seated?'sit':'idle'):'fall';SkillSystem.restore(s,p);}for(const r of s.rooms.values()){if(r.kind==='village'){r.map=makeVillage(r.seed);const spot=villagePracticePosition(r.map);for(const a of r.actors)if(a.kind==='dummy'){a.x=a.homeX=spot.x;a.z=a.homeZ=spot.z;}}r.actors=r.actors.filter(a=>a.kind!=='villager');for(const a of r.actors){if(a.kind==='archer')a.kind='soldier';if(a.kind==='mage')a.kind='goblin';a.statuses??={};a.hp??=a.kind==='guard'?130:a.elite?120:70;a.hpMax??=a.hp;a.npcResolveMax??=a.kind==='guard'?18:14;if(data.version!==VERSION)a.npcResolve=a.npcResolveMax;}}for(const l of Object.values(s.legacies))l.archive=l.archive.filter(id=>skillById(id));return s;}
 }
