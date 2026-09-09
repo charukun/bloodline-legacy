@@ -31,7 +31,14 @@ jobs:
       - run: npm run build
       - run: node --test tests/ship-*.test.mjs tests/traversal.test.mjs tests/live-update.test.mjs tests/world-actions.test.mjs
       - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
-      - run: deploy/node_modules/.bin/playwright install --with-deps chromium
+      - name: Install and verify Chromium
+        run: |
+          deploy/node_modules/.bin/playwright install chromium
+          # Hosted runners may already have the required native libraries.
+          # Probe the actual browser before requesting an OS dependency refresh.
+          if ! node --input-type=module -e "import {chromium} from './deploy/node_modules/playwright/index.mjs'; const browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']}); await browser.close();"; then
+            deploy/node_modules/.bin/playwright install-deps chromium
+          fi
       - name: Verify physical boarding, deck actions, saved departure and WebGL
         run: node tests/ship-browser.mjs
       - uses: actions/upload-artifact@v4

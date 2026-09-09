@@ -71,15 +71,15 @@ const EnemyCreatures=(()=>{
   hull('snout',[[-.7,0,0],[-.6,.7,.7,.12],[-.05,1,1,.12],[.6,.78,.76],[.85,0,0]],10);
  }
  const point=(m,v)=>v.map((_,i)=>m[12+i]+m[i]*v[0]+m[4+i]*v[1]+m[8+i]*v[2]);
- function socket(art,rec,part,v){rec.sockets[part]=point(art.root,v);}
+ function socket(art,rec,part,v,normal=[0,0,1],size=.14,mark=v){rec.sockets[part]=point(art.root,v);EnemyDamage.anchor(art,rec,part,mark,normal,size);}
  function draw(art,p,t){
   install();const r=art.r,records=r.enemyCreatures??=new Map();
   for(const[id,rec]of records)if(r.frame-rec.frame>2)records.delete(id);
   let rec=records.get(p.id);if(!rec){rec={};records.set(p.id,rec);}
   const c=profile(p),m=motion(p,t,rec),react=damagePose(r,p,t),ail=ailmentPose(p,t),id=EnemyLooks.id(p);
   const sideFall=['maw','stag','crawler'].includes(p.kind);
-  const root=rModel(p.x+react.x,.20+ail.y-react.drop+(p.kind==='wraith'?.18+m.breathe:0)+m.fall*.48*c.scale[1],p.z+react.z,...c.scale,p.dir||0,react.roll+ail.roll+m.fall*(sideFall?1.48:.14),react.pitch+ail.pitch+m.fall*(sideFall?.08:1.42));
-  const oldRoot=art.root,oldTarget=art.target;art.root=root;art.target=r.dynamic;rec.sockets={};rec.frame=r.frame;rec.root=root;rec.motion=m;rec.config=c;
+  const root=rModel(p.x+react.x,(p.baseY??(.20+(p.supportHeight||0)))+(p.verticalOffset||0)+ail.y-react.drop+(p.kind==='wraith'?.18+m.breathe:0)+m.fall*.48*c.scale[1],p.z+react.z,...c.scale,p.dir||0,react.roll+ail.roll+m.fall*(sideFall?1.48:.14),react.pitch+ail.pitch+m.fall*(sideFall?.08:1.42));
+  const oldRoot=art.root,oldTarget=art.target;art.root=root;art.target=r.dynamic;rec.sockets={};rec.damageAnchors={};rec.breaks=[];rec.frame=r.frame;rec.root=root;rec.motion=m;rec.config=c;
   const ctx={p,c,m,id,rec,root,react};
   try{
    if(p.kind==='goblin'||p.kind==='boss')humanoid(art,ctx);
@@ -88,12 +88,7 @@ const EnemyCreatures=(()=>{
    else if(id==='dusk-bat'||id==='rift-jelly')floater(art,ctx);
    else if(p.kind==='wraith')wraith(art,ctx);
    else fungus(art,ctx);
-   // Marks follow the actual articulated sockets, including back-facing marks.
-   for(const[part,at]of Object.entries(rec.sockets)){
-    if(p.wounds?.[part]?.severity==='lost'||!p.wounds?.[part]&&!p.damageMarks?.[part])continue;
-    art.root=rModel(...at,1,1,1,p.dir||0);
-    for(const side of [-1,1])art.p('box',0,0,side*.05,.04,.19,.02,'#6b4539',0,0,.45,0);
-   }
+   EnemyDamage.draw(art,p,rec);
    art.root=rModel();r.blob(p.x,p.z,.70*c.scale[0],.59*c.scale[2],.31,r.fxBatches);
   }finally{art.root=oldRoot;art.target=oldTarget;}
  }
@@ -112,7 +107,8 @@ const EnemyCreatures=(()=>{
   a.p('enemy:shell',0,1.31,-.03,.55,.35,.39,c.cloth,0,0,0,0);
   a.B(0,.98,.03,.84,.12,.66,'#655445');a.B(.12,.98,.38,.16,.15,.05,'#bd9e69',0,0,0,10);
   for(let i=-1;i<=1;i++)a.p('leaf',i*.23,.76,.27,.18,.32,.07,c.cloth,0,i*.15,0,0);
-  socket(a,rec,'torso',[0,1.35,.42]);
+  socket(a,rec,'torso',[0,1.35,.42],[0,0,1],.23,[.09,1.30,.37]);
+  EnemyDamage.onSurface(a,rec,'torso','enemy:shell',rModel(0,1.31,-.03,.55,.35,.39),[-.25,.30,.70],[0,0,1],.46);
   a.with(rModel(0,1.91,.05,1,1,1,Math.sin(m.time*.75)*.025,react.headRoll,react.head-m.lift*.08),()=>{
    a.p('enemy:head',0,.10,0,.55,.52,.46,c.skin);a.p('enemy:snout',0,-.11,.38,.29,.18,.22,c.skin);
    for(const s of [-1,1]){a.p('leaf',s*.54,.21,-.01,bog?.31:.25,.38,.10,c.skin,0,-s*1.01,0);a.B(s*.20,.27,.40,.26,.068,.09,'#5c7153',0,s*.15,0,0);a.p('horn',s*.18,-.17,.57,.048,.15,.044,'#e4d5ad',0,0,0,9);}
@@ -123,15 +119,16 @@ const EnemyCreatures=(()=>{
    else if(bog){a.p('cap',0,.40,-.10,.53,.17,.43,c.cloth);for(const s of [-1,1])a.p('horn',s*.35,.57,-.14,.072,.45,.07,'#879572',0,-s*.55,0,9);}
    else if(boss){for(const s of [-1,1]){branch(a,[s*.43,.40,-.04],s,.81,'#c8b990');a.p('box',s*.36,.09,.43,.15,.44,.07,'#867250',0,0,s*.22,10);}a.p('cap',0,.45,-.07,.58,.22,.48,'#9d977e',0,0,0,10);}
    else {a.p('hair',-.12,.55,-.03,.29,.29,.29,'#53634c',0,0,.28);a.B(-.30,.02,.433,.14,.14,.04,'#665d4a',0,0,.1);}
-   socket(a,rec,'head',[0,.08,.48]);
+   socket(a,rec,'head',[0,.08,.48],[0,0,1],.13,[.29,.06,.398]);
+   EnemyDamage.onSurface(a,rec,'head','enemy:head',shaman?rModel(0,.06,.41,.38,.37,.10):rModel(0,.10,0,.55,.52,.46),[-.60,-.16,.70],[0,0,1],.34);
   });
   for(const s of [-1,1]){
-   const leg=s===1?'rightLeg':'leftLeg';if(!missing(p,leg)){a.root=root;a.with(rModel(s*.26,.82,0,1,1,1,0,0,(m.run?step*s*.50:0)+react[leg]),()=>{
+   const leg=s===1?'rightLeg':'leftLeg';a.root=root;if(missing(p,leg))EnemyDamage.broken(a,rec,leg,[s*.26,.80,0],.17);if(!missing(p,leg)){a.root=root;a.with(rModel(s*.26,.82,0,1,1,1,0,0,(m.run?step*s*.50:0)+react[leg]),()=>{
     a.p('bead',0,-.22,0,.19,.33,.19,c.skin);a.with(rModel(0,-.42,0,1,1,1,0,0,m.run?Math.max(0,-step*s)*.6:0),()=>{a.B(0,-.16,.11,.36,.27,.48,'#6d674f');socket(a,rec,leg,[0,-.11,.25]);});});}
-   const arm=s===1?'rightArm':'leftArm';if(missing(p,arm))continue;a.root=body;
+   const arm=s===1?'rightArm':'leftArm';a.root=body;if(missing(p,arm)){EnemyDamage.broken(a,rec,arm,[s*.48,1.53,0],.17,[s,-.4,0]);continue;}
    const swing=s===1||missing(p,'rightArm')?-m.lift*2.4-m.strike*.95:(m.guard?-1.1:.1)-m.lift*.40;
    a.with(rModel(s*.55,1.56,0,1,1,1,0,s*.24+react[arm+'Z'],swing+react[arm]),()=>{
-    a.p('bead',0,-.24,0,.19,.35,.20,c.skin);a.p('bead',0,-.53,.04,.21,.20,.20,c.skin);socket(a,rec,arm,[0,-.52,.14]);
+    a.p('bead',0,-.24,0,.19,.35,.20,c.skin);a.p('bead',0,-.53,.04,.21,.20,.20,c.skin);socket(a,rec,arm,[0,-.52,.14],[0,0,1],.11,[0,-.52,.241]);
     if(s===1){a.with(rModel(0,-.58,.02,1,1,1,0,0,Math.PI),()=>{
      a.C(0,.24,0,.045,.95,.045,'#745d43');
      if(shaman){a.p('enemy:head',0,.72,0,.17,.20,.15,'#c7b990',0,0,0,9);for(const side of [-1,1])a.p('bead',side*.06,.74,.13,.034,.043,.024,'#514f41');a.p('horn',.12,.91,0,.034,.25,.035,'#c7b990',0,-.3,0,9);}
@@ -146,26 +143,27 @@ const EnemyCreatures=(()=>{
   a.root=body;
   if(bog){a.C(-.43,.84,-.31,.11,.28,.11,'#b1ac7c');a.B(-.43,1.02,-.31,.10,.05,.10,'#5a5844');}
   if(miner){a.B(0,1.15,-.41,.62,.61,.23,'#735b43');for(let i=-1;i<=1;i++)a.p('bead',i*.16,1.49,-.49,.14,.15,.14,'#b2b09a',0,0,0,9);}
-  if(boss){a.B(0,1.37,-.45,.91,1.16,.12,c.cloth);for(const s of [-1,1]){a.p('enemy:shell',s*.58,1.68,0,.28,.24,.30,'#ada68c',0,0,0,10);a.p('horn',s*.62,1.98,-.02,.065,.37,.065,'#d0c29e',0,-s*.33,0,9);}for(let i=0;i<4;i++)a.B((i-1.5)*.20,1.39,.40,.14,.18,.04,i<(p.seals??4)?'#c4d3ae':'#674f42',0,0,0,4);}
+  if(boss){a.B(0,1.37,-.45,.91,1.16,.12,c.cloth);for(const s of [-1,1]){if(missing(p,s===1?'rightArm':'leftArm'))continue;a.p('enemy:shell',s*.58,1.68,0,.28,.24,.30,'#ada68c',0,0,0,10);a.p('horn',s*.62,1.98,-.02,.065,.37,.065,'#d0c29e',0,-s*.33,0,9);}for(let i=0;i<4;i++)a.B((i-1.5)*.20,1.39,.40,.14,.18,.04,i<(p.seals??4)?'#c4d3ae':'#674f42',0,0,0,4);}
  }
  function crawler(a,{p,c,m,id,rec,root}){
   const scarab=id==='amber-scarab',mantis=id==='needle-mantis',spider=id==='burrow-spider',scorpion=id==='scorpion',step=m.phase;
   a.p('enemy:body',0,.62,-.13,mantis?.36:.54,.36,mantis?.76:.63,c.skin,0,0,-m.lift*.12);
   a.p('enemy:shell',0,.77,-.20,scarab?.67:.49,scarab?.57:.30,.61,c.skin,0,0,0,scarab?10:9);
   for(const s of [-1,1])a.p('enemy:shell',s*(scarab?.28:.22),.94,-.24,scarab?.32:.25,scarab?.26:.20,.55,c.cloth,0,0,s*.17,9);
-  socket(a,rec,'torso',[0,1.12,-.08]);
-  if(spider){a.p('enemy:body',0,.78,-.55,.58,.46,.61,c.skin);for(const s of [-1,1])a.p('leaf',s*.19,1.13,-.60,.085,.24,.035,c.cloth,0,s*.4,Math.PI/2);}
+  socket(a,rec,'torso',[0,1.12,-.08],[0,1,0],.25,spider?[0,1.27,-.55]:scarab?[0,1.345,-.20]:[.22,1.145,-.24]);
+  EnemyDamage.onSurface(a,rec,'torso','enemy:shell',rModel(0,.77,-.20,scarab?.67:.49,scarab?.57:.30,.61),[-.25,.5,.25],[0,1,0],.42);
+  if(spider){EnemyDamage.onSurface(a,rec,'torso','enemy:body',rModel(0,.78,-.55,.58,.46,.61),[-.3,.7,0],[0,1,0],.42);a.p('enemy:body',0,.78,-.55,.58,.46,.61,c.skin);for(const s of [-1,1])a.p('leaf',s*.19,1.13,-.60,.085,.24,.035,c.cloth,0,s*.4,Math.PI/2);}
   if(scorpion){let x=0,y=.79,z=-.69;for(let i=0;i<5;i++){const yy=y+.24,zz=z+(i<2?-.18:.16+m.strike*.06);a.line([x,y,z],[x,yy,zz],.115-i*.014,c.cloth,9);a.p('bead',x,yy,zz,.12-i*.012,.13,.12-i*.012,c.skin);y=yy;z=zz;}a.p('horn',0,y,z+.06,.06,.43,.08,c.cloth,0,0,1.65+m.strike*.4,9);}
   a.with(rModel(0,.73,.52,1,1,1,0,0,m.strike*.50-m.lift*.50),()=>{
    a.p('enemy:head',0,0,0,.34,.23,.30,c.skin);eyes(a,.17,.08,.27,.065);
    for(const s of [-1,1]){a.line([s*.18,.18,.13],[s*.30,.50,.27],.018,c.cloth,9);a.p('bead',s*.30,.50,.27,.035,.035,.035,c.cloth);a.p('horn',s*.19,-.07,.24,.065,.34,.06,'#d4c59c',0,s*.47,1.23-m.strike*.35,9);}
    if(scarab)a.p('horn',0,.28,.05,.09,.63,.11,'#d9c18f',0,0,.42,9);
    if(spider)eyes(a,.08,.21,.255,.038,'#cb8d76');
-   socket(a,rec,'head',[0,.08,.30]);
+   socket(a,rec,'head',[0,.08,.30],[0,1,0],.11,[0,.235,-.035]);
   });
   const legs=spider?4:3;
   for(const s of [-1,1])for(let i=0;i<legs;i++){
-   const part=(s===1?'right':'left')+(i===legs-1?'Arm':'Leg');if(missing(p,part))continue;
+   const part=(s===1?'right':'left')+(i===legs-1?'Arm':'Leg');a.root=root;if(missing(p,part)){EnemyDamage.broken(a,rec,part,[s*.35,.60,(i-1)*.47],.09,[s,0,0]);continue;}
    const cycle=step+(s>0?Math.PI:0)+i*Math.PI*.72,gait=m.run?Math.sin(cycle):0,z=(i-1)*.47;
    a.root=root;a.with(rModel(s*.35,.60,z,1,1,1,0,0,0),()=>{
     const front=i===legs-1,tip=front&&(mantis||scorpion),attack=front?m.strike:0;
@@ -174,7 +172,7 @@ const EnemyCreatures=(()=>{
     a.line([0,0,0],knee,tip?.075:.055,c.skin,9);a.line(knee,foot,tip?.06:.036,c.cloth,9);a.p('bead',...knee,.075,.075,.075,c.skin);
     if(tip)a.p('horn',...foot,.085,.46,.08,'#d9d5b6',0,s*.32,1.1-m.strike*.7,9);
     if(front&&scorpion)a.p('horn',foot[0]+s*.14,foot[1]+.1,foot[2],.085,.35,.075,c.cloth,0,-s*.42,.80,9);
-    if(front||i===0)socket(a,rec,part,foot);
+    if(front||i===0)socket(a,rec,part,foot,[0,0,1],tip?.07:.045,[knee[0],knee[1],knee[2]+.075]);
    });
   }
  }
@@ -185,13 +183,14 @@ const EnemyCreatures=(()=>{
   else if(lizard){for(let i=0;i<6;i++)a.p('leaf',0,1.42,-.81+i*.27,.05,.19,.17,c.cloth,0,0,.3,9);}
   else if(!wolf&&!boar&&!stag)for(let i=0;i<3;i++)a.p('enemy:shell',0,1.19,-.64+i*.42,.62,.34,.33,i%2?c.skin:c.cloth,0,0,0,9);
   else for(let i=0;i<(boar?5:3);i++)a.p('leaf',0,1.39,-.65+i*.24,boar?.12:.32,boar?.22:.24,.25,c.cloth,0,0,-.35,0);
-  socket(a,rec,'torso',[0,1.28,.32]);
+  socket(a,rec,'torso',[0,1.28,.32],[1,0,0],.25,[wolf?.44:bear?.61:boar?.59:.55,1.09,.10]);
+  EnemyDamage.onSurface(a,rec,'torso','enemy:body',rModel(0,.99,-.18,wolf?.46:bear?.65:boar?.61:.57,lizard?.32:bear?.57:.49,lizard?1.02:.87,0,0,-.10),[-.8,.15,.20],[-1,0,0],.48);
   for(const s of [-1,1])for(const front of [false,true]){
-   const part=(s===1?'right':'left')+(front?'Arm':'Leg');if(missing(p,part))continue;
+   const part=(s===1?'right':'left')+(front?'Arm':'Leg');a.root=root;if(missing(p,part)){EnemyDamage.broken(a,rec,part,[s*.39,.87,front?.48:-.70],wolf?.12:.16);continue;}
    a.root=root;a.with(rModel(s*.39,.88,front?.48:-.70,1,1,1,0,0,m.run?step*s*(front?1:-1)*.53:0),()=>{
     a.p('bead',0,-.24,0,wolf?.12:.17,.31,.16,c.skin);
     a.with(rModel(0,-.42,0,1,1,1,0,0,m.run?Math.max(0,-step*s*(front?1:-1))*.67:.10),()=>{
-     a.p('bead',0,-.19,.045,.11,.23,.13,c.skin);a.B(0,-.32,.09,.22,.16,.30,stag?'#72694f':'#706b5c',0,0,0,9);socket(a,rec,part,[0,-.21,.10]);
+     a.p('bead',0,-.19,.045,.11,.23,.13,c.skin);a.B(0,-.32,.09,.22,.16,.30,stag?'#72694f':'#706b5c',0,0,0,9);socket(a,rec,part,[0,-.21,.10],[0,0,1],.075,[0,-.18,.177]);
     });
    });
   }
@@ -209,7 +208,7 @@ const EnemyCreatures=(()=>{
    a.with(rModel(0,-.21,.15,1,1,1,0,0,m.strike*.33),()=>{
     a.p('enemy:snout',0,-.015,.18,.23,.085,wolf?.31:.22,'#6a6553');
     if(wolf)for(const s of [-1,1])for(let i=0;i<3;i++)a.p('cone',s*.15,.045,.09+i*.12,.026,.075,.024,'#ded4b7',0,0,0,9);
-   });socket(a,rec,'head',[0,.16,.38]);
+   });socket(a,rec,'head',[0,.16,.38],[0,1,0],.14,[0,lizard?.345:stag?.59:.488,-.02]);EnemyDamage.onSurface(a,rec,'head','enemy:head',rModel(0,.10,0,wolf?.34:bear?.47:lizard?.38:.43,stag?.46:lizard?.24:.36,.37),[-.45,.40,.5],[0,1,0],.33);
   });
   a.root=root;a.with(rModel(0,1.17,-.93,1,1,1,Math.sin(m.time*2)*.13,0,wolf?-.55:.35),()=>{
    if(lizard){a.line([0,0,0],[.12,-.35,-.65],.14,c.skin);a.line([.12,-.35,-.65],[.3,-.51,-1.05],.065,c.cloth);a.p('horn',.32,-.50,-1.07,.048,.34,.05,c.cloth,0,0,-1.3,9);}
@@ -222,23 +221,23 @@ const EnemyCreatures=(()=>{
    a.p('cap',0,1.91,0,.71+pulse*.04,.50-pulse*.035,.64,c.skin);a.p('bead',0,1.93,.12,.26,.19,.24,c.cloth,0,0,0,4);
    a.p('torus',0,1.86,0,.58,.58,.075,c.cloth,0,0,Math.PI/2,9);
    for(let i=0;i<6;i++){
-    const side=Math.sin(i*TAU/6)>0?'right':'left',part=side+(i%2?'Arm':'Leg');if(missing(p,part))continue;
+    const side=Math.sin(i*TAU/6)>0?'right':'left',part=side+(i%2?'Arm':'Leg');if(missing(p,part)){EnemyDamage.broken(a,rec,part,[Math.sin(i*TAU/6)*.44,1.85,Math.cos(i*TAU/6)*.39],.052);continue;}
     const x=Math.sin(i*TAU/6)*.44,z=Math.cos(i*TAU/6)*.39;
     let from=[x,1.85,z];for(let j=0;j<3;j++){const to=[x+Math.sin(m.time*2+i+j)*(.07+j*.035),1.55-j*.35,z+m.strike*.18*j];a.line(from,to,.033-j*.007,c.cloth,9);from=to;}
-    socket(a,rec,part,from);
+    socket(a,rec,part,from,[0,0,1],.028,[from[0],from[1]+.12,from[2]+.024]);
    }
-   eyes(a,.17,1.99,.48,.047,'#e4d5ac');socket(a,rec,'head',[0,2.24,.30]);socket(a,rec,'torso',[0,1.95,.36]);
+   eyes(a,.17,1.99,.48,.047,'#e4d5ac');socket(a,rec,'head',[0,2.24,.30],[0,1,0],.23,[0,2.416-pulse*.035,0]);EnemyDamage.onSurface(a,rec,'head','cap',rModel(0,1.91,0,.71+pulse*.04,.50-pulse*.035,.64),[-.25,.65,.20],[0,1,0],.32);socket(a,rec,'torso',[0,1.95,.36],[0,0,1],.14);
   }else{
    a.p('enemy:body',0,1.44,0,.25,.47,.26,c.skin);a.p('enemy:head',0,1.99,.02,.30,.30,.28,c.cloth);
    for(const s of [-1,1]){a.p('leaf',s*.23,2.34,-.02,.13,.34,.08,c.skin,0,-s*.24,0);a.p('horn',s*.085,1.84,.25,.026,.10,.026,'#d6ceb3',0,0,Math.PI,9);}
    eyes(a,.13,2.04,.272,.06,'#d7b47d');socket(a,rec,'head',[0,2,.29]);socket(a,rec,'torso',[0,1.50,.25]);
    for(const s of [-1,1]){
-    const arm=s===1?'rightArm':'leftArm';if(!missing(p,arm))a.with(rModel(s*.20,1.78,0,1,1,1,0,s*(.15+pulse*.30-m.strike*.62),0),()=>{
+    const arm=s===1?'rightArm':'leftArm';a.root=root;if(missing(p,arm))EnemyDamage.broken(a,rec,arm,[s*.20,1.78,0],.075,[s,0,0]);if(!missing(p,arm))a.with(rModel(s*.20,1.78,0,1,1,1,0,s*(.15+pulse*.30-m.strike*.62),0),()=>{
      a.line([0,0,0],[s*.59,.22,-.06],.043,c.cloth,9);a.line([s*.59,.22,-.06],[s*1.13,.32,-.09],.025,c.cloth,9);
      for(let i=0;i<3;i++){const x=s*(.37+i*.27);a.p('leaf',x,-.09-i*.02,-.025,.22,.49-i*.08,.045,c.skin,0,s*(.15+i*.18),0);a.line([s*.58,.19,-.05],[x,-.45+i*.06,-.015],.016,c.cloth,9);}
-     socket(a,rec,arm,[s*1.10,.26,-.06]);
+     socket(a,rec,arm,[s*1.10,.26,-.06],[0,0,1],.12,[s*.65,-.08,.027]);
     });
-    const leg=s===1?'rightLeg':'leftLeg';if(!missing(p,leg)){a.line([s*.13,1.13,0],[s*.20,.91,.1],.045,c.cloth,9);a.p('horn',s*.21,.83,.1,.034,.20,.03,c.cloth,0,-s*.2,.5,9);socket(a,rec,leg,[s*.20,.91,.1]);}
+    const leg=s===1?'rightLeg':'leftLeg';if(missing(p,leg))EnemyDamage.broken(a,rec,leg,[s*.13,1.13,0],.05);if(!missing(p,leg)){a.line([s*.13,1.13,0],[s*.20,.91,.1],.045,c.cloth,9);a.p('horn',s*.21,.83,.1,.034,.20,.03,c.cloth,0,-s*.2,.5,9);socket(a,rec,leg,[s*.20,.91,.1],[0,0,1],.04,[s*.18,1.0,.10]);}
    }
   }
  }
@@ -252,7 +251,8 @@ const EnemyCreatures=(()=>{
    for(let i=0;i<6;i++){const ang=i*TAU/6;a.p('leaf',Math.sin(ang)*.33,.57,Math.cos(ang)*.26,.20,.57,.07,i%2?c.skin:c.cloth,ang,sway*(i%2?1:-1),.16+Math.sin(m.time*2+i)*.10,0);}
    a.B(0,1.48,.32,.10,.30,.044,c.cloth,0,0,0,10);
   }
-  socket(a,rec,'torso',[0,1.42,.32]);
+  socket(a,rec,'torso',[0,1.42,.32],[0,0,1],thorn?.14:.21,thorn?[0,1.42,.236]:[.14,1.33,.305]);
+  EnemyDamage.onSurface(a,rec,'torso',thorn?'bead':'enemy:body',thorn?rModel(0,1.42,.02,.23,.34,.21):rModel(0,1.14,0,.46,.68,.34),[-.22,.20,.8],[0,0,1],.48);
   a.with(rModel(0,1.99,0,1,1,1,0,0,-m.lift*.2+m.strike*.17),()=>{
    a.p('enemy:head',0,.08,-.03,.44,.51,.37,c.skin);a.p('bead',0,.02,.32,.31,.33,.055,'#364448');
    if(thorn){for(const s of [-1,1])branch(a,[s*.25,.34,-.01],s,.52,'#a79e75');a.B(0,.12,.392,.11,.49,.04,c.cloth,0,0,0,9);}
@@ -260,12 +260,12 @@ const EnemyCreatures=(()=>{
    eyes(a,.13,.02,.385,.066,lantern?'#e8c884':'#bedcd0');socket(a,rec,'head',[0,.05,.40]);
   });
   for(const s of [-1,1]){
-   const part=s===1?'rightArm':'leftArm';if(missing(p,part))continue;a.root=root;
+   const part=s===1?'rightArm':'leftArm';a.root=root;if(missing(p,part)){EnemyDamage.broken(a,rec,part,[s*.40,1.62,0],.13,[s,-.2,0]);continue;}
    a.with(rModel(s*.43,1.64,0,1,1,1,0,-s*(.25+m.lift*.38),-m.lift*1.9-m.strike*.95),()=>{
     if(thorn){a.line([0,0,0],[s*.25,-.36,.12],.075,c.skin);a.line([s*.25,-.36,.12],[s*.33,-.61,.31],.046,c.cloth);}
     else a.p('leaf',s*.15,-.37,.02,.24,.62,.13,c.skin,0,-s*.22,0);
     a.p('bead',s*.28,-.55,.25,.12,.16,.11,c.cloth);for(let i=-1;i<=1;i++)a.p('horn',s*.28+i*.063,-.69,.28,.02,.20,.022,c.cloth,0,0,-.5,9);
-    socket(a,rec,part,[s*.28,-.56,.28]);
+    socket(a,rec,part,[s*.28,-.56,.28],[0,0,1],.09,[s*.28,-.55,.362]);
     if(lantern&&s===1)a.with(rModel(.29,-.65,.32,1,1,1,0,0,-.2),()=>{
      a.line([0,0,0],[0,-.20,0],.018,'#b59d66',10);a.p('bead',0,-.38,0,.12,.18,.12,'#edc681',0,0,0,4);
      for(const side of [-1,1])for(const front of [-1,1])a.B(side*.14,-.37,front*.14,.026,.38,.026,'#756448',0,0,0,10);a.B(0,-.57,0,.33,.06,.32,'#b49a65',0,0,0,10);
@@ -273,7 +273,7 @@ const EnemyCreatures=(()=>{
    });
   }
   // The lower streamers are separate limbs and honor existing part loss.
-  a.root=root;for(const s of [-1,1])if(!missing(p,s===1?'rightLeg':'leftLeg')){a.p('leaf',s*.18,.35,0,.14,.38,.12,c.skin,0,sway*s,0);socket(a,rec,s===1?'rightLeg':'leftLeg',[s*.18,.35,0]);}
+  a.root=root;for(const s of [-1,1]){const part=s===1?'rightLeg':'leftLeg';if(missing(p,part))EnemyDamage.broken(a,rec,part,[s*.18,.64,0],.095);else{a.p('leaf',s*.18,.35,0,.14,.38,.12,c.skin,0,sway*s,0);socket(a,rec,part,[s*.18,.35,0],[0,0,1],.07,[s*.18,.38,.09]);}}
  }
  function fungus(a,{p,c,m,rec}){
   a.p('enemy:body',0,.62,0,.34,.58,.33,c.skin);socket(a,rec,'torso',[0,.79,.34]);
@@ -282,9 +282,9 @@ const EnemyCreatures=(()=>{
    a.p(loss?'cap-loss:'+loss:'cap',0,0,0,.89,.48,.77,c.cloth);
    a.p(loss?'cap-loss:'+loss:'cylinder',0,-.10,0,.73,.065,.65,'#d9c6a0',0,0,0,9);
    for(let i=0;i<7;i++){const ang=i*2.4,x=Math.sin(ang)*.46;if(loss&1&&x>.30||loss&2&&x<-.30)continue;a.p('bead',x,.24+(i%3)*.06,Math.cos(ang)*.43,.12,.042,.12,'#ead8b0');}
-   socket(a,rec,'head',[0,.38,.1]);for(const s of [-1,1])if(!missing(p,s===1?'rightArm':'leftArm'))socket(a,rec,s===1?'rightArm':'leftArm',[s*.65,.07,0]);
+   socket(a,rec,'head',[0,.38,.1],[0,1,0],.24,[0,.484,0]);EnemyDamage.onSurface(a,rec,'head','cap',rModel(0,0,0,.89,.48,.77),[-.25,.6,.2],[0,1,0],.40);for(const s of [-1,1]){const part=s===1?'rightArm':'leftArm';if(missing(p,part))EnemyDamage.broken(a,rec,part,[s*.30,.07,0],.22,[s,0,0]);else{socket(a,rec,part,[s*.65,.07,0]);EnemyDamage.onSurface(a,rec,part,'cap',rModel(0,0,0,.89,.48,.77),[s*.60,.45,.15],[0,1,0],.23);}}
   });eyes(a,.115,.79,.32,.048);
-  for(const s of [-1,1])if(!missing(p,s===1?'rightLeg':'leftLeg')){a.p('bead',s*.22,.19,.10,.18,.19,.23,c.skin,0,0,m.run?Math.sin(m.phase)*s*.4:0);socket(a,rec,s===1?'rightLeg':'leftLeg',[s*.22,.21,.22]);}
+  for(const s of [-1,1]){const part=s===1?'rightLeg':'leftLeg';if(missing(p,part))EnemyDamage.broken(a,rec,part,[s*.22,.29,.10],.13);else{a.p('bead',s*.22,.19,.10,.18,.19,.23,c.skin,0,0,m.run?Math.sin(m.phase)*s*.4:0);socket(a,rec,part,[s*.22,.21,.22],[0,0,1],.10,[s*.22,.20,.329]);}}
  }
  return {eligible,profile,motion,draw,install,point};
 })();
@@ -367,3 +367,7 @@ VillageArt.prototype.sentinelSpecial=function(p,rec,id){
   else{this.p('cylinder',0,.11,.06,.28,.11,.28,metal,0,0,Math.PI/2,10);this.p('horn',0,.11,.15,.061,.32,.06,edge,0,0,Math.PI/2,10);}
  }
 };
+
+// Preserve all authored equipment variants while applying their wound state.
+const DAMAGE_PREVIOUS_EQUIPMENT=VillageArt.prototype.sentinelEquipment;
+VillageArt.prototype.sentinelEquipment=function(p,rec){return EnemyDamage.equipment(this,p,rec,()=>DAMAGE_PREVIOUS_EQUIPMENT.call(this,p,rec));};

@@ -1,0 +1,12 @@
+{
+  "result": "PASS",
+  "runtimeSHA256": "1a9b29e11320723614eae1589a1dc3908b8852ad837d918436cd9687d15466f2",
+  "triangles": 5104,
+  "bytes": 743788,
+  "externalAssets": 1,
+  "license": "CC0-1.0",
+  "gameUse": [
+    "soldier family: soldier, grave-warden, cinder-knight, rime-guard, oath-breaker",
+    "elite family: elite, thorn-reaver, bell-executioner, stone-colossus, veil-duelist"
+  ]
+}

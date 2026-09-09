@@ -85,3 +85,12 @@ test('live update waits for a passenger to disembark even when no reservation fl
  const f=setup();deck(f);f.p.queued=false;assert.equal(safePlayer(f.p,f.room,f.sim.time),false);assert.equal(safePlayer(f.p,f.sim.snapshot(f.p.id),f.sim.time),false);
  f.p.z=31;assert.equal(safePlayer(f.p,f.room,f.sim.time),false);
 });
+
+
+test('gangway walking and recoil follow continuous height without weakening terrace edge guards',()=>{
+ const f=setup();let last=0,lastZ=f.p.z;
+ for(let i=0;i<75;i++){f.sim.command(f.p.id,{type:'move',x:0,z:1});f.sim.tick(1/30);assert.ok(Math.abs(f.p.supportHeight-last)<=Math.abs(f.p.z-lastZ)*.275+1e-8);last=f.p.supportHeight;lastZ=f.p.z;}
+ assert.ok(f.p.z>34);assert.equal(f.p.supportHeight,1.2);
+ Object.assign(f.p,{x:0,z:32,supportHeight:.275+(32-29.5)/4.5*.925});
+ const moved=f.sim.moveAttackStep(f.p,f.room,0,-1);assert.ok(moved>.99);assert.ok(f.p.supportHeight<.6);
+});

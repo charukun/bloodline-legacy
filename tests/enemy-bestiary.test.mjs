@@ -44,7 +44,7 @@ test('limb loss removes articulated creature sockets and guard/damage/death stat
  }
 });
 test('form assignment preserves develop combat stats, RNG, AI and spawn quotas',()=>{
- const source=execFileSync('git',['show','e3502f519dbaea1d399d3a69b274f72f57494059:src/legacy/core.js'],{encoding:'utf8'}),ctx=vm.createContext({console});
+ const source=execFileSync('git',['show','c53f9b2c918ff71525b76ea4b20c8b530429a26e:src/legacy/core.js'],{encoding:'utf8'}),ctx=vm.createContext({console});
  vm.runInContext(fs.readFileSync(new URL('../src/legacy/dialogue.js',import.meta.url),'utf8')+'\n'+source,ctx);
  const baseline=vm.runInContext('new Simulation({seed:7349})',ctx),current=h.run('new Simulation({seed:7349})');
  for(const kind of ['goblin','soldier','elite','crawler','maw','wraith','boss','stag','mushroom','guard','dummy'])for(let i=0;i<9;i++){
@@ -70,4 +70,12 @@ test('normal front spawns reach every hostile form and new/legacy saves retain t
  })()`);
  assert.equal(result.seen.length,31);assert.deepEqual(result.restored,result.expected);
  for(const a of result.old){assert.equal(a.form,a.kind);assert.equal(a.hasField,false);}
+});
+
+test('all enemy rigs and their hit sockets follow raised terrain without changing pose',()=>{
+ for(const f of forms){h.ctx.form=f;const a=h.run('drawForm(form,.4)'),b=h.run('drawForm(form,.4,{supportHeight:1.2,verticalOffset:.3})');
+  assert.equal(a.batches.length,b.batches.length);
+  for(let i=0;i<a.batches.length;i++)for(let k=0;k<16;k++)assert(Math.abs(b.batches[i].m[k]-a.batches[i].m[k]-(k===13?1.5:0))<2e-6,f.id+' mesh height');
+  for(const key of Object.keys(a.rec.sockets)){const x=a.rec.sockets[key],y=b.rec.sockets[key],k=x.length===16?13:1;assert(Math.abs(y[k]-x[k]-1.5)<2e-6,f.id+' '+key);}
+ }
 });

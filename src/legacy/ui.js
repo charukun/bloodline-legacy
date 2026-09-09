@@ -312,7 +312,7 @@ class UI {
  }
  updateShipNotice(s){
   let node=document.getElementById('ship-notice');if(!node){node=document.createElement('p');node.id='ship-notice';node.className='ship-notice';this.hud.appendChild(node);}
-  const p=s.player,show=s.room.kind==='village'&&p.z>22&&canAct(p)&&!this.modal&&!p.prologue;
+  const p=s.player,show=!!s.map.ship&&s.room.kind==='village'&&p.z>22&&canAct(p)&&!this.modal&&!p.prologue;
   if(node.hidden===show)node.hidden=!show;if(!show)return;
   const years=Math.max(0,s.boatIn/s.yearSeconds),time=years<.1?'まもなく出港':`出港まで ${years.toFixed(1)}年`;
   UIValue.text(node,p.age<15?'最前線へ渡るのは、15歳から':onShipDeck(p)?`最前線行き · ${time} — 降りるときは桟橋へ`:`最前線行き · ${time} — 桟橋を渡って乗船`);
@@ -325,7 +325,7 @@ class UI {
   node.innerHTML=(text?`<p role="status">${ESC(text)}${incapacitated(p)&&p.lifeState!=='carried'?`<progress aria-label="復帰までの回復" max="1" value="${p.recoveryProgress||0}"></progress>`:''}</p>`:'')+(canAct(p)&&!p.prologue&&p.rescueTarget?'<button data-drop>ここで降ろす</button>':'');
   const drop=node.querySelector('[data-drop]');if(drop)drop.onclick=()=>this.g.command({type:'rescue-drop'});
  }
- updateContext(s){const p=s.player,t=s.t,school=s.room.kind==='village'?villageActivityAt(s.map,p):null,item=s.room.items?.find(i=>i.ready<=t&&Math.hypot(i.x-p.x,i.z-p.z)<2.3),dummy=s.actors.filter(a=>a.kind==='dummy'&&a.alive&&Math.hypot(a.x-p.x,a.z-p.z)<4).sort((a,b)=>dist(a,p)-dist(b,p))[0],options=[];
+ updateContext(s){const p=s.player,t=s.t,school=s.room.kind==='village'?villageActivityAt(s.map,p):null,item=s.room.items?.find(i=>i.ready<=t&&Math.hypot(i.x-p.x,i.z-p.z)<2.3),dummy=s.actors.filter(a=>a.kind==='dummy'&&a.alive&&Math.hypot(a.x-p.x,a.z-p.z)<4).sort((a,b)=>(b.id===p.autoFight)-(a.id===p.autoFight)||dist(a,p)-dist(b,p))[0],options=[];
   if(!p.prologue&&canAct(p)&&!p.rescueTarget){
    if(this.g.nearRack())options.push({id:'rack',name:'武具棚',glyph:'sword',facility:'armory'});
    if(school&&p.age>=4){const a=ACTIVITY_DEFS[school.id];if(a)options.push({id:'activity',value:a.id,name:p.activity===a.id?'やめる':a.label,glyph:p.activity===a.id?'close':a.id==='pray'?'sun':a.id==='observe'?'eye':a.id==='play'?'leaf':'book',facility:school.id});}

@@ -39,15 +39,54 @@ class Renderer{
   // Skinned characters supply their existing conservative animation envelope.
   const x=m[12],y=m[13],z=m[14];const r=Math.max(Math.hypot(m[0],m[1],m[2]),Math.hypot(m[4],m[5],m[6]),Math.hypot(m[8],m[9],m[10]))*1.75;const clipX=vp[0]*x+vp[4]*y+vp[8]*z+vp[12],clipY=vp[1]*x+vp[5]*y+vp[9]*z+vp[13];return Math.abs(clipX)<1+r*this.unitsToClip+padding&&Math.abs(clipY)<1+r*this.unitsToClip+padding;
  }
+ staticRanges(items,bounds){
+  // Index immutable scenery by 8-unit cells. Bounds include each complete mesh,
+  // including off-center/rotated/oversized parts. Never use just its origin.
+  this.staticRangeCache??=new WeakMap();
+  let cached=this.staticRangeCache.get(items);
+  if(cached&&cached.count===items.length&&cached.bounds===bounds)return cached;
+  const cells=new Map(),radii=[],c=bounds.center,e=bounds.extent;
+  for(let j=0;j<items.length;j++){
+   const m=items[j],key=Math.floor(m[12]/8)+','+Math.floor(m[14]/8);
+   let cell=cells.get(key);
+   if(!cell){cell={indices:[],min:[Infinity,Infinity,Infinity],max:[-Infinity,-Infinity,-Infinity]};cells.set(key,cell);}cell.indices.push(j);
+   radii.push(Math.max(Math.hypot(m[0],m[1],m[2]),Math.hypot(m[4],m[5],m[6]),Math.hypot(m[8],m[9],m[10])));
+   for(let k=0;k<3;k++){
+    const center=m[k]*c[0]+m[k+4]*c[1]+m[k+8]*c[2]+m[k+12];
+    const extent=Math.abs(m[k])*e[0]+Math.abs(m[k+4])*e[1]+Math.abs(m[k+8])*e[2];
+    cell.min[k]=Math.min(cell.min[k],center-extent);cell.max[k]=Math.max(cell.max[k],center+extent);
+   }
+  }
+  for(const cell of cells.values()){
+   cell.center=cell.min.map((v,k)=>(v+cell.max[k])*.5);cell.extent=cell.min.map((v,k)=>(cell.max[k]-v)*.5);
+  }
+  cached={count:items.length,bounds,cells,radii,selected:[]};this.staticRangeCache.set(items,cached);return cached;
+ }
  drawBatches(map,program,shadow=false){
-  const gl=this.gl,buckets=new Map(),pixelScale=this.width/this.viewWidth,scenery=map===this.static;
-  for(const [type,items] of map){const bounds=this.geometryBounds(type);for(const m of items){
+  this.bucketScratch??=new WeakMap();let scratch=this.bucketScratch.get(map);
+  if(!scratch){scratch={buckets:new Map(),pool:new Map()};this.bucketScratch.set(map,scratch);}
+  const {buckets,pool}=scratch;buckets.clear();for(const rows of pool.values())rows.length=0;
+  const gl=this.gl,pixelScale=this.width/this.viewWidth,scenery=map===this.static,vp=shadow?this.lightVP:this.vp,padding=shadow?.4:.09;
+  this.rangeIdentity??=rModel();
+  for(const [type,items] of map){const bounds=this.geometryBounds(type),index=scenery?this.staticRanges(items,bounds):null;
+   if(index){
+    index.selected.length=0;
+    for(const cell of index.cells.values()){
+     this.stats.staticRangesTested=(this.stats.staticRangesTested||0)+1;
+     if(this.visible(this.rangeIdentity,vp,padding,cell))for(const j of cell.indices)index.selected.push(j);
+    }
+    // Preserve the original row order, including coplanar surfaces.
+    index.selected.sort((a,b)=>a-b);
+   }
+   const count=index?index.selected.length:items.length;
+   for(let i=0;i<count;i++){const j=index?index.selected[i]:i,m=items[j];
    if(shadow&&(m[20]===1||m[20]===2||m[20]===4||m[19]<.85))continue;
    // Roof shells already cast the building silhouette. Millimetre paving relief
    // and overlapping tile faces do not need a second copy in the static shadow.
    if(shadow&&scenery&&(m[20]===20||type==='craft:paving'||type==='gltf:roof-shingle'||type==='golden:slate'))continue;
-   if(!this.visible(m,shadow?this.lightVP:this.vp,shadow?.4:.09,bounds))continue;
-   const radius=Math.max(Math.hypot(m[0],m[1],m[2]),Math.hypot(m[4],m[5],m[6]),Math.hypot(m[8],m[9],m[10])),pixels=radius*pixelScale;
+   if(scenery)this.stats.staticRowsTested=(this.stats.staticRowsTested||0)+1;
+   if(!this.visible(m,vp,padding,bounds))continue;
+   const radius=scenery?index.radii[j]:Math.max(Math.hypot(m[0],m[1],m[2]),Math.hypot(m[4],m[5],m[6]),Math.hypot(m[8],m[9],m[10])),pixels=radius*pixelScale;
    let lod=type;if(type==='sphere'&&(pixels<11||shadow))lod='bead';else if(type==='rbox'&&(pixels<7||shadow&&radius<.65))lod='box';else if(type==='leaf'&&(pixels<7||shadow))lod='leaflow';
    // Environment only: retain character geometry, animation and silhouette.
    if(scenery){
@@ -57,10 +96,10 @@ class Renderer{
     if(shadow&&RG_CACHE.get(type)?.shadowMesh)lod=RG_CACHE.get(type).shadowMesh;
    }
    if(lod!==type)this.stats.lodInstances++;
-   if(!buckets.has(lod))buckets.set(lod,[]);buckets.get(lod).push(m);
+   if(!buckets.has(lod)){if(!pool.has(lod))pool.set(lod,[]);buckets.set(lod,pool.get(lod));}buckets.get(lod).push(m);
   }}
   this.instanceScratch??=new Map();
-  for(const [type,rows]of buckets){const g=this.geometry(type),length=rows.length*21;let data=this.instanceScratch.get(type);
+  for(const [type,rows]of buckets){if(!rows.length)continue;const g=this.geometry(type),length=rows.length*21;let data=this.instanceScratch.get(type);
    if(!data||data.length<length){data=new Float32Array(2**Math.ceil(Math.log2(Math.max(64,length))));this.instanceScratch.set(type,data);}
    for(let i=0;i<rows.length;i++)data.set(rows[i],i*21);
    gl.bindVertexArray(g.vao);gl.bindBuffer(gl.ARRAY_BUFFER,g.instance);gl.bufferData(gl.ARRAY_BUFFER,data.subarray(0,length),gl.DYNAMIC_DRAW);gl.drawArraysInstanced(gl.TRIANGLES,0,g.count,rows.length);this.stats.calls++;this.stats.triangles+=g.count/3*rows.length;if(!shadow)this.stats.instances+=rows.length;
@@ -168,7 +207,7 @@ class Renderer{
    }else put('bead',0,.29,0,.23,.14,.18,item.item==='charcoal'?'#50463c':'#b6aa8d');
   }
  }
- render(snapshot,dt=.016,options={}){if(this.lost||!snapshot)return;this.resize();const gl=this.gl,t=snapshot.t||0,p=snapshot.player||snapshot.players?.[0],area=snapshot.room?.kind||'village';let key=options.portrait?'portrait':options.clan?'showcase':area==='village'?'village'+snapshot.map.seed:'front'+Math.floor(-(p?.z||0)/44);if(key!==this.sceneKey){this.sceneKey=key;this.static.clear();if(options.portrait){this.groundFX.clear();this.labels=[];}else if(options.clan)this.art.showcase();else if(area==='village')this.art.village(snapshot.map);else this.art.front(snapshot.map.seed,Math.floor(-(p?.z||0)/44));this.staticShadowDirty=true;}
+ render(snapshot,dt=.016,options={}){if(this.lost||!snapshot)return;this.resize();const gl=this.gl,t=snapshot.t||0,p=snapshot.player||snapshot.players?.[0],area=snapshot.room?.kind||'village';let key=options.portrait?'portrait':options.clan?'showcase':area==='village'?'village'+snapshot.map.seed+':'+(snapshot.map.terrainRevision||0)+':'+(snapshot.map.shipRevision||0):'front'+Math.floor(-(p?.z||0)/44);if(key!==this.sceneKey){this.sceneKey=key;this.static.clear();if(options.portrait){this.groundFX.clear();this.labels=[];}else if(options.clan)this.art.showcase();else if(area==='village')this.art.village(snapshot.map);else this.art.front(snapshot.map.seed,Math.floor(-(p?.z||0)/44));this.staticShadowDirty=true;}
  this.diorama.update(snapshot,dt,options);
  this.updateCamera(snapshot,dt,options);
  this.framePanel(snapshot,dt,options);this.matrix();this.stats={calls:0,triangles:0,instances:0,lodInstances:0,resolution:this.canvas.width+'×'+this.canvas.height,scale:this.scale,meshTypes:this.geo.size};this.dynamic.clear();this.fxBatches.clear();this.arcaneFX.clear();this.impactFX.clear();

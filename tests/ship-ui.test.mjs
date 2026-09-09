@@ -40,3 +40,20 @@ test('tap picking intersects the deck and sloped gangway on portrait and landsca
   for(const [x,z]of [[-3,43],[3,52],[0,31],[0,33.5],[0,28]]){const y=supportHeight(r.traversalMap,x,z),screen=r.project(x,y,z),q=r.pointToWorld(screen.x,screen.y);assert.ok(Math.hypot(q.x-x,q.z-z)<.002,`${width} ${yaw} (${x},${z}) -> ${q.x},${q.z}`);}
  }
 });
+
+
+test('active practice target remains stoppable when a different deck dummy is closer',t=>{
+ const {p,d,sim,sync}=fixture(t),targets=sim.getRoom(p).actors.filter(a=>a.shipStation!=null);
+ Object.assign(p,{x:3.5,z:41.5,supportHeight:1.2,autoFight:targets[0].id});sync();
+ const button=d.querySelector('[data-context=practice]');assert.equal(button.dataset.value,targets[0].id);assert.match(button.textContent,/やめる/);button.click();assert.equal(p.autoFight,null);
+});
+
+test('new clients preserve older live terrain and only render the ship for supporting rooms',t=>{
+ const {g,p,sim,ui,d}=fixture(t);p.z=28;g.online=true;g.mapCache.clear();
+ const old=sim.snapshot(p.id);delete old.room.shipRevision;
+ assert.equal(g.decorate(old).map.ship,undefined);assert.equal(g.snapshot.map.terrainRevision,1);
+ ui.updateShipNotice(old);assert.equal(d.querySelector('#ship-notice').hidden,true);
+ const current=sim.snapshot(p.id);assert.ok(g.decorate(current).map.ship);assert.equal(current.room.shipRevision,1);ui.updateShipNotice(current);assert.equal(d.querySelector('#ship-notice').hidden,false);
+ const oldest=sim.snapshot(p.id);delete oldest.room.shipRevision;delete oldest.room.terrainRevision;
+ assert.equal(g.decorate(oldest).map.ship,undefined);assert.equal(oldest.map.terrainRevision,0);
+});
