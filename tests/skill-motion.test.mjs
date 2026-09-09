@@ -110,3 +110,64 @@ test('pose and foot sampling leave the actual simulation, events and serializati
  }
  assert(hits>0,'real contact path exercised');
 });
+
+test('weapon channels have continuous nonzero velocity through contact, with distinct timing by family',()=>{
+ for(const [id,key]of [[4001,'rightArmZ'],[60002,'rightArm'],[4300,'weightZ']]){
+  const p=attack(id),h=.00001,at=1+.43/(book.get(id).hits||1);
+  const before=artPose(p,at-h)[key],hit=artPose(p,at)[key],after=artPose(p,at+h)[key];
+  const incoming=(hit-before)/h,outgoing=(after-hit)/h;
+  assert(Math.abs(incoming)>.05,`${id} stops at contact`);
+  assert(Math.abs(incoming-outgoing)<.02,`${id} changes velocity abruptly at contact`);
+ }
+ const early=id=>Math.abs(artPose(attack(id),1.16).rightArm-artPose(attack(id),1).rightArm);
+ assert(early(60010)>early(60002)+.1,'thrust accelerates before a heavy downward strike');
+});
+
+test('a different chained skill starts from the last pose and reaches its own release on time',()=>{
+ const state={},p={...attack(4001),weapon:2,combo:{total:1}};
+ let last;for(let i=0;i<=60;i++)last=artPose(p,1+i/60,state);
+ const charge={...p,action:'charge',attackSkill:60002,combo:{total:2},pendingSkill:{id:60002,started:2,at:2.8}};
+ const first=artPose(charge,2,state);assert(delta(last,first)<1e-7,'chain returned to common guard');
+ const loaded=artPose(charge,2.8,state),released=artPose({...attack(60002,2.8),weapon:2,combo:{total:2}},2.8,state);
+ assert(delta(loaded,released)<1e-7,'chain blend delayed release');
+ const a=artPose({...attack(60002,2.8),weapon:2,combo:{total:2}},3.8,state);
+ const recovery={...p,action:'recover',actionStarted:3.8,actionUntil:4.6};
+ assert(delta(a,artPose(recovery,3.8,state))<1e-7,'recovery snapped to guard');
+ assert(Math.abs(artPose(recovery,4.6-1e-7,state).rightArm)<.0001,'recovery failed to settle');
+});
+
+test('two-handed weapon handles meet the actual supporting palm, without stretching either rig',()=>{
+ for(const id of [60002,60010])for(const weapon of [2,3,4]){
+  const r=renderer(),cm=new CM01.Character(r),p={...attack(id),weapon};
+  for(let i=0;i<=60;i++){
+   const t=1+i/60;r.frame++;cm.update(p,t);
+   const hand=cm.transforms[11],left=cm.transforms[16];
+   const offset=api.rModel(0,-.075,.03,1,1,1,0,-.06,Math.PI-.12),shaft=[0,-.20*.84,0];
+   const target=[0,1,2].map(k=>{
+    const local=[0,1,2].map(j=>offset[12+j]+offset[j]*shaft[0]+offset[4+j]*shaft[1]+offset[8+j]*shaft[2]);
+    return hand[12+k]+hand[k]*local[0]+hand[4+k]*local[1]+hand[8+k]*local[2];
+   });
+   assert(Math.hypot(...target.map((v,k)=>v-left[12+k]))<.006,'palm detached from shaft');
+   for(const [upper,elbow,wrist]of [[9,10,11],[14,15,16]]){
+    const d=(a,b)=>Math.hypot(...[12,13,14].map(k=>cm.transforms[a][k]-cm.transforms[b][k]));
+    const bind=CM01.asset.bind;
+    assert(Math.abs(d(upper,elbow)-Math.hypot(...bind[upper].map((v,k)=>v-bind[elbow][k])))<.003);
+    assert(Math.abs(d(elbow,wrist)-Math.hypot(...bind[elbow].map((v,k)=>v-bind[wrist][k])))<.003);
+   }
+  }
+ }
+ for(const age of [7,14,75])for(const race of [0,1,2,3]){
+  const r=renderer(),art=new VillageArt(r),p={...attack(60002),age,race,weapon:2};
+  for(let i=0;i<=30;i++){r.parts=[];art.doll(p,1+i/30,false);assert(art.skillGripDebug?.error<.006);assert(r.parts.every(part=>part.m.every(Number.isFinite)));}
+ }
+});
+
+test('grip and motion history respect limb loss, shields, room changes and separate renderers',()=>{
+ for(const patch of [{shield:true},{wounds:{leftArm:{severity:'lost'}}},{wounds:{rightArm:{severity:'lost'}}}]){
+  const r=renderer(),cm=new CM01.Character(r);r.frame++;cm.update({...attack(60002),weapon:2,...patch},1.43);assert.equal(cm.skillGripDebug,null);
+ }
+ const p=attack(60002),r=renderer(),s=SkillMotion.stateFor(r,p,1);artPose(p,1.6,s);
+ assert.notEqual(SkillMotion.stateFor(renderer(),p,1),s);
+ assert.notEqual(SkillMotion.stateFor(r,{...p,room:'another'},1.7),s);
+ const next=SkillMotion.stateFor(r,p,2);assert.notEqual(SkillMotion.stateFor(r,p,1),next,'seek back retained future pose');
+});
