@@ -899,7 +899,13 @@ class Simulation {
   if(e.kind==='guard'&&this.time>=(e.nextSpeechAt||0)){
    e.nextSpeechAt=this.time+10+this.rng()*10;
    const helper=ps.filter(p=>p.alive&&dist(p,e)<9).sort((a,b)=>dist(a,e)-dist(b,e))[0];
-   if(helper){const type=(helper.health??100)<55?'hurt':helper.age<10?'young':helper.experience>30?'veteran':'helper',lines=GUARD_LINES[type];e.speech=lines[Math.floor(this.rng()*lines.length)];e.speechUntil=this.time+4.6;this.emit('guardline',{room:r.id,target:e.id,text:e.speech,x:e.x,z:e.z});}
+   if(helper){
+    const type=(helper.health??100)<55?'hurt':helper.age<10?'young':helper.experience>30?'veteran':'helper',lines=GUARD_LINES[type],speech=lines[Math.floor(this.rng()*lines.length)];
+    // Keep the normal retry time and RNG draws even when another guard has the floor.
+    if(!r.actors.some(g=>g!==e&&g.alive&&g.kind==='guard'&&g.speech&&g.speechUntil>this.time)){
+     e.speech=speech;e.speechUntil=this.time+4.6;this.emit('guardline',{room:r.id,target:e.id,text:e.speech,x:e.x,z:e.z});
+    }
+   }
   }
   const ranged=false,reach=ranged?11:e.wounds.rightArm?.severity==='lost'?1.2:e.kind==='boss'?5:e.elite?3.4:2.3;
   if(e.telegraph){
@@ -947,4 +953,3 @@ class Simulation {
  exportState(){const data={schema:3,version:VERSION,seed:this.seed,rngState:this.rng.getState(),mode:this.mode,time:this.time,seq:this.seq,eid:this.eid,roomSeq:this.roomSeq,rooms:[...this.rooms],players:[...this.players].map(([id,p])=>[id,{...p,speech:'',speechUntil:0}]),legacies:this.legacies,abandoned:this.abandoned};return JSON.parse(JSON.stringify(data));}
  static restore(data){if(data?.schema!==3||!Array.isArray(data.players)||!Array.isArray(data.rooms)||data.players.length>200)throw Error('この改修より前の進行中データは別保管されています。');const s=new Simulation({seed:data.seed,mode:data.mode});s.time=+data.time||0;s.seq=+data.seq||0;s.eid=+data.eid||0;s.roomSeq=+data.roomSeq||1;s.rooms=new Map(data.rooms);s.players=new Map(data.players);s.legacies=data.legacies||{};s.abandoned=data.abandoned||[];if(Number.isInteger(data.rngState))s.rng.setState(data.rngState);for(const p of s.players.values()){if(!s.rooms.has(p.room))throw Error('村の記録がありません。');p.attackBufferedUntil=0;p.attackStep??=null;p.hitReactAt??=0;p.hitReactUntil??=0;p.hitDir??=0;p.hitSeverity??=null;p.input={x:0,z:0};p.guard=false;p.guardPending=false;p.speech='';p.speechUntil=0;s.preparePlayer(p);p.dash=null;p.autoFight=null;p.chain=null;p.pendingSkill=null;p.combo=null;p.attackStep=null;p.action=p.seated?'sit':'idle';SkillSystem.restore(s,p);}for(const r of s.rooms.values()){if(r.kind==='village'){r.map=makeVillage(r.seed);const spot=villagePracticePosition(r.map);for(const a of r.actors)if(a.kind==='dummy'){a.x=a.homeX=spot.x;a.z=a.homeZ=spot.z;}}r.actors=r.actors.filter(a=>a.kind!=='villager');for(const a of r.actors){if(a.kind==='archer')a.kind='soldier';if(a.kind==='mage')a.kind='goblin';a.statuses??={};a.hp??=a.kind==='guard'?130:a.elite?120:70;a.hpMax??=a.hp;a.npcResolveMax??=a.kind==='guard'?18:14;if(data.version!==VERSION)a.npcResolve=a.npcResolveMax;}}for(const l of Object.values(s.legacies))l.archive=l.archive.filter(id=>skillById(id));return s;}
 }
-
