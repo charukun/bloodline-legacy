@@ -203,3 +203,9 @@ Reproduce after `npm run build` and `node tools/enemies/build-review.mjs`:
 `node tools/enemies/check-shaders.mjs dist/Bloodline_Legacy_Enemy_Review.html`.
 The compiler uses Python 3 standard library plus Mesa `libEGL.so.1` on Linux.
 No runtime or packaged game dependency is added.
+
+## Staged wounds and persistent breaks
+
+The continued work, latest develop integration, review controls and evidence
+are recorded in [DAMAGE_STAGES.md](DAMAGE_STAGES.md). Historical measurements
+above remain tied to their original revisions.

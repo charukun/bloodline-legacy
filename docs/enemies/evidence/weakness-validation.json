@@ -1,0 +1,68 @@
+{
+  "recordedAt": "2026-09-09T18:12:53.170946+00:00",
+  "baseDevelop": "10fb501e635f953c529dfbfc6898d8c0fd21e66c",
+  "preservedIntegrationHead": "6660376e7c3bd2738cc43bf650730ced43f2a912",
+  "simulationRulesVersion": "a383e782cea44fe92cc45194ce15f1265ea52d8eb7102cb15730b9cb6147419e",
+  "build": "PASS",
+  "focusedTests": {
+    "pass": 69,
+    "fail": 0,
+    "skip": 0,
+    "command": "node --test tests/enemy-weakness.test.mjs tests/enemy-damage.test.mjs tests/enemy-sentinel.test.mjs tests/enemy-bestiary.test.mjs tests/enemy-review.test.mjs tests/enemy-shaders.test.mjs tests/live-update.test.mjs"
+  },
+  "nativeGLESPrograms": {
+    "pass": 9,
+    "backend": "Mesa llvmpipe EGL/GLES",
+    "isBrowserVerification": false
+  },
+  "assetLicenseValidation": "PASS, unchanged CC0-1.0 KayKit Skeleton Warrior",
+  "newExternalAssets": 0,
+  "motionResourcesAdded": {
+    "meshes": 0,
+    "textures": 0,
+    "bones": 0,
+    "drawPasses": 0
+  },
+  "visualDiagnostic": {
+    "forms": [
+      "soldier",
+      "moss-wolf"
+    ],
+    "states": [
+      "healthy",
+      "50 percent HP",
+      "20 percent HP",
+      "right arm lost",
+      "right leg lost",
+      "both legs lost"
+    ],
+    "actions": [
+      "run",
+      "attack contact"
+    ],
+    "file": "weakness-motion.jpg",
+    "isBrowserVerification": false
+  },
+  "remainingGates": [
+    "Browser and real-device startup/readability",
+    "Full-game performance, Desktop 60fps / Pixel Fold 30fps and sustained thermal behavior",
+    "Latest-HEAD repository-wide CI at Integration",
+    "Unique insect/fungal crawling refinement"
+  ],
+  "sha256": {
+    "docs/enemies/evidence/weakness-assets.json": "2a96308188a0f8379e532cacd7490743fc8dfd48853f56644036b25d53d100de",
+    "docs/enemies/evidence/weakness-budget.json": "f5b0f43d8faf0b10e59d9c2b14ab234db1310057b82ef333ec47828eae547260",
+    "docs/enemies/evidence/weakness-gles.json": "2d3fe5d4e107283bbb1f5c753b8cc07009756bbd69344e948130e66440109b00",
+    "docs/enemies/evidence/weakness-motion.jpg": "b22c4f4354430cfb7636c10c4759bcc6b1114e71b07ff1a854ea257c9bf3a990",
+    "docs/enemies/evidence/weakness-tests.txt": "fff1e23bd9ceb86fab7fc8eb53eb64cf66f2830bbe0da37a42c0c5f875d08a64",
+    "src/enemies/bestiary.js": "58e7111cd812e98617d7823c07314e3fd509c44180532ea436774355d2dd24cc",
+    "src/enemies/sentinel.js": "cf1f63cb5ffa3f826784f8965d61d33a69b0276ba90fd57e3265b215def6c1a6",
+    "src/enemies/weakness.js": "56f1d29eb60a54e42f2a9eeb690d9582ba5f8f94b3d19c6f91b140375adfe6e6",
+    "src/legacy/core.js": "43f47d70be6817bd4b187749b5f0e4f86cad428e77ef5139282a789e33a686f4",
+    "src/server/engines/a383e782cea44fe92cc45194ce15f1265ea52d8eb7102cb15730b9cb6147419e.mjs": "a383e782cea44fe92cc45194ce15f1265ea52d8eb7102cb15730b9cb6147419e",
+    "src/server/engines/registry.json": "549e2956ccc8b94fa913fbd81d048689df281f4d2eafd84b72dfa56f40d322c3",
+    "tests/enemy-weakness.test.mjs": "a9df073b55bebee99fd64904f5b3793b5d1befcc5c8e4ab6336663c352421996",
+    "tools/enemies/build-review.mjs": "11583bc8683d30620fc05c52991364a6378512df0863b965fc52926092eaf9c5",
+    "tools/enemies/review-scenes.js": "4618cc54e2d3ecb9c81fca981a6e099e600f52e35ad1c768551354574d8688ae"
+  }
+}
