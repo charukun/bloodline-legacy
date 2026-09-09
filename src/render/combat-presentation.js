@@ -1,6 +1,7 @@
 /* Snapshot-only combat VFX. Strike timing, damage, hitstop and save data stay in
  * Simulation. Short tapered silhouettes emphasize the existing contact pose. */
 const COMBAT_FX = Object.freeze({
+ skillconnection:{life:.24,color:'#a8ddd1'},
  trailLife:.105, trailWidth:.045, trailPoints:7,
  hit:{life:.21,count:7,color:'#ecd7ab'},
  wound:{life:.34,count:9,color:'#f4b48e'},
@@ -119,6 +120,17 @@ class CombatPresentation{
    if(e.type==='wound'&&r.effects.some(h=>h!==e&&['hit','partbreak'].includes(h.type)&&h.target===e.target&&Math.abs(h.born-e.born)<.025))continue;
    const target=byId.get(e.target||e.player||e.id),source=byId.get(e.source),x=e.x??target?.x,z=e.z??target?.z;
    if(!Number.isFinite(x)||!Number.isFinite(z)||Math.hypot(x-r.camera.x,z-r.camera.z)>22)continue;
+   if(e.type==='skillconnection'){
+    const u=age/profile.life,dir=e.dir||0,side=[Math.cos(dir),0,-Math.sin(dir)],forward=[Math.sin(dir),0,Math.cos(dir)];
+    const center=[x,1.2,z],strength=e.first?1:.5,fade=(1-u)**2*strength;
+    // Two quick converging traces resolve at the actual contact point; no camera shake.
+    for(const sign of [-1,1]) {
+     const tail=center.map((v,i)=>v+side[i]*sign*(.25+u*.65)-forward[i]*(.3+u*.3));
+     this.needle(tail,center,.022*strength,profile.color,fade);
+    }
+    if(e.first&&r.quality!=='low')this.needle([x,1.03,z],[x,1.4,z],.015,'#fff7da',fade);
+    continue;
+   }
    const hurt=e.type==='wound',own=hurt&&e.player===p?.id;
    const u=clamp(age/profile.life,0,1),strong=e.type==='partbreak'||hurt&&e.severity!=='light',count=r.quality==='low'?(own?6:4):profile.count;
    const dir=Number.isFinite(e.dir)?e.dir:source?Math.atan2(x-source.x,z-source.z):target?.dir||0;

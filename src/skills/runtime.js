@@ -41,8 +41,13 @@ const SkillSystem = (() => {
   // A witnessed defeat influences a future idea, never grants the parent's technique.
   const ancestor=sim.legacy(p.owner).records.findLast(r=>(p.inherit||[]).includes(r.skill));
   if(ancestor?.skillHistory?.defeat)inherited.push('tension','patience');
+  const serial=p.skillLife.serial;
   const d=BL_SKILL_CATALOG.observe(p.skillLife,{...event,at:sim.time},{age:p.age,prologue:p.prologue,known:[...p.skills,...p.passives],weapon:p.weapon,shield:p.shield,lost:Object.entries(p.wounds||{}).filter(([,v])=>v.severity==='lost').map(([k])=>k),inheritedTags:inherited});
   if(d)sim.learn(p,d.id);
+  else if(p.skillLife.serial!==serial&&!p.prologue&&p.age>=4&&!p.autoFight) {
+   const glimpse=BloodlineSkills.glimpse(p.skillLife,sim.time);
+   if(glimpse)sim.emit('skillglimpse',{player:p.id,room:p.room,x:p.x,z:p.z,...glimpse});
+  }
  }
  function onEvent(sim,e) {
   const p=sim.players.get(e.player||e.source);if(!p)return;
@@ -81,7 +86,9 @@ const SkillSystem = (() => {
   if(cast?.linked&&cast.id===def.id&&cast.target===target.id&&!cast.announced) {
    cast.announced=true;const key=cast.from+':'+def.id;
    p.skillLife.connections[key]=Math.min(10000,(p.skillLife.connections[key]||0)+1);
-   sim.emit('skillconnection',{player:p.id,room:p.room,id:def.id,from:cast.from,target:target.id,x:p.x,z:p.z});
+   const first=p.skillLife.connections[key]===1,signal=first?'discovery':sim.time-(p.skillConnectionAt??-100)>=6?'echo':'quiet';
+   if(signal!=='quiet')p.skillConnectionAt=sim.time;
+   sim.emit('skillconnection',{player:p.id,room:p.room,id:def.id,from:cast.from,target:target.id,x:target.x,z:target.z,dir:p.dir,connectionKind:cast.connectionKind,first,signal});
   }
   if(!target.alive){p.skillExit=null;return;}
   const tags=def.exit.filter(tag=>tag!=='offbalance'||target.kind==='dummy'||target.stun>sim.time||target.exposedUntil>sim.time).filter(tag=>tag!=='close'||dist(target,p)<=2.4);
@@ -105,7 +112,7 @@ const SkillSystem = (() => {
   const target=sim.getRoom(p)?.actors.find(e=>e.id===p.autoFight&&e.alive),link=p.skillLink;p.skillLink=null;
   if(!target||dist(target,p)>sk.reach+.8||!BloodlineSkills.connection(d,link,target.id,sim.time,p.combo?.band??0))return sk;
   if(d.entry.includes('offbalance')&&link.tags.includes('offbalance')&&target.kind!=='dummy'&&!(target.stun>sim.time||target.exposedUntil>sim.time))return sk;
-  const bonus=d.connection||{},cast={id:sk.id,from:link.id,linked:true,target:target.id,announced:false};
+  const bonus=d.connection||{},cast={id:sk.id,from:link.id,linked:true,target:target.id,announced:false,connectionKind:d.entry.find(tag=>link.tags.includes(tag))};
   for(const key of ['charge','recovery','cost'])if(bonus[key]!==undefined)cast[key]=sk[key]*bonus[key];
   for(const key of ['reach','breakPower','knockback','tracking'])if(bonus[key]!==undefined)cast[key]=(sk[key]||0)+bonus[key];
   p.skillCast=cast;return {...sk,...cast};
@@ -115,7 +122,7 @@ const SkillSystem = (() => {
   p.skillLink=p.skillExit&&p.skillExit.id===p.currentSkill?p.skillExit:null;p.skillExit=null;
  }
  function remember(p) {
-  return {revision:BloodlineSkills.REVISION,defeat:p.cause!=='寿命'&&!!p.cause,families:[...new Set(p.skillLife.discovered.map(d=>d.family))],discoveries:p.skillLife.discovered.slice(-8).map(d=>({id:d.id,reasons:d.reasons,route:d.route})),connections:{...p.skillLife.connections}};
+  return {revision:BloodlineSkills.REVISION,defeat:p.cause!=='寿命'&&!!p.cause,families:[...new Set(p.skillLife.discovered.map(d=>d.family))],discoveries:p.skillLife.discovered.slice(-8).map(d=>({id:d.id,reasons:d.reasons,route:d.route})),connections:{...p.skillLife.connections},signature:Object.entries(p.skillUses||{}).filter(([id,n])=>Number.isFinite(n)&&n>0&&skillById(+id)&&!skillById(+id).passive).sort((a,b)=>b[1]-a[1]||Number(a[0])-Number(b[0])).slice(0,3).map(([id])=>Number(id))};
  }
  return {prepare,restore,reset,record,onEvent,contact,sample,prepareCast,active,complete,remember};
 })();

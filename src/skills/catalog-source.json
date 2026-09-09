@@ -1712,6 +1712,33 @@
         "bias": 0.16,
         "copy": false
       }
+    },
+    {
+      "id": 60904,
+      "key": "deep_faith",
+      "ja": "篤い信仰",
+      "en": "Deep Devotion",
+      "desc": "祈りを重ね、心に灯を宿す。奇跡を受け入れ、その祈りが少し届きやすくなる。",
+      "descEn": "Repeated prayer kindles devotion. Open your heart to miracles and make them a little more likely to answer.",
+      "tags": [
+        "pray",
+        "patience"
+      ],
+      "requiresExperience": [
+        [
+          "pray"
+        ]
+      ],
+      "effect": "faith",
+      "value": 2,
+      "action": {
+        "school": "church"
+      },
+      "color": "#dec78e",
+      "inheritance": {
+        "bias": 0.16,
+        "copy": false
+      }
     }
   ]
 }
