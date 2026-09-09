@@ -22,6 +22,40 @@ function installGoldenGeometry(){
   const pts=[[c[0]-dx,c[1]-.04,c[2]-dz],[c[0]+Math.sin(a)*.30,c[1]+.12,c[2]+Math.cos(a)*.30],[c[0]+dx,c[1]-.04,c[2]+dz],[c[0],c[1]-.12,c[2]]];
   for(const ids of [[0,1,2],[0,2,3]]){for(const j of ids){p.push(...pts[j]);n.push(Math.sin(a)*.25,.93,Math.cos(a)*.25);}}
  }RG_CACHE.set('golden:spray',{positions:new Float32Array(p),normals:new Float32Array(n),count:p.length/3,radius:1});
+ // One opaque, instanced bough: folded leaves leave real gaps in the silhouette.
+ // 192 triangles replace the 252-triangle solid crowns; no alpha cards or new pass.
+ const cp=[],cn=[];
+ // A small interior closes distant pinholes; only the perimeter is individual leaf mesh.
+ const core=rGeometry('beadlow');
+ for(let i=0;i<core.positions.length;i+=3){
+  const [x,y,z]=core.positions.subarray(i,i+3),ruffle=1+.06*Math.sin(x*7+z*5);
+  cp.push(x*.63*ruffle,y*.34,z*.61*ruffle);
+  const d=Math.hypot(x,y*1.7,z);cn.push(x/d,y*1.7/d,z/d);
+ }
+ for(let i=0;i<36;i++){
+  const a=i*2.399963,h=1-2*(i+.5)/36,r=Math.sqrt(1-h*h),
+   c=[Math.sin(a)*r*.68,h*.35,Math.cos(a)*r*.66],
+   yaw=a+Math.sin(i*3.7)*.6,len=.18+(i%4)*.015,w=.095+(i%3)*.010,
+   along=[Math.sin(yaw)*len,.02+Math.sin(i*1.7)*.04,Math.cos(yaw)*len],
+   across=[Math.cos(yaw)*w,0,-Math.sin(yaw)*w],
+   ring=[c.map((v,k)=>v+along[k]),c.map((v,k)=>v+across[k]),c.map((v,k)=>v-along[k]),c.map((v,k)=>v-across[k])],
+   ridge=[c[0],c[1]+.025,c[2]];
+  for(let j=0;j<4;j++)for(const q of [ridge,ring[j],ring[(j+1)%4]]){
+   cp.push(...q);
+   // Broad bough normals retain canopy volume without harsh card-to-card flicker.
+   const normal=[q[0]*.8,.30+(q[1]+.35)*1.1,q[2]*.8],d=Math.hypot(...normal);
+   cn.push(...normal.map(v=>v/d));
+  }
+ }
+ RG_CACHE.set('golden:canopy',{positions:new Float32Array(cp),normals:new Float32Array(cn),count:cp.length/3,radius:1.3});
+ // Five rounded petals, authored together instead of five instanced spheres.
+ const fp=[],fn=[];
+ for(let j=0;j<5;j++){
+  const a=j*TAU/5,s=Math.sin(a),c=Math.cos(a),shape=[[0,.025],[.075,.08],[.075,.17],[0,.205],[-.075,.17],[-.075,.08]],
+   pts=shape.map(([x,z],i)=>[x*c+z*s,i===0?.014:.005,x*-s+z*c]);
+  for(let k=1;k<5;k++)for(const q of [pts[0],pts[k],pts[k+1]]){fp.push(...q);fn.push(0,1,0);}
+ }
+ RG_CACHE.set('golden:blossom',{positions:new Float32Array(fp),normals:new Float32Array(fn),count:fp.length/3,radius:.23});
 }
 class GoldenArt extends VillageArt{
  constructor(r){super(r);installGoldenGeometry();this.goldenActive=false;}
@@ -65,6 +99,13 @@ class GoldenArt extends VillageArt{
    for(let j=0;j<3;j++)this.g('box',x+side*s*.60,y+(j-1)*s*.28,z+.11,s*.24,.035,.025,'#8b8d6d',0,0,0,22);
   }
  }
+ flower(x,z,c='#faf0d8',s=1){
+  if(!this.local(x,0,z))return super.flower(x,z,c,s);
+  this.line([x,.13,z],[x,.50*s,z],.013*s,'#7d8c54',13);
+  this.g('golden:spray',x,.17,z,.25*s,.20*s,.25*s,'#7e8b50',x+z,0,0,13);
+  this.g('golden:blossom',x,.53*s,z,s,1,s,c,x+z,0,0,0);
+  this.g('beadlow',x,.545*s,z,.045*s,.018*s,.045*s,'#c3a451',0,0,0,0);
+ }
  cottage(x,z,scale=1,variant=0,yaw=0){
   super.cottage(x,z,scale,variant,yaw);if(!this.local(x,0,z))return;
   this.with(rModel(x,.08,z,scale,scale,scale,yaw),()=>{
@@ -73,6 +114,12 @@ class GoldenArt extends VillageArt{
    this.g('roof',0,3.47,2.10,4.80,.94,.11,'#bbb39b',0,0,0,21);
    this.g('box',0,3.36,2.18,.13,.78,.12,'#756049',0,0,0,22);
    for(const side of [-1,1])this.line([side*1.8,3.06,2.18],[0,3.9,2.18],.065,'#796449',22);
+   // A compact espalier stays against the side wall, clear of the door/steps.
+   for(const zz of [-.90,-.25,.40])this.g('box',-2.48,1.17,zz,.055,1.75,.055,'#897652',0,0,0,22);
+   for(const yy of [.65,1.15,1.65])this.g('box',-2.49,yy,-.25,.045,.05,1.68,'#a18b62',0,0,0,22);
+   for(let j=0;j<5;j++)this.g('golden:canopy',-2.54,.52+j*.29,-.68+Math.sin(j*2.1)*.35,.28,.37,.53,j%2?'#74804b':'#909058',j*.8,0,0,13);
+   this.g('box',-2.48,.26,-.28,.53,.32,1.87,'#9c8662',0,0,0,22);
+   this.g('box',-2.48,.435,-.28,.43,.025,1.71,'#625c3f',0,0,0,16);
   });
  }
  garden(x,z){
@@ -97,15 +144,17 @@ class GoldenArt extends VillageArt{
  }
  tree(x,z,scale=1,tint,seed=1){
   if(!this.local(x,0,z))return super.tree(x,z,scale,tint,seed);
-  // Two canopy tiers and visible branches; foliage remains in the existing wind pass.
+  // Asymmetric boughs, exposed forks and a planted root skirt. Existing wind only.
   this.with(rModel(x,0,z,scale,scale,scale,seed%6),()=>{
    this.g('trunk',0,1.7,0,.15,3.4,.18,'#71644c',0,0,.025,22);
    if(seed%3===0){for(let j=0;j<6;j++){const rad=1.30-j*.19;this.g('gltf:pine-tier',Math.sin(j*2)*.07,1.45+j*.52,0,rad,1.30,rad,['#3f6147','#486c49','#52754c','#608051','#6e8b57','#7f965e'][j],j*.53,0,0,13);if(j<5)for(let k=0;k<3;k++){const a=k*TAU/3+j*2.4;this.g('golden:spray',Math.sin(a)*rad*.80,1.09+j*.52,Math.cos(a)*rad*.80,.85,.55,.85,'#60814c',a,0,0,13);}}}
-   else{for(let j=0;j<5;j++){const a=j*2.399963,xx=Math.sin(a)*.73,zz=Math.cos(a)*.75;
-    this.line([0,1.4,0],[xx,2.65+j%2*.4,zz],.065,'#807052',22);
-    this.g('gltf:leaf-crown',xx,2.72+j%2*.38,zz,.83,.73,.88,['#496848','#5c794d','#728b55'][j%3],a,0,0,13);
-    this.g('golden:spray',xx*1.8,2.42,zz*1.8,1.1,1.0,1.1,'#6a8350',a,0,0,13);
-   }this.g('gltf:leaf-crown',.07,3.65,0,.84,.96,.87,'#78915c',0,0,0,13);}
+   else{for(let j=0;j<7;j++){const a=j*2.399963+seed*.17,rad=j<5?.76:.30,xx=Math.sin(a)*rad,zz=Math.cos(a)*rad,
+     yy=j<5?2.77+(j%3)*.29:3.76+(j-5)*.30;
+    if(j<5)this.line([0,1.65,0],[xx*1.28,yy-.12,zz*1.28],.063,'#807052',22);
+    this.g('golden:canopy',xx,yy,zz,1.08+(j%2)*.16,.83,1.08,['#566f44','#6a7e49','#7b8c51','#697d48','#859457','#7c9254','#91a062'][j],a,.08*Math.sin(a),0,13);
+   }}
+   for(let j=0;j<3;j++){const a=j*2.399963;this.line([0,.27,0],[Math.sin(a)*.46,.12,Math.cos(a)*.46],.07,'#786b4e',22);
+    this.g('golden:canopy',Math.sin(a)*.54,.28,Math.cos(a)*.54,.56,.39,.54,j%2?'#6c7945':'#858951',a,0,0,13);}
   });this.r.blob(x,z,1.4*scale,1.4*scale,.34,this.r.groundFX);
  }
  village(map){
@@ -138,14 +187,15 @@ class GoldenArt extends VillageArt{
   for(const s of map.schools){if(s.id==='dance'||!inGoldenDistrict(s.x,s.z))continue;
    const side=s.x<0?-1:1,bx=s.x+side*3.7,bz=s.z-3.0;
    for(let j=0;j<6;j++)this.g('golden:stone',bx,.24+(j%2)*.06,bz+j*.57,.68,.45,.60,stone[j%stone.length],j*.15);
-   for(let j=0;j<10;j++)this.g('golden:spray',bx-side*.25+(rng()-.5)*.55,.17,bz+rng()*3.0,.9+rng()*.5,.65+rng()*.7,.9,'#657d4c',rng()*6,0,0,13);
+   for(let j=0;j<7;j++)this.g('golden:canopy',bx-side*.25+(rng()-.5)*.55,.34,bz+rng()*3.0,.55+rng()*.3,.45+rng()*.35,.65,j%2?'#718048':'#8a9156',rng()*6,0,0,13);
    // The taller backdrop sits behind the building, never in front of its interaction.
    for(let j=0;j<2;j++){const tx=s.x+side*(1.7+j*1.5),tz=s.z-5.0;if(inGoldenDistrict(tx,tz))this.tree(tx,tz,1.08+rng()*.42,'#607f50',s.x*17+j+87);}
   }
   for(const side of [-1,1]){
    const x=side*(side<0?5.7:6.0),z=well.z+(side<0?.2:1.3);
    this.g('gltf:stone-sculpt',x+side*.6,.08,z-.3,1.1,.26,2.7,'#73774e',.12,0,0,16);
-   for(let j=0;j<7;j++){this.g('golden:stone',x+side*Math.sin(j*.45)*.45,.23,z-2.2+j*.65,.75,.38,.64,stone[j%5],j*.22);this.g('golden:spray',x+side*.5,.19,z-2.2+j*.65,1.3,.7+(j%3)*.3,1.2,j%2?'#607b4a':'#819052',j,0,0,13);}
+   for(let j=0;j<7;j++){this.g('golden:stone',x+side*Math.sin(j*.45)*.45,.23,z-2.2+j*.65,.75,.38,.64,stone[j%5],j*.22);this.g('golden:canopy',x+side*.5,.37,z-2.2+j*.65,.85,.53+(j%3)*.14,.78,j%2?'#667b45':'#899252',j,0,0,13);
+    if(j%2===0){this.flower(x+side*.22,z-2.1+j*.65,'#e6d8ae',.53);this.tuft(x-side*.25,.12,z-2+j*.65,.7,'#859453');}}
    this.tree(x+side*.8,z-(side<0?3.6:2.1),1.09+(side+1)*.09,'#698251',side+212);
    // Worn bench and stacked baskets beside the planted edge, away from the well.
    this.with(rModel(x-side*.9,0,z+1,1,1,1,side*.18),()=>{
@@ -157,6 +207,13 @@ class GoldenArt extends VillageArt{
    this.barrel(x+side*.25,z+3,.67);
    for(let j=0;j<4;j++)this.flower(x+side*.25+(j%2)*.3,z-1+j*.47,j%2?'#c9b987':'#adacc2',.46+j%2*.10);
    if(side<0)this.cart(x-1.1,z+3.0);
+  }
+  // Low planting pockets soften the grass/path join, without covering walking space.
+  for(const side of [-1,1])for(let j=0;j<3;j++){
+   const x=side*(3.25+j*.49),z=well.z-4.6-j*.65;
+   if(paved(x,z)||map.schools.some(s=>s.id!=='dance'&&Math.hypot(x-s.x,z-s.z)<4.8))continue;
+   this.g('golden:canopy',x,.29,z,.66,.42,.62,j%2?'#7c8950':'#687b48',j+side,0,0,13);
+   for(let k=0;k<3;k++)this.flower(x-side*.40+Math.sin(k*2.4)*.22,z+.35+Math.cos(k*2.4)*.23,k===1?'#d4bc9b':'#e9dfbe',.65+(k%2)*.13);
   }
   this.goldenActive=false;
  }
