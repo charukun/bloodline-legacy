@@ -48,6 +48,7 @@ const CompositionLab=(()=>{
  }
  function launch(nextMode=mode){if(!renderer)return;mode=nextMode;trial=prepareTrial({target:$('target').value,distance:+$('distance').value,weapon});seq=trial.sim.seq;hits=0;links=0;travel=0;carry=0;cycleEnded=false;clearVisual();renderer.combatPresentation.previewEnabled=$('effects').checked;
   const {sim,p,room}=trial,chosen=mode==='combo'?slots:[selected];
+  if(mode==='ready'){p.focusTarget=room.actors[0].id;p.focusUntil=sim.time+30;paused=false;$('pause').textContent='一時停止';return;}
   for(const recipe of chosen){const d=def(recipe);sim.learn(p,d.id);p.phaseWeights[d.phase]={[d.id]:1};}
   const d=def(chosen[0]);p.combo={band:d.phase,total:0,repeats:0};p.autoFight=mode==='combo'?room.actors[0].id:null;
   if(!sim.beginComboStrike(p,d.id))throw Error('技を使えません：'+skillRestriction(p,skillById(d.id)));if(mode==='combo')p.comboQueued=true;paused=false;$('pause').textContent='一時停止';
@@ -73,6 +74,7 @@ const CompositionLab=(()=>{
   $('weapon').onchange=()=>{remember();weapon=+$('weapon').value;if(!def(selected).composition)selected=weapon<0?generate():{skillId:available(weapon)[0].id};slots=slots.map((r,i)=>def(r).composition||def(r).action.weapon===weapon?r:generate(i));update();launch('single');};
   $('weapon-skill').onchange=()=>{remember();selected=$('weapon-skill').value?{skillId:+$('weapon-skill').value}:generate();update();fitDistance();launch('single');};
   $('adopt').onclick=()=>{slots[def(selected).phase]=canonical(selected);update();};$('cast').onclick=()=>launch('single');$('combo').onclick=()=>launch('combo');$('pause').onclick=()=>{paused=!paused;$('pause').textContent=paused?'再生':'一時停止';};
+  $('ready').onclick=()=>launch('ready');
   $('effects').onchange=()=>launch();$('fit-distance').onclick=()=>{fitDistance();launch();};$('distance').oninput=()=>{$('distanceText').value=(+$('distance').value).toFixed(1);};$('distance').onchange=()=>launch();$('target').onchange=()=>launch();
   $('save').onclick=()=>{try{restore(JSON.parse($('recipe').value));localStorage.setItem('bloodline-skill-composition-lab-v1',$('recipe').value);$('error').textContent='構成を保存しました';}catch(e){$('error').textContent='保存できません：'+e.message;}};
   $('load').onclick=()=>{try{restore(JSON.parse($('recipe').value));launch();$('error').textContent='構成を読み込みました';}catch(e){$('error').textContent=e.message;}};
