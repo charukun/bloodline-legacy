@@ -41,6 +41,7 @@ void main(){if(R>=10)discard;vec3 p=C.rgb;if(textured)p*=texture(atlas,U).rgb;fl
   for key,geo in self.cap['geometry'].items():
    p=np.array(geo['positions']).reshape(-1,3);n=np.array(geo['normals']).reshape(-1,3);self.parts[key]=self.simple(p,n,[1,1,1,1])
   floor=np.array([[-8,.10,-8],[-8,.10,8],[8,.10,8],[-8,.10,-8],[8,.10,8],[8,.10,-8]])
+  origin=self.cap['frames'][0]['p'];floor[:,0]+=origin['x'];floor[:,2]+=origin['z']
   self.floor=self.simple(floor,np.tile([0,1,0],(6,1)),[.65,.69,.60,1],9)
  def vao(self,p,n,uv,col,j,w,reg,index=None):
   data=np.column_stack([p,n,uv,col,j,w,reg]).astype('f4');b=self.c.buffer(data.tobytes());ib=self.c.buffer(index) if index else None

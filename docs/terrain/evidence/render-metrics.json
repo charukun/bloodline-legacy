@@ -1,0 +1,70 @@
+{
+  "before": {
+    "renderer": "llvmpipe (LLVM 20.1.2, 256 bits)",
+    "version": "4.5 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.2",
+    "backend": "offline EGL / same game shaders and drawBatches / not browser",
+    "initial_compile_upload_render_seconds": 2.4943688519997522,
+    "options": {
+      "width": 960,
+      "height": 720,
+      "x": 10.5,
+      "z": -15.2,
+      "zoom": 15,
+      "yaw": 0.4,
+      "pitch": 0.85,
+      "seed": 7349,
+      "time": 0,
+      "weather": "clear",
+      "quality": "medium",
+      "characters": false
+    },
+    "game_drawBatches_stats_including_shadow_refresh": {
+      "calls": 46,
+      "triangles": 505344,
+      "instances": 2062,
+      "lodInstances": 3420
+    },
+    "steady_scene_draw_calls": 27,
+    "unverified": [
+      "browser interaction",
+      "native WebGL frame pacing",
+      "hardware GPU",
+      "Pixel Fold",
+      "bone palette transitions"
+    ]
+  },
+  "after": {
+    "renderer": "llvmpipe (LLVM 20.1.2, 256 bits)",
+    "version": "4.5 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.2",
+    "backend": "offline EGL / same game shaders and drawBatches / not browser",
+    "initial_compile_upload_render_seconds": 6.716403048005304,
+    "options": {
+      "width": 960,
+      "height": 720,
+      "x": 10.5,
+      "z": -15.2,
+      "zoom": 15,
+      "yaw": 0.4,
+      "pitch": 0.85,
+      "seed": 7349,
+      "time": 0,
+      "weather": "clear",
+      "quality": "medium",
+      "characters": false
+    },
+    "game_drawBatches_stats_including_shadow_refresh": {
+      "calls": 46,
+      "triangles": 511866,
+      "instances": 2168,
+      "lodInstances": 3642
+    },
+    "steady_scene_draw_calls": 27,
+    "unverified": [
+      "browser interaction",
+      "native WebGL frame pacing",
+      "hardware GPU",
+      "Pixel Fold",
+      "bone palette transitions"
+    ]
+  }
+}
