@@ -55,14 +55,15 @@ test('presentation cache evicts absent characters',()=>{
  const m=new api.DamageMotion();for(let i=0;i<150;i++)m.sample(actor({id:'actor'+i}),i*.5+1);assert(m.actors.size<=64);
 });
 // Compare every gameplay field and RNG state with the fixed develop source.
-// Only the documented render metadata is allowed to differ.
-const presentation=new Set(['hitPart','hitSeverity','hitReactAt','hitReactUntil','hitDir','hitStrength','hitMotionAt','hitMotionId','hitGuard']);
-const state=sim=>JSON.parse(JSON.stringify(sim.exportState(),(k,v)=>presentation.has(k)?undefined:v));
+// The neutral frontal case retains prior damage/reaction behavior. New persisted
+// life, surface and damage-mark metadata is checked by the feature suites.
+const presentation=new Set(['hitPart','hitSeverity','hitReactAt','hitReactUntil','hitDir','hitStrength','hitMotionAt','hitMotionId','hitGuard','lifeState','traversables','damageMarks','grounded','supportHeight','verticalOffset']);
+const state=sim=>JSON.parse(JSON.stringify(sim.exportState(),(k,v)=>presentation.has(k)||k==='phaseLimitVersion'?undefined:v));
 test('damage, wound progression, attack interruption, hitstop and RNG match develop',()=>{
  const before=runtime(true);
  for(const seed of [13,27,48])for(const power of [.3,1,1.5,2,3])for(const part of ['head','torso','rightArm','leftLeg']){
   const pair=[before,api].map(a=>{const f=life(a,seed);f.sim.time=10;const e=f.sim.actor('soldier',0,3,0);return {...f,e};});
-  for(const f of pair){f.e.guard=false;f.room.actors.push(f.e);f.e.telegraph={at:12,started:9,dir:0};f.sim.damageActor(f.e,f.p,part,power,f.room);for(let i=0;i<8;i++)f.sim.tick(1/30);}
+  for(const f of pair){f.e.guard=false;f.e.dir=Math.PI;Object.assign(f.p,{x:0,z:1,dir:0});f.room.actors=[f.e];f.room.waveAt=1e6;f.e.telegraph={at:12,started:9,dir:Math.PI};f.sim.damageActor(f.e,f.p,part,power,f.room);for(let i=0;i<8;i++)f.sim.tick(1/30);}
   assert.deepEqual(state(pair[1].sim),state(pair[0].sim),`${seed} ${power} ${part}`);
  }
 });

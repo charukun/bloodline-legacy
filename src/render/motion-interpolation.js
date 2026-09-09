@@ -14,7 +14,7 @@ class MotionInterpolation {
    let old=this.previous.get(e.id);
    if(!old){old={};this.previous.set(e.id,old);}
    Object.assign(old,{x:e.x,z:e.z,dir:e.dir,baseY:e.baseY,alive:e.alive,
-    prologue:e.prologue,time:sim.time});
+    prologue:e.prologue,supportHeight:e.supportHeight||0,verticalOffset:e.verticalOffset||0,time:sim.time});
   };
   for(const e of room.actors)remember(e);
   for(const e of sim.players.values())if(e.room===room.id)remember(e);
@@ -37,6 +37,7 @@ class MotionInterpolation {
     p.dir=old.dir+angle*alpha;
    }
    if(Number.isFinite(old.baseY)&&Number.isFinite(e.baseY))p.baseY=old.baseY+(e.baseY-old.baseY)*alpha;
+   p.supportHeight=old.supportHeight+((e.supportHeight||0)-old.supportHeight)*alpha;p.verticalOffset=old.verticalOffset+((e.verticalOffset||0)-old.verticalOffset)*alpha;
    return p;
   };
   const player=pose(snapshot.player);

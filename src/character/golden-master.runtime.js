@@ -47,7 +47,7 @@ const CM01 = (()=>{
   }
  }
  function selectClip(p,t,st,phase,moving,run,reaction){
-  if(!asset.clips?.size||p.weapon!==0||!p.alive||p.seated||p.activity||p.guard||p.guardUntil>t||reaction.amount>.02||Object.keys(p.statuses||{}).length||Object.values(p.wounds||{}).some(w=>w.severity==='lost')||['carry','wave','sleep','sit','interact'].includes(p.action)){st.clipCut=null;return null;}
+  if(incapacitated(p)||p.traversal||p.rescueTarget||!asset.clips?.size||p.weapon!==0||!p.alive||p.seated||p.activity||p.guard||p.guardUntil>t||reaction.amount>.02||Object.keys(p.statuses||{}).length||Object.values(p.wounds||{}).some(w=>w.severity==='lost')||['carry','wave','sleep','sit','interact'].includes(p.action)){st.clipCut=null;return null;}
   const clock=SkillMotion.clock(p,t);
   if(clock){
    if(clock.shape!=='slash'||clock.hits!==1){st.clipCut=null;return null;}
@@ -109,7 +109,7 @@ const CM01 = (()=>{
   }
   groundAt(x,z){return SkillMotion.groundAt(this.r,x,z);}
 
-  update(p,t){if(!eligible(p,true)){this.lastFrame=-1;return;}const start=performance.now(),r=this.r;this.owner=p;this.lastFrame=r.frame;let st=this.state;
+  update(p,t){if(!eligible(p,true)){this.lastFrame=-1;return;}p=carriedVisualPose(p);const start=performance.now(),r=this.r;this.owner=p;this.lastFrame=r.frame;let st=this.state;
    const motionT=Number.isFinite(p.renderPoseTime)?p.renderPoseTime:t;
    if(!st||st.id!==p.id||t<st.t||t-st.t>.35||Math.hypot(p.x-st.x,p.z-st.z)>1.5){st=this.state={id:p.id,t,motionT,x:p.x,z:p.z,phase:0,speed:0,feet:[],lastQ:null};}
    // Simulation snapshots run at 30 Hz; extra render frames must not restart
@@ -127,7 +127,7 @@ const CM01 = (()=>{
    else if(moving)st.phase+=d/stride;
    st.moving=moving;st.gaitMode=gaitMode;
    const phase=st.phase*TAU,reaction=damagePose(r,p,t,st.feet),pose=damageArtPose(r,p,t,artPose(p,t,SkillMotion.stateFor(r,p,t))),ail=ailmentPose(p,t),guard=p.guard||p.guardUntil>t||p.autoFight;
-   const fall=!p.alive?smooth((t-(p.deathAt??t))/1.12):0;const sampledGround=this.groundAt(p.x,p.z);if(!Number.isFinite(st.ground))st.ground=sampledGround;st.ground+=(sampledGround-st.ground)*(1-Math.exp(-dt*14));const baseY=p.baseY!=null?p.baseY:st.ground-.020;
+   const fall=!p.alive?(p.wasDownedOnDeath?1:smooth((t-(p.deathAt??t))/1.12)):0;const sampledGround=p.traversal?Math.max(.10,p.supportHeight||0):this.groundAt(p.x,p.z);if(!Number.isFinite(st.ground))st.ground=sampledGround;st.ground+=(sampledGround-st.ground)*(1-Math.exp(-dt*14));const baseY=(p.baseY!=null?p.baseY:st.ground-.020)+(p.verticalOffset||0);
    const authored=selectClip(p,t,st,phase,moving,run,reaction);
    const rootQ=Q.euler((authored?0:pose.pitch)+reaction.pitch+ail.pitch+fall*1.48,(p.dir||0)+(authored?0:pose.yaw),(authored?0:pose.roll)+reaction.roll+ail.roll);
    const rootM=matrix([p.x+reaction.x+(authored?0:Math.cos(p.dir||0)*(pose.weightX||0)+Math.sin(p.dir||0)*(pose.weightZ||0)),baseY+(authored?0:pose.y)+ail.y-reaction.drop,p.z+reaction.z+(authored?0:-Math.sin(p.dir||0)*(pose.weightX||0)+Math.cos(p.dir||0)*(pose.weightZ||0))],rootQ);
@@ -175,7 +175,7 @@ const CM01 = (()=>{
      for(let i=start+3;i<=start+4;i++)globalM[i]=rMultiply(globalM[asset.parents[i]],localM[i]);
     }
    }
-   const useGroundIK=!p.seated&&!p.activity&&fall===0&&(pose.skillMotion||Math.abs(pose.y)<.22&&Math.abs(pose.rightLeg)<1.2&&Math.abs(pose.leftLeg)<1.2);
+   const useGroundIK=!incapacitated(p)&&!p.traversal&&!p.seated&&!p.activity&&fall===0&&(pose.skillMotion||Math.abs(pose.y)<.22&&Math.abs(pose.rightLeg)<1.2&&Math.abs(pose.leftLeg)<1.2);
    if(pose.skillMotion&&!st.skillFeet)st.skillFeet=st.feet.map(f=>f?{anchor:[...f.anchor],yaw:f.yaw,t,motionT,rootX:p.x,rootZ:p.z,lift:0}:null);
    if(!pose.skillMotion)st.skillFeet=null;
    let contactError=0,contacts=0;this.footDebug=[];const targets=[];
@@ -261,7 +261,7 @@ const CM01 = (()=>{
 const CM01_PREVIOUS_LOAD=AssetBank.load.bind(AssetBank);
 AssetBank.load=async function(){await CM01_PREVIOUS_LOAD();await CM01.load(VISUAL_ASSETS['character/young-human-male-cm01.glb']);};
 const CM01_PREVIOUS_DOLL=VillageArt.prototype.doll;
-VillageArt.prototype.doll=function(p,t,local){if(!CM01.asset||!CM01.eligible(p,local)||!this.r.rigs)return CM01_PREVIOUS_DOLL.call(this,p,t,local);const r=this.r;if(!r.characterMaster)r.characterMaster=new CM01.Character(r);const cm=r.characterMaster;cm.update(p,t);
+VillageArt.prototype.doll=function(p,t,local){if(p.rescueTarget||incapacitated(p)||p.traversal)p={...p,weapon:-1,shield:false};if(!CM01.asset||!CM01.eligible(p,local)||!this.r.rigs)return CM01_PREVIOUS_DOLL.call(this,p,t,local);const r=this.r;if(!r.characterMaster)r.characterMaster=new CM01.Character(r);const cm=r.characterMaster;cm.update(p,t);
  const root=this.root,target=this.target;this.target=r.dynamic;
  // Keep the original equipment geometry and the existing tip/trail registration.
  r.rigs.begin(p,t);try{if(p.weapon>=0&&p.wounds?.rightArm?.severity!=='lost'){this.root=cm.transforms[11];this.with(rModel(0,-.075,.03,1,1,1,0,-.06,Math.PI-.12),()=>this.weapon(p.weapon,.84));}if(p.shield&&p.wounds?.leftArm?.severity!=='lost'){this.root=cm.transforms[16];this.shield(-.08,.06,.19,.94);}}finally{if(r.rigs.pending.parts.length)r.rigs.end();else r.rigs.pending=null;this.root=root;this.target=target;}

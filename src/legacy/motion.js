@@ -270,6 +270,7 @@ const SkillMotion=(()=>{
   r.skillMotionStates??=new Map();let s=r.skillMotionStates.get(p.id);
   if(!s||s.room!==p.room||t<s.t||t-s.t>.35||Math.hypot(p.x-s.x,p.z-s.z)>1.5){s={room:p.room};r.skillMotionStates.set(p.id,s);}
   Object.assign(s,{t,x:p.x,z:p.z});
+  if(incapacitated(p)||p.traversal||p.rescueTarget||p.action==='land'||p.standUpUntil>t){s.lastPose=null;s.carry=null;s.recover=null;s.stage=p.action;}
   if(r.skillMotionStates.size>48)for(const [id,old]of r.skillMotionStates)if(t-old.t>2)r.skillMotionStates.delete(id);
   if(p.pendingSkill&&s.stage!=='charge'){
    const target=r.currentSnapshot?.actors?.find(a=>a.id===p.autoFight&&a.alive);
@@ -373,15 +374,25 @@ const SkillMotion=(()=>{
   for(const m of r.motionGroundCells.get(Math.floor(x)+','+Math.floor(z))||[]){const det=m[0]*m[10]-m[8]*m[2];if(Math.abs(det)<1e-8)continue;
    const dx=x-m[12],dz=z-m[14],u=(dx*m[10]-dz*m[8])/det,v=(dz*m[0]-dx*m[2])/det,edge=Math.max(Math.abs(u),Math.abs(v));
    if(edge<.50)y=Math.max(y,m[13]+Math.abs(m[5])*.5-.014*(1-ease((.50-edge)/.09)));
-  }return y;
+  }return Math.max(y,supportHeight(r.traversalMap,x,z));
  }
  return {sample,clock,shape,foot,groundAt,stateFor,twoHanded,grip};
 })();
 
+// Collision stays with the rescuer; the body lies across the supporting arms.
+function carriedVisualPose(p){if(p.lifeState!=='carried')return p;const d=p.dir||0;return {...p,x:p.x-Math.cos(d)*1.05+Math.sin(d)*.48,z:p.z+Math.sin(d)*1.05+Math.cos(d)*.48,dir:d+Math.PI/2};}
 /* Lifestyle poses are kept separate from the combat keys. */
 function artPose(p,t,state){
  const o={active:false,y:0,x:0,z:0,yaw:0,pitch:0,roll:0,torso:0,head:0,rightArm:0,leftArm:0,rightArmZ:0,leftArmZ:0,rightLeg:0,leftLeg:0,rightKnee:0,leftKnee:0};
  if(p.alive===false)return o;
+ if(p.traversal){const u=p.traversal.progress||0,lift=Math.sin(Math.PI*u);return {...o,active:true,pitch:.30*lift,rightArm:-1.35*lift,leftArm:-.9*lift,rightLeg:-1.25*lift,leftLeg:-.72*lift,rightKnee:1.9*lift,leftKnee:1.5*lift,head:-.08};}
+ if(p.action==='land'&&p.actionUntil>t){const u=clamp((t-p.actionStarted)/.16,0,1),bend=Math.sin(Math.PI*u);return {...o,active:true,y:-.1*bend,rightLeg:-.25*bend,leftLeg:-.25*bend,rightKnee:.5*bend,leftKnee:.5*bend};}
+ if(incapacitated(p)){
+  const u=clamp((t-(p.downedAt??t))/.7,0,1),settle=u*u*(3-2*u),carried=p.lifeState==='carried';
+  return {...o,active:true,pitch:carried?1.35:1.48*settle,y:carried?0:-.03,head:.12+Math.sin(t*1.8)*.018,rightArm:-.35,leftArm:-.5,rightLeg:-.12,leftLeg:.15,rightKnee:.25,leftKnee:.2};
+ }
+ if(p.standUpUntil>t){const u=clamp((t-p.standUpAt)/.8,0,1),rise=u*u*(3-2*u);return {...o,active:true,pitch:1.48*(1-rise),rightArm:-.7*(1-rise),leftArm:-.8*(1-rise),rightKnee:.7*Math.sin(Math.PI*u),leftKnee:.5*Math.sin(Math.PI*u)};}
+ if(p.rescueTarget)return {...o,active:true,pitch:.08,rightArm:-1.1,leftArm:-1.1,rightElbow:-.1,leftElbow:-.1,rightArmZ:-.2,leftArmZ:.2};
  if(p.seated){const settle=clamp((t-(p.sitSince??t))/.25,0,1);return {...o,active:true,y:-.65*settle,pitch:.06,head:.07+Math.sin(t*1.4)*.035,rightArm:-.72,leftArm:-.72,rightArmZ:-.13,leftArmZ:.13,rightLeg:-1.5*settle,leftLeg:-1.5*settle,rightKnee:1.62*settle,leftKnee:1.62*settle};}
  if(p.activity){
   const u=t-(p.activitySince||0),breath=Math.sin(u*1.6),page=Math.sin(u*.75);

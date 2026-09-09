@@ -12,7 +12,14 @@ const SkillPresentation = (() => {
  function event(ui,e) {
   if(e.player!==ui.g.playerId)return false;
   if(e.type==='death'){clear(ui);return false;}
-  if(e.type==='skillconnection') { ui.floatLines.push({...e,born:e.t,shown:performance.now(),text:'繋がった'});ui.floatLines=ui.floatLines.slice(-16);return true; }
+  if(e.type==='skillconnection') {
+   if(e.first) {ui.floatLines.push({...e,born:e.t,shown:performance.now(),life:2.3,text:connectionText(e.connectionKind)});ui.floatLines=ui.floatLines.slice(-16);}
+   return true;
+  }
+  if(e.type==='skillglimpse') {
+   if(!ui.skillRevealEvent) {ui.floatLines.push({...e,born:e.t,shown:performance.now(),life:4.6});ui.floatLines=ui.floatLines.slice(-16);}
+   return true;
+  }
   if(!['insight','passive'].includes(e.type)||!BL_SKILL_CATALOG.byId.has(e.id))return false;
   const el=ensure(ui),d=BL_SKILL_CATALOG.byId.get(e.id);
   ui.skillRevealEvent={...e,shown:performance.now()};el.classList.remove('named');
@@ -44,12 +51,27 @@ const SkillPresentation = (() => {
   el.innerHTML=`<strong>${ESC(d.names.ja)}</strong><span>${ESC(d.descriptions.ja)}</span>${d.passive?'':costMarks(skillById(id))}${memory?`<p class="skill-memory">${memory.reasons.map(ESC).join('<br>')}</p>`:''}${connections.length?`<small class="skill-memory">戦いで繋がった<br>${connections.map(ESC).join('<br>')}</small>`:''}`;
   return true;
  }
+ const CONNECTION_TEXT={offbalance:'崩した隙に、次の一手',close:'詰めた間合いを、そのままに',rhythm:'拍子が、ひとつにつながる',ringing:'余韻に、次の一手が重なる',ember:'残る火に、次の一手を'};
+ function connectionText(kind){return CONNECTION_TEXT[kind]||'次の一手が、つながった';}
+ function recap(p) {
+  const history=SkillSystem.remember(p),names=history.signature.map(id=>skillById(id)?.name).filter(Boolean);
+  const pair=Object.entries(history.connections).filter(([key])=>key.split(':').every(id=>skillById(+id))).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))[0];
+  const memory=p.skillLife?.discovered.find(d=>d.id===history.signature[0])||history.discoveries.findLast(d=>d.route==='cross')||history.discoveries.at(-1);
+  if(!names.length&&!memory&&!pair)return '';
+  const row=(caption,text)=>`<div><small>${caption}</small><p>${ESC(text)}</p></div>`;
+  return `<section class="skill-life-recap" aria-label="この人生の戦い方">${names.length?row('手に馴染んだ技',names.join(' · ')):''}${pair?row('息が合った技',pair[0].split(':').map(id=>skillById(+id).name).join(' → ')):''}${memory?.reasons?.length?row('「'+ESC(skillById(memory.id)?.name||'技')+'」が生まれた記憶',memory.reasons.slice(0,2).join('。')):''}</section>`;
+ }
  function sound(audio,e) {
   if(!audio.enabled||!audio.ctx||audio.background)return false;
   const d=BL_SKILL_CATALOG.byId.get(e.id??e.skill),t=audio.ctx.currentTime;
   if(d&&['insight','passive'].includes(e.type)) { [62,69,76].forEach((n,i)=>audio.tone(n,t+[0,.23,.45][i],.65,.08,'triangle',false,audio.fxBus));return true; }
-  if(e.type==='skillconnection') {audio.tone(74,t,.16,.055,'triangle',false,audio.fxBus);return true;}
+  if(e.type==='skillconnection') {
+   if(e.signal==='quiet')return true;
+   if(e.first) [74,81,86].forEach((n,i)=>audio.tone(n,t+i*.045,.12,.035,'triangle',false,audio.fxBus));
+   else audio.tone(81,t,.085,.018,'triangle',false,audio.fxBus);
+   return true;
+  }
   return false;
  }
- return {event,update,opened,rendered,describe,clear,sound};
+ return {event,update,opened,rendered,describe,clear,sound,recap,connectionText};
 })();

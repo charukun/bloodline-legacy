@@ -21,12 +21,14 @@ function rGeometry(type){
  }else if(type==='coat'){
   const seg=20,rings=12;const V=(i,j)=>{const u=i/rings,a=j/seg*RTAU;const radial=.37+.11*Math.exp((-(((u-.78)/.26)**2)))+.025*Math.cos(u*Math.PI*3),x=Math.sin(a)*radial,z=Math.cos(a)*radial*.70;return {p:[x,.5-u,z],n:normalize([Math.sin(a),u<.15?.45:u>.90?-.15:0,Math.cos(a)*1.25])}};
   for(let i=0;i<rings;i++)for(let j=0;j<seg;j++){const a=V(i,j),b=V(i+1,j),c=V(i+1,j+1),d=V(i,j+1);quad(a.p,b.p,c.p,d.p,a.n,b.n,c.n,d.n);}
- }else if(['sphere','bead','beadlow','cap','head','leaf','leaflow'].includes(type)){
+ }else if(['sphere','bead','beadlow','cap','head','leaf','leaflow'].includes(type)||type.startsWith('cap-loss:')){
   const seg=type==='beadlow'?8:type==='leaflow'?6:type==='bead'?10:type==='head'?24:type==='leaf'?10:16,rings=type==='beadlow'?4:type==='leaflow'?4:type==='head'?16:type==='bead'?6:10;
-  const V=(i,j)=>{const lat=(i/rings)*(type==='cap'?Math.PI*.56:Math.PI),lon=j/seg*RTAU;let a=[Math.sin(lat)*Math.sin(lon),Math.cos(lat),Math.sin(lat)*Math.cos(lon)];
+  const cap=type==='cap'||type.startsWith('cap-loss:'),loss=cap?Number(type.split(':')[1]||0):0;
+  const V=(i,j)=>{const lat=(i/rings)*(cap?Math.PI*.56:Math.PI),lon=j/seg*RTAU;let a=[Math.sin(lat)*Math.sin(lon),Math.cos(lat),Math.sin(lat)*Math.cos(lon)];
+   if(loss&1)a[0]=Math.min(a[0],.34);if(loss&2)a[0]=Math.max(a[0],-.34);
    if(type==='head'){a[0]*=.95+Math.max(0,-a[1])*.12;a[2]*=.89;if(a[2]>.45)a[2]=.45+(a[2]-.45)*.84;}if(type==='leaf'||type==='leaflow'){a[0]*=(1+a[1])*.6;a[2]*=.45;}
    return {p:a,n:normalize([a[0],a[1],a[2]*(type==='head'?1.15:type==='leaf'||type==='leaflow'?2:1)])}};
-  for(let i=0;i<rings;i++)for(let j=0;j<seg;j++){const a=V(i,j),b=V(i+1,j),c=V(i+1,j+1),d=V(i,j+1);if(i>0)tri(a.p,b.p,d.p,a.n,b.n,d.n);if(i<rings-1||type==='cap')tri(b.p,c.p,d.p,b.n,c.n,d.n);}
+  for(let i=0;i<rings;i++)for(let j=0;j<seg;j++){const a=V(i,j),b=V(i+1,j),c=V(i+1,j+1),d=V(i,j+1);if(i>0)tri(a.p,b.p,d.p,a.n,b.n,d.n);if(i<rings-1||cap)tri(b.p,c.p,d.p,b.n,c.n,d.n);}
  }else if(['cylinder','cone','trunk','hair','horn'].includes(type)){
   const seg=type==='hair'?8:12,rings=['hair','horn','trunk'].includes(type)?6:1;
   const V=(i,j)=>{const u=i/rings,y=.5-u,a=j/seg*RTAU;let rad=1,dx=0,dz=0;

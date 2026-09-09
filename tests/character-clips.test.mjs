@@ -58,7 +58,7 @@ test('three cuts reach their authored contacts on the existing simulation hit cl
  const [before,at,after]=values;assert((at-before)/.00001>.8);assert(Math.abs((at-before)-(after-at))<1e-8);
 });
 test('guard, activities, injury, other weapons and non-slash skills retain the existing pose route',()=>{
- for(const extra of [{guard:true},{seated:true},{activity:{kind:'fish'}},{weapon:3},{statuses:{poison:{until:100}}},{wounds:{rightArm:{severity:'lost'}}},{action:'attack',attackSkill:60002,actionStarted:1,actionUntil:2}]){
+ for(const extra of [{lifeState:'downed'},{traversal:{kind:'vault'}},{rescueTarget:'casualty'},{guard:true},{seated:true},{activity:{kind:'fish'}},{weapon:3},{statuses:{poison:{until:100}}},{wounds:{rightArm:{severity:'lost'}}},{action:'attack',attackSkill:60002,actionStarted:1,actionUntil:2}]){
   const r=renderer(),cm=new CM01.Character(r);r.frame++;cm.update({...player(),...extra},1.2);assert.equal(cm.clipDebug,null,JSON.stringify(extra));assert(cm.palette.every(Number.isFinite));
  }
  assert.equal(CM01.eligible({...player(),age:14},true),false);assert.equal(CM01.eligible({...player(),race:2},true),false);

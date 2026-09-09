@@ -57,3 +57,5 @@ const GUARD_LINES = {
 };
 
 
+
+const RESCUE_LINES={approach:'そこで待て。今、助けに行く！',lift:'つかまっていろ。村まで運ぶぞ。',arrival:'ここなら大丈夫だ。ゆっくり息を整えろ。'};

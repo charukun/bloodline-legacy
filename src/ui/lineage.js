@@ -4,8 +4,8 @@ class UILineage {
  get g(){return this.ui.g;}
  current(){
   const g=this.g;
-  if(g.profile.online){const p=g.online?g.snapshot?.player:null;return p?.alive&&p.owner===g.profile.owner?p:null;}
-  return [...g.sim.players.values()].find(p=>p.owner===g.profile.owner&&p.alive)||null;
+  if(g.profile.online){const p=g.online?g.snapshot?.player:null;return (p?.alive||p?.legacyChoice?.state==='pending')&&p.owner===g.profile.owner?p:null;}
+  return [...g.sim.players.values()].find(p=>p.owner===g.profile.owner&&(p.alive||p.legacyChoice?.state==='pending'))||null;
  }
  source(){
   const legacy=this.g.getLegacy(),ids=new Set([...(legacy.archive||[]),...(legacy.records||[]).map(r=>r.skills?.[0]??r.skill)]);
@@ -65,7 +65,7 @@ class UILineage {
  }
  liveSignature(){
   const l=this.g.getLegacy(),p=this.current();
-  return JSON.stringify([this.key(),p?.id,l.generation,l.records?.length,l.archive]);
+  return JSON.stringify([this.key(),p?.id,p?.legacyChoice?.state,l.generation,l.records?.length,l.archive]);
  }
  update(){
   if(this.modalView&&this.signature!==this.liveSignature()){
