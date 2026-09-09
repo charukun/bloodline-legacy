@@ -134,6 +134,94 @@ dialog.dialog-launched,
 
 :host{display:block;width:100%;height:100%;isolation:isolate}#lineage-build{max-width:55vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.stage .life-meta{max-width:260px}.film-paused .stage-film{opacity:1}
 
+/* Each screen has one subject. History and inheritance use distinct controls. */
+#app[data-screen]{grid-template-columns:minmax(0,1fr);grid-template-areas:'top' 'stage' 'controls' 'commands';grid-template-rows:76px minmax(330px,1fr) auto auto;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+#app[data-screen]>.top{grid-area:top}#app[data-screen]>.stage{grid-area:stage}#app[data-screen]>.commands{grid-area:commands}
+#app[data-screen]>:is(.archive,.prologue-controls,.memory-controls){grid-area:controls}
+#app[data-screen=resume]{grid-template-areas:'top' 'stage' 'commands';grid-template-rows:76px minmax(330px,1fr) 98px}
+#app[data-screen] .commands{grid-template-columns:minmax(0,1fr) minmax(250px,400px) auto;grid-template-rows:auto;gap:14px;min-height:98px;padding:12px 0}
+#app[data-screen] .command-copy strong{white-space:normal;overflow-wrap:anywhere;font-size:19px}
+#command-detail{display:block;font-size:11px;color:#5a6249;margin-top:3px}
+#app[data-screen] .begin{min-height:56px;font-size:18px;white-space:normal;line-height:1.5}
+#app[data-screen] .skip-inherit{min-height:44px}
+#app[data-screen] .archive{height:184px;grid-template-rows:44px 44px minmax(0,1fr);padding-bottom:12px}
+#app[data-screen] .archive-track{grid-template-columns:44px minmax(0,1fr) 44px;grid-template-rows:1fr;gap:6px}
+#app[data-screen] .archive-list{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:1fr;gap:8px}
+#app[data-screen] .rail-arrow{display:block;min-width:44px;min-height:44px}
+#app .record-seal{display:grid;place-items:center;flex:0 0 32px;width:32px;height:44px;color:#e2cf95;background:linear-gradient(145deg,#796848,#4b543d);border:1px solid #b69b5e;border-radius:3px 3px 13px 13px}
+.record-seal .icon{width:21px;height:30px}
+#app .ancestor{gap:8px}#app .ancestor-copy{flex:1}
+#dialog .index-art{background:transparent}
+#dialog .record-seal{color:#d9c58e}
+.art-caption{position:absolute;bottom:12px;right:18px;left:18px;text-align:right;z-index:5;font-size:10px;color:#36442e;pointer-events:none}
+#app #exit-history{min-height:44px;padding:6px 12px;font-size:11px}
+#app .blood{font-size:12px;letter-spacing:.08em}
+#app .memory-link{min-height:44px;font-size:12px}
+#inherit-effect{font-size:11px;line-height:1.7;margin-top:12px;max-width:265px;border-left:2px solid #8a8458;padding-left:9px}
+#app .selected-stamp{top:auto;bottom:36px;left:5%;font-size:11px}
+#app .index-shortcut{font-size:12px;min-height:44px;padding:4px 10px;margin:0}
+.memory-controls{margin:0 -24px;padding:10px 30px 14px;background:var(--night);color:#eee5c6}
+.memory-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;margin-bottom:6px;font-size:13px}
+.memory-toolbar small{font-size:10px;margin-left:9px;color:#b5c1ac}
+#app #find-memory{padding:5px 12px;font-size:12px}
+.memory-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+#app .memory-choice{display:flex;align-items:center;gap:10px;padding:8px 12px;min-height:62px;text-align:left;min-width:0;position:relative}
+.memory-choice>span{flex:1;min-width:0}.memory-choice strong{display:block;font-size:17px;line-height:1.4;overflow-wrap:anywhere}.memory-choice small{display:block;color:#d0c39e;font-size:10px;line-height:1.6}.memory-choice>.icon{width:23px;height:32px}
+.memory-choice i{font-style:normal;color:#eedb98}.memory-pages{display:flex;align-items:center;justify-content:center;gap:24px;margin-top:8px;font-size:11px}.memory-pages button{width:44px;font-size:22px}
+.empty-memories{padding:8px;font-size:13px;grid-column:1/-1}
+.lineage-options{display:grid;gap:12px}.lineage-options button{padding:10px 16px;text-align:left;min-height:48px}
+#dialog .danger-action{color:#fff1df;background:#75483b;border-color:#ba9377}
+#dialog #settings-help{margin:0}.clear-scope{padding-left:20px;margin:20px 0;font-size:14px;line-height:2}.clear-actions{display:flex;gap:16px;justify-content:flex-end;margin-top:24px}.clear-actions button{min-height:48px;padding:8px 20px}
+@media(min-width:1100px){.memory-controls{margin:0 -40px;padding-left:60px;padding-right:60px}.memory-choices{grid-template-columns:repeat(6,minmax(0,1fr))}#app .memory-choice{gap:6px;padding:8px}.memory-choice strong{font-size:16px}}
+@media(max-width:699px){
+ #app[data-screen]{grid-template-rows:64px minmax(330px,1fr) auto auto}
+ #app[data-screen=resume]{grid-template-rows:64px minmax(330px,1fr) 96px}
+ #app .top-tools{gap:4px}#app .index-shortcut{font-size:11px;padding:4px 7px}
+ #app[data-screen] .commands{grid-template-columns:minmax(0,1fr) minmax(170px,1.3fr);grid-template-rows:auto;gap:7px 10px;min-height:96px;padding:10px 0}
+ #app[data-screen] .command-copy strong{font-size:17px}#app[data-screen] .command-eyebrow{font-size:10px}
+ #app[data-screen] .begin{font-size:15px;padding:10px 30px 10px 12px}#app .begin:after{right:12px}
+ #app[data-screen] .skip-inherit{grid-column:1/-1;justify-self:end}
+ #app[data-screen] .archive{height:184px;padding:7px 12px 12px}
+ #app .ancestor{padding:6px;gap:3px}.ancestor .record-seal{display:none}#app .ancestor-copy strong{font-size:15px}#app .ancestor-copy small{font-size:10px}
+ #app .person-heading{top:19%;max-width:66%}#app .person-heading h2{font-size:34px}
+ #app .memory{left:6%;right:auto;top:46%;width:55%}#app .memory h3{font-size:28px}
+ #app .eyebrow{font-size:10px;margin-bottom:7px}#app .skill-note{font-size:12px;line-height:1.7;margin-top:9px}
+ #app .life-meta{font-size:11px}#app .generation{font-size:12px}#app .blood{font-size:11px}
+ #inherit-effect{font-size:10px;line-height:1.65;margin-top:8px}
+ .art-caption{font-size:9px;bottom:8px;right:10px}
+ .memory-controls{margin:0 -12px;padding:7px 12px 12px}.memory-toolbar{font-size:12px}.memory-toolbar small{font-size:10px;margin-left:5px}
+ #app .memory-choice{min-height:64px;padding:7px 6px;gap:4px}.memory-choice>.icon{display:none}.memory-choice strong{font-size:14px}.memory-choice small{font-size:10px}
+ #app.is-prologue .memory{width:70%}#app.is-prologue .memory h3{font-size:28px}#app.is-prologue .skill-note{font-size:11px;max-width:220px}
+}
+@media(max-width:370px){#app .brand>.icon{display:none}#app .brand h1{font-size:17px}#app .top-tools{gap:3px}#app .index-shortcut{font-size:10px}.memory-choice strong{font-size:13px}}
+@media(min-width:700px) and (max-height:600px){
+ #app[data-screen]{grid-template-columns:minmax(0,1fr) 280px;grid-template-areas:'top top' 'stage controls' 'commands commands';grid-template-rows:56px minmax(280px,1fr) auto;column-gap:14px}
+ #app[data-screen=resume]{grid-template-columns:1fr;grid-template-areas:'top' 'stage' 'commands';grid-template-rows:56px minmax(280px,1fr) auto}
+ #app[data-screen] .archive{height:auto;margin:0;padding:8px;grid-template-rows:44px 44px 1fr}
+ #app[data-screen] .archive-track{grid-template-columns:1fr;grid-template-rows:1fr}
+ #app[data-screen] .archive-list{gap:5px}#app[data-screen] .archive .rail-arrow{display:none}
+ #app .ancestor{padding:6px;gap:3px}.ancestor .record-seal{display:none}#app .ancestor-copy strong{font-size:14px}
+ .memory-controls{margin:0;padding:8px}.memory-choices{grid-template-columns:1fr 1fr}.memory-choice>.icon{display:none}#app .memory-choice{padding:8px;min-height:62px}.memory-choice strong{font-size:14px}
+ #app .prologue-controls{margin:0}#app .commands{min-height:80px}
+ #app .person-heading{top:22%}#app .person-heading h2{font-size:26px}
+ #app .memory{top:48%;left:5%;width:56%}#app .memory h3{font-size:23px}#app .eyebrow{font-size:10px;margin-bottom:3px}#app .skill-note{font-size:11px;margin-top:5px;line-height:1.5}
+ #inherit-effect{font-size:10px;line-height:1.5;margin-top:6px}.art-caption{font-size:9px}
+}
+/* Flow the text within the illustration stage: long names and descriptions cannot overlap. */
+@media(max-width:699px),(max-height:600px){
+ #app[data-screen] .stage{display:flex;flex-direction:column;align-items:flex-start;padding:74px 6% 38px;gap:16px}
+ #app[data-screen] .person-heading{position:relative;inset:auto;max-width:66%;width:66%;flex:none}
+ #app[data-screen] .memory{position:relative;inset:auto;max-width:60%;width:60%;flex:none}
+ #app[data-screen] .selected-stamp{position:relative;inset:auto;flex:none}
+ #app[data-screen] .stage{min-height:min-content}
+ #app[data-screen]{grid-template-rows:64px minmax(min-content,1fr) auto auto}
+ #app[data-screen=resume]{grid-template-rows:64px minmax(min-content,1fr) auto}
+ #app[data-screen] .stage:before{content:'';position:absolute;min-height:330px;pointer-events:none}
+ #app[data-screen=resume] .stage{min-height:350px}
+ #app[data-screen=first] .memory{max-width:73%;width:73%}
+}
+@media(min-width:700px) and (max-height:600px){#app[data-screen],#app[data-screen=resume]{grid-template-rows:56px minmax(min-content,1fr) auto}#app[data-screen] .stage{padding-top:68px;gap:12px}}
+
 /* Chosen memories use the same leaf motif as in-game choices. */
 .index-choose .icon{width:20px;height:20px;opacity:.38}.index-choose[aria-pressed=true]{color:#f5e3ad;background:#4c6545;box-shadow:inset 0 0 0 2px #c2a25f}.index-choose[aria-pressed=true] .icon{opacity:1}
 .selected-stamp{display:grid;place-items:center;width:30px;height:30px;border:1px solid #927343;border-radius:50%;background:#e8d4a899;color:#655131;box-shadow:inset 0 0 0 3px #fff1c444}
