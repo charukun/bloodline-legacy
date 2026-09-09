@@ -37,6 +37,8 @@ Astra は `AGENTS.md`、skills、その他アクセス可能な指示ファイ�
 
 実作業を依頼されたWORKは、利用可能な権限とツールの範囲で完了まで進める。
 
+通常のBloodline Legacy作業ではサブエージェントの使用は禁止です。
+
 通常は次を行う。
 
 `必要な調査 → 実装 → 必要な検証 → 修正 → branch公開 → Ready for review PR`
