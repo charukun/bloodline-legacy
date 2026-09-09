@@ -40,7 +40,7 @@ python3 tools/render-character-motion.py /tmp/after.json public/assets/character
 
 ## Validation and outstanding review
 
-Build / Testは226件成功、GLB検証は22件成功。詳細はこの改修の `motion-clips-verification.json` を参照。前のCM01レビュー記録と今回の検証を混同しない。
+develop 66198eb（UI改修PR #27を含む）を取り込んだBuild / Testは234件成功、GLB検証は22件成功。詳細はこの改修の `motion-clips-verification.json` を参照。前のCM01レビュー記録と今回の検証を混同しない。
 
 - Blenderの導入は環境の権限/ネットワーク制約で完了しなかったため、今回はglTFを直接扱うオフライン制作経路。
 - Browserのlocalhost画面は `net::ERR_BLOCKED_BY_CLIENT` により開けなかった。HTMLの構文・操作メッセージのテストを、WebGLの目視確認済みとして扱わない。

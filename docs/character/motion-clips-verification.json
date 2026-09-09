@@ -1,11 +1,11 @@
 {
   "date": "2026-09-09",
   "startedFrom": "cd5f0344a176802dbfbfd3e9d28edadcd98a9907",
-  "integratedDevelop": "b8c3183a681c8eb01911c8123e16ee1e21153856",
+  "integratedDevelop": "66198ebc1b926f040e37d376399353f63af8a776",
   "build": "npm test includes npm run build: PASS",
   "tests": {
     "command": "npm test",
-    "passed": 226,
+    "passed": 234,
     "failed": 0
   },
   "assetValidation": {
@@ -33,7 +33,8 @@
     "guard, hit, activities, statuses, other weapons and ages fallback",
     "simulation state/events unchanged by pose sampling",
     "damage feedback/recovery changes in latest develop",
-    "review controls and source-model A/B replacement"
+    "review controls and source-model A/B replacement",
+    "latest develop UI polish PR #27 retained without motion-file overlap"
   ],
   "offlineReview": {
     "kind": "EGL rendered runtime bone palettes and game equipment, simplified lighting, not browser capture",
