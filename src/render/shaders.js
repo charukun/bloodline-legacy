@@ -7,7 +7,7 @@ layout(location=0) in vec3 pos;layout(location=1) in vec3 nor;
 layout(location=2) in mat4 model;layout(location=6) in vec4 ink;layout(location=7) in float surface;
 uniform mat4 vp;uniform mat4 lightVP;uniform float time;uniform float wind;
 out vec3 vWorld;out vec3 vNormal;out vec4 vInk;out float vSurface;out vec4 vShadow;out vec3 vLocal;
-void main(){vec4 w=model*vec4(pos,1.);if(surface>12.5&&surface<13.5){float bend=max(0.,pos.y+.35);w.x+=sin(time*1.8+w.z*.72+model[3].x)*.042*bend*wind;w.z+=cos(time*1.1+w.x*.43)*.028*bend*wind;}vWorld=w.xyz;vNormal=normalize(mat3(model)*(nor/max(vec3(.00001),vec3(dot(model[0].xyz,model[0].xyz),dot(model[1].xyz,model[1].xyz),dot(model[2].xyz,model[2].xyz)))));vInk=ink;vSurface=surface;vShadow=lightVP*w;vLocal=pos;gl_Position=vp*w;}`;
+void main(){vec4 w=model*vec4(pos,1.);if(surface>12.5&&surface<13.5){float bend=max(0.,pos.y+.35);w.x+=sin(time*1.8+w.z*.72+model[3].x)*.042*bend*wind;w.z+=cos(time*1.1+w.x*.43)*.028*bend*wind;}vWorld=w.xyz;vNormal=normalize(mat3(model)*(nor/max(vec3(.00001),vec3(dot(model[0].xyz,model[0].xyz),dot(model[1].xyz,model[1].xyz),dot(model[2].xyz,model[2].xyz)))));vInk=ink;vSurface=surface;vShadow=lightVP*w;vLocal=pos;if(surface>23.5&&surface<24.5){vLocal=nor;vNormal=vec3(0.,1.,0.);}gl_Position=vp*w;}`;
 const RFRAG=`#version 300 es
 precision highp float;
 in vec3 vWorld;in vec3 vNormal;in vec4 vInk;in float vSurface;in vec4 vShadow;in vec3 vLocal;
@@ -26,6 +26,23 @@ float shadowValue(sampler2D map,vec3 p,float bias){vec2 t=1./vec2(textureSize(ma
 vec3 brdf(vec3 base,vec3 N,vec3 V,vec3 L,float rough,float metal,vec3 radiance){vec3 H=normalize(V+L);float nl=max(dot(N,L),0.),nv=max(dot(N,V),.08),nh=max(dot(N,H),0.),vh=max(dot(V,H),0.);float a=rough*rough,a2=a*a;float d=a2/(PI*pow(nh*nh*(a2-1.)+1.,2.)+.0001);float k=pow(rough+1.,2.)*.125;float g=(nv/(nv*(1.-k)+k))*(nl/(nl*(1.-k)+k));vec3 f0=mix(vec3(.035),base,metal);vec3 F=f0+(1.-f0)*pow(1.-vh,5.);return ((1.-F)*(1.-metal)*base/PI+d*g*F/max(.1,4.*nv*max(nl,.01)))*radiance*nl;}
 vec3 localLight(vec3 p,vec3 intensity,vec3 base,vec3 N,vec3 V,float rough,float metal){if(!any(greaterThan(intensity,vec3(0.))))return vec3(0.);vec3 delta=p-vWorld;float d=length(delta);if(d>=7.5)return vec3(0.);float atten=pow(max(0.,1.-d/7.5),2.)/(1.+d*d*.12);return brdf(base,N,V,delta/max(.01,d),rough,metal,intensity*atten);}
 void main(){vec3 N=normalize(vNormal),L=normalize(vec3(-.48,.85,.42)),V=normalize(eye-vWorld);float authored=vSurface;bool golden=authored>=19.5&&authored<23.5;float surf=golden?(authored<21.5?9.:authored<22.5?8.:18.):authored,alpha=vInk.a;vec3 pigment=vInk.rgb;
+ // Continuous silk surface. UV/erosion travel with the strike, so hitstop also
+ // freezes the material. Only material 24 uses this path; no world texture lookup.
+ if(authored>23.5&&authored<24.5){
+  float u=vLocal.x,v=vLocal.y,age=vLocal.z;
+  float warp=sin(u*19.+age*.9)*.055+sin(u*43.-age)*.012;
+  float fiber=pow(.5+.5*sin((v+warp)*82.+sin(u*23.)*2.2),7.);
+  float core=exp(-pow((v-.12)/max(.065,fwidth(v)*.75),2.));
+  float wake=exp(-v*3.8)*(.14+.64*fiber);
+  float grain=.5+.5*sin(u*39.+v*16.+sin(u*17.-v*6.)*1.7);
+  float erosion=smoothstep(age*.95-.22,age*.95+.06,grain+.18*(1.-v));
+  float edge=smoothstep(0.,max(.025,fwidth(v)),v)*(1.-smoothstep(.86,1.,v));
+  float ends=smoothstep(0.,.045,u)*(1.-smoothstep(.93,1.,u));
+  alpha*=clamp((core*.9+wake)*erosion*edge*ends,0.,1.);
+  if(alpha<.004)discard;
+  vec3 light=lin(pigment)*(1.4+core*1.6);
+  outColor=vec4(light/(1.+light),alpha);outNormal=vec4(.5,1.,.5,0.);return;
+ }
  if(surf>1.5&&surf<2.5){float d=length(vLocal.xz);alpha*=pow(max(0.,1.-d),2.);if(alpha<.005)discard;outColor=vec4(lin(pigment),alpha);outNormal=vec4(.5,1.,.5,0.);return;}
  float slot=0.,tile=1.7,rough=.86,metal=0.,ao=1.;bool foliage=surf>12.5&&surf<13.5;bool skin=surf>13.5&&surf<14.5;bool water=surf>.5&&surf<1.5;
  if(surf>7.5&&surf<8.5){slot=1.;rough=.81;tile=1.2;}
