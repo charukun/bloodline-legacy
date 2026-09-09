@@ -7,3 +7,5 @@
 .skill-en{font-family:Georgia,serif;letter-spacing:.08em}
 .skill-memory{border-top:1px solid #9e8d6355;padding-top:9px;font-size:11px;line-height:1.7;opacity:.85;overflow-wrap:anywhere}
 @media(prefers-reduced-motion:reduce){.skill-revelation{transition:none}}
+
+.skill-connection{color:#c9f0dc;letter-spacing:.09em;text-shadow:0 1px 3px #162e28,0 0 7px #548d75;animation:skill-link-in .18s ease-out both}.skill-glimpse{color:#e0dcc5;white-space:normal;max-width:min(310px,80vw);width:max-content;text-align:center;line-height:1.65}.skill-life-recap{margin:18px auto;padding:4px 16px;max-width:340px;border-block:1px solid #9e8d6355;text-align:left}.skill-life-recap>div{margin:11px 0}.skill-life-recap small{font-size:10px;color:#817352;letter-spacing:.12em}.skill-life-recap p{margin:4px 0;font-size:12px;line-height:1.65;overflow-wrap:anywhere}@keyframes skill-link-in{from{opacity:0;filter:brightness(1.5)}to{opacity:1;filter:brightness(1)}}@media(prefers-reduced-motion:reduce){.skill-connection{animation:none}}

@@ -10,21 +10,21 @@ vm.runInContext('const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));'+fs.readFileSyn
 const {DamageMotion,damageFoot,damageArtPose}=ctx.API;
 const hit=(extra={})=>({id:'p',alive:true,x:0,z:0,dir:0,room:'r',hitMotionId:1,hitReactAt:1,hitReactUntil:1.72,hitStrength:1,hitPart:'torso',hitSeverity:'heavy',hitDir:Math.PI/2,...extra});
 
-test('unarmored ordinary hits become lethal in 3–4 contacts, armor still matters',()=>{
+test('unarmored ordinary hits become incapacitating in 3–4 contacts, armor still matters',()=>{
  for(const armor of [0,1,2]){
   const {sim,p}=life(api);p.armor=armor;const e=sim.actor('soldier',0,1);e.attackCount=1;
   let hits=0;const parts=['rightArm','leftArm','rightLeg','leftLeg'];
-  while(p.alive&&hits<10){sim.time=10+hits*2;sim.hitPlayer(p,e,{part:parts[hits%4]});hits++;}
+  while(p.lifeState==='active'&&hits<10){sim.time=10+hits*2;sim.hitPlayer(p,e,{part:parts[hits%4]});hits++;}
   assert.equal(hits,armor===2?5:4);
   const wounds=sim.events.filter(e=>e.type==='wound');assert.equal(wounds.length,hits);
   assert.equal(wounds.at(-1).severity,'fatal');assert.equal(wounds.at(-1).source,e.id);
-  assert.equal(sim.events.filter(e=>e.type==='death').length,1);
+  assert.equal(p.lifeState,'downed');assert.equal(sim.events.filter(e=>e.type==='downed').length,1);assert.equal(sim.events.filter(e=>e.type==='death').length,0);
  }
- for(const elite of [false,true]){const {sim,p}=life(api),e=sim.actor('soldier',0,1);e.elite=elite;e.attackCount=1;let n=0;while(p.alive&&n<5){sim.time=10+n*2;sim.hitPlayer(p,e,{part:'torso'});n++;}assert.equal(n,elite?2:3);}
+ for(const elite of [false,true]){const {sim,p}=life(api),e=sim.actor('soldier',0,1);e.elite=elite;e.attackCount=1;let n=0;while(p.lifeState==='active'&&n<5){sim.time=10+n*2;sim.hitPlayer(p,e,{part:'torso'});n++;}assert.equal(n,elite?2:3);assert.equal(p.lifeState,'downed');}
 });
 
-test('fatal contact by either route has one source/part notification before death; wound strength follows the incoming blow',()=>{
- for(const health of [100,1]){const {sim,p}=life(api);p.health=health;sim.inflictWound(p,'head',health===100?'fatal':'light',{id:'enemy',x:1,z:0});const es=sim.events.filter(e=>['wound','death'].includes(e.type));assert.deepEqual(Array.from(es,e=>e.type),['wound','death']);assert.equal(es[0].severity,'fatal');assert.equal(es[0].part,'head');assert.equal(es[0].dir,Math.atan2(p.x-1,p.z));}
+test('fatal contact by either route has one source/part notification before incapacitation; a later attack confirms death',()=>{
+ for(const health of [100,1]){const {sim,p,room}=life(api);p.health=health;const enemy=sim.actor('soldier',p.x+1,p.z);room.actors=[enemy];sim.inflictWound(p,'head',health===100?'fatal':'light',enemy);const es=sim.events.filter(e=>['wound','downed','death'].includes(e.type));assert.deepEqual(Array.from(es,e=>e.type),['wound','downed']);assert.equal(es[0].severity,'fatal');assert.equal(es[0].part,'head');assert.equal(es[0].dir,Math.atan2(p.x-enemy.x,p.z-enemy.z));sim.time+=3;sim.hitPlayer(p,enemy,{started:sim.time-.1,reach:2.3});assert.equal(sim.events.filter(e=>e.type==='death').length,1);}
  const {sim,p}=life(api),e=sim.actor('soldier',0,1);e.attackCount=1;p.wounds.leftArm={severity:'light'};sim.hitPlayer(p,e,{part:'leftArm'});assert.equal(p.hitSeverity,'heavy');assert.equal(p.hitStrength,.6);
 });
 

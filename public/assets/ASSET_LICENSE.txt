@@ -1,1 +1,2 @@
 These textures and meshes are original procedural artworks authored for this project. No Visual Reference pixels or third-party art are incorporated. The user may use, modify and redistribute these assets with the game. The lineage subdirectory has its own art/font provenance and license notices.
+The music subdirectory contains original compositions rendered with instrument samples; see music/CREDITS.md and music/GeneralUser-GS-LICENSE.txt for provenance.

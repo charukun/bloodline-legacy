@@ -13,8 +13,8 @@ OUT=ROOT/'public/assets/character';OUT.mkdir(parents=True,exist_ok=True)
 TAU=math.tau
 # rest positions in mesh space; parents are strictly before children
 BONES=[('root',None,(0,0,0)),('pelvis','root',(0,1.16,0)),('spine','pelvis',(0,1.42,0)),('chest','spine',(0,1.74,0)),('neck','chest',(0,1.94,0)),('head','neck',(0,2.30,0)),('hair','head',(0,2.67,0)),('eye.R','head',(.145,2.365,.315)),('eye.L','head',(-.145,2.365,.315)),
- ('arm.R','chest',(.405,1.80,0)),('elbow.R','arm.R',(.405,1.435,0)),('hand.R','elbow.R',(.405,1.12,.012)),('fingers.R','hand.R',(.405,1.055,.025)),('thumb.R','hand.R',(.358,1.07,.06)),
- ('arm.L','chest',(-.405,1.80,0)),('elbow.L','arm.L',(-.405,1.435,0)),('hand.L','elbow.L',(-.405,1.12,.012)),('fingers.L','hand.L',(-.405,1.055,.025)),('thumb.L','hand.L',(-.358,1.07,.06)),
+ ('arm.R','chest',(.465,1.80,0)),('elbow.R','arm.R',(.465,1.435,0)),('hand.R','elbow.R',(.465,1.12,.012)),('fingers.R','hand.R',(.465,1.055,.025)),('thumb.R','hand.R',(.418,1.07,.06)),
+ ('arm.L','chest',(-.465,1.80,0)),('elbow.L','arm.L',(-.465,1.435,0)),('hand.L','elbow.L',(-.465,1.12,.012)),('fingers.L','hand.L',(-.465,1.055,.025)),('thumb.L','hand.L',(-.418,1.07,.06)),
  ('thigh.R','pelvis',(.165,1.17,0)),('shin.R','thigh.R',(.165,.665,0)),('foot.R','shin.R',(.165,.145,.025)),('toe.R','foot.R',(.165,.08,.22)),
  ('thigh.L','pelvis',(-.165,1.17,0)),('shin.L','thigh.L',(-.165,.665,0)),('foot.L','shin.L',(-.165,.145,.025)),('toe.L','foot.L',(-.165,.08,.22)),
  ('mantle','chest',(0,1.84,-.15)),('mantle.tip','mantle',(-.10,1.40,-.27)),('coat.R','pelvis',(.20,1.16,0)),('coat.L','pelvis',(-.20,1.16,0))]
@@ -187,8 +187,8 @@ def build(lod=0):
   # Toe cap stitch follows the actual toe surface.
   m.sweep([(x-.12,.099,.15),(x-.077,.118,.237),(x,.128,.261),(x+.077,.118,.237),(x+.12,.099,.15)],[.004,.004,.004],[.004,.004,.004],12,'foot.'+s,reg,rings=12,sides=6,name='boot toe seam')
   # Sleeves blend to chest at the shoulder and to elbow across the rolled cuff.
-  reg=2 if side==1 else 3;x=side*.405
-  sleevew=lambda p,s=s:({'chest':max(0,min(.45,(p[1]-1.75)*4)),'arm.'+s:1-max(0,min(.45,(p[1]-1.75)*4))} if p[1]>1.75 else blend_y(p[1],[(1.37,'elbow.'+s),(1.50,'arm.'+s)]))
+  reg=2 if side==1 else 3;x=side*.465
+  sleevew=lambda p,s=s:({'chest':max(0,min(.20,(p[1]-1.79)*3)),'arm.'+s:1-max(0,min(.20,(p[1]-1.79)*3))} if p[1]>1.75 else blend_y(p[1],[(1.37,'elbow.'+s),(1.50,'arm.'+s)]))
   m.loft([(1.385,x,0,.104,.109),(1.46,x,-.003,.126,.126),(1.58,x,-.004,.145,.14),(1.72,x-.018*side,0,.154,.144),(1.80,x-.035*side,0,.145,.139),(1.85,x-.07*side,0,.08,.088)],2,sleevew,reg,seg=24,rings=18,deform=lambda p,a,t:p+np.array([math.sin(a)*.007*math.sin(t*15),0,math.cos(a)*.007*math.sin(t*15)]),name='structured sleeve '+s)
   m.loft([(1.37,x,0,.111,.117),(1.40,x,0,.129,.133),(1.445,x,0,.122,.127)],11,{'arm.'+s:.62,'elbow.'+s:.38},reg,seg=24,rings=6,name='turned sleeve cuff '+s)
   m.loft([(1.115,x,.012,.061,.061),(1.20,x,.005,.070,.071),(1.30,x,0,.087,.083),(1.405,x,0,.097,.09)],0,lambda p,s=s:blend_y(p[1],[(1.115,'hand.'+s),(1.215,'elbow.'+s)]),reg,seg=22,rings=14,name='anatomical forearm '+s)
@@ -287,7 +287,7 @@ def build(lod=0):
  m.loft([(1.335,0,0,.252,.203),(1.348,0,0,.260,.210),(1.363,0,0,.270,.215)],7,'spine',10,seg=28,rings=4,name='rolled cuirass lower rim')
  for side in [-1,1]:
   s='R' if side==1 else 'L'
-  m.loft([(1.705,side*.418,0,.159,.15),(1.77,side*.405,-.005,.171,.165),(1.83,side*.377,-.01,.115,.119),(1.862,side*.354,-.012,.04,.043)],7,'arm.'+s,11 if side==1 else 12,seg=22,rings=10,name='equipment shoulder '+s)
+  m.loft([(1.705,side*.478,0,.159,.15),(1.77,side*.465,-.005,.171,.165),(1.83,side*.437,-.01,.115,.119),(1.862,side*.414,-.012,.04,.043)],7,'arm.'+s,11 if side==1 else 12,seg=22,rings=10,name='equipment shoulder '+s)
  return m
 
 def finalize(m):
