@@ -13,7 +13,7 @@ test('wardrobe only inspects physical gear and belongings, with no rack shortcut
 
 test('only the physical armory opens the rack, and closing returns to the same facility button',async t=>{
  const f=fixture(t);f.ui.body();assert.equal(f.ui.rack(),false);assert.equal(f.ui.modal,'body');f.ui.closeModal();
- atRack(f);const button=f.d.querySelector('[data-facility="armory"] [data-context="rack"]');assert.ok(button);button.focus();button.click();await flush();
+ atRack(f);const button=f.d.querySelector('[data-facility="armory"][data-context="rack"]');assert.ok(button);button.focus();button.click();await flush();
  assert.equal(f.ui.modal,'rack');assert.equal(f.ui.navigation.length,0);f.d.querySelector('[data-slot="weapon"][data-value="0"]').click();assert.equal(f.p.weapon,0);
  f.d.querySelector('.panel-close').click();await flush();assert.equal(f.ui.modal,null);assert.equal(f.d.activeElement,button);
 });

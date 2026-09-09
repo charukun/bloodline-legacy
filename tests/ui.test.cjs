@@ -101,14 +101,14 @@ test('Escape returns one level; Tab stays inside modal; rerender does not grow n
  d.querySelector('.panel-back').focus();d.activeElement.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Tab',shiftKey:true,bubbles:true,cancelable:true}));assert.equal(d.activeElement.dataset.menu,'settings');
  const toggle=d.getElementById('sound-toggle');toggle.focus();toggle.click();await flush();assert.equal(ui.navigation.length,0);assert.equal(d.activeElement.id,'sound-toggle');
 });
-test('keyboard typing and pointer down during modal cannot begin game movement or rest',t=>{
- const {g,ui,d,w,p}=fixture(t);g.installInput();ui.talk();const input=d.getElementById('chat-text');input.focus();
+test('keyboard and pointer down during the talk fan cannot begin movement or rest',t=>{
+ const {g,ui,d,w,p}=fixture(t);g.installInput();ui.talk();const input=d.querySelector('[data-talk]');input.focus();
  for(const code of ['KeyW','KeyR','Space','KeyD']){input.dispatchEvent(new w.KeyboardEvent('keydown',{key:code.slice(-1),code,bubbles:true}));input.dispatchEvent(new w.KeyboardEvent('keyup',{key:code.slice(-1),code,bubbles:true}));}
  g.renderer.canvas.dispatchEvent(new w.MouseEvent('pointerdown',{button:0,bubbles:true}));assert.equal(g.keys.size,0);assert.ok(!g.pointer);assert.equal(p.seated,false);assert.equal(p.input.x,0);assert.equal(p.input.z,0);
 });
 test('talk uses surrounding speech and preserves the existing wake behavior',t=>{
- const {g,p,ui,d,sim}=fixture(t);g.command({type:'sit',active:true});assert.equal(p.seated,true);ui.talk();assert.equal(p.seated,false);assert.match(d.querySelector('[role="dialog"]').getAttribute('aria-label'),/周囲/);
- d.querySelector('[data-say="ありがとう"]').click();assert.equal(p.speech,'ありがとう');assert.equal(ui.modal,null);assert.ok(sim.events.some(e=>e.type==='speech'&&e.text==='ありがとう'));
+ const {g,p,ui,d,sim}=fixture(t);g.command({type:'sit',active:true});assert.equal(p.seated,true);ui.talk();assert.equal(p.seated,false);assert.match(d.querySelector('[role="menu"]').getAttribute('aria-label'),/周囲/);
+ d.querySelector('[data-talk="2"]').click();assert.equal(p.speech,'ありがとう');assert.equal(ui.modal,null);assert.ok(sim.events.some(e=>e.type==='speech'&&e.text==='ありがとう'));
 });
 test('world labels show only the engaged target and are removed after disengagement',t=>{
  const {g,p,ui,d,sim,sync}=fixture(t),r=sim.getRoom(p);const a=sim.actor('goblin',1,0),b=sim.actor('goblin',2,0);r.actors=[a,b];sync();assert.equal(d.querySelectorAll('.target-label').length,0);
@@ -128,9 +128,9 @@ test('presentation updates cannot mutate game state or save payload',t=>{
 });
 test('skill toggle and keyboard pie adjustment use existing weight commands and preserve focus',async t=>{
  const {sim,p,ui,g,d,w}=fixture(t);sim.learn(p,4001);p.phaseWeights[0]={4000:1,4001:1};ui.skills();await flush();
- const detail=d.querySelector('[data-skill="4000"]');detail.focus();detail.click();assert.match(d.getElementById('skill-detail').textContent,/殴る/);
+ const detail=d.querySelector('[data-skill="4000"]');detail.focus();assert.match(d.getElementById('skill-detail').textContent,/殴る/);
  const handle=d.querySelector('[data-handle="0"]');assert.ok(handle);handle.focus();handle.dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true,cancelable:true}));assert.equal(p.phaseWeights[0][4000],51);assert.equal(p.phaseWeights[0][4001],49);assert.equal(d.activeElement.dataset.handle,'0');
- const btn=d.querySelector('[data-skill="4001"]');btn.focus();btn.click();assert.equal(p.phaseWeights[0][4001],49,'reading the description does not change the build');const toggle=d.getElementById('skill-toggle');toggle.focus();toggle.click();assert.equal(p.phaseWeights[0][4001],0);assert.equal(d.activeElement.id,'skill-toggle');
+ const btn=d.querySelector('[data-skill="4001"]');btn.focus();btn.click();assert.equal(p.phaseWeights[0][4001],0);assert.equal(d.activeElement.dataset.skill,'4001');assert.equal(d.activeElement.getAttribute('aria-pressed'),'false');assert.equal(d.getElementById('skill-toggle'),null);
 });
 test('lineage renders only actual lives and safely escapes imported names',t=>{
  const {sim,p,ui}=fixture(t),legacy=sim.legacy(p.owner);legacy.archive=[4000];legacy.records=[{id:'past',gen:2,age:42,name:'<script>unsafe</script>',skills:[4000],cause:'老衰'},{id:'unknown',name:'記録だけ',skills:[]}];ui.lineage();const root=ui.lineageView.modalView.scope;
@@ -138,7 +138,7 @@ test('lineage renders only actual lives and safely escapes imported names',t=>{
 });
 test('real save/restore retains inventory, equipment, wounds, age and recorded lineage',t=>{
  const {sim,p,g,api}=fixture(t);p.inventory=['stone','bell'];p.weapon=0;p.armor=1;p.shield=true;p.wounds={head:{severity:'light',healsAt:25}};sim.legacy(p.owner).records.push({id:'ancestor',name:'前の命',gen:1,age:60,skills:[4000]});sim.legacy(p.owner).archive=[4000];
- g.saveWorld();const saved=JSON.parse(g.renderer.canvas.ownerDocument.defaultView.localStorage.getItem('aerin.tactics.v3.world.normal'));assert.ok(saved);
+ g.saveWorld();const saved=JSON.parse(g.renderer.canvas.ownerDocument.defaultView.localStorage.getItem('aerin.tactics.v3.world4.normal'));assert.ok(saved);
  const restored=api.Simulation.restore(saved),rp=restored.players.get(p.id);for(const key of ['age','inventory','weapon','armor','shield','wounds'])assert.equal(JSON.stringify(rp[key]),JSON.stringify(p[key]));assert.equal(restored.legacy(p.owner).records[0].name,'前の命');
 });
 test('showGame invalidates caches across repeated lives and restores all HUD nodes',t=>{

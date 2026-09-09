@@ -5,8 +5,8 @@
       "name": "稽古と学び",
       "skills": [
         {
-          "id": 60040,
-          "name": "間割り",
+          "id": 60390,
+          "name": "引き受けの声",
           "route": "main",
           "reasons": [
             "指南書と稽古で、構えの意味を学んだ"
@@ -48,38 +48,38 @@
       ],
       "latest": {
         "ids": [
-          60040,
+          60390,
           60001,
           60012
         ],
         "kind": "crawler",
-        "elapsed": 9,
-        "won": true,
-        "survived": true,
-        "health": 100,
-        "enemyHp": -3.719999999999999,
-        "connections": 4,
+        "elapsed": 20,
+        "won": false,
+        "survived": false,
+        "health": 0,
+        "enemyHp": 26.088,
+        "connections": 1,
         "used": [
-          60040,
+          60390,
           60001,
           60012
         ]
       },
       "best": {
         "ids": [
-          60040,
+          60390,
           60041,
           60012
         ],
         "kind": "crawler",
-        "elapsed": 7.83,
-        "won": true,
-        "survived": true,
-        "health": 100,
-        "enemyHp": -0.4799999999999969,
-        "connections": 3,
+        "elapsed": 19.97,
+        "won": false,
+        "survived": false,
+        "health": 0,
+        "enemyHp": 24.607499999999995,
+        "connections": 1,
         "used": [
-          60040,
+          60390,
           60041,
           60012
         ]
@@ -117,21 +117,21 @@
           ]
         },
         {
-          "id": 60022,
-          "name": "遊び終い",
-          "route": "main",
+          "id": 60112,
+          "name": "夕凪返し",
+          "route": "cross",
           "reasons": [
-            "庭で遊び、弾む足の拍子を覚えた。手元には羽根があった",
+            "狩人の足跡を学び、一歩先を読んだ。手元には羽根があった",
+            "祈りの間、息と静けさを確かめた。手元には羽根があった",
             "道で拾った羽根"
           ]
         },
         {
-          "id": 60072,
-          "name": "落羽",
-          "route": "cross",
+          "id": 60904,
+          "name": "篤い信仰",
+          "route": "main",
           "reasons": [
             "祈りの間、息と静けさを確かめた。手元には羽根があった",
-            "庭で遊び、弾む足の拍子を覚えた。手元には羽根があった",
             "道で拾った羽根"
           ]
         }
@@ -140,38 +140,38 @@
         "ids": [
           60030,
           60071,
-          60072
+          60112
         ],
         "kind": "crawler",
-        "elapsed": 11.6,
+        "elapsed": 9.2,
         "won": true,
         "survived": true,
         "health": 100,
-        "enemyHp": -2.8199999999999985,
-        "connections": 3,
+        "enemyHp": -3.481499999999996,
+        "connections": 2,
         "used": [
           60030,
           60071,
-          60072
+          60112
         ]
       },
       "best": {
         "ids": [
           60030,
           60071,
-          60072
+          60112
         ],
         "kind": "crawler",
-        "elapsed": 11.6,
+        "elapsed": 9.2,
         "won": true,
         "survived": true,
         "health": 100,
-        "enemyHp": -2.8199999999999985,
-        "connections": 3,
+        "enemyHp": -3.481499999999996,
+        "connections": 2,
         "used": [
           60030,
           60071,
-          60072
+          60112
         ]
       }
     },
@@ -227,20 +227,11 @@
           ]
         },
         {
-          "id": 60902,
-          "name": "重みの記憶",
+          "id": 60101,
+          "name": "縫い崩し",
           "route": "cross",
           "reasons": [
-            "指南書と稽古で、構えの意味を学んだ。手元には鈴があった",
-            "鍛冶場で、道具が打ち返す拍子を見た。手元には鈴があった",
-            "家族から受け取った鈴"
-          ]
-        },
-        {
-          "id": 60051,
-          "name": "息継ぎ打ち",
-          "route": "deviation",
-          "reasons": [
+            "武具を手入れし、力の通り道を確かめた。手元には鈴があった",
             "指南書と稽古で、構えの意味を学んだ。手元には鈴があった",
             "家族から受け取った鈴"
           ]
@@ -248,37 +239,37 @@
       ],
       "latest": {
         "ids": [
-          60051,
+          60101,
           60002
         ],
         "kind": "crawler",
-        "elapsed": 11.83,
+        "elapsed": 3.97,
         "won": true,
         "survived": true,
-        "health": 46,
-        "enemyHp": -17.49,
+        "health": 100,
+        "enemyHp": -6.487500000000001,
         "connections": 0,
         "used": [
           4000,
-          60051,
+          60101,
           60002
         ]
       },
       "best": {
         "ids": [
-          60051,
+          60101,
           60002
         ],
         "kind": "crawler",
-        "elapsed": 11.83,
+        "elapsed": 3.97,
         "won": true,
         "survived": true,
-        "health": 46,
-        "enemyHp": -17.49,
+        "health": 100,
+        "enemyHp": -6.487500000000001,
         "connections": 0,
         "used": [
           4000,
-          60051,
+          60101,
           60002
         ]
       }
@@ -288,14 +279,14 @@
     {
       "mode": "combat",
       "seeds": 96,
-      "unique": 29,
+      "unique": 23,
       "mean": 1.625,
       "min": 1,
       "max": 2,
       "routes": {
-        "main": 105,
+        "main": 135,
         "cross": 0,
-        "deviation": 51
+        "deviation": 21
       }
     },
     {
@@ -314,14 +305,14 @@
     {
       "mode": "mixed",
       "seeds": 96,
-      "unique": 71,
-      "mean": 2.53125,
+      "unique": 75,
+      "mean": 2.4895833333333335,
       "min": 1,
       "max": 3,
       "routes": {
-        "main": 105,
-        "cross": 128,
-        "deviation": 10
+        "main": 118,
+        "cross": 113,
+        "deviation": 8
       }
     }
   ],
@@ -335,11 +326,11 @@
           60102
         ],
         "kind": "crawler",
-        "elapsed": 8.4,
+        "elapsed": 6.8,
         "won": true,
         "survived": true,
         "health": 100,
-        "enemyHp": -6.96,
+        "enemyHp": -6.600000000000003,
         "connections": 1,
         "used": [
           60080,
@@ -349,19 +340,19 @@
       },
       "worst": {
         "ids": [
-          60080,
+          60390,
           60081,
           60102
         ],
         "kind": "crawler",
-        "elapsed": 9.63,
-        "won": true,
-        "survived": true,
-        "health": 100,
-        "enemyHp": -3.360000000000004,
-        "connections": 2,
+        "elapsed": 21.67,
+        "won": false,
+        "survived": false,
+        "health": 0,
+        "enemyHp": 17.016,
+        "connections": 0,
         "used": [
-          60080,
+          60390,
           60081,
           60102
         ]
@@ -373,37 +364,37 @@
       "best": {
         "ids": [
           60080,
-          60041,
+          60101,
           60102
         ],
         "kind": "soldier",
-        "elapsed": 10.3,
+        "elapsed": 6.8,
         "won": true,
         "survived": true,
-        "health": 68,
-        "enemyHp": -0.21000000000000263,
-        "connections": 2,
+        "health": 100,
+        "enemyHp": -6.600000000000003,
+        "connections": 1,
         "used": [
           60080,
-          60041,
+          60101,
           60102
         ]
       },
       "worst": {
         "ids": [
-          60080,
+          60390,
           60081,
           60102
         ],
         "kind": "soldier",
-        "elapsed": 11.13,
-        "won": true,
-        "survived": true,
-        "health": 65,
-        "enemyHp": -3.360000000000004,
-        "connections": 2,
+        "elapsed": 27.93,
+        "won": false,
+        "survived": false,
+        "health": 0,
+        "enemyHp": 17.016,
+        "connections": 0,
         "used": [
-          60080,
+          60390,
           60081,
           60102
         ]
@@ -419,11 +410,11 @@
           60102
         ],
         "kind": "elite",
-        "elapsed": 27.13,
+        "elapsed": 25.13,
         "won": true,
         "survived": true,
         "health": 100,
-        "enemyHp": -0.8399999999999768,
+        "enemyHp": -9.851999999999983,
         "connections": 4,
         "used": [
           60080,
@@ -433,20 +424,20 @@
       },
       "worst": {
         "ids": [
-          60000,
-          60081,
+          60390,
+          60101,
           60102
         ],
         "kind": "elite",
-        "elapsed": 32.1,
-        "won": true,
-        "survived": true,
-        "health": 100,
-        "enemyHp": -2.5799999999999965,
-        "connections": 5,
+        "elapsed": 20.63,
+        "won": false,
+        "survived": false,
+        "health": 0,
+        "enemyHp": 64.70400000000001,
+        "connections": 2,
         "used": [
-          60000,
-          60081,
+          60390,
+          60101,
           60102
         ]
       },
