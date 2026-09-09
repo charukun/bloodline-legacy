@@ -81,7 +81,7 @@ test('passives have their own page and inspection never changes active phase wei
  assert.equal(d.querySelectorAll('[data-phase]').length,4);assert.ok(d.querySelector('.skill-overview #pie-wrap'));assert.ok(d.querySelector('.skill-overview #skill-detail'));
  const before=JSON.stringify(p.phaseWeights);d.querySelector('[data-phase="3"]').click();d.querySelector('[data-passive="60900"]').click();
  assert.match(d.getElementById('skill-detail').textContent,/炉辺の息/);assert.equal(d.getElementById('balance-pie'),null);assert.equal(d.getElementById('skill-toggle'),null);assert.equal(JSON.stringify(p.phaseWeights),before);
- d.querySelector('[data-phase="0"]').click();assert.ok(d.getElementById('balance-pie'));assert.ok(d.getElementById('skill-toggle'));
+ d.querySelector('[data-phase="0"]').click();assert.ok(d.getElementById('balance-pie'));assert.equal(d.getElementById('skill-toggle'),null);
 });
 
 test('combat continues while the panel edits a build, with normal world input available',async t=>{
@@ -89,11 +89,48 @@ test('combat continues while the panel edits a build, with normal world input av
  sim.learn(p,4001);p.weapon=0;p.phaseWeights[0]={4000:1,4001:1};Object.assign(p,{x:dummy.x,z:dummy.z+1.1});
  for(let i=0;i<12;i++)sim.tick(1/30);sync();assert.equal(p.autoFight,dummy.id);
  ui.skills();await flush();const start=sim.time;assert.equal(ui.blocksWorldInput(),false);assert.equal(g.renderer.canvas.inert,false);assert.equal(d.querySelector('[role=dialog]').getAttribute('aria-modal'),'false');
- d.querySelector('[data-skill="4000"]').click();d.getElementById('skill-toggle').click();assert.equal(p.phaseWeights[0][4000],0);
+ d.querySelector('[data-skill="4000"]').click();assert.equal(p.phaseWeights[0][4000],0);
  for(let i=0;i<70;i++)sim.tick(1/30);sync();assert.ok(sim.time>start+2);assert.ok(sim.events.some(e=>e.type==='hit'&&e.kind==='practice'&&e.t>start));assert.equal(p.autoFight,dummy.id);
  g.installInput();g.renderer.canvas.setPointerCapture=()=>{};g.renderer.canvas.hasPointerCapture=()=>false;
  const event=(target,type)=>{const e=new w.MouseEvent(type,{button:0,clientX:100,clientY:140,bubbles:true,cancelable:true});Object.defineProperty(e,'pointerId',{value:1});target.dispatchEvent(e);};
  event(d.querySelector('[data-skill="4001"]'),'pointerdown');assert.ok(!g.pointer,'panel cannot send touch to the world');
  event(g.renderer.canvas,'pointerdown');assert.ok(g.pointer,'upper view still accepts movement');event(g.renderer.canvas,'pointercancel');assert.equal(g.pointer,null);
  ui.body();assert.equal(ui.blocksWorldInput(),true);assert.equal(g.renderer.canvas.inert,true);assert.equal(ui.skillPanelTop,null);ui.closeModal();assert.equal(ui.skillPanelTop,null);
+});
+
+test('one tile activation toggles and describes the skill; refresh and phase changes never toggle it again',async t=>{
+ const {sim,p,ui,d,sync}=fixture(t);sim.learn(p,4001);sync();ui.skills();await flush();
+ const tile=()=>d.querySelector('[data-skill="4001"]');
+ assert.equal(tile().getAttribute('aria-pressed'),'false');
+ const list=d.querySelector('.skill-list-scroll');list.scrollTop=44;tile().focus();tile().click();
+ assert.equal(p.phaseWeights[0][4001],20);assert.equal(tile().getAttribute('aria-pressed'),'true');assert.match(d.getElementById('skill-detail').textContent,/斬る/);
+ assert.equal(d.activeElement,tile());assert.equal(d.querySelector('.skill-list-scroll').scrollTop,44);assert.equal(d.querySelector('#skill-toggle,#skill-choice'),null);
+ const before=JSON.stringify(p.phaseWeights);
+ for(let i=0;i<5;i++){ui.renderSkills();sync();}
+ d.querySelector('[data-phase="1"]').click();d.querySelector('[data-phase="0"]').click();assert.equal(JSON.stringify(p.phaseWeights),before);
+ tile().click();assert.equal(p.phaseWeights[0][4001],0);assert.equal(tile().getAttribute('aria-pressed'),'false');assert.equal(tile().closest('.skill-cell').classList.contains('enabled'),false);assert.match(d.getElementById('skill-detail').textContent,/斬る/);
+ assert.equal(d.querySelector('[data-skill="4000"]').getAttribute('aria-pressed'),'true','reading a different skill must not clear the enabled state of other skills');
+});
+
+test('each phase toggle persists through actual save and restore, including an empty phase',t=>{
+ const {sim,p,ui,g,d,sync,w,api}=fixture(t);for(const id of [4001,4100,4101])sim.learn(p,id);sync();ui.skills();
+ const original=p.phaseWeights.map(w=>Object.fromEntries(p.skills.map(id=>[id,w[id]||0])));
+ for(const [phase,id]of [4001,4100,4101].entries()){
+  d.querySelector(`[data-phase="${phase}"]`).click();d.querySelector(`[data-skill="${id}"]`).click();assert.equal(p.phaseWeights[phase][id],20);
+  const saved=JSON.parse(w.localStorage.getItem('aerin.tactics.v3.world.normal')),restored=api.Simulation.restore(saved).players.get(p.id);assert.equal(restored.phaseWeights[phase][id],20);
+  d.querySelector(`[data-skill="${id}"]`).click();assert.equal(p.phaseWeights[phase][id],0);
+  const off=api.Simulation.restore(JSON.parse(w.localStorage.getItem('aerin.tactics.v3.world.normal'))).players.get(p.id);assert.equal(off.phaseWeights[phase][id],0);
+ }
+ assert.equal(JSON.stringify(p.phaseWeights),JSON.stringify(original));
+});
+
+test('rejected commands leave activation state and saves untouched while allowing the explanation',t=>{
+ const {sim,p,ui,g,d,sync}=fixture(t);sim.learn(p,4001);sync();ui.skills();p.lifeState='downed';sync();let saves=0;g.saveWorld=()=>saves++;
+ const tile=d.querySelector('[data-skill="4001"]');tile.click();assert.equal(p.phaseWeights[0][4001],0);assert.equal(d.querySelector('[data-skill="4001"]').getAttribute('aria-pressed'),'false');assert.match(d.getElementById('skill-detail').textContent,/斬る/);assert.equal(saves,0);
+});
+
+test('online tile activation uses the existing weights transport and reflects the acknowledged snapshot',t=>{
+ const {sim,p,ui,g,d,sync}=fixture(t);sim.learn(p,4001);sync();g.online=true;g.commandBuffer=[];ui.skills();
+ d.querySelector('[data-skill="4001"]').click();const changes=g.commandBuffer.filter(c=>c.type==='weights');assert.equal(changes.length,1);assert.equal(changes[0].phase,0);assert.equal(changes[0].weights[4001],20);assert.equal(p.phaseWeights[0][4001],0,'UI does not mutate the authoritative player');
+ sim.command(p.id,changes[0]);sync();assert.equal(d.querySelector('[data-skill="4001"]').getAttribute('aria-pressed'),'true');assert.equal(d.querySelector('[data-skill="4000"]').getAttribute('aria-pressed'),'true');
 });

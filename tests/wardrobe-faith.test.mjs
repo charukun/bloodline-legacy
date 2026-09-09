@@ -41,10 +41,10 @@ test('weapon changes teach their technique without replacing a full chosen set',
 test('consciousness keeps all learned choices visible and opens a slot only after removal',async t=>{
  const {sim,p,ui,d,sync}=fixture(t),ids=phaseIds(0);ids.forEach(id=>sim.learn(p,id));p.phaseWeights[0]=Object.fromEntries(ids.map((id,i)=>[id,i<5?20:0]));sync();ui.skills();await flush();
  assert.ok(ids.every(id=>d.querySelector(`[data-skill="${id}"]`)));assert.equal(d.querySelectorAll('.phase-capacity i.lit').length,5);
- d.querySelector(`[data-skill="${ids[5]}"]`).click();assert.equal(d.getElementById('skill-toggle').disabled,true);
- d.getElementById('skill-toggle').click();assert.equal(p.phaseWeights[0][ids[5]],0);
- d.querySelector(`[data-skill="${ids[0]}"]`).click();assert.equal(d.getElementById('skill-toggle').disabled,false);d.getElementById('skill-toggle').click();
- d.querySelector(`[data-skill="${ids[5]}"]`).click();assert.equal(d.getElementById('skill-toggle').disabled,false);d.getElementById('skill-toggle').click();
+ d.querySelector(`[data-skill="${ids[5]}"]`).click();assert.equal(d.getElementById('skill-toggle'),null);
+ assert.equal(p.phaseWeights[0][ids[5]],0);
+ d.querySelector(`[data-skill="${ids[0]}"]`).click();assert.equal(d.getElementById('skill-toggle'),null);
+ d.querySelector(`[data-skill="${ids[5]}"]`).click();assert.equal(d.getElementById('skill-toggle'),null);
  assert.equal(active(p.phaseWeights[0]).length,5);assert.equal(p.phaseWeights[0][ids[0]],0);assert.ok(p.phaseWeights[0][ids[5]]>0);
 });
 

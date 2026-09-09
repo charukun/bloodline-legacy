@@ -128,9 +128,9 @@ test('presentation updates cannot mutate game state or save payload',t=>{
 });
 test('skill toggle and keyboard pie adjustment use existing weight commands and preserve focus',async t=>{
  const {sim,p,ui,g,d,w}=fixture(t);sim.learn(p,4001);p.phaseWeights[0]={4000:1,4001:1};ui.skills();await flush();
- const detail=d.querySelector('[data-skill="4000"]');detail.focus();detail.click();assert.match(d.getElementById('skill-detail').textContent,/殴る/);
+ const detail=d.querySelector('[data-skill="4000"]');detail.focus();assert.match(d.getElementById('skill-detail').textContent,/殴る/);
  const handle=d.querySelector('[data-handle="0"]');assert.ok(handle);handle.focus();handle.dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true,cancelable:true}));assert.equal(p.phaseWeights[0][4000],51);assert.equal(p.phaseWeights[0][4001],49);assert.equal(d.activeElement.dataset.handle,'0');
- const btn=d.querySelector('[data-skill="4001"]');btn.focus();btn.click();assert.equal(p.phaseWeights[0][4001],49,'reading the description does not change the build');const toggle=d.getElementById('skill-toggle');toggle.focus();toggle.click();assert.equal(p.phaseWeights[0][4001],0);assert.equal(d.activeElement.id,'skill-toggle');
+ const btn=d.querySelector('[data-skill="4001"]');btn.focus();btn.click();assert.equal(p.phaseWeights[0][4001],0);assert.equal(d.activeElement.dataset.skill,'4001');assert.equal(d.activeElement.getAttribute('aria-pressed'),'false');assert.equal(d.getElementById('skill-toggle'),null);
 });
 test('lineage renders only actual lives and safely escapes imported names',t=>{
  const {sim,p,ui}=fixture(t),legacy=sim.legacy(p.owner);legacy.archive=[4000];legacy.records=[{id:'past',gen:2,age:42,name:'<script>unsafe</script>',skills:[4000],cause:'老衰'},{id:'unknown',name:'記録だけ',skills:[]}];ui.lineage();const root=ui.lineageView.modalView.scope;

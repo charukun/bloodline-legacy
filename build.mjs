@@ -25,6 +25,7 @@ let style=(await fs.readFile(path.join(root,'src/ui/base.css'),'utf8'))+'\n'+awa
 style+='\n'+await fs.readFile(path.join(root,'src/skills/skills.css'),'utf8');
 style+='\n'+await fs.readFile(path.join(root,'src/ui/interaction.css'),'utf8')+'\n'+await fs.readFile(path.join(root,'src/ui/lineage.css'),'utf8');
 style+='\n'+await fs.readFile(path.join(root,'src/ui/talk-fan.css'),'utf8');
+style+='\n'+await fs.readFile(path.join(root,'src/ui/bequest.css'),'utf8');
 style=style.replace(/asset:([a-z-]+\.png)/g,(_,name)=>`data:image/png;base64,${assets[name]}`);
 style+='\n'+await fs.readFile(path.join(root,'src/ui/skills-panel.css'),'utf8')+'\n'+await fs.readFile(path.join(root,'src/ui/wardrobe-panel.css'),'utf8')+'\n'+lineage.fontCSS;
 let html=await fs.readFile(path.join(root,'src/shell.html'),'utf8');html=html.replace('/*__STYLE__*/',style).replace('/*__SCRIPT__*/',`'use strict';\n(async()=>{\n${code}\n})();`.replace(/<\/script/gi,'<\\/script'));

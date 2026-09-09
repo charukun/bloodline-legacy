@@ -30,6 +30,7 @@ export async function verifySkillSlice(page,evidence,viewport) {
   if(await tile.count()){await tile.click();assert.equal(await tile.getAttribute('aria-pressed'),'true');found=true;break;}
  }
  assert.ok(found,'The learned technique is reachable through the existing consciousness button');
+assert.equal(await page.locator('#skill-toggle').count(),0);
  assert.ok((await page.locator('#skill-detail').innerText()).includes('鍛冶'),'Discovery cause remains available in details');
  await page.screenshot({path:prefix+'-loadout.png'});
  report.saved=await page.evaluate(()=>{const a=window.AERIN_QA.app;a.saveWorld();return {skills:a.snapshot.player.skills,weights:a.snapshot.player.phaseWeights,memories:a.snapshot.player.skillLife.memories,discovered:a.snapshot.player.skillLife.discovered};});

@@ -32,7 +32,7 @@ test('the notice expires after 2.2 seconds while the unread glow waits for manua
 test('manual opening clears the brief notice immediately and retains learned details and weights',t=>{
  const {p,sim,ui,d,reveal,sync}=noticeFixture(t);sim.learn(p,60000);p.skillLife.unread=[60000];p.skillLife.discovered.push({id:60000,key:'bl.skill.hammer.opening',reasons:['鍛冶場で覚えた拍子']});sync();const weights=JSON.stringify(p.phaseWeights);reveal();
  d.querySelector('[data-menu="skills"]').click();assert.equal(ui.skillRevealEvent,null);assert.ok(!d.getElementById('skill-revelation').classList.contains('visible'));
- d.querySelector('[data-skill="60000"]').click();assert.match(d.getElementById('skill-detail').textContent,/鍛冶場で覚えた拍子/);assert.equal(JSON.stringify(p.phaseWeights),weights);assert.equal(p.skillLife.unread.length,0);
+ assert.equal(JSON.stringify(p.phaseWeights),weights);d.querySelector('[data-skill="60000"]').click();assert.match(d.getElementById('skill-detail').textContent,/鍛冶場で覚えた拍子/);assert.ok(p.phaseWeights[0][60000]>0);const selected=JSON.stringify(p.phaseWeights);ui.describeSkill(60000);assert.equal(JSON.stringify(p.phaseWeights),selected);assert.equal(p.skillLife.unread.length,0);
 });
 
 test('the label follows the existing dock through menus and a rebuilt HUD, without a screen overlay',t=>{
