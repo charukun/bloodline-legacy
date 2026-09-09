@@ -45,15 +45,20 @@ async function fixture(page,{close=false}={}){
     if(a.renderer.characterMaster)a.renderer.characterMaster.state=null;
     a.renderer.render(a.snapshot,1/30,{freezeCamera:true});a.ui.update(a.snapshot);
     window.characterTrace=[];
+    // Bound queued software-GPU frames; recording must not leave hundreds of
+    // draws outstanding when Playwright asks the compositor for a screenshot.
+    const syncPixel=new Uint8Array(4);
+    window.characterDrain=()=>{const g=a.renderer.gl;g.readPixels(0,0,1,1,g.RGBA,g.UNSIGNED_BYTE,syncPixel);};
     window.characterStep=(n,draw=true)=>{for(let i=0;i<n;i++){a.updateMove();a.sim.tick(1/30);a.snapshot=a.decorate(a.sim.snapshot(a.playerId,a.seq));
       if(draw){a.renderer.render(a.snapshot,1/30,{freezeCamera:true});const cm=a.renderer.characterMaster;
-        if(a.renderer.stats.characterMaster)window.characterTrace.push({t:a.sim.time,x:p.x,z:p.z,action:p.action,metrics:{...cm.metrics},finite:cm.palette.every(Number.isFinite),feet:structuredClone(cm.footDebug)});}
+        if(a.renderer.stats.characterMaster)window.characterTrace.push({t:a.sim.time,x:p.x,z:p.z,action:p.action,metrics:{...cm.metrics},finite:cm.palette.every(Number.isFinite),feet:structuredClone(cm.footDebug)});
+        if(i%4===3||i===n-1)characterDrain();}
     }a.ui.update(a.snapshot);};
   },{close});
   // Drain the old, now-closed frame callback before starting a new live loop.
   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
 }
-async function shot(name){await page.screenshot({path:path.join(out,name+'.png')});report.lastScreenshot=name;flush();}
+async function shot(name){await page.evaluate(()=>window.characterDrain?.());await page.screenshot({path:path.join(out,name+'.png')});report.lastScreenshot=name;flush();}
 try{
   browser=await chromium.launch({executablePath:process.env.CHROMIUM_EXECUTABLE||undefined,headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
   for(const version of mode==='motion'||process.env.CHARACTER_AFTER_ONLY==='1'?['after']:['before','after']){
@@ -141,7 +146,7 @@ try{
     const combat={charged:false,attack:false,states:[],animations:[]};
     for(let i=0;i<150;i++){
       const state=await page.evaluate(({draw,capturedCharge,capturedPeak})=>{characterStep(1,false);const a=AERIN_QA.app,p=AERIN_QA.player(),u=(a.sim.time-p.actionStarted)/Math.max(.001,p.actionUntil-p.actionStarted),peak=p.action==='attack'&&u>=.3&&u<=.65;
-        if(draw||p.pendingSkill&&!capturedCharge||peak&&!capturedPeak)a.renderer.render(a.snapshot,1/30,{freezeCamera:true});
+        if(draw||p.pendingSkill&&!capturedCharge||peak&&!capturedPeak){a.renderer.render(a.snapshot,1/30,{freezeCamera:true});characterDrain();}
         return {action:p.action,charged:!!p.pendingSkill,target:p.autoFight,peak,animation:AERIN_QA.stats().characterMaster?.animation};
       },{draw:i%3===0,capturedCharge:combat.charged,capturedPeak:combat.peak});
       if(state.charged&&!combat.charged)await shot(version+'-combat-charge');
