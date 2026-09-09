@@ -78,7 +78,7 @@ const EnemyCreatures=(()=>{
   let rec=records.get(p.id);if(!rec){rec={};records.set(p.id,rec);}
   const c=profile(p),m=motion(p,t,rec),react=damagePose(r,p,t),ail=ailmentPose(p,t),id=EnemyLooks.id(p);
   const sideFall=['maw','stag','crawler'].includes(p.kind);
-  const root=rModel(p.x+react.x,.20+ail.y-react.drop+(p.kind==='wraith'?.18+m.breathe:0)+m.fall*.48*c.scale[1],p.z+react.z,...c.scale,p.dir||0,react.roll+ail.roll+m.fall*(sideFall?1.48:.14),react.pitch+ail.pitch+m.fall*(sideFall?.08:1.42));
+  const root=rModel(p.x+react.x,(p.baseY??(.20+(p.supportHeight||0)))+(p.verticalOffset||0)+ail.y-react.drop+(p.kind==='wraith'?.18+m.breathe:0)+m.fall*.48*c.scale[1],p.z+react.z,...c.scale,p.dir||0,react.roll+ail.roll+m.fall*(sideFall?1.48:.14),react.pitch+ail.pitch+m.fall*(sideFall?.08:1.42));
   const oldRoot=art.root,oldTarget=art.target;art.root=root;art.target=r.dynamic;rec.sockets={};rec.damageAnchors={};rec.breaks=[];rec.frame=r.frame;rec.root=root;rec.motion=m;rec.config=c;
   const ctx={p,c,m,id,rec,root,react};
   try{

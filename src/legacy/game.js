@@ -27,7 +27,7 @@ class Game{
   this.playerId=[...this.sim.players.values()].find(p=>p.owner===this.profile.owner&&(p.alive||p.legacyChoice?.state==='pending'))?.id||[...this.sim.players.values()].filter(p=>p.owner===this.profile.owner).at(-1)?.id||null;
   this.seq=this.sim.seq;if(this.playerId)this.snapshot=this.decorate(this.sim.snapshot(this.playerId,this.seq));
  }
- decorate(s){if(!s)return s;if(!this.mapCache.has(s.room.seed))this.mapCache.set(s.room.seed,makeVillage(s.room.seed));s.map=this.mapCache.get(s.room.seed);return s;}
+ decorate(s){if(!s)return s;const revision=s.room.terrainRevision??(this.online?0:1),key=s.room.seed+':'+revision;if(!this.mapCache.has(key))this.mapCache.set(key,makeVillage(s.room.seed,revision));s.map=this.mapCache.get(key);return s;}
  makeClanPreview(){const previewSim=new Simulation({seed:7349,mode:'normal'}),p=previewSim.addPlayer('preview',{race:this.profile.race,owner:'preview',name:'エリン'});Object.assign(p,{kind:'portrait',race:this.profile.race,age:24,appearanceSeed:16,hair:1,gender:0,weapon:-1,armor:0,shield:false,prologue:false,introUntil:-100,x:0,z:0,dir:.05,baseY:.13,action:'idle',alive:true});this.previewCharacter=p;this.clanScene=this.decorate(previewSim.snapshot(p.id));}
  saveWorld(){
   if(!this.sim||this.online||this.blockSave)return false;

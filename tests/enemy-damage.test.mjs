@@ -15,16 +15,48 @@ h.run(`function damageFixture(form,level,part,time=1.35,quality='medium',extra={
 const plain=v=>JSON.parse(JSON.stringify(v));
 const forms=h.run('Object.values(ENEMY_FORMS).flat()');
 
-test('damage stages are monotonic, local and bounded; legacy actors stay clean',()=>{
- for(const values of [{},{hp:NaN,hpMax:100},{hp:1,hpMax:Infinity},{hp:100,hpMax:0}]){h.ctx.p=values;assert.equal(h.run('EnemyDamage.state(p).wear'),0);}
+test('whole-body damage follows lost HP alone, monotonically and within bounds',()=>{
+ for(const values of [{},{hp:NaN,hpMax:100},{hp:1,hpMax:Infinity},{hp:100,hpMax:0},{hp:100,hpMax:-10}]){h.ctx.p=values;assert.equal(h.run('EnemyDamage.state(p).wear'),0);}
  let prior=0;
- for(const [level,stage]of [['clean',0],['light',1],['medium',2],['heavy',3],['lost',3]]){
-  h.ctx.level=level;const s=h.run(`EnemyDamage.state(EnemyReview.damage({hpMax:100},level,'rightArm'))`);
-  assert.equal(s.parts.rightArm.stage,stage);assert(s.wear>=prior);prior=s.wear;
-  assert.equal(s.parts.leftArm.amount,0);assert.equal(s.parts.torso.amount,0);
+ for(const [hp,stage]of [[120,0],[100,0],[99,1],[82,1],[60,2],[52,2],[30,3],[22,3],[0,3],[-100,3]]){
+  h.ctx.p={hp,hpMax:100};const s=h.run('EnemyDamage.state(p)'),amount=Math.max(0,Math.min(1,1-hp/100));
+  assert.equal(s.wear,amount);assert(s.wear>=prior);prior=s.wear;
+  for(const part of Object.values(s.parts)){assert.equal(part.amount,amount);assert.equal(part.stage,stage);assert.equal(part.lost,false);}
  }
- h.ctx.p={hp:-1000,hpMax:100,damageMarks:{head:{depth:1000,hits:1000},leftArm:{depth:-10,hits:NaN}}};
- const s=h.run('EnemyDamage.state(p)');assert.equal(s.wear,1);assert.equal(s.parts.head.amount,1);assert.equal(s.parts.leftArm.amount,0);
+});
+
+test('local hit severity/counts cannot advance whole-body wear; loss is independent of HP',()=>{
+ for(const hp of [100,52,0]){
+  h.ctx.p={hp,hpMax:100};const clean=plain(h.run('EnemyDamage.state(p)'));
+  h.ctx.p.wounds={head:{severity:'heavy'},leftArm:{severity:'light'}};
+  h.ctx.p.damageMarks={head:{depth:1000,hits:1000},leftArm:{depth:-10,hits:NaN}};
+  assert.deepEqual(plain(h.run('EnemyDamage.state(p)')),clean);
+  h.ctx.p.wounds.rightArm={severity:'lost'};clean.parts.rightArm.lost=true;
+  assert.deepEqual(plain(h.run('EnemyDamage.state(p)')),clean);
+ }
+ for(const form of forms){h.ctx.form=form;
+  const clean=h.run("damageFixture(form,'auto','torso',1.35,'medium',{hp:100})");
+  const local=h.run("damageFixture(form,'auto','torso',1.35,'medium',{hp:100,wounds:{head:{severity:'heavy'}},damageMarks:{head:{depth:5,hits:4}}})");
+  assert.deepEqual(plain(local.batches),plain(clean.batches),form.id+' no local persistent marks at full HP');
+  const low=h.run("damageFixture(form,'auto','torso',1.35,'medium',{hp:22})");
+  assert(low.batches.some(b=>b.type==='enemy:split'),form.id+' low HP alone creates whole-body scars');
+  const restored=h.run("damageFixture(form,'auto','torso',1.35,'medium',{hp:100,wounds:{rightArm:{severity:'lost'}}})");
+  assert(restored.batches.some(b=>b.type==='enemy:break-rim'),form.id+' restoring HP retains actual break');
+  assert.equal(restored.rec.damage.wear,0);
+ }
+});
+
+test('review vitality, broken part and motion controls are independent in all poses',()=>{
+ const result=h.run(`(()=>{
+  const sim=new Simulation({seed:7349}),templates=Object.fromEntries(Object.keys(ENEMY_FORMS).map(k=>[k,sim.actor(k,0,0)])),before=JSON.stringify(templates),rows=[];
+  for(const pose of ['sequence','idle','attack','run','guard','hit','death'])for(const time of [0,1.4,9.3,11])for(const vitality of [100,52,0])for(const brokenPart of ['none','rightArm','leftLeg']){
+   const p=EnemyReview.sample(templates,{form:'all',count:33,pose,time,vitality,brokenPart}).actors;
+   rows.push(...p.map(a=>({ratio:a.hp/a.hpMax,parts:Object.keys(a.wounds),expected:vitality/100,brokenPart})));
+  }
+  return {rows,unchanged:before===JSON.stringify(templates)};
+ })()`);
+ assert(result.unchanged);
+ for(const row of result.rows){assert(Math.abs(row.ratio-row.expected)<1e-12);assert.deepEqual(Array.from(row.parts),row.brokenPart==='none'?[]:[row.brokenPart]);}
 });
 
 test('all 33 forms retain finite, bounded staged marks without mutating actors',()=>{
@@ -84,7 +116,7 @@ test('existing snapshot/save damage data restores identical presentation without
 
 test('real repeated combat damage matches pinned develop wounds, HP, events and RNG',()=>{
  const ctx=vm.createContext({console,BL_SKILL_DEFINITIONS:h.ctx.BL_SKILL_DEFINITIONS});
- const core=execFileSync('git',['show','c53f9b2c918ff71525b76ea4b20c8b530429a26e:src/legacy/core.js'],{encoding:'utf8'});
+ const core=execFileSync('git',['show','8050da52899d5fd3761ca1f51383be2aea80c99d:src/legacy/core.js'],{encoding:'utf8'});
  vm.runInContext(fs.readFileSync(new URL('../src/legacy/dialogue.js',import.meta.url),'utf8')+'\n'+core,ctx);
  for(const f of ['engine','runtime'])vm.runInContext(fs.readFileSync(new URL('../src/skills/'+f+'.js',import.meta.url),'utf8'),ctx);
  const script=`(()=>{const s=new Simulation({seed:7349}),p=s.addPlayer('combat-damage',{owner:'combat-damage'}),room=s.getRoom(p),results=[];

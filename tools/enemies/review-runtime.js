@@ -17,16 +17,16 @@
   $('quality').onchange=()=>r.setQuality($('quality').value);
   const restart=()=>{time=0;paused=false;$('pause').textContent='⏸ 停止';clearHistory();};
   $('pose').onchange=restart;$('form').onchange=restart;$('replay').onclick=restart;
-  const damageChange=()=>{if($('damage').value==='lost'&&['head','torso'].includes($('part').value))$('part').value='rightArm';clearHistory();lastReport=-Infinity;};
-  $('damage').onchange=damageChange;$('part').onchange=damageChange;
+  $('vitality').oninput=()=>{$('vitality-value').textContent=$('vitality').value+'%';lastReport=-Infinity;};
+  $('broken-part').onchange=()=>{clearHistory();lastReport=-Infinity;};
   const next=direction=>{const rows=EnemyReview.forms,i=rows.findIndex(f=>f.id===$('form').value);$('form').value=rows[(i+direction+rows.length)%rows.length].id;restart();};$('prev').onclick=()=>next(-1);$('next').onclick=()=>next(1);
   $('count').onchange=clearHistory;
   $('pause').onclick=()=>{paused=!paused;$('pause').textContent=paused?'▶ 再生':'⏸ 停止';};
   $('seek').oninput=()=>{paused=true;$('pause').textContent='▶ 再生';time=Number($('seek').value)/1000*EnemyReview.duration($('pose').value);clearHistory();};
-  const sample=t=>EnemyReview.sample(templates,{form:$('form').value,count:Number($('count').value),pose:$('pose').value,time:t,damage:$('damage').value,part:$('part').value});
+  const sample=t=>EnemyReview.sample(templates,{form:$('form').value,count:Number($('count').value),pose:$('pose').value,time:t,vitality:Number($('vitality').value),brokenPart:$('broken-part').value});
   // Exports raw frame intervals plus renderer CPU/GPU counters. Target-device
   // pass/fail is deliberately left to the reviewer; no software-FPS extrapolation.
-  $('measure').onclick=()=>{if(measurement)return;paused=false;$('pause').textContent='⏸ 停止';measurement={start:performance.now(),runs:[[],[],[]],config:{version,form:$('form').value,pose:$('pose').value,count:$('count').value,quality:r.quality,damage:$('damage').value,part:$('part').value}};document.querySelectorAll('button,select,input').forEach(e=>e.disabled=true);};
+  $('measure').onclick=()=>{if(measurement)return;paused=false;$('pause').textContent='⏸ 停止';measurement={start:performance.now(),runs:[[],[],[]],config:{version,form:$('form').value,pose:$('pose').value,count:$('count').value,quality:r.quality,vitality:Number($('vitality').value),brokenPart:$('broken-part').value}};document.querySelectorAll('button,select,input').forEach(e=>e.disabled=true);};
   function reportMeasurement(now,dt){if(!measurement)return;const elapsed=(now-measurement.start)/1000,run=Math.floor((elapsed-10)/10);status.textContent=elapsed<10?'測定準備 10秒':`測定 ${Math.min(3,run+1)}/3`;
    if(run>=0&&run<3)measurement.runs[run].push({frameMs:dt*1000,cpuMs:r.cpuMs,gpuMs:r.gpuMs??null,calls:r.stats.calls,triangles:r.stats.triangles});
    if(elapsed<40)return;

@@ -5,7 +5,7 @@ const h=harness();
 const report=h.run(`(()=>{
  const forms=Object.values(ENEMY_FORMS).flat(),parts=EnemyDamage.parts;
  const renderer=quality=>({quality,frame:0,dynamic:new Map(),fxBatches:new Map(),weaponTips:new Map(),put(type,m,c,surface=0,alpha=1,target=this.dynamic){const rows=target.get(type)||[];rows.push(m);target.set(type,rows);},blob(){}});
- const make=(f,id,stage)=>({id,kind:f.kind,enemyForm:f.id,hpMax:100,hp:stage==='clean'?100:22,alive:true,action:'run',x:0,z:0,wounds:stage==='clean'?{}:Object.fromEntries(parts.map(k=>[k,{severity:'heavy'}])),damageMarks:stage==='clean'?{}:Object.fromEntries(parts.map(k=>[k,{depth:5,hits:4}])),statuses:{}});
+ const make=(f,id,stage)=>({id,kind:f.kind,enemyForm:f.id,hpMax:100,hp:stage==='clean'?100:22,alive:true,action:'run',x:0,z:0,wounds:{},damageMarks:{},statuses:{}});
  const draw=(r,a,p,time,rec={})=>{if(EnemySentinel.eligible(p)){EnemySentinel.pose(p,time,rec);a.sentinelEquipment(p,rec);a.sentinelScars(p,rec);}else EnemyCreatures.draw(a,p,time);};
  const rows=[];
  for(const f of forms)for(const quality of ['low','medium'])for(const stage of ['clean','heavy']){
@@ -26,5 +26,5 @@ const report=h.run(`(()=>{
  return {rows,cpu,meshes:['enemy:stain','enemy:split','enemy:break-rim'].map(id=>{const g=rGeometry(id);return{id,triangles:g.count/3,bytes:g.positions.byteLength+g.normals.byteLength};})};
 })()`);
 const out=process.argv[2]||'docs/enemies/evidence/damage-budget.json';
-await fs.writeFile(out,JSON.stringify({scope:'Node full-detail pose and geometry construction, excludes GPU/browser/world/combat/draw submission; heavy is every part at maximum damage',runtime:process.version,...report},null,2)+'\n');
+await fs.writeFile(out,JSON.stringify({scope:'Node full-detail pose and geometry construction, excludes GPU/browser/world/combat/draw submission; heavy is 22% remaining HP with empty wounds/marks; wear is global',runtime:process.version,...report},null,2)+'\n');
 console.log({maxDamageTriangles:Math.max(...report.rows.map(r=>r.damageTriangles)),meshes:report.meshes,cpu:report.cpu.map(({rawMs,...r})=>r)});

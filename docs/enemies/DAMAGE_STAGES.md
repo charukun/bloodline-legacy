@@ -1,133 +1,123 @@
-# Enemy damage presentation — 2026-09-09
+# Enemy damage presentation — vitality correction, 2026-09-09
 
-Implements the user's request for gradual wounds/dirt and lasting post-break
-appearance across all **31 hostile forms and 2 neutral creatures**. This branch
-started with the unmerged enemy work from #52. Created from develop
-`c53f9b2c918ff71525b76ea4b20c8b530429a26e`, then synchronized with develop
-`8ade374c84709e9ebcdfc77944b76ead87c0c8ba` (plaza craft integration). Integration subsequently merged #52 and the UI material work into develop
-`6cdbacdb627bd10bccf9fb4a06f771881cc5dd3a`. This branch was synchronized again;
-the final PR is now the damage-presentation delta on those integrated enemies.
-No merge into develop is performed by this WORK.
+All **31 hostile forms and 2 neutral creatures** use the enemy's remaining
+vitality to drive whole-body scratches, fractures and dirt. This corrects the
+initial per-part interpretation following the user's clarification. PR #58 is
+synchronized with develop `8050da52899d5fd3761ca1f51383be2aea80c99d`, including
+the integrated enemy expansion, plaza materials and raised terrain. This WORK
+does not merge into develop.
 
-## Existing combat data, presentation only
+## Authoritative inputs
 
-`src/enemies/damage.js` consumes existing `hp / hpMax`, six `wounds` and six
-`damageMarks` records. It writes no actor/save fields, advances no RNG, and adds
-no damage, AI, break probability, injury penalty, hitbox or timing rule.
+`src/enemies/damage.js` computes wear as **1 − clamp(hp / hpMax, 0, 1)**.
+Every retained body region receives that same damage amount. There is no
+contribution from local wound severity, hit count, damage depth or accumulated
+wound totals. Missing/invalid HP data defaults to clean appearance.
 
-For each part, normalized injury is the maximum of existing wound severity
-(light .22, heavy .70, lost 1), accumulated depth / 5 and hit count × .16.
-The existing record limits remain authoritative. Stages are clean, light
-(positive), medium (≥ .40) and heavy (≥ .70). Overall wear uses lost HP and
-bounded accumulated part injury. A part can be badly damaged while the actor
-still has plenty of HP; low HP alone does not invent a severed limb.
+| Remaining HP | Whole-body presentation |
+|---|---|
+| 100% or above | Clean |
+| Below 100%, above 60% | Small scratches grow with lost HP; dirt starts at 90% |
+| 60% to above 30% | More scratches, edged cracks, spreading dirt and worn cloth |
+| 30% to 0% | Broad scars, deeper fractures, most extensive dirt |
 
-| Family | Local injury | Accumulated wear / break |
+These are **visual thresholds only**. Mark size and shader strength scale with
+HP loss within each stage. Existing `wounds[part].severity === 'lost'` alone
+controls that part's missing geometry, attached equipment and broken joint rim.
+Low HP never creates limb loss. Restoring HP reduces wear but does not repair
+an actually destroyed part. Broken limbs remain broken on corpses.
+
+No actor/save fields are written, no RNG is consumed, and no damage, AI,
+break probability, injury penalty, collision, socket reach or combat timing
+rule changes. The final diff has no simulation/core/archive changes against
+the pinned develop. Raised ground placement from #54 is preserved.
+
+## Species-specific appearance and motion
+
+| Family | Whole-body wear | Actual break |
 |---|---|---|
-| Goblin / ruler | Shallow then wider dried scars | Uneven dirt islands; closed torn joint, attached shoulder armor removed |
-| Bone soldiers / executioners | Bind-space bone/armor fractures | Dark patina, torn mantle hems, chipped crest, lost shoulder armor and weapon |
-| Crawlers / stone forms | Pale-edged shell cracks | Muted deposits and jagged rigid joint rim |
-| Beasts / bat / neutral flesh | Fur/membrane scratches then deep scars | Mud on limbs/body; closed joint after limb/wing loss |
-| Spirits / wraith / jelly | Dark fissures, brighter internal seams | Faded shroud/core patches; luminous torn joint edge |
-| Fungus | Cap/stalk tears | Dirt on cap/feet, cut cap lobe and exposed rim |
+| Goblins / ruler | Dried scratches and uneven dirt | Closed torn joint; attached armor removed |
+| Bone soldiers / executioners | Bind-space fractures, patina, torn mantle, chipped crest | Missing limb, shoulder armor and associated weapon |
+| Crawlers / stone forms | Pale-edged shell cracks and deposits | Jagged rigid rim |
+| Beasts / bat / neutral flesh | Fur/membrane scratches and mud | Closed limb/wing joint |
+| Spirits / jelly | Dark fissures and luminous inner seams | Luminous torn edge |
+| Fungus | Cap/stalk tears and dirt | Cut lobe and exposed rim |
 
-These are stylized, non-graphic marks; they do not use gore textures. Ordinary
-combat, attack clips, hitstop, guard, death and wounded poses use the same
-presentation clock and deformation/part transforms as before. Broken geometry
-and marks remain while the corpse is rendered. Retained limbs keep their
-original VFX contact sockets. Lost creature limbs provide no active socket.
+The same global amount drives each family; color and material response match
+its flesh, shell, bone or spirit concept. These are stylized non-graphic marks.
+Per-part attachment transforms are retained so surface marks follow animation,
+hitstop and death. They locate marks; they do not determine damage severity.
+Retained weapon/VFX contact sockets and animation timing are unchanged.
 
-The three opaque mark meshes are shared and instanced with existing batches.
-Large curved surfaces use a cached ray-to-face placement on the existing
-shared mesh, then transform with the part. This corrected floating marks found
-in the first native captures. There are no projected world-space textures,
-additional transparent passes, per-actor geometry buffers, new bones or clips.
-Low quality limits dirt islands and cuts to one each per part. Bone bodies add
-two uniform vectors to their existing material shader, with a clean-body early
-return; no new shader program is introduced.
+Three opaque mark meshes are shared and instanced with existing batches.
+Cached ray-to-face placement keeps marks on curved procedural surfaces.
+Skinned bodies reuse their material shader with two uniform vectors. No new
+programs, textures, transparent passes, per-actor geometry, bones or clips.
+Low quality bounds dirt and cuts to one each per retained part.
 
 ## Review sample
 
 `npm run build && node tools/enemies/build-review.mjs`
 
-Open the generated `dist/Bloodline_Legacy_Enemy_Review.html` and use **損傷** and
-**部位**. Light / medium / heavy fixtures use 18% / 48% / 78% HP loss plus staged
-local wound records. The 82% break fixture applies to limbs; choosing break
-while head/torso is selected switches the selector to right arm. Percentages
-are sample HP-loss fixtures, not new gameplay thresholds or severing rules.
+Open `dist/Bloodline_Legacy_Enemy_Review.html`:
 
-Damage selection retains playback position and pause state. Sequence, attack,
-run, guard, hit and death continue to work. Pause/seek allows pose comparisons.
-"動作に合わせる" retains the original demo's motion-specific fixtures. Before
-uses the old family model; after uses the expanded enemy and damage renderer.
-The performance JSON records the selected damage and part. The sample never
-creates Game or saves progress.
+1. Move **生命力** from 100% toward 0% to increase whole-body wounds and dirt.
+2. Select **部位破壊** independently; **なし** keeps all limbs intact at any HP.
+3. Select attack, movement, guard, hit or death; pause/seek to compare a fixed pose.
 
-## Compatibility and provenance
+Vitality, broken part and motion are independent preview settings. HP changes
+retain pause/position and do not recreate shader/skin resources. The sample
+never creates Game or saves progress. Performance JSON records remaining
+vitality and the broken part separately. The old combined stage/part selectors
+and automatic loss motion were replaced to remove their misleading coupling.
+The standalone HTML embeds its resources and needs no external CDN.
 
-The simulation metadata already integrated through #52 is the deterministic
-appearance/name metadata for spawns. Latest develop now requires immutable
-simulation archives, so the merged source is registered as
-`4a4d9e684f5172142308358ae6a41a1d2854121571c08ebdb045beb44919d7be` using
-`node tools/archive-simulation.mjs`. That exact archive is now present in develop too; the final PR has no
-simulation/core/archive delta. Prior archives and schema migration remain
-intact. No damage-presentation fields are added to the save schema.
+## Assets and licensing
 
-New damage geometry/shader code is original project work. The ten bone forms
-continue to use the audited **CC0-1.0 KayKit Skeleton Warrior**, 743,788 bytes,
-23 bones, 8 clips, 5,104 triangles and no image textures. GLB/source/license
-bytes are unchanged. See `public/assets/enemies/provenance.json`, the retained
-CC0 text and source license. No new external assets or license assumptions.
+This correction adds no external assets. The ten bone forms retain the audited
+**CC0-1.0 KayKit Skeleton Warrior**: 743,788 bytes, 23 bones, 8 clips, 5,104
+triangles and no image textures. Original project meshes provide the remaining
+forms and all wear geometry. Asset, source and license bytes are unchanged;
+see `public/assets/enemies/provenance.json` and the retained license texts.
 
-## Evidence and remaining gates
+## Current verification
 
-- `tests/enemy-damage.test.mjs`: all forms × six parts × stages, finite marks,
-  actor immutability, actual weapon contacts, limb closure and removal,
-  moving/frozen/dead poses, legacy data, save restoration and repeated combat
-  HP/wound/event/RNG equivalence against pinned develop.
-- `tests/enemy-review.test.mjs`: actual generated HTML, decoded embedded assets
-  and renderer submissions in Node/JSDOM with recorded GL. All forms/motions,
-  stage/part controls, pause/resume, render errors and 24-actor quality switches.
-- Native GLES checks compile/link the actual embedded shader strings unchanged
-  as GLSL ES. The float-plus-int negative control remains rejected. This
-  specifically protects against the user's previous mobile shader failure.
-- Native EGL captures use the real meshes, skin palettes, uniforms, world
-  shaders and draw batches. They are visual diagnostics, **not browser QA**.
+Build: PASS. Focused enemy/review/shader/terrain tests: **42 passed, 0 failed,
+0 skipped**. Asset/license gate: PASS. Native GLES: **9 / 9** programs.
 
-[Staged injuries](evidence/damage-stages.jpg) ·
-[Broken parts and death](evidence/damage-breaks.jpg) ·
-[CPU / geometry data](evidence/damage-budget.json) ·
-[Native GLES results](evidence/damage-gles.json) ·
-[Asset/license check](evidence/damage-asset-validation.json).
+- Whole-body HP mapping, all 33 forms, actual limb loss, moving/frozen/dead
+  poses, actor immutability, save restoration and repeated combat equivalence
+  against develop `8050da5` are covered by the enemy tests.
+- The delivered HTML is executed in Node/JSDOM with decoded embedded images
+  and recorded GL submissions. Checks cover all models, motions, HP/break
+  controls, paused scrubbing, errors and 24-actor quality switches.
+- Unchanged embedded GLSL ES strings compile/link in native GLES, including
+  the float-plus-int rejection control for the previous mobile shader error.
+- Native EGL captures show the same wolf, soldier and wraith at remaining HP
+  **100 / 82 / 52 / 22 / 0%**, with empty local wound records and no broken limbs.
 
-The supported browser's explicit security rejection prevents browser execution
-in this WORK; no alternate browser, Playwright or CDP route is used. The user's
-prior display confirmation concerns the earlier HTML. New live-combat browser
-rendering, Pixel Fold sustained 30 fps and desktop 60 fps remain **UNVERIFIED**
-and must be checked before integration/release. CPU construction measurements
-exclude world drawing, combat, GPU and browser. They are not FPS results.
+[HP comparison](evidence/vitality-stages.jpg) ·
+[Focused test log](evidence/vitality-tests.txt) ·
+[Native GLES](evidence/vitality-gles.json) ·
+[Asset/license validation](evidence/vitality-asset-validation.json) ·
+[CPU / geometry](evidence/vitality-budget.json) ·
+[Source hashes and results](evidence/vitality-validation.json).
 
-## Recorded integrated results
+Shared damage geometry remains **2,232 bytes**. Peak intact-body overhead is
+**342 triangles / actor** at medium and **114** at low, unchanged from the
+previous all-parts worst case. At most three shared rigid batch types are added
+per world/shadow pass, independent of actor count.
 
-- Full `npm test`: **492 passed, 0 failed, 0 skipped**. DEV deployment build and
-  embedded asset integrity: PASS. Native enemy GLES: **9 / 9**, plus the
-  existing wider renderer GLES tests and negative controls in the full suite.
-- Nine final native captures after the plaza merge cover representative skin,
-  shell, fur, spirit and fungus injury stages, damaged attacks, lost parts and
-  corpses. All 33 forms are additionally exercised by the automated checks.
-- Shared damage geometry: **2,232 bytes**, 3 meshes; zero new image textures,
-  model downloads, bones, clips or per-actor geometry resources.
-- Maximum all-six-parts damage: **342 extra triangles / actor** at medium;
-  **114** at low. Break rims use the third shared mesh. At most three additional
-  rigid batch types per world/shadow pass globally, independent of actor count.
-- Node construction/pose at 24 mixed actors: medium clean p50/p95
-  **7.48 / 13.37 ms**; every part heavily wounded **10.69 / 20.48 ms**.
-  Low-detail heavy p50/p95 was **10.50 / 47.67 ms**, with substantial GC/shared
-  executor outliers; reduced geometry is not evidence of faster frame pacing.
-  These CPU-only figures do **not** establish either project FPS target.
-- No per-body LOD or device-specific tuning is added. Sustained full-game
-  performance, broken-edge appearance at every device angle and native mobile
-  browser startup remain Integration's review gates.
+The new CPU-only sample at 24 mixed enemies recorded medium clean p50/p95
+**7.37 / 28.91 ms**, versus **16.84 / 48.64 ms** at 22% HP. Large GC/shared-host
+outliers are present. This measures pose and batch construction only; it
+excludes world, combat, GPU and browser and does **not** establish frame rate.
+More actors now visibly wear at low HP even without local wound records; this
+is intentional but warrants sustained device measurement.
 
-[Full test log](evidence/damage-tests.txt) ·
-[Validation/source hashes](evidence/damage-validation.json).
+Browser execution is unavailable following the supported browser's explicit
+security rejection; no alternate browser/Playwright/CDP route is used. These
+native and Node diagnostics are **not browser QA**. Actual full-game rendering,
+Pixel Fold sustained 30 fps and desktop 60 fps remain **UNVERIFIED** before
+integration/release. Prior `damage-*` evidence (including the 492-test run)
+describes the earlier per-part revision, not this correction.

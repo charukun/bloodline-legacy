@@ -43,7 +43,7 @@ async function openReview(t){
  assert.equal(errors.length,0,errors[0]?.stack);assert.equal(frames.length,1,'startup must schedule a frame');
  let now=100;
  const step=()=>{assert.equal(frames.length,1);frames.shift()(now+=250);};
- const change=(id,value)=>{const el=document.getElementById(id);el.value=value;el.dispatchEvent(new dom.window.Event(id==='seek'?'input':'change'));};
+ const change=(id,value)=>{const el=document.getElementById(id);el.value=value;el.dispatchEvent(new dom.window.Event(['seek','vitality'].includes(id)?'input':'change'));};
  return{document,frames,errors,recorded,step,change,status:()=>document.getElementById('status').textContent};
 }
 
@@ -51,7 +51,7 @@ test('delivered enemy review submits its first world frame and both versions in 
  const r=await openReview(t);
  r.step();assert(r.recorded.draws>0);assert.match(r.status(),/改善後.*calls.*tris/);
  assert(!r.status().includes('準備完了'));
- for(const version of ['before','after'])for(const pose of ['idle','attack','run','guard','hit','death','lost']){
+ for(const version of ['before','after'])for(const pose of ['idle','attack','run','guard','hit','death']){
   r.change('version',version);r.change('pose',pose);
   for(const seek of ['0','430','550']){
    r.change('seek',seek);const before=r.recorded.draws;r.step();
@@ -68,12 +68,16 @@ test('delivered enemy review submits its first world frame and both versions in 
  for(const count of ['8','24'])for(const quality of ['low','medium','high']){
   r.change('count',count);r.change('quality',quality);r.step();assert.match(r.status(),/calls.*tris/);
  }
- for(const damage of ['clean','light','medium','heavy','lost'])for(const part of ['head','torso','rightArm','leftArm','rightLeg','leftLeg']){
-  r.change('damage',damage);r.change('part',part);r.step();assert.match(r.status(),/calls.*tris/);
-  if(damage==='lost'&&['head','torso'].includes(part))assert.equal(r.document.getElementById('part').value,'rightArm');
+ for(const vitality of ['100','82','52','22','0'])for(const part of ['none','rightArm','leftArm','rightLeg','leftLeg']){
+  r.change('vitality',vitality);r.change('broken-part',part);r.step();assert.match(r.status(),/calls.*tris/);
+  assert.equal(r.document.getElementById('vitality').value,vitality);
+  assert.equal(r.document.getElementById('vitality-value').textContent,vitality+'%');
+  assert.equal(r.document.getElementById('broken-part').value,part);
  }
- r.change('seek','500');r.change('damage','heavy');r.step();assert.equal(r.document.getElementById('pause').textContent,'▶ 再生');
- r.document.getElementById('pause').click();r.change('damage','medium');r.step();assert.equal(r.document.getElementById('pause').textContent,'⏸ 停止');
+ r.change('seek','500');r.change('vitality','22');r.step();assert.equal(r.document.getElementById('pause').textContent,'▶ 再生');
+ assert.equal(r.document.getElementById('seek').value,'500');
+ r.change('vitality','100');r.step();assert.equal(r.document.getElementById('broken-part').value,'leftLeg');
+ r.document.getElementById('pause').click();r.change('vitality','52');r.step();assert.equal(r.document.getElementById('pause').textContent,'⏸ 停止');
  assert.equal(r.errors.length,0);
 });
 

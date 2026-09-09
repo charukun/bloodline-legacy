@@ -1,18 +1,17 @@
-/* Enemy-only presentation of existing hp / wounds / damageMarks.
+/* Enemy-only presentation of existing hp / hpMax and actual limb loss.
  * No event counters, random calls, actor writes, new damage rules or textures. */
 const EnemyDamage=(()=>{
  const parts=['head','torso','rightArm','leftArm','rightLeg','leftLeg'];
  const bounded=(value,max=1)=>Number.isFinite(value)?Math.max(0,Math.min(max,value)):0;
  function state(p){
   const health=Number.isFinite(p.hp)&&Number.isFinite(p.hpMax)&&p.hpMax>0?bounded(1-p.hp/p.hpMax):0;
-  const regions={};let sum=0;
+  // Whole-body wear follows remaining vitality, independent of local hit
+  // counts/severity. Only actual loss records control destroyed geometry.
+  const regions={};
   for(const part of parts){
-   const wound=p.wounds?.[part]?.severity,mark=p.damageMarks?.[part];
-   const amount=Math.max(wound==='lost'?1:wound==='heavy'?.70:wound==='light'?.22:0,
-    bounded(mark?.depth,5)/5,bounded(mark?.hits,4)*.16);
-   regions[part]={amount,lost:wound==='lost',stage:amount>=.70?3:amount>=.40?2:amount>0?1:0};sum+=amount;
+   regions[part]={amount:health,lost:p.wounds?.[part]?.severity==='lost',stage:health>=.70?3:health>=.40?2:health>0?1:0};
   }
-  return {parts:regions,wear:Math.max(health,Math.min(.8,sum*.16)),health};
+  return {parts:regions,wear:health,health};
  }
  function style(p){
   const id=p.enemyForm||p.kind;
@@ -77,7 +76,8 @@ const EnemyDamage=(()=>{
   if(local.amount<=0||local.lost)return;
   const cuts=a.r.quality==='low'?1:local.stage;
   for(let i=0;i<cuts;i++){
-   const x=(i-(cuts-1)/2)*size*.48,angle=.38+(i%2)*.35,wide=size*(.21+local.amount*.23),long=size*(.57+local.amount*.43);
+   const onset=Math.min(1,local.amount/.22);
+   const x=(i-(cuts-1)/2)*size*.48,angle=.38+(i%2)*.35,wide=size*(.21+local.amount*.23)*onset,long=size*(.57+local.amount*.43)*onset;
    if(local.stage>=2)a.p('enemy:split',x-size*.04,0,.008,wide*1.45,long*1.10,1,material.edge,0,angle,0,0);
    a.p('enemy:split',x,0,.011,wide,long,1,material.cut,0,angle,0,0);
    if(local.stage===3&&material.type==='spirit')a.p('enemy:split',x,0,.014,wide*.25,long*.80,1,material.edge,0,angle,0,4);

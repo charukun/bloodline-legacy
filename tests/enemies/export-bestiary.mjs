@@ -5,7 +5,7 @@ import {loadScene,writeScene,repository} from '../export_scene.mjs';
 const out=process.argv[2]||'verification/current/bestiary',family=process.argv[3]||'goblin',time=Number(process.argv[4]??'1.35'),pose=process.argv[5]||'idle';
 const scene=await loadScene(repository,{enemyReview:true,characters:false,width:1500,height:550,x:0,z:-34,y:family==='other'?3.1:family==='elite'?2.4:family==='soldier'?1.9:1.4,zoom:family==='other'?13:family==='elite'?10:8.3,yaw:.10,pitch:.40,time,weather:'clear',quality:'medium',isolatedMaterials:true});
 const damage=process.argv[6]||'auto',part=process.argv[7]||'torso';
-const r=scene.r,api=r.enemyAPI,stages=['clean','light','medium','heavy','lost'],selected=Object.values(api.forms).flat().find(f=>f.id===family),forms=damage==='stages'?stages.map(()=>selected):family==='other'?[...api.forms.boss,...api.forms.stag,...api.forms.mushroom]:api.forms[family];
+const r=scene.r,api=r.enemyAPI,stages=['clean','light','medium','heavy','depleted'],selected=Object.values(api.forms).flat().find(f=>f.id===family),forms=damage==='stages'?stages.map(()=>selected):family==='other'?[...api.forms.boss,...api.forms.stag,...api.forms.mushroom]:api.forms[family];
 if(!forms)throw Error('Unknown family '+family);
 const skins=[],stats=[];
 for(const[fIndex,form]of forms.entries()){
@@ -22,7 +22,7 @@ for(const[fIndex,form]of forms.entries()){
   if(pose==='run'){r.enemyCreatures??=new Map();r.enemyCreatures.set(p.id,{phase:time*5,time,x:p.x,z:p.z});}
   api.creatures.draw(r.art,p,time);
  }
- stats.push({id:form.id,name:form.name,damage:damage==='stages'?stages[fIndex]:damage,part,parts:[...r.dynamic.values()].reduce((n,rows)=>n+rows.length,0)-before});
+ stats.push({id:form.id,name:form.name,damage:damage==='stages'?stages[fIndex]:damage,part,vitalityPercent:Math.round(p.hp/p.hpMax*100),brokenParts:Object.entries(p.wounds||{}).filter(([,v])=>v.severity==='lost').map(([k])=>k),parts:[...r.dynamic.values()].reduce((n,rows)=>n+rows.length,0)-before});
 }
 let current,rows,mesh;const originalGeometry=r.geometry.bind(r);
 Object.assign(r.gl,{bindVertexArray(v){mesh=v;},bufferData(_t,a){rows=Array.from(a);},drawArraysInstanced(_m,_s,count,instances){current.push({mesh,rows,count,instances});}});

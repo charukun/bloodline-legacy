@@ -96,7 +96,7 @@ const Travelers = (()=>{
    st.moving=moving;st.gaitMode=run?'run':'walk';const phase=st.phase*TAU;
    const reaction=damagePose(r,p,t,st.feet,asset.damageProfile),pose=damageArtPose(r,p,t,artPose(p,t,SkillMotion.stateFor(r,p,t))),ail=ailmentPose(p,t),guard=p.guard||p.guardUntil>t||p.autoFight;
    const fall=!p.alive?(p.wasDownedOnDeath?1:smooth((t-(p.deathAt??t))/1.12)):0;
-   const sampledGround=p.traversal?Math.max(.10,p.supportHeight||0):this.groundAt(p.x,p.z);if(!Number.isFinite(st.ground))st.ground=sampledGround;st.ground+=(sampledGround-st.ground)*(1-Math.exp(-dt*14));
+   const sampledGround=p.traversal?Math.max(.10,p.supportHeight||0):this.groundAt(p.x,p.z);if(p.traversal||!Number.isFinite(st.ground))st.ground=sampledGround;st.ground+=(sampledGround-st.ground)*(1-Math.exp(-dt*14));
    const authored=asset.clips?CM01.selectClip(p,t,st,phase,moving||['run','guardWalk','dash'].includes(p.action),run,reaction,asset.clips):null;
    const rootQ=Q.euler((authored?0:pose.pitch)+reaction.pitch+ail.pitch+fall*1.48,(p.dir||0)+(authored?0:pose.yaw),(authored?0:pose.roll)+reaction.roll+ail.roll);
    const rootM=matrix([p.x+reaction.x+Math.cos(p.dir||0)*(authored?0:pose.weightX||0)+Math.sin(p.dir||0)*(authored?0:pose.weightZ||0),(p.baseY??st.ground)+(p.verticalOffset||0)+(authored?0:pose.y)+ail.y-reaction.drop,p.z+reaction.z-Math.sin(p.dir||0)*(authored?0:pose.weightX||0)+Math.cos(p.dir||0)*(authored?0:pose.weightZ||0)],rootQ);
