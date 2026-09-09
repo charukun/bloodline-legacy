@@ -90,3 +90,27 @@ The compiler refuses a source whose SHA differs from the audited original. It do
 Rollback: revert this PR; existing procedural monster functions remain intact. A local A/B uses the review page only, without changing production gameplay. Broader adoption is deliberately deferred until the device gate is established. The same base could support armor/weapon variants for armed humanoids after each asset's audit; goblin proportions and boss reach require separate art/combat review. Wraith, crawler, maw, stag and mushroom should retain procedural designs unless a concrete replacement is superior.
 
 Known limits: no body LOD yet; whole limbs are hidden at existing part boundaries without fracture caps; full skin geometry is submitted to shadows (see performance report); gear uses the existing per-actor rigid mesh cache. No claim of completing all enemy art or achieving final commercial quality.
+
+## Standalone review black-screen fix — 2026-09-09
+
+The user reported an Android Chrome local-file view showing only the controls and
+“準備完了”. The review entry point passed an undecorated Simulation snapshot to
+the world renderer. Its first frame read `snapshot.map.seed` and threw because
+Simulation does not include a map. The old outer startup catch did not cover the
+scheduled frame, which repeatedly failed without updating the status.
+
+The review now supplies `makeVillage(snapshot.room.seed)`, matching Game.decorate,
+and reports readiness only after a successful frame. Scheduled rendering errors
+and WebGL context loss show an error, disable controls and stop scheduling frames.
+Production gameplay, renderer and enemy assets are unchanged by this fix.
+
+`tests/enemy-review.test.mjs` runs the actual generated standalone script with its
+embedded assets, Simulation and complete renderer in Node. A recorded WebGL stub
+replaces GPU execution; native Canvas decodes assets and builds terrain. Before
+the fix it reproduced `Cannot read properties of undefined (reading 'seed')` in
+the real first-frame renderer. After the fix it checks world draw submissions,
+both versions, seven poses including attack contact/recovery, 2/8/24 actors,
+three quality settings and visible failure handling. This is JavaScript
+integration evidence, **not browser, shader, visual or mobile performance QA**.
+Full `npm test` after this fix: **271 passed, 0 failures, 0 skips**.
+The supported browser restriction and target-device merge gates above remain.

@@ -1,13 +1,16 @@
 /* Review-only entry point. Synthetic snapshots; never creates Game or writes a save. */
 (async()=>{
  const $=id=>document.getElementById(id),status=$('status');
+ const fail=e=>{status.textContent='表示できませんでした: '+e.message;console.error(e);document.querySelectorAll('button,select,input').forEach(el=>el.disabled=true);};
  try{
   await AssetBank.load();installTerrainGeometry();
   const r=new SliceRenderer($('world'));r.setQuality('medium');
   const sim=new Simulation({seed:7349}),base=sim.addPlayer('review',{owner:'review'}),snapshot=sim.snapshot(base.id);
+  // Match Game.decorate: Simulation snapshots omit the renderer's map data.
+  snapshot.map=makeVillage(snapshot.room.seed);
   const templates={soldier:sim.actor('soldier',0,0),elite:sim.actor('elite',0,0)};
   const replacement=VillageArt.prototype.monster,original=ENEMY_PREVIOUS_MONSTER;
-  let time=0,last=0,paused=false,version='after',lastReport=0,measurement=null;
+  let time=0,last=0,paused=false,version='after',lastReport=-Infinity,measurement=null;
   const clearHistory=()=>{r.enemySentinels?.dispose();r.enemySentinels=null;r.damageMotion?.actors.clear();r.effects.length=0;};
   $('version').onchange=()=>{version=$('version').value;r.art.monster=version==='after'?replacement:original;clearHistory();};
   $('quality').onchange=()=>r.setQuality($('quality').value);
@@ -39,12 +42,16 @@
    const data={...measurement,base:'__BASE_SHA__',browser:navigator.userAgent,renderer:r.gl.getParameter(r.gl.RENDERER),resolution:[r.canvas.width,r.canvas.height],runs:measurement.runs.map(rows=>({fps:rows.length/(rows.reduce((s,x)=>s+x.frameMs,0)/1000),p50Ms:quantile(rows.map(x=>x.frameMs),.5),p95Ms:quantile(rows.map(x=>x.frameMs),.95),p99Ms:quantile(rows.map(x=>x.frameMs),.99),raw:rows}))};
    const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='enemy-'+version+'-performance.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);measurement=null;document.querySelectorAll('button,select,input').forEach(e=>e.disabled=false);
   }
-  function frame(now){requestAnimationFrame(frame);const raw=last?(now-last)/1000:0,dt=Math.min(.05,raw);last=now;if(!paused)time+=dt*Number($('speed').value);
+  function frame(now){try{
+   if(r.lost)throw Error('WebGL の接続が失われました。ファイルを開き直してください。');
+   const raw=last?(now-last)/1000:0,dt=Math.min(.05,raw);last=now;if(!paused)time+=dt*Number($('speed').value);
    const list=actors(time),s={...snapshot,t:time,player:null,players:[],actors:list,events:[]};
    Object.assign(r.camera,{x:0,z:Number($('count').value)>2?-40:-33,y:1.4,zoom:Number($('count').value)>2?22:10.5,yaw:Number($('angle').value),pitch:.48});
    r.render(s,paused?0:dt,{freezeCamera:true});
    if(measurement)reportMeasurement(now,raw);else if(now-lastReport>200){lastReport=now;$('seek').value=String(Math.round(time%3.6/3.6*1000));status.textContent=`${version==='after'?'改善後':'変更前'} · ${r.stats.calls} calls · ${r.stats.triangles.toLocaleString()} tris · CPU ${r.cpuMs.toFixed(1)} ms · GPU ${r.gpuMs?.toFixed(1)??'N/A'} ms`;}
+   requestAnimationFrame(frame);
+  }catch(e){fail(e);}
   }
-  status.textContent='準備完了';requestAnimationFrame(frame);
- }catch(e){status.textContent='表示できませんでした: '+e.message;console.error(e);}
+  status.textContent='描画を準備中…';requestAnimationFrame(frame);
+ }catch(e){fail(e);}
 })();
