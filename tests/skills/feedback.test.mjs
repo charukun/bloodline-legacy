@@ -57,7 +57,7 @@ test('glimpse migration sanitizes unknown records and new lives get an independe
 test('first connection is named once, glimpses stay nonmodal, sounds distinguish first/repeat/silent',t=>{
  const {w,ui,p}=fixture(t,read('src/legacy/ui.js')+'\nwindow.getFeedback=()=>SkillPresentation;');const f=w.getFeedback();
  const base={type:'skillconnection',player:p.id,t:10,first:true,signal:'discovery',connectionKind:'offbalance'};
- assert.ok(f.event(ui,base));assert.match(ui.floatLines.at(-1).text,/崩した/);assert.equal(ui.floatLines.at(-1).life,2.3);
+ assert.ok(f.event(ui,base));assert.match(ui.floatLines.at(-1).text,/技がつながった/);assert.equal(ui.floatLines.at(-1).life,2.3);
  f.event(ui,{...base,first:false,signal:'echo'});assert.equal(ui.floatLines.length,1);
  f.event(ui,{type:'skillglimpse',player:p.id,t:20,text:'記憶が重なる'});assert.equal(ui.floatLines.length,2);assert.equal(ui.modal,null);
  f.event(ui,{...base,player:'another'});assert.equal(ui.floatLines.length,2);
