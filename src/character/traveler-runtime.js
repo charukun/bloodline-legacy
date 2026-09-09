@@ -18,13 +18,15 @@ const Travelers = (()=>{
  uniform sampler2D cmBones;uniform mat4 vp;uniform mat4 lightVP;
  out vec3 vWorld;out vec3 vNormal;out vec4 vInk;out float vSurface;out vec4 vShadow;out vec3 vLocal;out vec2 vUv;flat out int vRegion;
  mat4 bone(int j){return mat4(texelFetch(cmBones,ivec2(0,j),0),texelFetch(cmBones,ivec2(1,j),0),texelFetch(cmBones,ivec2(2,j),0),texelFetch(cmBones,ivec2(3,j),0));}
- void main(){mat4 m=bone(int(joints.x))*weights.x+bone(int(joints.y))*weights.y+bone(int(joints.z))*weights.z+bone(int(joints.w))*weights.w;vec4 w=m*vec4(pos,1.);vWorld=w.xyz;vNormal=normalize(mat3(m)*nor);vInk=color;vSurface=surface;vLocal=pos;vUv=uv;vRegion=int(region+.5);vShadow=lightVP*w;gl_Position=vp*w;}`;
- const regionHeader=`in vec2 vUv;flat in int vRegion;uniform vec4 cmLoss;uniform float cmArmor;
- bool hidden(){return (vRegion==2&&cmLoss.x>.5)||(vRegion==3&&cmLoss.y>.5)||(vRegion==4&&cmLoss.z>.5)||(vRegion==5&&cmLoss.w>.5)||(vRegion==10&&cmArmor<.5)||(vRegion==11&&(cmArmor<1.5||cmLoss.x>.5))||(vRegion==12&&(cmArmor<1.5||cmLoss.y>.5));}`;
+ ${TravelerAge.glsl}
+ void main(){mat4 m=bone(int(joints.x))*weights.x+bone(int(joints.y))*weights.y+bone(int(joints.z))*weights.z+bone(int(joints.w))*weights.w;bool head=joints.x==2.;vec4 w=m*vec4(agePosition(pos,head,region==13.),1.);vWorld=w.xyz;vNormal=normalize(mat3(m)*ageNormal(nor,pos,head));vInk=color;vSurface=surface;vLocal=pos;vUv=uv;vRegion=int(region+.5);vShadow=lightVP*w;gl_Position=vp*w;}`;
+ const regionHeader=`in vec2 vUv;flat in int vRegion;uniform vec4 cmLoss;uniform float cmArmor;uniform float cmBeard;
+ bool hidden(){return (vRegion==13&&cmBeard<.005)||(vRegion==2&&cmLoss.x>.5)||(vRegion==3&&cmLoss.y>.5)||(vRegion==4&&cmLoss.z>.5)||(vRegion==5&&cmLoss.w>.5)||(vRegion==10&&cmArmor<.5)||(vRegion==11&&(cmArmor<1.5||cmLoss.x>.5))||(vRegion==12&&(cmArmor<1.5||cmLoss.y>.5));}`;
  const FS=RFRAG.slice(0,RFRAG.indexOf('void main()'))+regionHeader+`
- uniform vec3 cmHairTint;uniform float cmSilhouette;
+ uniform vec3 cmHairTint;uniform float cmSilhouette;uniform vec2 cmAgeColor;
  void main(){if(hidden())discard;vec3 pigment=vInk.rgb;
- if(abs(vSurface-1.)<.1)pigment*=cmHairTint;
+ if(abs(vSurface-1.)<.1)pigment=mix(pigment*cmHairTint,vec3(.82,.81,.76),cmAgeColor.x);
+ if(abs(vSurface)<.1)pigment=mix(pigment,pigment*vec3(.98,.96,.96),cmAgeColor.y*.35);
  float rough=vSurface<.5?.73:vSurface<1.5?.70:vSurface<2.5?.90:vSurface<3.5?.73:.34;
  float metal=vSurface>5.5?.75:0.,ao=1.;
  if(vRegion==10){pigment=cmArmor>1.5?vec3(.64,.71,.70):vec3(.43,.27,.17);rough=cmArmor>1.5?.38:.74;metal=cmArmor>1.5?.70:0.;}
@@ -41,7 +43,7 @@ const Travelers = (()=>{
  const DS=`#version 300 es\nprecision highp float;${regionHeader}\nvoid main(){if(hidden())discard;}`;
  const names=['root','torso','head','arm.R','elbow.R','hand.R','arm.L','elbow.L','hand.L','thigh.R','knee.R','foot.R','thigh.L','knee.L','foot.L','cape','tail'];
  const parents=[-1,0,1,1,3,4,1,6,7,0,9,10,0,12,13,1,0];
- const eligible=(p,local)=>!!(p&&local&&p.kind==='player'&&!p.prologue&&p.age>=18&&p.age<35&&[0,1,0,1][p.race]===p.gender);
+ const eligible=(p,local)=>!!(p&&local&&p.kind==='player'&&Number.isFinite(p.age)&&p.age>=0&&[0,1,0,1][p.race]===p.gender);
  const modelCache=new Map();
  function prepare(race){
   if(modelCache.has(race))return modelCache.get(race);
@@ -80,12 +82,24 @@ const Travelers = (()=>{
    this.r=r;this.asset=prepare(race);const gl=r.gl;this.program=r.programOf(VS,FS);this.depth=r.programOf(VS,DS);
    this.lods=this.asset.lods.map(l=>{const vao=gl.createVertexArray(),buffers=[];gl.bindVertexArray(vao);for(const [i,[key,n]]of [['POSITION',3],['NORMAL',3],['TEXCOORD_0',2],['COLOR_0',4],['JOINTS_0',4],['WEIGHTS_0',4],['_REGION',1],['_SURFACE',1]].entries()){const b=gl.createBuffer();buffers.push(b);gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,l.attrs[key],gl.STATIC_DRAW);gl.enableVertexAttribArray(i);gl.vertexAttribPointer(i,n,key==='JOINTS_0'?gl.UNSIGNED_SHORT:gl.FLOAT,false,0,0);}const b=gl.createBuffer();buffers.push(b);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,b);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,l.indices,gl.STATIC_DRAW);return{vao,buffers,count:l.indices.length,type:gl.UNSIGNED_SHORT};});
    this.boneTex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,this.boneTex);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA32F,4,this.asset.bind.length,0,gl.RGBA,gl.FLOAT,null);
+   this.restAsset=this.asset;this.ageKey=null;
    this.palette=new Float32Array(this.asset.bind.length*16);this.transforms=this.asset.bind.map(()=>rModel());this.state=null;this.lod=0;this.lastFrame=-1;this.footDebug=[];
+  }
+  setAge(p,t){
+   const profile=TravelerAge.sample(p,t),key=profile.visual;
+   this.ageProfile=profile;
+   if(this.ageKey===key)return;
+   const rest=this.restAsset,bind=rest.bind.map((v,i)=>TravelerAge.point(v,i===2,profile,rest));
+   this.asset={...rest,bind,ibm:bind.map(v=>matrix(V.mul(v,-1),Q.identity())),body:[rest.body[0]*profile.body[2],rest.body[1]*profile.body[0],rest.body[2]*profile.body[3]]};
+   // Hulls contain rest points; deform with the same rule as the shader.
+   this.asset.hulls=rest.hulls.map((h,i)=>h.map(v=>TravelerAge.point(v,i===2,profile,rest)));
+   this.ageKey=key;
   }
   groundAt(x,z){return SkillMotion.groundAt(this.r,x,z);}
   update(source,t){
    if(!eligible(source,true)||source.race!==this.asset.race){this.lastFrame=-1;return;}
-   const p=carriedVisualPose(source),r=this.r,asset=this.asset,start=performance.now();this.owner=p;this.lastFrame=r.frame;
+   const start=performance.now();this.setAge(source,t);
+   const p=carriedVisualPose(source),r=this.r,asset=this.asset;this.owner=p;this.lastFrame=r.frame;
    const motionT=Number.isFinite(p.renderPoseTime)?p.renderPoseTime:t;
    let st=this.state;if(!st||st.id!==p.id||t<st.t||t-st.t>.35||Math.hypot(p.x-st.x,p.z-st.z)>1.5)st=this.state={id:p.id,t,motionT,x:p.x,z:p.z,phase:0,speed:0,feet:[],pelvisDrop:0};
    const dt=clamp(motionT-st.motionT,0,.1),distance=Math.hypot(p.x-st.x,p.z-st.z),moving=['run','guardWalk','dash'].includes(p.action)&&(distance>1e-7||dt===0&&st.moving);
@@ -100,8 +114,8 @@ const Travelers = (()=>{
    const rootQ=Q.euler((authored?0:pose.pitch)+reaction.pitch+ail.pitch+fall*1.48,(p.dir||0)+(authored?0:pose.yaw),(authored?0:pose.roll)+reaction.roll+ail.roll);
    const rootM=matrix([p.x+reaction.x+Math.cos(p.dir||0)*(authored?0:pose.weightX||0)+Math.sin(p.dir||0)*(authored?0:pose.weightZ||0),(p.baseY??st.ground)+(p.verticalOffset||0)+(authored?0:pose.y)+ail.y-reaction.drop,p.z+reaction.z-Math.sin(p.dir||0)*(authored?0:pose.weightX||0)+Math.cos(p.dir||0)*(authored?0:pose.weightZ||0)],rootQ);
    const q=asset.bind.map(()=>Q.identity()),offset=asset.bind.map(()=>[0,0,0]),qi=(i,x=0,y=0,z=0)=>q[i]=Q.euler(x,y,z),wave=Math.cos(phase);
-   qi(1,pose.torso+reaction.torso*.7+(run?.035:0)*gaitWeight,pose.torsoYaw||0,reaction.torsoRoll*.6);
-   qi(2,pose.head+reaction.head+ail.head,pose.headYaw||0,reaction.headRoll);
+   qi(1,this.ageProfile.posture+pose.torso+reaction.torso*.7+(run?.035:0)*gaitWeight,pose.torsoYaw||0,reaction.torsoRoll*.6);
+   qi(2,-this.ageProfile.posture*.65+pose.head+reaction.head+ail.head,pose.headYaw||0,reaction.headRoll);
    for(const [side,a]of [[1,3],[-1,6]]){
     const key=side===1?'right':'left';let x=wave*side*(run?.31:.22)*gaitWeight,z=side*.025;
     if(pose.active){x=pose[key+'Arm'];z+=pose[key+'ArmZ'];}else if(guard)x=-.6;
@@ -109,10 +123,17 @@ const Travelers = (()=>{
     qi(a,x+reaction[key+'Arm']+ail.arm,0,z+reaction[key+'ArmZ']);
     qi(a+1,pose[key+'Elbow']??0);qi(a+2,pose[key+'Wrist']??0);
    }
+   if(p.prologue){const hold=1-this.ageProfile.lower;qi(3,-.45*hold,0,.10*hold);qi(6,-.45*hold,0,-.10*hold);qi(4,-.35*hold);qi(7,-.35*hold);}
    qi(15,Math.sin(phase-.5)*.025*gaitWeight);if(q[16])qi(16,0,Math.sin(phase*.5)*.065*gaitWeight);
    if(authored){
     if(st.clipName!==authored.name){st.clipFrom=st.lastQ;st.clipFromOffset=st.lastOffset;st.clipChanged=motionT;st.clipName=authored.name;}
     TravelerClips.sample(authored.clip,authored.u,q,offset,Q);
+    // Retarget translation deltas into the visual age; keep clip rotations,
+    // selector and combat phase exactly as authored by the motion pipeline.
+    for(let i=0;i<offset.length;i++){
+     const b=this.restAsset.bind[i],to=TravelerAge.point(V.add(b,offset[i]),i===2,this.ageProfile,this.restAsset);
+     offset[i]=V.sub(to,asset.bind[i]);
+    }
     const entry=authored.stage==='charge'?authored.entry:authored.stage==='ready'?smooth((motionT-st.clipChanged)/.14):1;
     if(st.clipFrom&&entry<1)for(let i=0;i<q.length;i++){q[i]=Q.slerp(st.clipFrom[i],q[i],entry);if(st.clipFromOffset)offset[i]=V.lerp(st.clipFromOffset[i],offset[i],entry);}
     this.clipDebug={name:authored.name,stage:authored.stage,u:authored.u,contact:authored.clip.contact};
@@ -124,7 +145,7 @@ const Travelers = (()=>{
    for(let i=0;i<q.length;i++){const par=asset.parents[i];localM[i]=matrix(V.add(V.sub(asset.bind[i],par>=0?asset.bind[par]:[0,0,0]),offset[i]),q[i]);globalM[i]=par>=0?rMultiply(globalM[par],localM[i]):localM[i];}
    const gripping=authored?null:SkillMotion.grip(p,pose,{arm:globalM[3],elbow:globalM[4],hand:globalM[5]},{arm:globalM[6],elbow:globalM[7],hand:globalM[8]},-.035);
    this.skillGripDebug=gripping;if(gripping)for(const [i,c]of [[3,gripping.right],[6,gripping.left]]){globalM[i]=c.arm;globalM[i+1]=c.elbow;globalM[i+2]=c.hand;}
-   const useGroundIK=!incapacitated(p)&&!p.traversal&&!p.seated&&!p.activity&&fall===0&&!pose.air&&Math.abs(pose.pitch+reaction.pitch)<.8;
+   const useGroundIK=!p.prologue&&!incapacitated(p)&&!p.traversal&&!p.seated&&!p.activity&&fall===0&&!pose.air&&Math.abs(pose.pitch+reaction.pitch)<.8;
    if(pose.skillMotion&&!st.skillFeet)st.skillFeet=st.feet.map(f=>f?{anchor:[...f.anchor],yaw:f.yaw,t,motionT,rootX:p.x,rootZ:p.z,lift:0}:null);if(!pose.skillMotion)st.skillFeet=null;
    const targets=[];this.footDebug=[];
    for(const [side,si,ti]of [[1,0,9],[-1,1,12]]){
@@ -180,24 +201,25 @@ const Travelers = (()=>{
      globalM[ti]=matrix(H,Q.fromTo(upper,V.sub(K,H)));globalM[ki]=matrix(K,Q.fromTo(lower,V.sub(F,K)));globalM[fi]=matrix(F,Q.mul(Q.inv(rootQ),Q.euler(0,foot.yaw,0)));
      const actual=point(rootM,F);this.footDebug.push({side,swing:foot.swing,floor,soleY:actual[1]-soleOffset,target:worldAnkle,actual,error:Math.hypot(...V.sub(actual,worldAnkle))});
     }else{
-     const key=side===1?'right':'left';globalM[ti]=rMultiply(globalM[0],matrix(asset.bind[ti],Q.euler(pose[key+'Leg']+reaction[key+'Leg'])));globalM[ki]=rMultiply(globalM[ti],matrix(upper,Q.euler(pose[key+'Knee']+reaction[key+'Knee']+ail.knee)));globalM[fi]=rMultiply(globalM[ki],matrix(lower,Q.identity()));st.feet[si]=null;
+     const key=side===1?'right':'left';globalM[ti]=rMultiply(globalM[0],matrix(asset.bind[ti],Q.euler(pose[key+'Leg']+reaction[key+'Leg']-(p.prologue?.55*(1-this.ageProfile.lower):0))));globalM[ki]=rMultiply(globalM[ti],matrix(upper,Q.euler(pose[key+'Knee']+reaction[key+'Knee']+ail.knee+(p.prologue?.8*(1-this.ageProfile.lower):0))));globalM[fi]=rMultiply(globalM[ki],matrix(lower,Q.identity()));st.feet[si]=null;
     }
    }
    for(let i=0;i<q.length;i++){this.transforms[i]=rMultiply(rootM,globalM[i]);this.palette.set(rMultiply(this.transforms[i],asset.ibm[i]),i*16);}
    // A seated/fallen body rests on its own mesh envelope. Carried and airborne
    // bodies keep their existing authored vertical offsets and support state.
-   if(!useGroundIK&&!p.traversal&&p.lifeState!=='carried'&&!pose.air){let minimum=Infinity;
+   if(!useGroundIK&&!p.prologue&&!p.traversal&&p.lifeState!=='carried'&&!pose.air){let minimum=Infinity;
     for(let i=0;i<asset.hulls.length;i++){if((i>=3&&i<=5&&p.wounds?.rightArm?.severity==='lost')||(i>=6&&i<=8&&p.wounds?.leftArm?.severity==='lost')||(i>=9&&i<=11&&p.wounds?.rightLeg?.severity==='lost')||(i>=12&&i<=14&&p.wounds?.leftLeg?.severity==='lost'))continue;for(const v of asset.hulls[i])minimum=Math.min(minimum,point(this.palette.subarray(i*16,i*16+16),v)[1]);}
     const lift=Math.max(0,st.ground-minimum);for(let i=0;i<q.length;i++){this.transforms[i][13]+=lift;this.palette[i*16+13]+=lift;}
    }
    st.x=p.x;st.z=p.z;st.t=t;st.motionT=motionT;
    const gl=r.gl;gl.activeTexture(gl.TEXTURE5);gl.bindTexture(gl.TEXTURE_2D,this.boneTex);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,4,asset.bind.length,gl.RGBA,gl.FLOAT,this.palette);
-   const px=3*r.canvas.height/Math.max(1,r.viewHeight||r.camera.zoom);if(this.lod===0&&px<125)this.lod=1;else if(this.lod===1&&px>150)this.lod=0;
-   this.metrics={character:'TRAVELER',race:asset.id,lod:this.lod,triangles:this.lods[this.lod].count/3,bones:q.length,solveMs:performance.now()-start,pelvisDrop:st.pelvisDrop,contactError:Math.max(0,...this.footDebug.filter(f=>!f.swing).map(f=>f.error)),contacts:this.footDebug.filter(f=>!f.swing).length,animation:fall?'death':incapacitated(p)?p.lifeState||'downed':p.traversal?'traverse':p.seated?'rest':p.activity|| (reaction.amount>.1?'hit':p.action==='attack'||p.pendingSkill?'attack':guard?'combat_idle':gaitWeight>.15?(run?'run':'walk'):'idle')};
+   const px=3*this.ageProfile.head[1]*r.canvas.height/Math.max(1,r.viewHeight||r.camera.zoom);if(this.lod===0&&px<125)this.lod=1;else if(this.lod===1&&px>150)this.lod=0;
+   this.metrics={character:'TRAVELER',race:asset.id,age:this.ageProfile.age,visualAge:this.ageProfile.visual,lod:this.lod,triangles:this.lods[this.lod].count/3,bones:q.length,solveMs:performance.now()-start,pelvisDrop:st.pelvisDrop,contactError:Math.max(0,...this.footDebug.filter(f=>!f.swing).map(f=>f.error)),contacts:this.footDebug.filter(f=>!f.swing).length,animation:p.prologue?'cradle':fall?'death':incapacitated(p)?p.lifeState||'downed':p.traversal?'traverse':p.seated?'rest':p.activity|| (reaction.amount>.1?'hit':p.action==='attack'||p.pendingSkill?'attack':guard?'combat_idle':gaitWeight>.15?(run?'run':'walk'):'idle')};
   }
   draw(shadow=false){
    const r=this.r,gl=r.gl;if(this.lastFrame!==r.frame)return;const p=shadow?this.depth:this.program;gl.useProgram(p);r.uniform(p,'vp',shadow?r.lightVP:r.vp);r.uniform(p,'lightVP',r.lightVP);r.uniform(p,'eye',r.eye);r.uniform(p,'focus',[r.camera.x,r.camera.z]);r.uniform(p,'time',r.currentTime);r.int(p,'shadows',r.quality!=='low'?1:0);
    if(!shadow){r.setupSurfaceUniforms({},p);r.uniform(p,'cmHairTint',[[1,1,1],[1.24,1.22,1.14],[.72,.76,.80],[1.40,1.40,1.34],[1.10,.91,.91],[.60,.65,.70]][(this.owner.hair||0)%6]);r.uniform(p,'cmSilhouette',this.silhouette?1:0);}
+   const age=this.ageProfile;gl.uniform4fv(gl.getUniformLocation(p,'cmAgeBody'),age.body);r.uniform(p,'cmAgeHead',age.head);r.uniform(p,'cmAgeLandmarks',TravelerAge.landmarks(this.restAsset));gl.uniform4fv(gl.getUniformLocation(p,'cmAgeBeard'),[...TravelerAge.beardOrigin(this.restAsset),age.beard]);r.uniform(p,'cmBeard',age.beard);r.uniform(p,'cmAgeColor',[age.gray,age.old]);
    gl.uniform4fv(gl.getUniformLocation(p,'cmLoss'),['rightArm','leftArm','rightLeg','leftLeg'].map(k=>this.owner.wounds?.[k]?.severity==='lost'?1:0));r.uniform(p,'cmArmor',this.owner.armor||0);gl.activeTexture(gl.TEXTURE5);gl.bindTexture(gl.TEXTURE_2D,this.boneTex);r.int(p,'cmBones',5);
    const lod=this.lods[this.lod];gl.bindVertexArray(lod.vao);gl.drawElements(gl.TRIANGLES,lod.count,lod.type,0);r.stats.calls++;r.stats.triangles+=lod.count/3;if(!shadow){r.stats.skinnedCharacters=(r.stats.skinnedCharacters||0)+1;r.stats.characterMaster={...this.metrics};}gl.useProgram(shadow?r.depthProgram:r.program);
   }
@@ -209,11 +231,18 @@ const TRAVELER_PREVIOUS_DOLL=VillageArt.prototype.doll;
 VillageArt.prototype.doll=function(p,t,local){
  if(!Travelers.eligible(p,local)||!this.r.rigs)return TRAVELER_PREVIOUS_DOLL.call(this,p,t,local);
  const r=this.r;if(!(r.characterMaster instanceof Travelers.Character)||r.characterMaster.asset.race!==p.race){r.characterMaster?.dispose();r.characterMaster=new Travelers.Character(r,p.race);}
- const c=r.characterMaster;c.update(p,t);const root=this.root,target=this.target;this.target=r.dynamic;
- const armed=!(p.rescueTarget||incapacitated(p)||p.traversal);
+ const c=r.characterMaster;
+ let visual=p;
+ if(p.prologue){
+  const lower=TravelerAge.sample(p,t).lower;
+  TRAVELER_PREVIOUS_DOLL.call(this,{...p,id:p.id+'parent',kind:'parent',prologue:false,age:34,gender:1,weapon:-1,skin:0,action:'carry',carryWalking:p.action==='run',wounds:{},baseY:-.34*lower},t,false);
+  visual={...p,baseY:1.20*(1-lower)+.10*lower,x:p.x+Math.sin(p.dir)*(.32*(1-lower)),z:p.z+Math.cos(p.dir)*(.32*(1-lower)),dir:p.dir+.2*(1-lower),action:'idle',weapon:-1,shield:false};
+ }
+ c.update(visual,t);const root=this.root,target=this.target;this.target=r.dynamic;
+ const armed=p.age>=7&&!p.prologue&&!(p.rescueTarget||incapacitated(p)||p.traversal);
  r.rigs.begin(p,t);try{
-  if(armed&&p.weapon>=0&&p.wounds?.rightArm?.severity!=='lost'){this.root=c.transforms[5];this.with(rModel(0,-.035,.03,1,1,1,0,-.06,Math.PI-.12),()=>this.weapon(p.weapon,.84));}
-  if(armed&&p.shield&&p.wounds?.leftArm?.severity!=='lost'){this.root=c.transforms[8];this.shield(-.08,.09,.19,.94);}
+  if(armed&&p.weapon>=0&&p.wounds?.rightArm?.severity!=='lost'){this.root=c.transforms[5];this.with(rModel(0,-.035,.03,1,1,1,0,-.06,Math.PI-.12),()=>this.weapon(p.weapon,.84*Math.min(1,c.ageProfile.body[1])));}
+  if(armed&&p.shield&&p.wounds?.leftArm?.severity!=='lost'){this.root=c.transforms[8];this.shield(-.08,.09,.19,.94*Math.min(1,c.ageProfile.body[1]));}
  }finally{if(r.rigs.pending.parts.length)r.rigs.end();else r.rigs.pending=null;this.root=root;this.target=target;}
  r.blob(p.x,p.z,.55,.39,.32,r.fxBatches);if(local&&p.alive)r.add('ring:6.283',p.x,.23,p.z,.58,1,.58,'#f5e3b2',0,0,0,4,.62,r.fxBatches);
 };
