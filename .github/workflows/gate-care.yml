@@ -25,6 +25,7 @@ jobs:
       - run: npm run build
       - run: node --test tests/gate-care.test.mjs tests/stamina-warning.test.mjs tests/life-state.test.mjs tests/combat-awareness.test.mjs
       - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
+      - run: sudo apt-get install -y --no-install-recommends fonts-noto-cjk
       # The hosted runner already supplies Chromium's system libraries. Avoid
       # refreshing unrelated third-party apt repositories while installing it.
       - run: deploy/node_modules/.bin/playwright install chromium
