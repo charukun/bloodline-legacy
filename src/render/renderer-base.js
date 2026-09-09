@@ -10,7 +10,7 @@ class Renderer{
  put(type,m,c,surface=0,alpha=1,target=this.dynamic){let batch=target.get(type);if(!batch){batch=[];target.set(type,batch);}const col=Array.isArray(c)?c:rColor(c);batch.push([...m,col[0],col[1],col[2],alpha,surface]);}
  add(type,x,y,z,sx,sy,sz,c,yaw=0,rz=0,rx=0,surf=0,alpha=1,target=this.dynamic){this.put(type,rModel(x,y,z,sx,sy,sz,yaw,rz,rx),c,surf,alpha,target);}
  blob(x,z,sx,sz,a=.28,target=this.fxBatches){this.add('disk',x,.27,z,sx,1,sz,'#665b42',0,0,0,2,a,target);}
- geometry(type){if(this.geo.has(type))return this.geo.get(type);const gl=this.gl,g=rGeometry(type);if(!g.count)throw new Error('Unknown mesh: '+type);const vao=gl.createVertexArray();gl.bindVertexArray(vao);const data=new Float32Array(g.count*6);for(let i=0;i<g.count;i++){data.set(g.positions.subarray(i*3,i*3+3),i*6);data.set(g.normals.subarray(i*3,i*3+3),i*6+3);}const vertex=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,vertex);gl.bufferData(gl.ARRAY_BUFFER,data,gl.STATIC_DRAW);for(let i=0;i<2;i++){gl.enableVertexAttribArray(i);gl.vertexAttribPointer(i,3,gl.FLOAT,false,24,i*12);}const instance=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,instance);for(let i=0;i<4;i++){gl.enableVertexAttribArray(2+i);gl.vertexAttribPointer(2+i,4,gl.FLOAT,false,84,i*16);gl.vertexAttribDivisor(2+i,1);}gl.enableVertexAttribArray(6);gl.vertexAttribPointer(6,4,gl.FLOAT,false,84,64);gl.vertexAttribDivisor(6,1);gl.enableVertexAttribArray(7);gl.vertexAttribPointer(7,1,gl.FLOAT,false,84,80);gl.vertexAttribDivisor(7,1);gl.bindVertexArray(null);const out={...g,vao,vertex,instance};this.geo.set(type,out);return out;}
+ geometry(type){if(this.geo.has(type))return this.geo.get(type);const gl=this.gl,g=rGeometry(type);if(!g.count)throw new Error('Unknown mesh: '+type);const vao=gl.createVertexArray();gl.bindVertexArray(vao);const data=new Float32Array(g.count*6);for(let i=0;i<g.count;i++){data.set(g.positions.subarray(i*3,i*3+3),i*6);data.set(g.normals.subarray(i*3,i*3+3),i*6+3);}const vertex=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,vertex);gl.bufferData(gl.ARRAY_BUFFER,data,gl.STATIC_DRAW);for(let i=0;i<2;i++){gl.enableVertexAttribArray(i);gl.vertexAttribPointer(i,3,gl.FLOAT,false,24,i*12);}let craftBuffer=null;if(g.craft){craftBuffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,craftBuffer);gl.bufferData(gl.ARRAY_BUFFER,g.craft,gl.STATIC_DRAW);gl.enableVertexAttribArray(9);gl.vertexAttribPointer(9,3,gl.FLOAT,false,12,0);}const instance=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,instance);for(let i=0;i<4;i++){gl.enableVertexAttribArray(2+i);gl.vertexAttribPointer(2+i,4,gl.FLOAT,false,84,i*16);gl.vertexAttribDivisor(2+i,1);}gl.enableVertexAttribArray(6);gl.vertexAttribPointer(6,4,gl.FLOAT,false,84,64);gl.vertexAttribDivisor(6,1);gl.enableVertexAttribArray(7);gl.vertexAttribPointer(7,1,gl.FLOAT,false,84,80);gl.vertexAttribDivisor(7,1);gl.bindVertexArray(null);const out={...g,vao,vertex,instance,craftBuffer};this.geo.set(type,out);return out;}
  geometryBounds(type){
   const g=rGeometry(type);
   // Mesh coordinates need not be unit sized or centered on the instance origin.
@@ -45,7 +45,7 @@ class Renderer{
    if(shadow&&(m[20]===1||m[20]===2||m[20]===4||m[19]<.85))continue;
    // Roof shells already cast the building silhouette. Millimetre paving relief
    // and overlapping tile faces do not need a second copy in the static shadow.
-   if(shadow&&scenery&&(m[20]===20||type==='gltf:roof-shingle'||type==='golden:slate'))continue;
+   if(shadow&&scenery&&(m[20]===20||type==='craft:paving'||type==='gltf:roof-shingle'||type==='golden:slate'))continue;
    if(!this.visible(m,shadow?this.lightVP:this.vp,shadow?.4:.09,bounds))continue;
    const radius=Math.max(Math.hypot(m[0],m[1],m[2]),Math.hypot(m[4],m[5],m[6]),Math.hypot(m[8],m[9],m[10])),pixels=radius*pixelScale;
    let lod=type;if(type==='sphere'&&(pixels<11||shadow))lod='bead';else if(type==='rbox'&&(pixels<7||shadow&&radius<.65))lod='box';else if(type==='leaf'&&(pixels<7||shadow))lod='leaflow';
@@ -54,6 +54,7 @@ class Renderer{
     if((type==='sphere'||type==='bead')&&(shadow||pixels<11))lod='beadlow';
     if(type==='torus'&&(shadow||pixels<32))lod='toruslow';
     if(shadow&&(type==='rbox'||type==='softbox'))lod='box';
+    if(shadow&&RG_CACHE.get(type)?.shadowMesh)lod=RG_CACHE.get(type).shadowMesh;
    }
    if(lod!==type)this.stats.lodInstances++;
    if(!buckets.has(lod))buckets.set(lod,[]);buckets.get(lod).push(m);
@@ -167,7 +168,7 @@ class Renderer{
    }else put('bead',0,.29,0,.23,.14,.18,item.item==='charcoal'?'#50463c':'#b6aa8d');
   }
  }
- render(snapshot,dt=.016,options={}){if(this.lost||!snapshot)return;this.resize();const gl=this.gl,t=snapshot.t||0,p=snapshot.player||snapshot.players?.[0],area=snapshot.room?.kind||'village';let key=options.portrait?'portrait':options.clan?'showcase':area==='village'?'village'+snapshot.map.seed:'front'+Math.floor(-(p?.z||0)/44);if(key!==this.sceneKey){this.sceneKey=key;this.static.clear();if(options.portrait){this.groundFX.clear();this.labels=[];}else if(options.clan)this.art.showcase();else if(area==='village')this.art.village(snapshot.map);else this.art.front(snapshot.map.seed,Math.floor(-(p?.z||0)/44));this.staticShadowDirty=true;}
+ render(snapshot,dt=.016,options={}){if(this.lost||!snapshot)return;this.resize();const gl=this.gl,t=snapshot.t||0,p=snapshot.player||snapshot.players?.[0],area=snapshot.room?.kind||'village';let key=options.portrait?'portrait':options.clan?'showcase':area==='village'?'village'+snapshot.map.seed+':'+(snapshot.map.terrainRevision||0):'front'+Math.floor(-(p?.z||0)/44);if(key!==this.sceneKey){this.sceneKey=key;this.static.clear();if(options.portrait){this.groundFX.clear();this.labels=[];}else if(options.clan)this.art.showcase();else if(area==='village')this.art.village(snapshot.map);else this.art.front(snapshot.map.seed,Math.floor(-(p?.z||0)/44));this.staticShadowDirty=true;}
  this.diorama.update(snapshot,dt,options);
  this.updateCamera(snapshot,dt,options);
  this.framePanel(snapshot,dt,options);this.matrix();this.stats={calls:0,triangles:0,instances:0,lodInstances:0,resolution:this.canvas.width+'×'+this.canvas.height,scale:this.scale,meshTypes:this.geo.size};this.dynamic.clear();this.fxBatches.clear();this.arcaneFX.clear();this.impactFX.clear();

@@ -28,10 +28,12 @@ export async function loadScene(root = repository, options = {}) {
   }
   try { await fs.access(path.join(root, 'src/world/golden-slice.js')); files.push('world/golden-slice.js'); } catch {}
   files.push('weather/weather.js', 'character/rig.js', 'render/combat-presentation.js', 'render/adapter.js');
+  if(options.enemyReview)files.splice(files.indexOf('render/combat-presentation.js'),0,'enemies/sentinel.js','enemies/equipment.js','enemies/bestiary.js');
   const assets = {};
   for (const file of await fs.readdir(path.join(root, 'public/assets'))) {
     if (/\.(png|glb)$/.test(file)) assets[file] = (await fs.readFile(path.join(root, 'public/assets', file))).toString('base64');
   }
+  if(options.enemyReview)assets['enemies/sentinel.glb']=(await fs.readFile(path.join(root,'public/assets/enemies/sentinel.glb'))).toString('base64');
   const ctx = vm.createContext({ console, Image, TextDecoder, Uint8Array, Uint16Array,
     Uint32Array, Float32Array, DataView, ArrayBuffer, performance, Buffer,
     document: { createElement(type) { if (type !== 'canvas') throw Error(type); return createCanvas(1, 1); } },
@@ -40,6 +42,7 @@ export async function loadScene(root = repository, options = {}) {
       seed: 7349, time: 0, weather: 'clear', quality: 'medium', ...options },
     VISUAL_ASSETS: assets, BL_SKILL_DEFINITIONS: skillDefinitions,
   });
+  if(await fs.access(path.join(root,'src/assets/plaza-craft.js')).then(()=>true,()=>false))files.splice(files.indexOf('assets/loader.js'),0,'assets/plaza-craft.js');
   const code = (await Promise.all(files.map(f => fs.readFile(path.join(root, 'src', f), 'utf8')))).join('\n');
   vm.runInContext(code, ctx);
   return await vm.runInContext(`(async()=>{
@@ -52,13 +55,14 @@ export async function loadScene(root = repository, options = {}) {
     const snapshot=sim.snapshot(player.id); snapshot.map=makeVillage(snapshot.room.seed);snapshot.t=options.time;
     const r=Object.create(SliceRenderer.prototype);
     Object.assign(r,{width:options.width,height:options.height,canvas:{width:options.width,height:options.height},
-      camera:{x:options.x,z:options.z-1.5,zoom:options.zoom,yaw:options.yaw,pitch:options.pitch},
+      camera:{x:options.x,z:options.z-1.5,y:options.y??1,zoom:options.zoom,yaw:options.yaw,pitch:options.pitch},
       shakeOffset:[0,0],static:new Map(),dynamic:new Map(),groundFX:new Map(),fxBatches:new Map(),
       labels:[],effects:[],geo:new Map(),stats:{calls:0,triangles:0,instances:0,lodInstances:0},
       quality:options.quality,sceneKey:'village'+snapshot.map.seed,currentTime:options.time,
       program:{},shadowStatic:{tex:0},shadowDynamic:{tex:0},weather:new WeatherState(),frame:0});
     r.put=Renderer.prototype.put;
     r.art=new (typeof GoldenArt==='undefined'?VillageArt:GoldenArt)(r);
+    if(options.enemyReview){EnemyCreatures.install();r.enemyAPI={sentinel:EnemySentinel,creatures:EnemyCreatures,forms:ENEMY_FORMS};}
     const artStart=performance.now();r.art.village(snapshot.map);const artMs=performance.now()-artStart;
     if(options.isolatedMaterials){r.static.clear();r.art.root=rModel();r.art.target=r.static;r.art.B(0,-.20,options.z,20,.4,16,'#424a3d');}
     // Existing poses are flattened into rigid instance matrices for this offline
@@ -83,7 +87,7 @@ export async function loadScene(root = repository, options = {}) {
     const submitMs=performance.now()-submitStart;
     const geometries={};for(const pass of Object.values(passes))for(const batch of pass){
       if(geometries[batch.mesh])continue;const g=rGeometry(batch.mesh);
-      geometries[batch.mesh]={positions:Array.from(g.positions),normals:Array.from(g.normals),count:g.count};}
+      geometries[batch.mesh]={positions:Array.from(g.positions),normals:Array.from(g.normals),craft:g.craft?Array.from(g.craft):null,count:g.count};}
     let rainShaders; r.programOf=(v,f)=>{rainShaders={vertex:v,fragment:f};return{};};
     Object.assign(r.gl,{createVertexArray(){return 'rain';},createBuffer(){return 0;},
       enableVertexAttribArray(){},vertexAttribPointer(){},vertexAttribDivisor(){}});
@@ -91,7 +95,7 @@ export async function loadScene(root = repository, options = {}) {
     const staticRows=Object.fromEntries([...r.static].map(([k,v])=>[k,v.map(m=>Array.from(m))]));
     return {r,sim,snapshot,staticRows,geometries,passes,uniforms,rainSeeds,rainShaders,
       shaders:{skinVertex:SKINVERT,vertex:RVERT,fragment:RFRAG,depth:RDEPTH,postVertex:RPOSTV,postFragment:RPOSTF},
-      options,artMs,submitMs,stats:r.stats,totalStaticTriangles:[...r.static].reduce((s,[k,v])=>s+rGeometry(k).count/3*v.length,0),meshBytes:[...RG_CACHE.values()].reduce((s,g)=>s+g.positions.byteLength+g.normals.byteLength,0)};
+      options,artMs,submitMs,stats:r.stats,totalStaticTriangles:[...r.static].reduce((s,[k,v])=>s+rGeometry(k).count/3*v.length,0),meshBytes:[...RG_CACHE.values()].reduce((s,g)=>s+g.positions.byteLength+g.normals.byteLength+(g.craft?.byteLength||0),0)};
   })()`, ctx);
 }
 

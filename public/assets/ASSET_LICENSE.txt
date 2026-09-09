@@ -1,2 +1,4 @@
-These textures and meshes are original procedural artworks authored for this project. No Visual Reference pixels or third-party art are incorporated. The user may use, modify and redistribute these assets with the game. The lineage subdirectory has its own art/font provenance and license notices.
+The root-directory textures and meshes are original procedural artworks authored for this project. No Visual Reference pixels are incorporated. The user may use, modify and redistribute these assets with the game. The lineage subdirectory has its own art/font provenance and license notices.
 The music subdirectory contains original compositions rendered with instrument samples; see music/CREDITS.md and music/GeneralUser-GS-LICENSE.txt for provenance.
+
+The enemies subdirectory contains a modified CC0 Kay Lousberg Skeleton Warrior. See enemies/provenance.json, enemies/KayKit-LICENSE.txt and enemies/CC0-1.0.txt. Original enemy equipment is authored in src/enemies/equipment.js.

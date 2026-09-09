@@ -74,7 +74,8 @@ const Travelers = (()=>{
    for(let i=0;i<d.POSITION.length/3;i++){let bi=0;for(let k=1;k<4;k++)if(d.WEIGHTS_0[i*4+k]>d.WEIGHTS_0[i*4+bi])bi=k;if(d.JOINTS_0[i*4+bi]!==bone)continue;const score=d.POSITION[i*3+axis]*sign;if(score>best){best=score;point=Array.from(d.POSITION.slice(i*3,i*3+3));}}
    if(point)hulls[bone].push(point);
   }
-  const asset={id,race,bind,ibm,lods,hulls,parents:parents.slice(0,bind.length),names:names.slice(0,bind.length),scale,body,clips:typeof TravelerClips==='undefined'?null:TravelerClips.prepare(race,bind.length)};
+  const damageProfile={vertical:body[1]*.70,torso:clamp(body[2]/body[1],.85,1.1),lateral:clamp(body[0]/body[1],.85,1.15),head:.78};
+  const asset={id,race,bind,ibm,lods,hulls,parents:parents.slice(0,bind.length),names:names.slice(0,bind.length),scale,body,damageProfile,clips:typeof TravelerClips==='undefined'?null:TravelerClips.prepare(race,bind.length)};
   if(modelCache.size>=2)modelCache.delete(modelCache.keys().next().value);modelCache.set(race,asset);return asset;
  }
  class Character {
@@ -107,21 +108,22 @@ const Travelers = (()=>{
    const run=!!p.dash||st.speed>3.1,gaitWeight=clamp(st.speed/.6,0,1),stride=(run?(p.dash?1.70:1.38):1.04)*asset.body[1],duty=run?.46:.60;
    if(moving&&!st.moving){st.phase=duty*.5+distance/stride;for(const f of st.feet)if(f)f.settle=null;}else if(moving)st.phase+=distance/stride;
    st.moving=moving;st.gaitMode=run?'run':'walk';const phase=st.phase*TAU;
-   const reaction=damagePose(r,p,t,st.feet),pose=damageArtPose(r,p,t,artPose(p,t,SkillMotion.stateFor(r,p,t))),ail=ailmentPose(p,t),guard=p.guard||p.guardUntil>t||p.autoFight;
+   const reaction=damagePose(r,p,t,st.feet,asset.damageProfile),pose=damageArtPose(r,p,t,artPose(p,t,SkillMotion.stateFor(r,p,t))),ail=ailmentPose(p,t),guard=p.guard||p.guardUntil>t||p.autoFight;
    const fall=!p.alive?(p.wasDownedOnDeath?1:smooth((t-(p.deathAt??t))/1.12)):0;
-   const sampledGround=p.traversal?Math.max(.10,p.supportHeight||0):this.groundAt(p.x,p.z);if(!Number.isFinite(st.ground))st.ground=sampledGround;st.ground+=(sampledGround-st.ground)*(1-Math.exp(-dt*14));
+   const sampledGround=p.traversal?Math.max(.10,p.supportHeight||0):this.groundAt(p.x,p.z);if(p.traversal||!Number.isFinite(st.ground))st.ground=sampledGround;st.ground+=(sampledGround-st.ground)*(1-Math.exp(-dt*14));
    const authored=asset.clips?CM01.selectClip(p,t,st,phase,moving||['run','guardWalk','dash'].includes(p.action),run,reaction,asset.clips):null;
    const rootQ=Q.euler((authored?0:pose.pitch)+reaction.pitch+ail.pitch+fall*1.48,(p.dir||0)+(authored?0:pose.yaw),(authored?0:pose.roll)+reaction.roll+ail.roll);
    const rootM=matrix([p.x+reaction.x+Math.cos(p.dir||0)*(authored?0:pose.weightX||0)+Math.sin(p.dir||0)*(authored?0:pose.weightZ||0),(p.baseY??st.ground)+(p.verticalOffset||0)+(authored?0:pose.y)+ail.y-reaction.drop,p.z+reaction.z-Math.sin(p.dir||0)*(authored?0:pose.weightX||0)+Math.cos(p.dir||0)*(authored?0:pose.weightZ||0)],rootQ);
    const q=asset.bind.map(()=>Q.identity()),offset=asset.bind.map(()=>[0,0,0]),qi=(i,x=0,y=0,z=0)=>q[i]=Q.euler(x,y,z),wave=Math.cos(phase);
-   qi(1,this.ageProfile.posture+pose.torso+reaction.torso*.7+(run?.035:0)*gaitWeight,pose.torsoYaw||0,reaction.torsoRoll*.6);
+   qi(1,this.ageProfile.posture+(authored?0:pose.torso)+reaction.torso+(run?.035:0)*gaitWeight,(authored?0:pose.torsoYaw||0)+reaction.yaw,reaction.torsoRoll);
    qi(2,-this.ageProfile.posture*.65+pose.head+reaction.head+ail.head,pose.headYaw||0,reaction.headRoll);
    for(const [side,a]of [[1,3],[-1,6]]){
     const key=side===1?'right':'left';let x=wave*side*(run?.31:.22)*gaitWeight,z=side*.025;
     if(pose.active){x=pose[key+'Arm'];z+=pose[key+'ArmZ'];}else if(guard)x=-.6;
     if(p.action==='carry')x=-1.1;if(p.action==='wave'&&side===1){x=-2.25;z=.15+Math.sin(t*5)*.14;}
     qi(a,x+reaction[key+'Arm']+ail.arm,0,z+reaction[key+'ArmZ']);
-    qi(a+1,pose[key+'Elbow']??0);qi(a+2,pose[key+'Wrist']??0);
+    const protecting=reaction.amount>0&&!reaction.blocked;
+    qi(a+1,(pose[key+'Elbow']??0)-(protecting?reaction.amount*(reaction.part===key+'Arm'?.65:.38):0));qi(a+2,pose[key+'Wrist']??0);
    }
    if(p.prologue){const hold=1-this.ageProfile.lower;qi(3,-.45*hold,0,.10*hold);qi(6,-.45*hold,0,-.10*hold);qi(4,-.35*hold);qi(7,-.35*hold);}
    qi(15,Math.sin(phase-.5)*.025*gaitWeight);if(q[16])qi(16,0,Math.sin(phase*.5)*.065*gaitWeight);
@@ -164,12 +166,12 @@ const Travelers = (()=>{
     }else if(pose.skillMotion){foot.damageAnchor=null;foot.damageKey=null;}
     else if(useGroundIK&&!moving&&reaction.amount>0)damageFoot(p,reaction,side,foot,.72*asset.body[1]);
     else if(!moving){
-     foot.damageAnchor=null;foot.damageKey=null;const turn=Math.atan2(Math.sin(facing-foot.yaw),Math.cos(facing-foot.yaw)),needsStep=Math.hypot(...V.sub(foot.anchor,desired))>.035||Math.abs(turn)>.22;
+     foot.damageAnchor=null;foot.damageKey=null;const turn=Math.atan2(Math.sin(facing-foot.yaw),Math.cos(facing-foot.yaw)),needsStep=Math.hypot(...V.sub(foot.anchor,desired))>(foot.damageSettled?.23:.035)||Math.abs(turn)>.22;
      if(!foot.settle&&(foot.swing||needsStep&&!st.feet.some(f=>f?.settle)))foot.settle={from:[...foot.anchor],to:desired,yaw:foot.yaw,turn,lift:foot.lift,elapsed:0};
      if(foot.settle){const s=foot.settle;s.elapsed+=dt;const u=clamp(s.elapsed/.20,0,1);foot.anchor=V.lerp(s.from,s.to,smooth(u));foot.lift=s.lift*(1-u)+Math.sin(Math.PI*u)*.095;foot.yaw=s.yaw+s.turn*smooth(u);foot.swing=u<1;if(u>=1){foot.settle=null;foot.lift=0;}}
      else{foot.swing=false;foot.lift=0;}
     }else if(isSwing){
-     foot.damageAnchor=null;foot.damageKey=null;
+     foot.damageAnchor=null;foot.damageKey=null;foot.damageSettled=false;
      if(!foot.swing){foot.start=[...foot.anchor];foot.startPhase=normalized;foot.target=toWorld(side*width,.015+stride*(1-normalized+duty*.5));foot.swing=true;}
      const predicted=toWorld(side*width,.015+stride*(1-normalized+duty*.5));foot.target=V.lerp(foot.target,predicted,1-Math.exp(-dt*22));
      const u=clamp((normalized-foot.startPhase)/Math.max(.001,1-foot.startPhase),0,1);foot.anchor=V.lerp(foot.start,foot.target,smooth(u));foot.lift=Math.sin(Math.PI*u)*(run?.16:.11)*gaitWeight;foot.yaw=facing;
