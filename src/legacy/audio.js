@@ -35,7 +35,7 @@ class AudioEngine {
  toggle(){if(this.requested){this.disable();return Promise.resolve(false);}return this.enable();}
  visibility(hidden){
   this.background=hidden;
-  if(hidden){clearInterval(this.timer);this.timer=null;if(this.ctx?.state==='running')this.ctx.suspend().catch(()=>{});}
+  if(hidden){++this.ticket;this.enabled=false;clearInterval(this.timer);this.timer=null;if(this.ctx&&this.ctx.state!=='closed'){this.master.gain.setValueAtTime(0,this.ctx.currentTime);this.ctx.suspend().catch(()=>{});}}
   else if(this.requested)this.enable();
  }
  setListener(p){this.listener=p?{id:p.id,x:p.x,z:p.z}:null;}

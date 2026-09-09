@@ -130,16 +130,21 @@ test('existing snapshot/save damage data restores identical presentation without
 });
 
 
-test('real repeated combat damage matches pinned develop wounds, HP, events and RNG',()=>{
+test('adult repeated combat damage matches pinned develop wounds, HP, events and RNG',()=>{
  const ctx=vm.createContext({console,BL_SKILL_DEFINITIONS:h.ctx.BL_SKILL_DEFINITIONS});
  const core=execFileSync('git',['show','8050da52899d5fd3761ca1f51383be2aea80c99d:src/legacy/core.js'],{encoding:'utf8'});
  vm.runInContext(fs.readFileSync(new URL('../src/legacy/dialogue.js',import.meta.url),'utf8')+'\n'+core,ctx);
  for(const f of ['engine','runtime'])vm.runInContext(fs.readFileSync(new URL('../src/skills/'+f+'.js',import.meta.url),'utf8'),ctx);
  const script=`(()=>{const s=new Simulation({seed:7349}),p=s.addPlayer('combat-damage',{owner:'combat-damage'}),room=s.getRoom(p),results=[];
+ // Gate-care explicitly changes child damage. Keep this renderer-invariance
+ // comparison at adult maturity; gate-care tests separately exercise ages 4-15.
+ p.age=18;p.ageFraction=0;
  for(const kind of ['goblin','soldier','elite','crawler','maw','wraith','boss','stag','mushroom']){
  const e=s.actor(kind,0,0);room.actors=[e];
  for(const [part,power]of [['rightArm',.5],['torso',1],['head',2],['leftLeg',3]]){s.time+=1;s.damageActor(e,p,part,power,room);results.push(JSON.parse(JSON.stringify(e)));}
  }return {results,rng:s.rng.getState(),events:s.events};})()`;
- const clean=v=>JSON.parse(JSON.stringify(v,(k,val)=>['enemyForm','name'].includes(k)?undefined:val));
+ // The rescue lifecycle now records dead explicitly; normalize only the absent
+ // legacy marker for already-dead actors, retaining every living/downed state.
+ const clean=v=>JSON.parse(JSON.stringify(v,(k,val)=>val&&val.alive===false&&!Object.hasOwn(val,'lifeState')?{...val,lifeState:'dead'}:['enemyForm','name'].includes(k)?undefined:val));
  assert.deepEqual(clean(h.run(script)),clean(vm.runInContext(script,ctx)));
 });
