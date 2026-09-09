@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import {compileCatalog} from '../tools/skill-catalog.mjs';
-const sources=['legacy/dialogue.js','legacy/core.js','skills/engine.js','skills/runtime.js','legacy/render_math.js','legacy/motion.js','legacy/art.js','render/tilt-shift.js','render/shaders.js','character/rig.js','character/golden-master.runtime.js','character/traveler-model.js','character/traveler-clip-data.js','character/traveler-clips.js','character/traveler-age.js','character/traveler-runtime.js'];
+const sources=['legacy/dialogue.js','legacy/core.js','skills/engine.js','skills/runtime.js','legacy/render_math.js','legacy/motion.js','legacy/art.js','render/tilt-shift.js','render/shaders.js','character/rig.js','character/golden-master.runtime.js','character/traveler-model.js','character/traveler-clip-data.js','character/traveler-clips.js','character/traveler-age.js','character/traveler-expression.js','character/traveler-runtime.js'];
 const gl=new Proxy({FLOAT:5126,UNSIGNED_SHORT:5123,getUniformLocation:()=>({})},{get:(o,k)=>k in o?o[k]:k.startsWith('create')?()=>({}):()=>{}});
 const ctx=vm.createContext({console,performance,Float32Array,Uint8Array,Uint16Array,Uint32Array,DataView,TextDecoder,Blob,URL,atob});
 const defs=compileCatalog(JSON.parse(fs.readFileSync(new URL('../src/skills/catalog-source.json',import.meta.url),'utf8')));

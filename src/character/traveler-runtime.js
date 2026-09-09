@@ -18,10 +18,11 @@ const Travelers = (()=>{
  uniform sampler2D cmBones;uniform mat4 vp;uniform mat4 lightVP;
  out vec3 vWorld;out vec3 vNormal;out vec4 vInk;out float vSurface;out vec4 vShadow;out vec3 vLocal;out vec2 vUv;flat out int vRegion;
  mat4 bone(int j){return mat4(texelFetch(cmBones,ivec2(0,j),0),texelFetch(cmBones,ivec2(1,j),0),texelFetch(cmBones,ivec2(2,j),0),texelFetch(cmBones,ivec2(3,j),0));}
+ ${TravelerExpression.glsl}
  ${TravelerAge.glsl}
- void main(){mat4 m=bone(int(joints.x))*weights.x+bone(int(joints.y))*weights.y+bone(int(joints.z))*weights.z+bone(int(joints.w))*weights.w;bool head=joints.x==2.;vec4 w=m*vec4(agePosition(pos,head,region==13.),1.);vWorld=w.xyz;vNormal=normalize(mat3(m)*ageNormal(nor,pos,head));vInk=color;vSurface=surface;vLocal=pos;vUv=uv;vRegion=int(region+.5);vShadow=lightVP*w;gl_Position=vp*w;}`;
- const regionHeader=`in vec2 vUv;flat in int vRegion;uniform vec4 cmLoss;uniform float cmArmor;uniform float cmBeard;
- bool hidden(){return (vRegion==13&&cmBeard<.005)||(vRegion==2&&cmLoss.x>.5)||(vRegion==3&&cmLoss.y>.5)||(vRegion==4&&cmLoss.z>.5)||(vRegion==5&&cmLoss.w>.5)||(vRegion==10&&cmArmor<.5)||(vRegion==11&&(cmArmor<1.5||cmLoss.x>.5))||(vRegion==12&&(cmArmor<1.5||cmLoss.y>.5));}`;
+ void main(){vec3 facePos=pos,faceNor=nor;travelerFace(facePos,faceNor,region);mat4 m=bone(int(joints.x))*weights.x+bone(int(joints.y))*weights.y+bone(int(joints.z))*weights.z+bone(int(joints.w))*weights.w;bool head=joints.x==2.;vec4 w=m*vec4(agePosition(facePos,head,region==13.),1.);vWorld=w.xyz;vNormal=normalize(mat3(m)*ageNormal(faceNor,facePos,head));vInk=color;vSurface=surface;vLocal=pos;vUv=uv;vRegion=int(region+.5);vShadow=lightVP*w;gl_Position=vp*w;}`;
+ const regionHeader=`in vec2 vUv;flat in int vRegion;uniform vec4 cmLoss;uniform float cmArmor;uniform float cmBeard;uniform vec4 cmFace;
+ bool hidden(){return ((vRegion==22||vRegion==23)&&cmFace.x<.3)||(vRegion==13&&cmBeard<.005)||(vRegion==2&&cmLoss.x>.5)||(vRegion==3&&cmLoss.y>.5)||(vRegion==4&&cmLoss.z>.5)||(vRegion==5&&cmLoss.w>.5)||(vRegion==10&&cmArmor<.5)||(vRegion==11&&(cmArmor<1.5||cmLoss.x>.5))||(vRegion==12&&(cmArmor<1.5||cmLoss.y>.5));}`;
  const FS=RFRAG.slice(0,RFRAG.indexOf('void main()'))+regionHeader+`
  uniform vec3 cmHairTint;uniform float cmSilhouette;uniform vec2 cmAgeColor;
  void main(){if(hidden())discard;vec3 pigment=vInk.rgb;
@@ -169,6 +170,7 @@ const Travelers = (()=>{
    let st=this.state;if(!st||st.id!==p.id||st.room!==p.room||t<st.t||t-st.t>.35||Math.hypot(p.x-st.x,p.z-st.z)>1.5)st=this.state={id:p.id,room:p.room,t,motionT,x:p.x,z:p.z,phase:0,speed:0,feet:[],pelvisDrop:0};
    const dt=clamp(motionT-st.motionT,0,.1),distance=Math.hypot(p.x-st.x,p.z-st.z),moving=['run','guardWalk','dash'].includes(p.action)&&(distance>1e-7||dt===0&&st.moving);
    if(dt>0)st.speed+=((moving?distance/dt:0)-st.speed)*(1-Math.exp(-dt*18));
+   st.expression=TravelerExpression.update(p,motionT,dt,st.expression);this.expression=st.expression;
    const run=!!p.dash||st.speed>3.1,gaitWeight=clamp(st.speed/.6,0,1),stride=(run?(p.dash?1.70:1.38):1.04)*asset.body[1],duty=run?.46:.60;
    if(moving&&!st.moving){st.phase=duty*.5+distance/stride;for(const f of st.feet)if(f)f.settle=null;}else if(moving)st.phase+=distance/stride;
    st.moving=moving;st.gaitMode=run?'run':'walk';const phase=st.phase*TAU;
@@ -176,8 +178,9 @@ const Travelers = (()=>{
    const fall=!p.alive?(p.wasDownedOnDeath?1:smooth((t-(p.deathAt??t))/1.12)):0;
    const sampledGround=p.traversal?Math.max(.10,p.supportHeight||0):this.groundAt(p.x,p.z);if(p.traversal||!Number.isFinite(st.ground))st.ground=sampledGround;st.ground+=(sampledGround-st.ground)*(1-Math.exp(-dt*14));
    const authored=asset.clips&&!pose.combatIdle?CM01.selectClip(p,t,st,phase,moving||['run','guardWalk','dash'].includes(p.action),run,reaction,asset.clips):null;
+   const injury=TravelerExpression.body(st.expression,phase,moving);this.injury=injury;
    const transition=SkillMotion.chargeTransition(st,p,reaction.amount>.02?null:pose.motionClock),drive=bodyDrive(p,r,pose,st,asset,t);
-   let rootQ=Q.euler((authored?0:pose.pitch)+reaction.pitch+ail.pitch+fall*1.48,(p.dir||0)+(authored?0:pose.yaw),(authored?0:pose.roll)+reaction.roll+ail.roll);
+   let rootQ=Q.euler((authored?0:pose.pitch)+reaction.pitch+ail.pitch+injury.pitch+fall*1.48,(p.dir||0)+(authored?0:pose.yaw),(authored?0:pose.roll)+reaction.roll+ail.roll+injury.roll);
    let rootOffset=[reaction.x+Math.cos(p.dir||0)*(authored?0:pose.weightX||0)+Math.sin(p.dir||0)*(authored?0:pose.weightZ||0),(authored?0:pose.y)+ail.y-reaction.drop,reaction.z-Math.sin(p.dir||0)*(authored?0:pose.weightX||0)+Math.cos(p.dir||0)*(authored?0:pose.weightZ||0)];
    if(transition?.from){rootQ=Q.slerp(transition.from.rootQ,rootQ,transition.amount);rootOffset=V.lerp(transition.from.rootOffset,rootOffset,transition.amount);}
    st.lastRootQ=rootQ;st.lastRootOffset=rootOffset;
@@ -210,6 +213,15 @@ const Travelers = (()=>{
     this.clipDebug={name:authored.name,stage:authored.stage,u:authored.u,contact:authored.clip.contact};
    }else{st.clipName=null;this.clipDebug=null;for(const foot of st.feet)if(foot)foot.clipStep=null;}
    if(transition?.from&&transition.amount<1)for(let i=0;i<q.length;i++){q[i]=Q.slerp(transition.from.q[i],q[i],transition.amount);offset[i]=V.lerp(transition.from.offset[i],offset[i],transition.amount);}
+   if(injury.weight>0){
+    q[2]=Q.mul(q[2],Q.euler(injury.head));
+    for(const [key,a,side]of [['rightArm',3,1],['leftArm',6,-1]]){
+     const amount=injury[key];if(!amount)continue;
+     // Fold beside the chest, keeping the hand outside the torso silhouette.
+     q[a]=Q.slerp(q[a],Q.euler(-.25,0,side*.10),amount*.85);
+     q[a+1]=Q.slerp(q[a+1],Q.euler(-.85),amount*.85);
+    }
+   }
    const blend=pose.combatIdle&&reaction.amount<=.1?1-Math.exp(-dt*18):authored||(pose.active&&!moving)||reaction.amount>.1||fall>0?1:1-Math.exp(-dt*18);
    if(st.lastQ)for(let i=0;i<q.length;i++){q[i]=Q.slerp(st.lastQ[i],q[i],blend);if(st.lastOffset)offset[i]=V.lerp(st.lastOffset[i],offset[i],blend);}
    st.lastQ=q;st.lastOffset=offset;
@@ -259,6 +271,7 @@ const Travelers = (()=>{
      const dx=foot.anchor[0]-hipWorld[0],dz=foot.anchor[1]-hipWorld[2],reach=Math.hypot(dx,dz);
      if(reach>limit)foot.anchor=[hipWorld[0]+dx*limit/reach,hipWorld[2]+dz*limit/reach];
     }
+    if(foot.swing&&moving&&(!authored||['walk','run'].includes(authored.stage))&&!pose.skillMotion){const hurt=side===1?injury.rightLeg:injury.leftLeg;foot.lift*=1-.30*hurt;}
     const floor=Math.max(this.groundAt(...foot.anchor),this.groundAt(foot.anchor[0]+Math.sin(foot.yaw)*.13,foot.anchor[1]+Math.cos(foot.yaw)*.13));
     const soleOffset=asset.bind[fi][1]-.018*asset.body[1]*asset.scale,worldAnkle=[foot.anchor[0],floor+soleOffset+foot.lift,foot.anchor[1]];
     targets.push({side,si,ti,ki,fi,foot,floor,soleOffset,worldAnkle,hip:Array.from(globalM[ti].slice(12,15)),knee:Array.from(globalM[ki].slice(12,15)),lost:p.wounds?.[side===1?'rightLeg':'leftLeg']?.severity==='lost'});
@@ -322,12 +335,14 @@ const Travelers = (()=>{
    st.x=p.x;st.z=p.z;st.t=t;st.motionT=motionT;
    const gl=r.gl;gl.activeTexture(gl.TEXTURE5);gl.bindTexture(gl.TEXTURE_2D,this.boneTex);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,4,asset.bind.length,gl.RGBA,gl.FLOAT,this.palette);
    const px=3*this.ageProfile.head[1]*r.canvas.height/Math.max(1,r.viewHeight||r.camera.zoom);if(this.lod===0&&px<125)this.lod=1;else if(this.lod===1&&px>150)this.lod=0;
-   this.metrics={character:'TRAVELER',race:asset.id,age:this.ageProfile.age,visualAge:this.ageProfile.visual,lod:this.lod,triangles:this.lods[this.lod].count/3,bones:q.length,solveMs:performance.now()-start,pelvisDrop:st.pelvisDrop,contactError:Math.max(0,...this.footDebug.filter(f=>!f.swing).map(f=>f.error)),contacts:this.footDebug.filter(f=>!f.swing).length,animation:p.prologue?'cradle':fall?'death':incapacitated(p)?p.lifeState||'downed':p.traversal?'traverse':p.seated?'rest':p.activity|| (reaction.amount>.1?'hit':p.action==='attack'||p.pendingSkill?'attack':guard?'combat_idle':gaitWeight>.15?(run?'run':'walk'):'idle')};
+   this.metrics={expression:this.expression.name,injuryWeight:injury.weight,character:'TRAVELER',race:asset.id,age:this.ageProfile.age,visualAge:this.ageProfile.visual,lod:this.lod,triangles:this.lods[this.lod].count/3,bones:q.length,solveMs:performance.now()-start,pelvisDrop:st.pelvisDrop,contactError:Math.max(0,...this.footDebug.filter(f=>!f.swing).map(f=>f.error)),contacts:this.footDebug.filter(f=>!f.swing).length,animation:p.prologue?'cradle':fall?'death':incapacitated(p)?p.lifeState||'downed':p.traversal?'traverse':p.seated?'rest':p.activity|| (reaction.amount>.1?'hit':p.action==='attack'||p.pendingSkill?'attack':guard?'combat_idle':gaitWeight>.15?(run?'run':'walk'):'idle')};
   }
   draw(shadow=false){
    const r=this.r,gl=r.gl;if(this.lastFrame!==r.frame)return;const p=shadow?this.depth:this.program;gl.useProgram(p);r.uniform(p,'vp',shadow?r.lightVP:r.vp);r.uniform(p,'lightVP',r.lightVP);r.uniform(p,'eye',r.eye);r.uniform(p,'focus',[r.camera.x,r.camera.z]);r.uniform(p,'time',r.currentTime);r.int(p,'shadows',r.quality!=='low'?1:0);
    if(!shadow){r.setupSurfaceUniforms({},p);r.uniform(p,'cmHairTint',[[1,1,1],[1.24,1.22,1.14],[.72,.76,.80],[1.40,1.40,1.34],[1.10,.91,.91],[.60,.65,.70]][(this.owner.hair||0)%6]);r.uniform(p,'cmSilhouette',this.silhouette?1:0);}
    const age=this.ageProfile;gl.uniform4fv(gl.getUniformLocation(p,'cmAgeBody'),age.body);r.uniform(p,'cmAgeHead',age.head);r.uniform(p,'cmAgeLandmarks',TravelerAge.landmarks(this.restAsset));gl.uniform4fv(gl.getUniformLocation(p,'cmAgeBeard'),[...TravelerAge.beardOrigin(this.restAsset),age.beard]);r.uniform(p,'cmBeard',age.beard);r.uniform(p,'cmAgeColor',[age.gray,age.old]);
+   const cfg=TravelerModel.definitions[this.asset.race],h=cfg.head,b=cfg.body;
+   gl.uniform4fv(gl.getUniformLocation(p,'cmFace'),this.expression.uniform);r.uniform(p,'cmFaceScale',[.78*h[0]*1.5,.80*h[1]*1.5,1.05*h[2]*1.5]);r.uniform(p,'cmFaceOffset',[0,(1.01*b[1]-1.01*.8*h[1])*1.5,-.018*h[2]*1.5]);
    gl.uniform4fv(gl.getUniformLocation(p,'cmLoss'),['rightArm','leftArm','rightLeg','leftLeg'].map(k=>this.owner.wounds?.[k]?.severity==='lost'?1:0));r.uniform(p,'cmArmor',this.owner.armor||0);gl.activeTexture(gl.TEXTURE5);gl.bindTexture(gl.TEXTURE_2D,this.boneTex);r.int(p,'cmBones',5);
    const lod=this.lods[this.lod];gl.bindVertexArray(lod.vao);gl.drawElements(gl.TRIANGLES,lod.count,lod.type,0);r.stats.calls++;r.stats.triangles+=lod.count/3;if(!shadow){r.stats.skinnedCharacters=(r.stats.skinnedCharacters||0)+1;r.stats.characterMaster={...this.metrics};}gl.useProgram(shadow?r.depthProgram:r.program);
   }
