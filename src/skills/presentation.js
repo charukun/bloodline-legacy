@@ -1,14 +1,12 @@
-/* Discovery is a short, nonmodal event. Catalog contents stay unknown until learned. */
+/* Discovery stays beside the consciousness button, outside the combat view. */
 const SkillPresentation = (() => {
  function ensure(ui) {
-  if(ui.skillReveal)return ui.skillReveal;
-  const el=document.createElement('aside');el.className='skill-revelation';el.id='skill-revelation';el.setAttribute('role','status');el.setAttribute('aria-live','polite');
-  el.innerHTML='<span class="reveal-overline">記憶が、技になる</span><p class="reveal-memory"></p><div class="reveal-name"></div><small class="reveal-english"></small><button class="reveal-open">心の采配へ</button>';
-  document.body.appendChild(el);ui.skillReveal=el;
-  el.querySelector('button').onclick=()=>{const d=BL_SKILL_CATALOG.byId.get(ui.skillRevealEvent?.id);ui.skills();if(d){ui.phase=d.passive?3:d.phase;ui.renderSkills();ui.describeSkill(d.id);}clear(ui);};
+  const button=document.querySelector('[data-menu="skills"]');if(!button)return null;
+  const el=ui.skillReveal||document.createElement('span');el.className='skill-revelation';el.id='skill-revelation';el.setAttribute('role','status');el.setAttribute('aria-live','polite');
+  if(el.parentElement!==button)button.appendChild(el);ui.skillReveal=el;
   return el;
  }
- function clear(ui) { ui.skillReveal?.classList.remove('visible');ui.skillRevealEvent=null; }
+ function clear(ui) { if(ui.skillReveal){ui.skillReveal.classList.remove('visible');ui.skillReveal.textContent='';}ui.skillRevealEvent=null; }
  function event(ui,e) {
   if(e.player!==ui.g.playerId)return false;
   if(e.type==='death'){clear(ui);return false;}
@@ -21,22 +19,18 @@ const SkillPresentation = (() => {
    return true;
   }
   if(!['insight','passive'].includes(e.type)||!BL_SKILL_CATALOG.byId.has(e.id))return false;
-  const el=ensure(ui),d=BL_SKILL_CATALOG.byId.get(e.id);
-  ui.skillRevealEvent={...e,shown:performance.now()};el.classList.remove('named');
-  el.querySelector('.reveal-memory').textContent=e.discovery?.reasons?.slice(0,2).join('。')||'この人生の記憶が、ひとつにつながった';
-  el.querySelector('.reveal-name').textContent='';el.querySelector('.reveal-english').textContent='';el.classList.add('visible');return true;
+  const el=ensure(ui);if(!el)return true;
+  ui.skillRevealEvent={...e,shown:performance.now()};el.textContent='閃き';el.classList.add('visible');return true;
  }
  function update(ui,s) {
   if(s.player.skillLifeNotice&&ui.skillNoticeLife!==s.player.id){ui.skillNoticeLife=s.player.id;ui.toast(s.player.skillLifeNotice);}
   document.querySelector('[data-menu="skills"]')?.classList.toggle('has-insight',!!s.player.skillLife?.unread?.length);
   if(!ui.skillRevealEvent)return;
   const e=ui.skillRevealEvent,elapsed=performance.now()-e.shown;
-  if(!s.player.alive||e.player!==s.player.id||elapsed>6800){clear(ui);return;}
-  if(elapsed>450&&!ui.skillReveal.classList.contains('named')) {
-   const d=BL_SKILL_CATALOG.byId.get(e.id);ui.skillReveal.querySelector('.reveal-name').textContent=d.names.ja;ui.skillReveal.querySelector('.reveal-english').textContent=d.names.en;ui.skillReveal.classList.add('named');
-  }
+  if(!s.player.alive||e.player!==s.player.id||elapsed>=2200){clear(ui);return;}
+  if(!ui.skillReveal.isConnected){const el=ensure(ui);if(el){el.textContent='閃き';el.classList.add('visible');}}
  }
- function opened(ui) { ui.g.command({type:'skill-read'});ui.g.saveWorld(); }
+ function opened(ui) { clear(ui);ui.g.command({type:'skill-read'});ui.g.saveWorld(); }
  function rendered(ui) {
   const node=document.getElementById('skills-content');if(!node)return;
   const note=document.createElement('p');note.className='skill-life-note';note.textContent='閃いた技は、使う段で印を灯す。';node.prepend(note);

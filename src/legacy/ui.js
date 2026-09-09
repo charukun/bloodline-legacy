@@ -111,9 +111,9 @@ class UI {
  onboarding(done,index=0){const pages=[
   {title:'歩む、休む',glyph:'hand',text:'地面をタップして、そこへ。<br>ドラッグで歩き、フリックで駆け続ける。<br>タップで止まり、長押しでひと休み。',note:'マウスも指も、同じ操作。'},
   {title:'身体の声',glyph:'heart',text:'左上に、年齢と体調。<br>小さな身体の色が、傷の場所。<br>緑のオーブは、残っている息。',note:'話すか歩くと、休息を終える。'},
-  {title:'心の采配',glyph:'leaf',text:'敵に近づくと、覚えた技で戦う。<br>「序・破・急」の輪を動かして配分。<br>◆が多い技ほど、息を使う。',note:'支度のあいだも、世界は進む。'}
+  {title:'意識',glyph:'leaf',text:'敵に近づくと、覚えた技で戦う。<br>「序・破・急」の輪を動かして配分。<br>◆が多い技ほど、息を使う。',note:'支度のあいだも、世界は進む。'}
  ];const pg=pages[index];this.open('onboarding','旅の手ほどき',`<div class="guide-emblem">${icon(pg.glyph)}</div><h3 class="guide-title">${pg.title}</h3><p class="guide-text">${pg.text}</p><p class="guide-note">${pg.note}</p><div class="guide-pages">${pages.map((_,i)=>`<i class="${i===index?'on':''}"></i>`).join('')}</div><button id="guide-next" class="begin-button">${index===pages.length-1?'旅を始める':'次へ'}${icon('arrow')}</button>`);document.getElementById('guide-next').onclick=()=>{if(index<pages.length-1)this.onboarding(done,index+1);else{this.closeModal();done?.();}};this.root.querySelector('.panel-back').onclick=()=>{if(this.navigation.length)this.back();else{this.closeModal();done?.();}};this.root.querySelector('.panel-close').onclick=()=>{this.closeModal();done?.();};}
- skills(){this.phase=0;this.detail=null;this.open('skills','心の采配','<div id="skills-content"></div>');this.renderSkills();SkillPresentation.opened(this);}
+ skills(){this.phase=0;this.detail=null;this.open('skills','意識','<div id="skills-content"></div>');this.renderSkills();SkillPresentation.opened(this);}
  renderSkills(){
   if(this.modal!=='skills')return;const focus=this.focusMark(),listScroll=this.root.querySelector('.skill-list-scroll')?.scrollTop||0,detailScroll=this.root.querySelector('#skill-detail')?.scrollTop||0,p=this.g.snapshot?.player;if(!p)return;
   const passive=this.phase===3,ids=(passive?p.passives:p.skills.filter(id=>skillById(id)&&skillPhase(skillById(id))===this.phase)).filter(id=>skillById(id));
