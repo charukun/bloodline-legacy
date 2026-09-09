@@ -1,0 +1,168 @@
+/* Small leather, cloth and brass objects, lit from the scene's upper left.
+   HUD placement is scoped below. Panel rules change paint only: the existing
+   skills/wardrobe grids, slots, pie, scroll regions and metrics stay authoritative. */
+:root {
+ --hud-map-size:54px;
+ --hud-map-right:calc(12px + var(--safe-right));
+ --ui-cloth:url("asset:cloth-panel.png");
+ --ui-brass:#c4a575;
+ --ui-edge-light:#f3dfa980;
+ --ui-contact:#15271b70;
+}
+
+/* One identity group; the existing orb and anatomical SVG retain their state. */
+.player-vitals {
+ position:absolute;left:calc(8px + var(--safe-left));top:calc(10px + var(--safe-top));
+ width:min(276px,calc(100% - 122px - var(--safe-left) - var(--safe-right)));
+}
+.player-vitals .player-mark {
+ position:relative;inset:auto;width:100%;max-width:none;height:64px;
+ padding:7px 11px 9px 10px;gap:6px;border:0;border-radius:0;
+ background:none;box-shadow:none;
+}
+.vitals-frame {position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;filter:drop-shadow(1px 4px 2px var(--ui-contact))}
+.player-vitals .portrait-frame {
+ z-index:1;position:relative;inset:auto;flex:none;width:40px;height:44px;
+ border:3px solid var(--ui-brass);outline:1px solid #ebd3a0;outline-offset:-2px;
+ border-radius:47%;background:radial-gradient(ellipse at 35% 25%,#e6d7b0,#aa9970 60%,#70664b);
+ box-shadow:0 2px 0 #765d39,0 3px 0 1px #3f3b29,1px 5px 3px #1d2a207d,inset 2px 3px 3px #554b3555;
+}
+.player-vitals .portrait-frame:after {border:1px solid #776643;box-shadow:inset 1px 2px 3px #4b382755}
+.player-vitals .player-info {position:relative;z-index:1;margin:0;min-width:0;text-shadow:0 1px 1px #202f20}
+.player-vitals .player-info strong {color:#fff0cb}
+.player-vitals .orb-wrap {
+ position:relative;inset:auto;transform:none;flex:none;width:34px;height:58px;
+ filter:drop-shadow(1px 3px 1px #15271b80);
+}
+.player-vitals .wound-mark {
+ left:11px;top:61px;width:44px;height:44px;padding:5px 11px 7px;
+ border:0;border-radius:0 0 12px 12px;
+ background:radial-gradient(ellipse at 25% 0,#b19a5955,transparent 75%),linear-gradient(110deg,#68583de8,#3e402cef),var(--ui-cloth) center/96px;
+ box-shadow:inset 0 3px 3px #27291970,inset 0 -3px 1px #372b20,inset 0 -4px #b59a63,1px 3px 3px var(--ui-contact);
+}
+.player-vitals .wound-mark:after {content:"";position:absolute;inset:5px 5px 7px;border:1px dashed #c8ac6c70;border-radius:0 0 7px 7px;pointer-events:none}
+
+.place-mark {
+ background:radial-gradient(ellipse at 25% 0,#b6a17344,transparent 75%),linear-gradient(120deg,#625c42ed,#35432ef2),var(--ui-cloth) center/96px;
+ border-color:#c4a575;box-shadow:inset 0 1px var(--ui-edge-light),inset 0 -3px 1px #293722,0 2px 0 #75603b,1px 4px 3px var(--ui-contact);
+ text-shadow:0 1px 1px #253521;
+}
+.mini-map {
+ right:var(--hud-map-right);width:var(--hud-map-size);height:var(--hud-map-size);padding:5px;border:0;
+ background:conic-gradient(from 315deg,#e4c897,#b4925d 13%,#715b3c 35%,#aa8955 48%,#d4b783 62%,#8f734a 78%,#e8d1a2);
+ box-shadow:inset 1px 2px 1px #f6e6c1,inset -1px -2px 1px #594b32,0 2px 0 #6b5a3e,0 3px 0 #42452f,1px 5px 3px var(--ui-contact);
+}
+.mini-map canvas {border:1px solid #77613d;box-shadow:inset 2px 3px 4px #5c532c88}
+.mini-map i {background:radial-gradient(ellipse at 25% 0,#87916b,#3b4e36);box-shadow:inset 0 1px #efe4b366,0 2px 1px #26382180}
+.settings-gear {
+ position:absolute;right:var(--hud-map-right);top:calc(88px + var(--safe-top) + var(--hud-map-size));
+ display:grid;place-items:center;width:44px;height:44px;min-width:44px;min-height:44px;
+ padding:10px;border:0;border-radius:50%;background:none;box-shadow:none;color:#f5e5b7;isolation:isolate;
+}
+.settings-gear:before {
+ content:"";position:absolute;inset:2px;z-index:-1;border:2px solid var(--ui-brass);border-radius:50%;
+ background:radial-gradient(ellipse at 28% 16%,#8c9164,#566448 52%,#334c38);
+ box-shadow:inset 1px 2px 1px #ebe0ab99,inset -1px -3px 1px #293827,0 2px 0 #806b45,0 3px 0 #283b2c,1px 5px 3px var(--ui-contact);
+}
+.settings-gear .icon {width:24px;height:24px;filter:drop-shadow(0 1px #273921)}
+.settings-gear[aria-expanded=true]:before {background:radial-gradient(ellipse at 30% 20%,#c2b47b,#837e51 60%,#525638);border-color:#e7ce96}
+/* A modal carries its close/toggle control within its own focus boundary. */
+.panel-head .settings-gear {position:relative;inset:auto;flex:none}
+
+/* The two menu buttons keep their current hit areas and dock layout. */
+.hud-button {
+ position:relative;isolation:isolate;border:0;background:none;border-radius:0;box-shadow:none;
+ color:#f4e5bd;text-shadow:0 1px 1px #2c3927;filter:drop-shadow(1px 3px 2px var(--ui-contact));
+}
+.hud-button:before,.hud-button:after {content:"";position:absolute;pointer-events:none;z-index:-1}
+.hud-button:before {
+ inset:0;background:conic-gradient(from 310deg at 50% 40%,#ddc18a,#ad8d55 18%,#6e5c36 35%,#b08e57 60%,#92764c 78%,#e7d09d);
+ clip-path:polygon(9% 0,91% 0,100% 12%,98% 85%,82% 94%,50% 100%,18% 94%,2% 85%,0 12%);
+ box-shadow:inset 0 2px #fbebbd99,inset 0 -3px #4c442b;
+}
+.hud-button:after {
+ inset:3px 3px 5px;clip-path:polygon(7% 0,93% 0,100% 11%,97% 87%,50% 100%,3% 87%,0 11%);
+ background:radial-gradient(ellipse at 35% 0,#86956980,transparent 65%),linear-gradient(120deg,#667653db,#40573fe8),var(--ui-cloth) center/90px;
+ box-shadow:inset 0 1px #e0dab25d,inset 1px 2px 3px #162c216e,inset -1px -3px 3px #293521bf;
+}
+.hud-button .icon {filter:drop-shadow(0 1px #243a29)}
+.hud-button[aria-expanded=true] {background:none;box-shadow:none;border-color:transparent}
+.hud-button[aria-expanded=true]:after {
+ background:radial-gradient(ellipse at 35% 0,#b6bc82,#7e8e57 58%,#58693e);
+ box-shadow:inset 0 1px #f7e7b588,inset -1px -3px 3px #36492dbf;
+}
+.talk-button {
+ border-color:#c7ac7a;background:radial-gradient(ellipse at 30% 18%,#b8a577,#85764d 53%,#585536);
+ box-shadow:inset 1px 2px 1px #f3e0b57d,inset -1px -3px 2px #3d3f297f,0 2px 0 #5d5438,1px 4px 3px var(--ui-contact);
+}
+.context button:not(:disabled) {
+ background:radial-gradient(ellipse at 30% 0,#aa956455,transparent 72%),linear-gradient(115deg,#6c6241eb,#474d31ef),var(--ui-cloth) center/96px;
+ box-shadow:inset 0 1px #e5c58e88,inset 0 -3px #3e3926,0 2px 2px var(--ui-contact);text-shadow:0 1px #243024;
+}
+
+/* Surface treatment only — do not add panel containers or alter content layout. */
+#modal-root:is(.skills,.body) .game-panel {
+ background:radial-gradient(ellipse at 20% 0,#a6a16a50,transparent 55%),linear-gradient(120deg,#596847df,#303f2de8),var(--ui-cloth) center/128px;
+ border-color:#c4a575;
+ box-shadow:inset 0 2px 1px #f1dcaa88,inset 2px 0 1px #dbc19155,inset -2px -4px 2px #202e22,0 3px 0 #967b50,0 5px 0 #4b432d,2px 8px 12px #162a2360;
+}
+#modal-root:is(.skills,.body) .game-panel:after {
+ border-color:#e2ca9250;border-style:dashed;border-radius:inherit;
+ box-shadow:inset 0 1px #182c2340;
+}
+#modal-root:is(.skills,.body) :is(.skill-description,.wardrobe-description) {border-left-color:#c6b48065;box-shadow:-1px 0 #1c2e2588}
+#modal-root:is(.skills,.body) :is(.skill-list-scroll,.wardrobe-slots) {border-top-color:#c4b68770;box-shadow:0 -1px #1c2e2577}
+#modal-root:is(.skills,.body) .panel-close {
+ border-radius:9px 12px 9px 12px;
+ background:radial-gradient(ellipse at 25% 15%,#9a845c,#705e3e 57%,#47432d);
+ box-shadow:inset 0 0 0 1px #b59b69,inset 1px 2px 1px #f1d19a77,inset -1px -3px 1px #443923,0 2px 0 #7b5f37;
+}
+.skills .phase-tabs button::before {
+ background:radial-gradient(ellipse at 30% 0,#e0cfa633,transparent 70%),linear-gradient(120deg,var(--ribbon),#25352dcf),var(--ui-cloth) center/128px;
+ box-shadow:inset 0 2px #e4cca17d,inset 1px 3px 3px #19271d55,inset -1px -3px 2px #172a1caa;
+}
+.skills .phase-tabs button[aria-selected=true]::before {box-shadow:inset 0 2px #f4daa0,inset 0 -3px #1c2e2088}
+.skills .phase-tabs button[aria-selected=true]::after {border-color:#f0d496;box-shadow:0 1px #24352180}
+.skills .skill-cell {
+ background:linear-gradient(135deg,#283b2cdd,#435337bb),var(--ui-cloth) center/100px;
+ border-color:#ab956a77;box-shadow:inset 1px 2px 3px #15261caa,inset -1px -1px #e5d3a03d;
+}
+.skills .skill-cell:has([data-skill][aria-pressed=true]),.skills .skill-cell.selected:has([data-passive]) {
+ background:radial-gradient(ellipse at 30% 0,#a6b77a66,#65734ba8),var(--ui-cloth) center/100px;
+ box-shadow:inset 1px 2px #e8ddac55,inset -1px -3px #2a4026aa;
+ outline-color:#e9d3a0;
+}
+.body .belonging-slot {
+ background:linear-gradient(145deg,#26362ccc,#445336c0),var(--ui-cloth) center/100px;
+ border-color:#ab956a77;box-shadow:inset 1px 3px 4px #14271c99,inset -1px -1px #edd69c44;
+}
+.body .belonging-slot[aria-pressed=true] {
+ background:radial-gradient(ellipse at 30% 0,#9faa7277,#607049aa),var(--ui-cloth) center/100px;
+ border-color:#e9d3a0;box-shadow:inset 0 0 0 1px #d0b77999,inset 1px 2px #e8ddac55,inset -1px -3px #2a4026aa;
+}
+.body #wardrobe-choice button {
+ background:radial-gradient(ellipse at 30% 0,#a0a57177,transparent 65%),linear-gradient(130deg,#66794ddd,#3c5438ed),var(--ui-cloth) center/100px;
+ box-shadow:inset 0 2px #d9d6a473,inset 0 -3px 1px #253e2d,0 1px #a08350;
+ text-shadow:0 1px #263c25;
+}
+.hud-button,.settings-gear,.talk-button,.context button,.skills .skill-tile,.body .belonging-slot,.body #wardrobe-choice button {transition:translate .1s ease-out}
+:is(.hud-button,.settings-gear,.talk-button,.context button,.skills .skill-tile,.body .belonging-slot,.body #wardrobe-choice button):active:not(:disabled) {translate:0 1px}
+:is(.hud-button,.settings-gear,.player-vitals .wound-mark):focus-visible {outline:2px solid #ffe2a0;outline-offset:3px}
+@media(min-width:700px) {
+ :root {--hud-map-size:66px;--hud-map-right:calc(25px + var(--safe-right))}
+ .player-vitals {left:calc(18px + var(--safe-left));width:286px}
+ .player-vitals .portrait-frame {width:44px;height:48px}
+ .player-vitals .orb-wrap {width:38px;height:62px}
+}
+@media(max-width:359px) {
+ .player-vitals .player-mark {padding-left:8px;padding-right:8px;gap:4px}
+ .player-vitals .portrait-frame {width:34px;height:40px;border-width:2px}
+ .player-vitals .orb-wrap {width:30px;height:54px}
+}
+@media(max-height:560px) and (orientation:landscape) {
+ :root {--hud-map-size:48px}
+ .player-vitals {left:calc(10px + var(--safe-left));width:258px}
+}
+@media(prefers-reduced-motion:reduce) {
+ .hud-button,.settings-gear,.talk-button,.context button,.skills .skill-tile,.body .belonging-slot,.body #wardrobe-choice button {transition:none}
+}

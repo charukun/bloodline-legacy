@@ -9,6 +9,7 @@ const schoolIcon=s=>({unarmed:'hand',heavy:'hammer',light:'feather',shield:'shie
 const label=(text,cls='')=>typeof GAME_LABELS!=='undefined'&&GAME_LABELS[text]?`<img class="ink-label ${cls}" alt="${ESC(text)}" src="${GAME_LABELS[text]}">`:`<span class="${cls}">${ESC(text)}</span>`;
 
 Object.assign(UI_PATH,{
+ gear:'m9 2-.5 3-2 1.2-2.8-1-2 3.5L4 11v2l-2.3 2.3 2 3.5 2.8-1 2 1.2.5 3h6l.5-3 2-1.2 2.8 1 2-3.5L20 13v-2l2.3-2.3-2-3.5-2.8 1-2-1.2L15 2ZM16 12a4 4 0 1 1-8 0 4 4 0 1 1 8 0',
  mic:'M8 5a4 4 0 0 1 8 0v7a4 4 0 0 1-8 0Zm-3 6v1a7 7 0 0 0 14 0v-1M12 19v4m-4 0h8',
  talk:'M4 3h16q3 0 3 3v10q0 3-3 3H11l-6 4v-4H4q-3 0-3-3V6q0-3 3-3Zm3 7h.1m5 0h.1m5 0h.1',
  map:'m2 5 6-3 8 3 6-3v17l-6 3-8-3-6 3Zm6-3v17m8-14v17',
@@ -28,6 +29,9 @@ const schoolName=s=>({unarmed:'体術',blade:'剣技',heavy:'剛技',light:'軽�
 const itemIcon=id=>icon(ITEMS[id]?.icon||'bag');
 function anatomy(p,large=false){const color=part=>({light:'#d2ae61',heavy:'#ce7459',lost:'#484340'})[p.wounds?.[part]?.severity]||'#b4c7a2';return `<svg class="anatomy ${large?'large':''}" viewBox="0 0 58 96" role="img" aria-label="部位の傷"><g stroke="#ebdfbb" stroke-width="1.15"><circle data-part="head" cx="29" cy="12" r="9" fill="${color('head')}"/><path data-part="torso" d="M20 25q9-5 18 0l1 30q-10 7-20 0Z" fill="${color('torso')}"/><path data-part="rightArm" d="m17 26-7 2-6 29q0 6 6 4l10-26" fill="${color('rightArm')}"/><path data-part="leftArm" d="m41 26 7 2 6 29q0 6-6 4L38 35" fill="${color('leftArm')}"/><path data-part="rightLeg" d="m20 57-3 31q0 8 9 4l3-33" fill="${color('rightLeg')}"/><path data-part="leftLeg" d="m38 57 3 31q0 8-9 4l-3-33" fill="${color('leftLeg')}"/></g></svg>`;}
 function orb(){return `<div class="stamina-orb" role="img" aria-label="息に余裕がある"><svg viewBox="0 0 72 96"><defs><linearGradient id="gold" x2=".8" y2="1"><stop stop-color="#f3dda8"/><stop offset=".36" stop-color="#a3844f"/><stop offset=".56" stop-color="#e4c897"/><stop offset="1" stop-color="#806039"/></linearGradient><radialGradient id="glass" cx=".4" cy=".3"><stop stop-color="#314733"/><stop offset="1" stop-color="#1c302c"/></radialGradient><linearGradient id="water" x2=".1" y2="1"><stop stop-color="#c7eeae"/><stop offset=".23" stop-color="#8fc789"/><stop offset=".6" stop-color="#538e6b"/><stop offset="1" stop-color="#285d50"/></linearGradient><clipPath id="orb-clip"><ellipse cx="36" cy="44" rx="22.8" ry="31"/></clipPath><radialGradient id="orbshine"><stop stop-color="#effada" stop-opacity=".35"/><stop offset="1" stop-color="#effada" stop-opacity="0"/></radialGradient></defs><path d="M36 3q-5 9-13 12C3 22 2 66 24 78q8 4 12 13 4-9 12-13C70 66 69 22 49 15Q41 12 36 3Z" fill="#685c43" stroke="url(#gold)" stroke-width="1.7"/><ellipse cx="36" cy="44" rx="26" ry="35" fill="none" stroke="url(#gold)" stroke-width="2.5"/><ellipse cx="36" cy="44" rx="23" ry="31.5" fill="url(#glass)"/><g clip-path="url(#orb-clip)"><path id="orb-cap" fill="#2c3027" opacity=".75"/><path id="orb-water" fill="url(#water)"/><path id="orb-wave" fill="none" stroke="#e8f7c8" stroke-width="1.1"/><ellipse cx="29" cy="30" rx="15" ry="23" fill="url(#orbshine)"/><circle cx="27" cy="56" r="1.3" fill="#edfadd" opacity=".62"/><circle cx="39" cy="64" r="1.8" fill="#bde4a8" opacity=".4"/><circle cx="45" cy="43" r=".8" fill="#f4ffdd" opacity=".7"/></g><path d="M18 39q1-18 12-22" stroke="#fff5da" stroke-width="2.3" stroke-linecap="round" opacity=".73" fill="none"/><path d="M48 56q-2 13-10 15" stroke="#e1efd4" opacity=".28" stroke-width="1" fill="none"/><g fill="#789269" stroke="#b9ba85" stroke-width=".7"><path d="M23 76Q8 79 8 66 19 63 23 76Z"/><path d="M16 67Q3 65 6 55 15 56 16 67Z"/><path d="M49 76q15 3 15-10-11-3-15 10Z"/><path d="M56 67q13-2 10-12-9 1-10 12Z"/></g><path d="m36 8 3 5-3 4-3-4Zm0 71 4 6-4 6-4-6Z" fill="#acbb80" stroke="#e4c997"/><path d="M29 8Q36-1 43 8M30 89q6 6 12 0" fill="none" stroke="url(#gold)" stroke-width="1.5"/></svg></div>`;}
+// Brass edge and padded leather share the scene's upper-left light direction.
+// Decorative only: all live identity, stamina and wound data remain in the HUD DOM.
+function hudIdentityFrame(){return `<svg class="vitals-frame" viewBox="0 0 270 66" preserveAspectRatio="none" aria-hidden="true" focusable="false"><defs><linearGradient id="vitals-metal" x2="1" y2="1"><stop stop-color="#f3dfa9"/><stop offset=".24" stop-color="#c2a570"/><stop offset=".53" stop-color="#806a43"/><stop offset=".76" stop-color="#c4a571"/><stop offset="1" stop-color="#786241"/></linearGradient></defs><path d="M23 2H239q5 6 20 6l8 23-8 24q-15 0-20 7H23Q9 61 3 51V13Q9 3 23 2Z" transform="translate(0 3)" fill="#50412c" stroke="#353625" stroke-width="2"/><path d="M23 2H239q5 6 20 6l8 23-8 24q-15 0-20 7H23Q9 61 3 51V13Q9 3 23 2Z" fill="url(#vitals-metal)" stroke="#e7ce97"/><path d="M26 7H237q7 6 18 6l7 18-7 19q-11 1-18 7H26Q15 57 8 48V16Q15 7 26 7Z" fill="#4c6040" fill-opacity=".94" stroke="#3e412b" stroke-width="2"/><path d="M28 10H236q7 6 16 6M18 14q-7 5-7 12" fill="none" stroke="#e5dfa8" opacity=".4"/><path d="M26 54H235q7-6 16-6" fill="none" stroke="#233620" stroke-width="2"/><path transform="translate(128 -45)" d="M55 50q24-8 41 0m-24-2q-7-9-13-5 3 7 13 5m9 0q8-9 14-5-4 7-14 5" fill="none" stroke="#c7b079" stroke-width=".9" opacity=".7"/></svg>`;}
 class UI {
  constructor(game){this.g=game;this.reducedMotion=typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;this.modal=null;this.phase=0;this.detail=null;this.clan=document.getElementById('clan-screen');this.hud=document.getElementById('hud');this.root=document.getElementById('modal-root');this.lastSkills='';this.lastContext='';this.deathShown='';this.portraits=new Map();this.portraitQueue=[];this.floatLines=[];this.pieDragging=false;this.hudPortrait='';this.lineageView=new UILineage(this);this.navigation=[];this.talkFan=new UITalkFan(this);this.worldNodes=new Map();this.notices=new UINoticeQueue();this.root.addEventListener('keydown',e=>this.modalKey(e));}
  toast(text){this.notify({key:'toast:'+text,parts:[text],priority:1});}
@@ -46,8 +50,8 @@ class UI {
  }
  showClan(){this.talkFan.cancel();SkillPresentation.clear(this);this.closeModal();this.notices=new UINoticeQueue();this.paintNotices();this.worldNodes.clear();this.hud.classList.add('hidden');document.getElementById('world-labels').innerHTML='';this.clan.classList.remove('hidden');this.renderClan();}
  renderClan(){this.lineageView.renderClan();}
- showGame(){this.talkFan.cancel();this.lineageView.showGame();this.damageFeedback=new UIDamageFeedback();this.facilityGroups=new Map();this.lastContext=null;this.hudPortrait='';this.lastWounds=null;this.lastMother=null;this.lastGifts=null;this.pickupKey=null;this.mapSignature=null;this.worldNodes.clear();document.getElementById('world-labels').replaceChildren();this.clan.classList.add('hidden');this.hud.classList.remove('hidden');this.hud.innerHTML=`<div class="player-mark"><div class="portrait-frame" id="hud-portrait">${icon('leaf')}</div><div class="player-info"><strong id="player-name"></strong><div class="life-line"><span id="age"></span><span id="condition"></span></div></div></div><button class="wound-mark" id="wound-mark" aria-label="傷のある部位"></button><div class="orb-wrap">${orb()}</div><div class="place-mark"><div class="day-line">${icon('sun')}<span id="day"></span></div><span id="place"></span></div><button class="mini-map" id="mini-map" aria-label="地図"><canvas id="map-preview" width="200" height="200"></canvas><i>${icon('map')}</i></button><nav class="hud-bottom" aria-label="旅のメニュー"><button data-menu="skills" class="hud-button" aria-controls="game-panel" aria-expanded="false">${icon('leaf')}${label('意識')}</button><button data-menu="body" class="hud-button" aria-controls="game-panel" aria-expanded="false">${icon('bag')}${label('身支度')}</button><button data-menu="settings" class="hud-button" aria-controls="game-panel" aria-expanded="false">${icon('menu')}${label('設定')}</button></nav><div id="context" class="context"></div><div id="facility-actions"></div><button class="talk-button" id="talk-button" aria-label="話す">${icon('talk')}<span>話す</span></button><div id="mother-dialogue"></div><div id="world-pickup"></div>`;
-  this.hudDock=this.hud.querySelector('.hud-bottom');this.hudDock.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>this.toggleMenu(b.dataset.menu,b));this.talkFan.bind(document.getElementById('talk-button'));document.getElementById('mini-map').onclick=()=>this.map();document.getElementById('wound-mark').onclick=()=>this.wounds();this.deathShown='';
+ showGame(){this.talkFan.cancel();this.lineageView.showGame();this.damageFeedback=new UIDamageFeedback();this.facilityGroups=new Map();this.lastContext=null;this.hudPortrait='';this.lastWounds=null;this.lastMother=null;this.lastGifts=null;this.pickupKey=null;this.mapSignature=null;this.worldNodes.clear();document.getElementById('world-labels').replaceChildren();this.clan.classList.add('hidden');this.hud.classList.remove('hidden');this.hud.innerHTML=`<section class="player-vitals" aria-label="旅人の状態"><div class="player-mark">${hudIdentityFrame()}<div class="portrait-frame" id="hud-portrait">${icon('leaf')}</div><div class="player-info"><strong id="player-name"></strong><div class="life-line"><span id="age"></span><span id="condition"></span></div></div><div class="orb-wrap">${orb()}</div></div><button class="wound-mark" id="wound-mark" aria-label="傷のある部位"></button></section><div class="place-mark"><div class="day-line">${icon('sun')}<span id="day"></span></div><span id="place"></span></div><button class="mini-map" id="mini-map" aria-label="地図"><canvas id="map-preview" width="200" height="200"></canvas><i>${icon('map')}</i></button><nav class="hud-bottom" aria-label="旅のメニュー"><button data-menu="skills" class="hud-button" aria-controls="game-panel" aria-expanded="false">${icon('leaf')}${label('意識')}</button><button data-menu="body" class="hud-button" aria-controls="game-panel" aria-expanded="false">${icon('bag')}${label('身支度')}</button></nav><button id="hud-settings" data-menu="settings" class="settings-gear" aria-label="設定" title="設定" aria-controls="game-panel" aria-expanded="false">${icon('gear')}</button><div id="context" class="context"></div><div id="facility-actions"></div><button class="talk-button" id="talk-button" aria-label="話す">${icon('talk')}<span>話す</span></button><div id="mother-dialogue"></div><div id="world-pickup"></div>`;
+  this.hudDock=this.hud.querySelector('.hud-bottom');this.hudSettings=this.hud.querySelector('#hud-settings');this.hud.querySelectorAll('[data-menu]').forEach(b=>b.onclick=()=>this.toggleMenu(b.dataset.menu,b));this.talkFan.bind(document.getElementById('talk-button'));document.getElementById('mini-map').onclick=()=>this.map();document.getElementById('wound-mark').onclick=()=>this.wounds();this.deathShown='';
  }
  blocksWorldInput(){return !!this.talkFan.menu||!!this.talkFan.pointer||!!this.modal&&this.modal!=='skills';}
  menuSection(){return ({skills:'skills',body:'body',rack:'body',settings:'settings',lineage:'settings'})[this.navigation[0]?.type||this.modal]||null;}
@@ -63,6 +67,19 @@ class UI {
   this.root.classList.toggle('has-dock',enabled);
   const section=this.menuSection();
   this.hudDock.querySelectorAll('[data-menu]').forEach(b=>UIValue.attr(b,'aria-expanded',!!this.modal&&b.dataset.menu===section));
+  // Keep the one settings control reachable inside its modal, then return it to
+  // the map. Never make the otherwise inert HUD interactive through an overlay.
+  this.restoreSettings();
+  if(this.hudSettings){
+   const active=enabled&&section==='settings',close=this.root.querySelector('.panel-head .panel-close');
+   if(active&&close){close.replaceWith(this.hudSettings);this.hudSettings.classList.add('panel-close');}
+   UIValue.attr(this.hudSettings,'aria-expanded',active);
+   UIValue.attr(this.hudSettings,'aria-label',active?'メニューを閉じる':'設定');
+   UIValue.attr(this.hudSettings,'title',active?'メニューを閉じる':'設定');
+  }
+ }
+ restoreSettings(){
+  if(this.hudSettings){this.hudSettings.classList.remove('panel-close');this.hud.appendChild(this.hudSettings);}
  }
  open(type,title,html){
   this.talkFan.cancel();
@@ -76,6 +93,7 @@ class UI {
   for(const n of [this.hud,this.clan])n.inert=true;this.g.renderer.canvas.inert=type!=='skills';
   this.root.className='modal-root visible '+type;
   if(this.hudDock)this.hud.appendChild(this.hudDock);
+  this.restoreSettings();
   this.root.innerHTML=`<section id="game-panel" class="game-panel ${['lineage','onboarding','wounds'].includes(type)?'parchment':''}" role="dialog" aria-modal="${type!=='skills'}" aria-label="${ESC(title)}">${['skills','body'].includes(type)?'':`<header class="panel-head"><button class="panel-back" aria-label="戻る">${icon('back')}</button><h2>${label(title)}</h2><button class="panel-close" aria-label="閉じる">${icon('close')}</button></header>`}<div class="panel-content">${html}</div></section>`;
   if(['skills','body'].includes(type)){
    const panel=this.root.querySelector('.game-panel');
@@ -88,7 +106,7 @@ class UI {
    queueMicrotask(measure);
   }
   this.mountDock(this.g.screen==='game'&&!['death','onboarding'].includes(type));
-  const back=this.root.querySelector('.panel-back'),close=this.root.querySelector('.panel-close');if(back)back.onclick=()=>this.back();if(close)close.onclick=()=>this.closeModal();
+  const back=this.root.querySelector('.panel-back'),close=this.root.querySelector('.panel-close');if(back)back.onclick=()=>this.back();if(close&&close!==this.hudSettings)close.onclick=()=>this.closeModal();
   if(current===type)this.root.querySelector('.panel-content').scrollTop=scroll;
   const generation=this.focusGeneration=(this.focusGeneration||0)+1;
   queueMicrotask(()=>{if(this.modal!==type||this.focusGeneration!==generation)return;this.root.querySelector('.panel-back,.panel-close')?.focus({preventScroll:true});if(current===type)this.restoreFocus(focus);});
@@ -104,6 +122,7 @@ class UI {
   this.skillPanelObserver?.disconnect();this.skillPanelTop=null;this.skillPanelLeft=null;
   this.pieDragging=false;this.modal=null;if(this.g.renderer.diorama)this.g.renderer.diorama.suspended=false;this.detail=null;this.navigation=[];this.focusGeneration=(this.focusGeneration||0)+1;
   if(this.hudDock)this.hud.appendChild(this.hudDock);
+  this.restoreSettings();
   this.root.replaceChildren();this.root.className='modal-root';this.mountDock(false);
   for(const n of [this.hud,this.clan,this.g.renderer.canvas])n.inert=false;
   this.portraitQueue=this.portraitQueue.filter(q=>q.node?.isConnected);

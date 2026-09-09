@@ -396,7 +396,7 @@ class ArtDirector{
   this.doll({...p,id:p.id+'parent',kind:'parent',prologue:false,age:34,gender:1,weapon:-1,armor:0,shield:false,x,z,dir,baseY:-.34*(1-clamp(age,0,1)),action:age<.8?'carry':walk?'run':'wave',seated:false,hitReactUntil:0,wounds:{},statuses:{},pendingSkill:null},t,false);
  }
 
- statuses(p,t){if(!p.alive)return;const old=this.target;this.target=this.r.fxBatches;this.root=rModel();const top=p.elite?3.5:p.kind==='crawler'?1.5:2.7;
+ statuses(p,t){if(!p.alive)return;const old=this.target;this.target=this.r.fxBatches;this.root=rModel();const top=this.r.enemySentinels?.records.has(p.id)?EnemySentinel.top(p):this.r.enemyCreatures?.get(p.id)?.sockets.head?.[1]+.3|| (p.elite?3.5:p.kind==='crawler'?1.5:2.7);
   for(const [id,state] of Object.entries(p.statuses||{})){if(state.until<=t)continue;
    if(id==='stun')for(let i=0;i<5;i++){const a=t*2+i/5*TAU;this.p('star',p.x+Math.sin(a)*.64,top+.16+Math.sin(a*2)*.08,p.z+Math.cos(a)*.36,.14,.14,.14,'#f7d571',-this.r.camera.yaw,0,0,4,1);}
    else if(id==='root')for(let i=0;i<5;i++)this.p('ring:5.800',p.x,.22+i*.15,p.z,.59-i*.035,1,.59-i*.035,'#92a36d',t*.25+i,.08,0,0,.92);

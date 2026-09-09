@@ -1,0 +1,26 @@
+{
+  "sourceBytes": 4863620,
+  "runtimeBytes": 743788,
+  "sourceTriangles": 5934,
+  "triangles": 5104,
+  "vertices": 5048,
+  "sourceBones": 41,
+  "bones": 23,
+  "sourceAnimations": 95,
+  "animations": [
+    "idle",
+    "walk",
+    "run",
+    "chop",
+    "guard",
+    "hit",
+    "death",
+    "unarmed"
+  ],
+  "sourceTexture": "1024x1024",
+  "runtimeTextures": 0,
+  "sourcePrimitives": 10,
+  "runtimePrimitives": 1,
+  "sha256": "1a9b29e11320723614eae1589a1dc3908b8852ad837d918436cd9687d15466f2",
+  "sourceSHA256": "178b6fda810b814c250d8a2010c24dfd9b458b9006dd323353e620b7ff118bbe"
+}

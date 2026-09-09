@@ -332,6 +332,23 @@ const phaseSkillCount=weights=>Object.values(weights||{}).filter(n=>Number(n)>0)
 const miracleChance=(p,sk)=>clamp(sk.procChance+.06*Math.max(0,effectsOf(p,'faith')-1),0,.9);
 const v3Weights=(ids,raw)=>{const out={};for(const id of ids){const n=Number(raw?.[id]);out[id]=Number.isFinite(n)?clamp(n,0,100):0;}if(!Object.values(out).some(x=>x>0)&&!ids.some(id=>Object.hasOwn(raw||{},id)&&Number.isFinite(+raw[id]))){const fallback=ids.includes(4000)?4000:ids[0];if(fallback!==undefined)out[fallback]=1;}return out;};
 
+// Named enemy forms share their family's existing combat rules. Stable IDs are
+// serialized with actors; selection never consumes the combat random stream.
+const ENEMY_FORMS=Object.freeze(Object.fromEntries(Object.entries({
+ goblin:[['goblin','森潜みの小鬼'],['bog-goblin','沼鉤の小鬼'],['scrap-goblin','鉄屑の鉱夫'],['bone-shaman','骨面の呪兵'],['mushroom-goblin','菌冠の小鬼']],
+ soldier:[['soldier','盾持ちの異形'],['grave-warden','墓守の鉄衛'],['cinder-knight','燻火の剣兵'],['rime-guard','霜棘の衛兵'],['oath-breaker','破戒の鎖兵']],
+ elite:[['elite','冠角の執行者'],['thorn-reaver','茨角の断頭者'],['bell-executioner','弔鐘の処刑者'],['stone-colossus','墓石の巨兵'],['veil-duelist','黒紗の決闘者']],
+ crawler:[['crawler','鎌脚の蟲'],['amber-scarab','琥珀甲の蟲'],['needle-mantis','針鎌の蟲'],['burrow-spider','洞穴の大蜘蛛'],['scorpion','骨尾の蠍']],
+ maw:[['maw','殻喰い'],['bristle-boar','石牙の猪'],['moss-wolf','苔鬣の狼'],['cave-bear','洞窟の鉄熊'],['marsh-lizard','沼鱗の蜥蜴']],
+ wraith:[['wraith','裂け目の亡霊'],['lantern-wraith','灯籠の亡霊'],['thorn-wraith','荊籠の精霊'],['rift-jelly','裂界の水母'],['dusk-bat','宵羽の魔蝙蝠']],
+ boss:[['boss','魔王']],stag:[['stag','苔角の獣']],mushroom:[['mushroom','眠る菌傘']]
+}).map(([kind,rows])=>[kind,Object.freeze(rows.map(([id,name])=>Object.freeze({id,name,kind})))])));
+function enemyForm(p){const forms=ENEMY_FORMS[p?.kind];return forms?.find(f=>f.id===p.enemyForm)||forms?.[0]||null;}
+function assignEnemyForm(p){const forms=ENEMY_FORMS[p.kind];if(!forms)return p;
+ let hash=2166136261;for(const c of p.kind+':'+p.id)hash=Math.imul(hash^c.charCodeAt(0),16777619)>>>0;
+ const form=forms[hash%forms.length];p.enemyForm=form.id;p.name=form.name;return p;
+}
+
 class Simulation {
  constructor({seed=7349,mode='normal'}={}){
   this.seed=seed;this.rng=random(seed);this.mode=mode==='normal'?'normal':'demo';this.yearSeconds=this.mode==='normal'?60:20;this.boatInterval=this.yearSeconds*5;
@@ -528,7 +545,7 @@ class Simulation {
  actor(kind,x,z,tier=0){
   if(kind==='archer')kind='soldier';if(kind==='mage')kind='wraith';
   const guard=kind==='guard',elite=kind==='elite',neutral=['stag','mushroom'].includes(kind),humanoid=['guard','goblin','soldier','elite','archer','mage','dummy'].includes(kind);
-  return {id:'e'+(++this.eid),kind,x,z,dir:0,tier,alive:true,action:'idle',actionUntil:0,actionStarted:0,cooldown:this.time+this.rng(),target:null,telegraph:null,stun:0,dodgeUntil:0,armor:elite?6:tier>0?2:0,guard:kind==='soldier',stance:this.rng()*TAU,homeX:x,homeZ:z,seals:kind==='boss'?4:0,attackCount:0,npcResolve:guard?18:elite?22:tier>0?14:10,npcResolveMax:guard?18:elite?22:tier>0?14:10,hp:guard?130:elite?120:tier>0?70:42,hpMax:guard?130:elite?120:tier>0?70:42,statuses:{},elite,lane:clamp(Math.round((x+10.5)/7),0,3),humanoid,neutral,aggro:false,smart:['soldier','elite'].includes(kind),bodyScale:elite?1.6:kind==='boss'?2.8:kind==='maw'?1.2:1,wounds:{},experience:guard?12:tier*5,hitUntil:0,hitReactAt:0,hitReactUntil:0,hitDir:0,hitSeverity:null,ammo:kind==='archer'?10:kind==='mage'?3:0,name:({elite:'冠角の執行者',crawler:'鎌脚の蟲',wraith:'裂け目の亡霊',maw:'殻喰い',stag:'苔角の獣',mushroom:'眠る菌傘',soldier:'盾持ちの異形',archer:'骨弓の異形',mage:'呪灯の亡霊'})[kind]||''};
+  return assignEnemyForm({id:'e'+(++this.eid),kind,x,z,dir:0,tier,alive:true,action:'idle',actionUntil:0,actionStarted:0,cooldown:this.time+this.rng(),target:null,telegraph:null,stun:0,dodgeUntil:0,armor:elite?6:tier>0?2:0,guard:kind==='soldier',stance:this.rng()*TAU,homeX:x,homeZ:z,seals:kind==='boss'?4:0,attackCount:0,npcResolve:guard?18:elite?22:tier>0?14:10,npcResolveMax:guard?18:elite?22:tier>0?14:10,hp:guard?130:elite?120:tier>0?70:42,hpMax:guard?130:elite?120:tier>0?70:42,statuses:{},elite,lane:clamp(Math.round((x+10.5)/7),0,3),humanoid,neutral,aggro:false,smart:['soldier','elite'].includes(kind),bodyScale:elite?1.6:kind==='boss'?2.8:kind==='maw'?1.2:1,wounds:{},experience:guard?12:tier*5,hitUntil:0,hitReactAt:0,hitReactUntil:0,hitDir:0,hitSeverity:null,ammo:kind==='archer'?10:kind==='mage'?3:0,name:({elite:'冠角の執行者',crawler:'鎌脚の蟲',wraith:'裂け目の亡霊',maw:'殻喰い',stag:'苔角の獣',mushroom:'眠る菌傘',soldier:'盾持ちの異形',archer:'骨弓の異形',mage:'呪灯の亡霊'})[kind]||''});
  }
  spawnVillageNPCs(r){
   for(let i=0;i<4;i++){const g=this.actor('guard',-10.5+i*7,-32);g.lane=i;r.actors.push(g);const e=this.actor(['crawler','wraith','maw','goblin'][i],-10.5+i*7,-39,i===2?1:0);e.lane=i;r.actors.push(e);}
