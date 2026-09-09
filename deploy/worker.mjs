@@ -24,7 +24,7 @@ export default {
    if(!env.WORLDS)return json({error:'Online backend is not deployed'},501);
    try{
     const release=await manifest(env);if(release.mode!=='game')return json({code:'RELEASE_PENDING'},503);
-    if(!['/api/join','/api/events','/api/command','/api/checkpoint','/api/presence'].includes(url.pathname))return json({code:'NOT_FOUND'},404);
+    if(!['/api/join','/api/events','/api/command','/api/checkpoint','/api/presence'].includes(url.pathname)&&!url.pathname.startsWith('/api/account/'))return json({code:'NOT_FOUND'},404);
     const origin=request.headers.get('Origin');if(origin&&origin!==url.origin)return json({code:'ORIGIN_REJECTED'},403);
     if(request.headers.get('Sec-Fetch-Site')==='cross-site')return json({code:'ORIGIN_REJECTED'},403);
     const mode=request.headers.get('X-Bloodline-Mode')||'normal';if(!['normal','demo'].includes(mode))return json({code:'INVALID_MODE'},400);

@@ -1,0 +1,4 @@
+.account-link{margin:14px 0;padding:12px;border:1px solid #aa97695c;border-radius:7px;background:#e8ddbd38;overflow-wrap:anywhere}
+.account-link h3{margin:0 0 8px;font-size:14px}.account-link p{font-size:12px;line-height:1.65;margin:8px 0}.account-link .full-button{min-height:44px;width:100%;white-space:normal;text-align:left}
+.account-link .account-status:empty{display:none}.account-link .account-status{color:#725025}.account-link input,.account-code{box-sizing:border-box;width:100%;min-height:44px;margin:8px 0;padding:9px;border:1px solid #aa97698c;border-radius:4px;background:#fbf3de;color:#302a20;font:inherit;font-size:12px}
+.account-code{height:86px;resize:none;font-family:monospace;user-select:all}.account-link summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-size:12px}.account-link small{display:block;font-size:10px;line-height:1.6}

@@ -5,7 +5,8 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {LiveContract} from '../src/live/contract.mjs';
-import {currentRules} from '../src/server/engines/registry.mjs';
+import {currentRules,engines} from '../src/server/engines/registry.mjs';
+import {authenticator,token as accountToken,recoveryCode} from '../tests/account-authenticator.mjs';
 const target=process.argv[2]||'dev';
 const dir=await fs.mkdtemp(path.join(os.tmpdir(),'bloodline-live-runtime-'));
 const output=await bundle({entryPoints:['deploy/worker.mjs'],bundle:true,format:'esm',platform:'browser',write:false});
@@ -29,4 +30,20 @@ try{
  assert(resumed.snapshot.t>=second.snapshot.t,'last streamed state is durable across runtime restart');
  const stale=await mf.dispatchFetch('https://local.test/api/command',{method:'POST',headers:headers(a),body:JSON.stringify({id:'stale',sequence:2,epoch:a.epoch,lease:a.lease,command:{type:'talk'}})});assert.equal(stale.status,409);
  console.log('PASS: real workerd / SQLite / Worker assets / two players / SSE / durable ACK / runtime restart / stale lease');
+ const accountCall=async(path,body={},credential)=>{
+  const r=await mf.dispatchFetch('https://local.test/api/account/'+path,{method:'POST',headers:{...headers(credential?{token:credential}:null),Origin:'https://local.test'},body:JSON.stringify(body)});
+  assert.equal(r.status,200,await r.clone().text());return r.json();
+ };
+ const auth=authenticator(),registration=await accountCall('register-options',{},resumed.token),code=recoveryCode();
+ await accountCall('register-verify',{id:registration.id,response:auth.register(registration.options,{origin:'https://local.test'}),recoveryCode:code},resumed.token);
+ const offline=new engines[currentRules]({mode:'normal'});offline.addPlayer('offline',{owner:'offline',name:'保存検証'});
+ const raw=JSON.stringify({...offline.exportState(),_profile:{owner:'offline',mode:'normal',online:false}});
+ await accountCall('cloud-save',{raw,rules:currentRules,revision:0},resumed.token);
+ await mf.dispose();mf=new Miniflare(options);
+ const authentication=await accountCall('login-options'),proof=await accountCall('login-verify',{id:authentication.id,response:auth.login(authentication.options,{origin:'https://local.test'})}),replacement=accountToken();
+ await accountCall('activate',{proof:proof.proof,token:replacement});
+ assert.equal((await accountCall('cloud-load',{},replacement)).cloud.raw,raw);
+ const recovered=await join({token:replacement});assert.equal(recovered.playerId,resumed.playerId);assert.equal(recovered.ack,resumed.ack);
+ const revoked=await mf.dispatchFetch('https://local.test/api/join',{method:'POST',headers:headers(resumed),body:'{}'});assert.equal(revoked.status,401);
+ console.log('PASS: real workerd / passkey P-256 registration and login / account restart / token rotation / offline cloud round-trip / retained online family');
 }finally{await mf.dispose();await fs.rm(dir,{recursive:true,force:true});}
