@@ -9,8 +9,8 @@ const SkillFxGPU=(()=>{
  precision highp float;in vec3 uv;out vec4 color;uniform vec3 effect;uniform float alpha;uniform float mono;
  const float PI=3.14159265;
  ${typeof FX_ARCANE_GLSL==='undefined'?'':FX_ARCANE_GLSL}
- void main(){float a=alpha*arcaneMask(effect.x,uv.x,uv.y,uv.z,effect.y,effect.z);if(a<.003)discard;
- vec3 c=effect.x>4.5&&effect.x<5.5?vec3(.015,.025,.04):vec3(.68,.88,1.);
+ void main(){float mode=mod(effect.x,8.),palette=floor(effect.x/8.);float a=alpha*arcaneMask(mode,uv.x,uv.y,uv.z,effect.y,effect.z);if(a<.003)discard;
+ vec3 c=mode>4.5&&mode<5.5?vec3(.015,.025,.04):effectTint(palette,uv.z);
  if(mono>.5)c=vec3(dot(c,vec3(.2126,.7152,.0722)));color=vec4(c,a);}`;
  function initialize(){
   try{canvas=document.createElement('canvas');gl=canvas.getContext('webgl2',{alpha:true,antialias:true,premultipliedAlpha:true,preserveDrawingBuffer:true});if(!gl)throw Error('WebGL2');

@@ -26,4 +26,4 @@ for line in (out/'animation.jsonl').open():
     if sample['index']==11:
         sheet.save(out/f"film-{sample['frame']:03d}.png")
         if sample['frame']==10:sheet.save(out/'original-effects.png')
-print('Native EGL film: 12 forms, 45 frames')
+print('Native EGL film: 12 forms, 75 frames')

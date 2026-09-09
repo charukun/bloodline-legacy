@@ -3,14 +3,14 @@
 <style>/*__STYLE__*/</style></head><body>
 <main>
  <header><a class="brand" href="#" aria-label="血脈の系譜 エフェクト工房"><span class="crest">血</span><span>血脈の系譜<small>BLOODLINE LEGACY</small></span></a><span class="edition">技のエフェクト工房 <b>01</b></span></header>
- <div class="intro"><div><span class="eyebrow">SKILL EFFECT STUDY</span><h1>技の表情を、組み替える。</h1></div><p>形、軌道、拍子、その余韻。<br>18の見本から、気になる一手を。</p></div>
+ <div class="intro"><div><span class="eyebrow">SKILL EFFECT STUDY</span><h1>技の表情を、組み替える。</h1></div><p>形、軌道、拍子、その余韻。<br>18の形に、それぞれの余韻を。</p></div>
  <div class="workspace">
   <section class="viewer" aria-label="エフェクト再生">
    <div class="stage-title"><div><span id="family-label">斬面</span><h2 id="effect-name">薄月</h2></div><button id="replay" class="small">↻ もう一度 <kbd>Space</kbd></button></div>
    <div class="canvas-wrap"><canvas id="stage" aria-label="キャラクターから稽古人形へ技を放つ演出見本"></canvas><div class="stage-tags"><span id="phase">構え</span><span id="mode-label">演出見本</span></div></div>
    <div class="transport">
     <button id="play" class="play" aria-label="一時停止">Ⅱ</button>
-    <div class="timeline"><label for="timeline" class="sr-only">再生位置</label><input id="timeline" type="range" min="0" max="1500" step="1" value="0"><div id="beat-marks" aria-hidden="true"></div></div>
+    <div class="timeline"><label for="timeline" class="sr-only">再生位置</label><input id="timeline" type="range" min="0" max="3000" step="1" value="0"><div id="beat-marks" aria-hidden="true"></div></div>
     <button id="step" class="small" aria-label="1コマ進める">+1f</button>
     <label class="speed"><span class="sr-only">再生速度</span><select id="speed"><option value=".25">0.25×</option><option value=".5">0.5×</option><option value="1" selected>1×</option></select></label>
    </div>
@@ -27,13 +27,20 @@
     <label>走る軌道<select id="path"></select></label><label>打撃の拍子<select id="rhythm"></select></label>
     <label>命中の形<select id="impact"></select></label><label>消え際<select id="release"></select></label>
    </div>
+   <div class="fields"><label class="full">光から余韻への配色<select id="palette"></select></label></div>
+   <fieldset class="silk-controls" id="expression-controls"><legend>余韻と発動ごとの変化</legend>
+    <label for="afterglow">余韻の長さ <output id="afterglow-value">1.0×</output></label><input id="afterglow" type="range" min=".5" max="2.4" step=".05" value="1">
+    <label for="variation">ランダム性 <output id="variation-value">65%</output></label><input id="variation" type="range" min="0" max="1" step=".05" value=".65">
+    <label><input type="checkbox" id="vary-cast" checked> 発動ごとに表情を変える</label>
+    <button id="next-cast" class="small">次の発動を試す ↻</button><p id="cast-label"></p>
+   </fieldset>
    <fieldset class="silk-controls" id="silk-controls"><legend>厚みと揺らめき</legend>
     <label for="thickness">厚み <output id="thickness-value" for="thickness">2.2×</output></label><input id="thickness" type="range" min=".5" max="3" step=".1" value="2.2">
     <label for="flutter">揺らめきの強さ <output id="flutter-value" for="flutter">65%</output></label><input id="flutter" type="range" min="0" max="1" step=".05" value=".65">
-    <button id="reseed" class="small">揺れ方を変える ↻</button><p>0%で揺れを止められます。厚みと揺れ方も構成に保存されます。</p>
+    <button id="reseed" class="small">揺れ方を変える ↻</button><p>0%で揺れを止められます。発動中は連続した揺らめきになり、コマ送りでも再現できます。</p>
    </fieldset>
    <fieldset class="silk-controls" id="layer-controls"><legend>重ねる演出</legend><label><input type="checkbox" id="layer-sigil" checked> 魔法陣</label><label><input type="checkbox" id="layer-body" checked> 光の本体</label><label><input type="checkbox" id="layer-motes" checked> 光の粒</label></fieldset>
-   <p class="field-note">項目を変えるとすぐに再生。色の変更はありません。</p>
+   <p class="field-note">形・動きが技の特徴。配色・厚み・余韻で表情を調整できます。</p>
    <div class="recipe-box"><span>いまの構成</span><p id="recipe-text"></p></div>
    <div class="file-actions"><button id="export">構成を保存 ↓</button><button id="import">構成を読込 ↑</button><input id="file" type="file" accept=".json,application/json" hidden></div>
    <p id="notice" role="status" aria-live="polite"></p>

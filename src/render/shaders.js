@@ -37,6 +37,17 @@ float arcaneMask(float mode,float u,float v,float age,float clock,float flutter)
  if(mode<5.5)return 1.-smoothstep(.80,1.,v);
  return clamp(edge*ends*(exp(-pow((v-.5)*6.,2.))+.2)*(.72+.28*sin(clock*35.+u*12.)),0.,1.);
 }
+// A two-color material evolves from bright core to colored afterimage. Color
+// is an expression parameter, never counted as a new skill or geometry form.
+vec3 effectTint(float palette,float phase){
+ vec3 a=vec3(.68,.88,1.),b=a;
+ if(palette>.5&&palette<1.5){a=vec3(1.,240./255.,187./255.);b=vec3(230.,111.,56.)/255.;}
+ else if(palette<2.5&&palette>1.5){a=vec3(217.,255.,227.)/255.;b=vec3(66.,155.,146.)/255.;}
+ else if(palette<3.5&&palette>2.5){a=vec3(215.,247.,255.)/255.;b=vec3(83.,125.,222.)/255.;}
+ else if(palette<4.5&&palette>3.5){a=vec3(255.,224.,237.)/255.;b=vec3(206.,80.,117.)/255.;}
+ else if(palette>4.5){a=vec3(239.,222.,255.)/255.;b=vec3(132.,100.,199.)/255.;}
+ return mix(a,b,clamp(phase,0.,1.));
+}
 float shadowValue(sampler2D map,vec3 p,float bias){vec2 t=1./vec2(textureSize(map,0));float s=0.;for(int i=0;i<4;i++){vec2 o=vec2((i&1)==0?-.9:.9,(i&2)==0?-.9:.9);s+=step(texture(map,p.xy+o*t*1.35).r,p.z-bias);}return s*.25;}
 vec3 brdf(vec3 base,vec3 N,vec3 V,vec3 L,float rough,float metal,vec3 radiance){vec3 H=normalize(V+L);float nl=max(dot(N,L),0.),nv=max(dot(N,V),.08),nh=max(dot(N,H),0.),vh=max(dot(V,H),0.);float a=rough*rough,a2=a*a;float d=a2/(PI*pow(nh*nh*(a2-1.)+1.,2.)+.0001);float k=pow(rough+1.,2.)*.125;float g=(nv/(nv*(1.-k)+k))*(nl/(nl*(1.-k)+k));vec3 f0=mix(vec3(.035),base,metal);vec3 F=f0+(1.-f0)*pow(1.-vh,5.);return ((1.-F)*(1.-metal)*base/PI+d*g*F/max(.1,4.*nv*max(nl,.01)))*radiance*nl;}
 vec3 localLight(vec3 p,vec3 intensity,vec3 base,vec3 N,vec3 V,float rough,float metal){if(!any(greaterThan(intensity,vec3(0.))))return vec3(0.);vec3 delta=p-vWorld;float d=length(delta);if(d>=7.5)return vec3(0.);float atten=pow(max(0.,1.-d/7.5),2.)/(1.+d*d*.12);return brdf(base,N,V,delta/max(.01,d),rough,metal,intensity*atten);}
@@ -44,7 +55,7 @@ void main(){vec3 N=normalize(vNormal),L=normalize(vec3(-.48,.85,.42)),V=normaliz
  // Continuous silk surface. UV/erosion travel with the strike, so hitstop also
  // freezes the material. Only material 24 uses this path; no world texture lookup.
  if(authored>23.5&&authored<24.5){
-  float u=vLocal.x,v=vLocal.y,age=vLocal.z,flutter=vInk.r,seed=vInk.g,clock=vInk.b;
+  float u=vLocal.x,v=vLocal.y,age=vLocal.z,flutter=mod(vInk.r,2.),seed=vInk.g,clock=vInk.b,palette=floor(vInk.r/2.);
   float warp=sin(u*19.+age*.9)*.055+sin(u*43.-age)*.012+flutter*silkFlow(u,clock,seed)*.16*smoothstep(.05,.65,v);
   float fiber=pow(.5+.5*sin((v+warp)*82.+sin(u*23.)*2.2),7.);
   float core=exp(-pow((v-.16)/max(.115,fwidth(v)*.75),2.));
@@ -55,14 +66,14 @@ void main(){vec3 N=normalize(vNormal),L=normalize(vec3(-.48,.85,.42)),V=normaliz
   float ends=smoothstep(0.,.045,u)*(1.-smoothstep(.93,1.,u));
   alpha*=clamp((core*.9+wake)*erosion*edge*ends,0.,1.);
   if(alpha<.004)discard;
-  vec3 light=lin(vec3(1.,240./255.,212./255.))*(1.4+core*1.6);
+  vec3 light=lin(palette<.5?vec3(1.,240./255.,212./255.):effectTint(palette,age))*(1.4+core*1.6);
   outColor=vec4(light/(1.+light),alpha);outNormal=vec4(.5,1.,.5,0.);return;
  }
  // Dedicated additive spell batch keeps depth testing but never writes depth.
  if(authored>24.5&&authored<25.5){
-  float mode=vInk.r;alpha*=arcaneMask(mode,vLocal.x,vLocal.y,vLocal.z,vInk.g,vInk.b);
+  float mode=mod(vInk.r,8.),palette=floor(vInk.r/8.);alpha*=arcaneMask(mode,vLocal.x,vLocal.y,vLocal.z,vInk.g,vInk.b);
   if(alpha<.003)discard;
-  vec3 light=mode>4.5&&mode<5.5?vec3(.008,.014,.023):lin(vec3(.68,.88,1.))*2.3;
+  vec3 light=mode>4.5&&mode<5.5?vec3(.008,.014,.023):lin(effectTint(palette,vLocal.z))*2.3;
   outColor=vec4(light/(1.+light),alpha);outNormal=vec4(0.);return;
  }
  if(surf>1.5&&surf<2.5){float d=length(vLocal.xz);alpha*=pow(max(0.,1.-d),2.);if(alpha<.005)discard;outColor=vec4(lin(pigment),alpha);outNormal=vec4(.5,1.,.5,0.);return;}

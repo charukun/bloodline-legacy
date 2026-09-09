@@ -36,5 +36,5 @@ test('spell impacts require a hit, anchor their ground layer and keep their auth
  p.composition=(primitives,point)=>draws.push(primitives.flatMap(p=>(p.strips||[]).flatMap(s=>s.flatMap(q=>[point(q.a),point(q.b)]))));
  const s={t:1.1,actors:[target],room:{id:'test'}};p.update(s);assert.equal(draws.length,0);
  r.effects=[{type:'hit',skill:4320,target:'target',born:1,x:0,z:0}];p.update(s);assert(draws.length>0);assert(Math.min(...draws.at(-1).map(p=>p[1]))>=2.035-1e-6);
- s.t=1.6;p.update(s);assert.equal(r.effects.length,1);s.t=1.76;p.update(s);assert.equal(r.effects.length,0);
+ s.t=1.6;p.update(s);assert.equal(r.effects.length,1);s.t=1+vm.runInContext("SkillEffects",ctx).life(r.effects[0].skillRecipe)+.001;p.update(s);assert.equal(r.effects.length,0);
 });

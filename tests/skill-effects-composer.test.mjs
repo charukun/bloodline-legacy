@@ -72,7 +72,7 @@ test('lab controls support edits, scrubbing, comparison and reset without game s
  const seed=w.SkillFxLab.getRecipe().seed;$('reseed').click();assert.notEqual(w.SkillFxLab.getRecipe().seed,seed);
  assert.equal(JSON.parse(w.localStorage.getItem('bloodline-skill-fx-lab-v1')).thickness,3);
  $ ('presets').querySelector('[data-index="3"]').click();assert.equal(w.SkillFxLab.getRecipe().family,'thread');
- assert.equal($('silk-controls').disabled,true);
+ assert.equal($('silk-controls').disabled,false);
  $('pin').click();$('family').value='stone';$('family').dispatchEvent(new w.Event('change'));assert.equal(w.SkillFxLab.getRecipe().family,'stone');
  $('compare').click();assert.equal($('compare').getAttribute('aria-pressed'),'true');
  $('timeline').value='430';$('timeline').dispatchEvent(new w.Event('input'));assert.equal($('play').getAttribute('aria-label'),'再生');
@@ -80,5 +80,11 @@ test('lab controls support edits, scrubbing, comparison and reset without game s
  $('mono').checked=true;$('mono').dispatchEvent(new w.Event('change'));$('reset').click();assert.equal(w.SkillFxLab.getRecipe().family,'thread');
  $('presets').querySelector('[data-index="6"]').click();assert.equal(w.SkillFxLab.getRecipe().family,'pillar');
  $('layer-body').checked=false;$('layer-body').dispatchEvent(new w.Event('change'));assert.equal(w.SkillFxLab.getRecipe().layers.body,false);assert.equal($('layer-controls').disabled,false);
+ $('afterglow').value='2.4';$('afterglow').dispatchEvent(new w.Event('input'));assert.equal(w.SkillFxLab.getRecipe().afterglow,2.4);
+ $('palette').value='amber';$('palette').dispatchEvent(new w.Event('change'));assert.equal(w.SkillFxLab.getRecipe().palette,'amber');
+ $('variation').value='1';$('variation').dispatchEvent(new w.Event('input'));const cast=w.SkillFxLab.getCast();
+ $('next-cast').click();assert.notEqual(w.SkillFxLab.getCast().seed,cast.seed);const config=w.SkillFxLab.getConfig();assert(config.previewCast>0);assert.equal(config.previewVary,true);w.SkillFxLab.seek(2.5);assert.equal($('timeline').value,'2500');
+ const snapshot=JSON.stringify(w.SkillFxLab.getCast());w.SkillFxLab.seek(.3);w.SkillFxLab.seek(2.5);assert.equal(JSON.stringify(w.SkillFxLab.getCast()),snapshot);
+ $('vary-cast').checked=false;$('vary-cast').dispatchEvent(new w.Event('change'));assert.equal(w.SkillFxLab.getCast().seed,w.SkillFxLab.getRecipe().seed);
  assert.equal(w.localStorage.length,1);assert.equal(w.localStorage.key(0),'bloodline-skill-fx-lab-v1');dom.window.close();
 });

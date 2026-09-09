@@ -40,14 +40,14 @@ const SkillFxStage=(()=>{
      const q=strip.map(s=>({a:project(s.a),b:project(s.b)}));
      for(let j=0;j<q.length-1;j++){
       const a=q[j],b=q[j+1],g=ctx.createLinearGradient((a.a[0]+b.a[0])/2,(a.a[1]+b.a[1])/2,(a.b[0]+b.b[0])/2,(a.b[1]+b.b[1])/2);
-      for(let k=0;k<=16;k++){const alpha=SkillArcane.mask(p.mode,(j+.5)/(q.length-1),k/16,p.age,p.clock,p.flutter),rgb=p.mode===5?'8,14,22':mono?'235,235,235':'151,207,246';g.addColorStop(k/16,`rgba(${rgb},${alpha})`);}
+      for(let k=0;k<=16;k++){const alpha=SkillArcane.mask(p.mode,(j+.5)/(q.length-1),k/16,p.age,p.clock,p.flutter),rgb=p.mode===5?'8,14,22':mono?'235,235,235':p.color.slice(1).match(/../g).map(x=>parseInt(x,16)).join(',');g.addColorStop(k/16,`rgba(${rgb},${alpha})`);}
       ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(...a.a);ctx.lineTo(...a.b);ctx.lineTo(...b.b);ctx.lineTo(...b.a);ctx.closePath();ctx.fill();
      }
     }ctx.restore();
    }else if(p.kind==='motes'){
     ctx.save();ctx.globalCompositeOperation='lighter';
     for(const q of p.points){const a=project(q.p),r=q.size*scale;ctx.globalAlpha=p.alpha*q.alpha;
-     const g=ctx.createRadialGradient(...a,0,...a,r);g.addColorStop(0,'#ffffff');g.addColorStop(.18,mono?'#e8e8e8':'#a5ddff');g.addColorStop(1,'#9ad6ff00');ctx.fillStyle=g;ctx.fillRect(a[0]-r,a[1]-r,r*2,r*2);
+     const g=ctx.createRadialGradient(...a,0,...a,r);g.addColorStop(0,'#ffffff');g.addColorStop(.18,mono?'#e8e8e8':p.color);g.addColorStop(1,p.color+'00');ctx.fillStyle=g;ctx.fillRect(a[0]-r,a[1]-r,r*2,r*2);
      if(q.size>.08){ctx.strokeStyle=mono?'#ffffffaa':'#cbeaffaa';ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(a[0]-r*.8,a[1]);ctx.lineTo(a[0]+r*.8,a[1]);ctx.moveTo(a[0],a[1]-r*.8);ctx.lineTo(a[0],a[1]+r*.8);ctx.stroke();}
     }ctx.restore();
    }else if(p.kind==='ribbon'){
@@ -59,7 +59,7 @@ const SkillFxStage=(()=>{
     for(let band=0;band<bands;band++){
      const v0=band/bands,v1=(band+1)/bands,v=(v0+v1)*.5,g=ctx.createLinearGradient(...start,...end);
      for(let j=0;j<=24;j++){
-      const u=j/24,m=SkillSilk.mask(u,v,p.age,p.material),c=mono?[245,245,245]:[255,240,212];
+      const u=j/24,m=SkillSilk.mask(u,v,p.age,p.material),c=mono?[245,245,245]:p.color.slice(1).match(/../g).map(x=>parseInt(x,16));
       g.addColorStop(u,`rgba(${c.join(',')},${m.alpha})`);
      }
      ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(...at(sections[0],v0));
@@ -69,7 +69,7 @@ const SkillFxStage=(()=>{
     }
     // Preserve subpixel leading-edge coverage as the WebGL fwidth path does.
     const edge=ctx.createLinearGradient(...start,...end);
-    for(let j=0;j<=32;j++){const u=j/32,alpha=SkillSilk.mask(u,.16,p.age,p.material).alpha;edge.addColorStop(u,`rgba(${mono?'250,250,250':'255,244,224'},${alpha*.85})`);}
+    for(let j=0;j<=32;j++){const u=j/32,alpha=SkillSilk.mask(u,.16,p.age,p.material).alpha;edge.addColorStop(u,`rgba(${mono?'250,250,250':p.color.slice(1).match(/../g).map(x=>parseInt(x,16)).join(',')},${alpha*.85})`);}
     ctx.strokeStyle=edge;ctx.lineWidth=quality==='low'?.85:1.15;ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(...at(sections[0],.16));
     for(let j=1;j<sections.length;j++)ctx.lineTo(...at(sections[j],.16));ctx.stroke();
    }else if(p.kind==='line'){

@@ -17,7 +17,7 @@ const SkillSilk=(()=>{
  }
  const flow=(u,clock,seed)=>.72*noise(u*4.7,clock*2.2,seed)+.28*noise(u*10.8,clock*4.8,seed+41);
  const appearance=(recipe,clock)=>({flutter:recipe.flutter??.65,seed:((recipe.seed??73)^((recipe.seed??73)>>>16))>>>0,clock});
- const ink=p=>[p.material?.flutter??0,(p.material?.seed??73)%251,p.material?.clock??0];
+ const ink=p=>[(p.material?.flutter??0)+(p.palette??0)*2,(p.material?.seed??73)%251,p.material?.clock??0];
  const point=(path,u)=>{
   if(path==='pierce')return [.06*Math.sin(u*Math.PI),1.12,.2+u*2.1];
   if(path==='fall')return [.04*Math.sin(u*4),2.6-u*1.9,.35+u*1.92];

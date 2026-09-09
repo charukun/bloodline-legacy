@@ -7,12 +7,12 @@ const shaders=await fs.readFile('src/render/shaders.js','utf8'),common=shaders.s
 vm.runInContext('const FX_ARCANE_GLSL='+JSON.stringify(common),ctx);vm.runInContext(await fs.readFile('tools/skill-fx-lab/webgl.js','utf8'),ctx);
 const lab=vm.runInContext('({vertex:SkillFxGPU.vertex,fragment:SkillFxGPU.fragment})',ctx);
 const out=path.join(root,'dist/arcane-review');await fs.mkdir(out,{recursive:true});const presets=FX.presets.slice(6);
-const eye=[3.8,3.7,5.8],vp=[...multiply(ortho(-3.0,3.0,-2.2,2.2,.1,30),look(eye,[0,1.1,0]))],frames=[];
+const eye=[3.8,3.7,5.8],vp=[...multiply(ortho(-3.3,3.3,-2.6,2.6,.1,30),look(eye,[0,1.1,0]))],frames=[];
 for(const p of presets)for(const age of [.04,.16,.34]){const fields=Arc.impact(p.recipe,age,'high',.035),geometry=fields.map(p=>{const g=Arc.geometry(p,v=>v,eye);return {positions:[...g.positions],normals:[...g.normals],center:g.center,alpha:p.alpha,ink:Arc.ink(p),additive:p.mode!==5};});frames.push({path:p.recipe.family,u:age,geometry});}
 await fs.writeFile(path.join(out,'egl-input.json'),JSON.stringify({vertex,fragment,skin,lab,frames,eye,vp}));console.log(out);
 
 const stream=await fs.open(path.join(out,'animation.jsonl'),'w');
-for(let i=0;i<45;i++)for(const [index,p] of presets.entries()){
+for(let i=0;i<75;i++)for(const [index,p] of presets.entries()){
  const time=i/30,fields=Arc.impact(p.recipe,time-.18,'high',.035);
  const geometry=fields.map(p=>{const g=Arc.geometry(p,v=>v,eye);return {positions:[...g.positions],normals:[...g.normals],center:g.center,alpha:p.alpha,ink:Arc.ink(p),additive:p.mode!==5};});
  await stream.write(JSON.stringify({frame:i,index,name:p.recipe.family,geometry})+'\n');

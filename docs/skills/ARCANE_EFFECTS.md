@@ -25,20 +25,24 @@ WORK's unmerged PR #40. No old recovery core/bootstrap was imported.
 | 双翼 | paired fans with unequal feather lengths | 4301 風縫い |
 | 雷紋 | deterministic branching lightning with terminal pulses | 4313 鳴石の震撃 |
 
-The names above identify VFX presets, not new unlockable skills. All use the same
-light palette; distinct shapes and motion are not color variants. The prior six
+The names above identify VFX presets, not new unlockable skills. Shapes and
+choreography remain the identity; color/width/noise variants are not counted as
+additional skills or distinct forms. The prior six
 motifs remain. The lab offers 18 base forms with independent path, rhythm,
 contact-shape and release controls. The 12 new forms also support toggling their
-seal/body/particle layers. Thickness, flutter and seed remain saved in version-1
-recipes; old exports gain default layer settings. No lifetime randomness is drawn
-from simulation RNG, and scrubbing reproduces the same effect.
+seal/body/particle layers. Version-1 recipes now also carry palette, afterglow
+and variation. Missing fields preserve native color, 1x afterglow and no per-cast
+variation. New authored presets enable bounded variation at 65%. The lab stores
+its preview sample index in export/view metadata so importing reproduces the
+sample. No randomness is drawn from simulation RNG; seeking is deterministic.
 
 ## Runtime contract
 
 `SkillArcane` is a stateless, direct-dispatch builder. `field` carries continuous
 UV strips; `motes` carries camera-facing sprites. Material 25 reuses the normal
 attribute for UV/phase (particle opacity for sprites), and instance RGB for mask
-mode / effect clock / flutter. Its analytic masks remove hard mesh outlines.
+packed mask+palette / effect clock / flutter. Material 24 similarly packs its
+palette with flutter without changing the vertex/instance layout. Its analytic masks remove hard mesh outlines.
 Game and HTML WebGL reuse the same GLSL mask source. The Canvas fallback is a
 lower-fidelity approximation, not the main quality reference.
 
@@ -46,28 +50,61 @@ Light layers use a dedicated additive batch with depth testing on and depth
 writes off. The dark eclipse disc uses the existing alpha batch. The renderer
 restores normal blending before weather/impact layers; other materials and
 character shaders keep their interfaces. No extra light sources or textures.
-Each effect uses at most 302 high / 132 low quads, inside existing shared
+Default effects use at most 382 high / 156 low quads (422/180 with optional
+extra seals), inside existing shared
 512/256 segment and 16/8 mesh-slot budgets. Concurrent effects may omit later
 layers when the budget is exhausted. All pooled buffers are released on room
 change. Device FPS remains to be measured.
 
-A small casting seal follows the strike clock. Full effects originate only from
-confirmed hit events, retain the actual contact point, and lift their ground
-layers 0.035 above the sampled terrain. Their release lasts 0.58–0.75 seconds;
-the hit-effect retention uses this definition instead of the former 0.55 cutoff.
+Casting follows the strike clock. Only pillar/gate default to seals; other forms
+gather on the weapon, run along the ground or fold at the hand. Full effects
+originate only from confirmed hit events, retain their contact point, and lift
+ground layers 0.035 above sampled terrain. Afterglow leaves the first 120ms
+unchanged, then scales the cosmetic tail by 0.5–2.4x. Retention uses the same
+resolved lifetime; damage/recovery timing is never stretched.
 No changes to damage, collision/reach, stamina, learning, save data or input.
 
 ## Review
 
 - `npm run build:skill-fx-lab` → `dist/skill-fx-lab.html` (standalone/offline).
-- `node --test tests/skill-arcane.test.mjs tests/skill-effects-composer.test.mjs tests/skill-silk.test.mjs`.
+- `node --test tests/skill-arcane.test.mjs tests/skill-effects-composer.test.mjs tests/skill-silk.test.mjs tests/skill-expression.test.mjs`.
 - `node tools/skill-fx-lab/arcane-evidence.mjs` generates real shader input.
 - `python3 tools/skill-fx-lab/arcane-film.py` renders with native EGL, including
   the existing skin and HTML preview shader link checks. This is not browser QA.
 - `npm test` and DEV deployment integrity remain required gates.
 
-Final checks: 278 tests pass, including 21 focused VFX tests. DEV build and
+Final checks: 283 tests pass, including 26 focused VFX tests. DEV build and
 deployment integrity pass. Native EGL renders 36 lifecycle samples and a
-45-frame comparison of all twelve forms; the film synchronizes their impact
+75-frame comparison of all twelve forms; the film synchronizes their impact
 start for comparison. The shared game shader, existing skin shader and HTML
 preview shader link successfully. Browser/device playback and FPS are unverified.
+
+## Follow-up: signature and expression
+
+The earlier universal seal → rising body → motes sequence caused repetition.
+The twelve forms now have authored growth/release timings and different particle
+routes: explosion, convergence, spiral absorption, forward spray, drifting pollen,
+or detached feathers. Thorns start with ground fissures and stagger their growth;
+eclipse opens/closes a dark slit; nova sheds its center; comet retracts its tail;
+lotus opens successive petals. These are presentation cues, not extra hit events.
+
+The composer adds five two-color transitions plus native color, actual luminous
+surface width (0.5–3x), afterglow (0.5–2.4x), and variation (0–100%). Flutter uses
+continuous seeded noise, not independent random values each frame. Variation
+samples seed/width/lifetime once per cast; maximum deviations are ±18% width and
+±22% afterglow, scaled by the control and clamped to allowed bounds. Geometry
+irregularity/particle scatter also follows that seed. Palette and main silhouette
+stay fixed across casts so the same Skill ID remains recognizable. Color evolves
+from core to tail rather than choosing an unrelated hue every frame.
+
+Runtime caches samples per visible actor, shares them with matching confirmed
+hits, freezes the sampled blade during hitstop, clears on room change and removes
+stale samples on switching to an unbound basic skill. Existing impact samples keep
+their recipe when the actor starts another action. No save schema changes.
+
+The lab supports next-cast, fixed-sample replay, zero variation, A/B comparison,
+monochrome review, JSON import/export and independent layers. Repeat playback
+waits only a short gap after the actual tail. The 3s scrub range accommodates
+maximum afterglow. Browser/device interaction, FPS and human judgement of
+perceptual novelty remain unverified; geometry tests are not a claim that every
+combination feels like a different skill.

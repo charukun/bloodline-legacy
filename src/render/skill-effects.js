@@ -11,6 +11,7 @@ const SkillEffects = (() => {
   impact:{cleave:'切り開く',fracture:'砕く',pinch:'締める',ripple:'波紋を送る'},
   release:{vanish:'切れよく消す',drift:'余韻を流す',recoil:'引き戻す'}
  });
+ const colorways=Object.freeze({native:['原色',null],amber:['琥珀 → 紅','#fff0bb','#e66f38'],jade:['翡翠 → 青磁','#d9ffe3','#429b92'],azure:['氷青 → 蒼','#d7f7ff','#537dde'],rose:['薄紅 → 朱','#ffe0ed','#ce5075'],violet:['藤 → 藍','#efdeff','#8464c7']});
  const palettes={blade:['#fff4d7','#b4ccc6','#637c7b'],bell:['#fff4d7','#b9d8d0','#687f85'],stone:['#e1c8a3','#b29772','#655b52'],thread:['#fff1cb','#cccbb9','#737d78'],ember:['#fff0b6','#e79447','#9a4732'],shadow:['#cfcfe1','#626780','#252b40']};
  const presetData=[
   ['薄月','blade','sweep','single','cleave','vanish','滑らかな斬面の外縁が走り、内側の細い筋がほどけて消える。'],
@@ -30,17 +31,22 @@ const SkillEffects = (() => {
   }
   if(value.seed!==undefined&&(!Number.isInteger(value.seed)||value.seed<0||value.seed>4294967295))throw Error('seedは0〜4294967295の整数にしてください');
   out.seed=value.seed??73;
-  for(const [key,min,max,fallback] of [['flutter',0,1,.65],['thickness',.5,3,2.2]]){
+  for(const [key,min,max,fallback] of [['flutter',0,1,.65],['thickness',.5,3,2.2],['afterglow',.5,2.4,1],['variation',0,1,0]]){
    const v=value[key]??fallback;
    if(!Number.isFinite(v)||v<min||v>max)throw Error(key+'は'+min+'〜'+max+'の数値にしてください');
    out[key]=v;
   }
+  out.palette=value.palette??'native';if(!Object.hasOwn(colorways,out.palette))throw Error('不明な配色です');
   const layers=value.layers??{};if(typeof layers!=='object'||Array.isArray(layers))throw Error('layersはレイヤー設定です');
   out.layers=Object.freeze(Object.fromEntries(['sigil','body','motes'].map(k=>{if(layers[k]!==undefined&&typeof layers[k]!=='boolean')throw Error('レイヤーはON/OFFで指定してください');return [k,layers[k]??true];})));
   return Object.freeze(out);
  }
  for(const d of arcane?.definitions||[])presetData.push([d.name,d.id,d.path,d.rhythm,d.impact,d.release,d.description]);
- const presets=Object.freeze(presetData.map(([name,family,path,rhythm,impact,release,description],i)=>Object.freeze({name,description,recipe:resolve({family,path,rhythm,impact,release,seed:73+i*97})})));
+ const presets=Object.freeze(presetData.map(([name,family,path,rhythm,impact,release,description],i)=>Object.freeze({name,description,recipe:resolve({family,path,rhythm,impact,release,seed:73+i*97,variation:.65,...signature(family)})})));
+ function signature(family){
+  const authored={pillar:['azure',1.35],vortex:['jade',1.2],nova:['amber',.7],lotus:['rose',1.65],gate:['violet',.95],comet:['azure',1.15],cage:['jade',1.1],tide:['azure',1.4],thorn:['amber',.85],eclipse:['violet',1.6],wings:['rose',1.25],fulgur:['azure',.6]};
+  const a=authored[family];return a?{palette:a[0],afterglow:a[1],layers:{sigil:['pillar','gate'].includes(family),body:true,motes:true}}:{};
+ }
  // Authored bindings: separate IDs retain their own spatial/timing signature.
  // All other skills continue to use the established renderer.
  const bindings={
@@ -53,9 +59,24 @@ const SkillEffects = (() => {
  };
  Object.assign(bindings,{4320:['pillar','fall','single','ripple','drift'],4311:['vortex','orbit','double','pinch','recoil'],4310:['nova','pierce','single','fracture','vanish'],4303:['lotus','sweep','single','ripple','drift'],4312:['gate','pierce','double','cleave','recoil'],4030:['comet','fall','single','cleave','drift'],4304:['cage','orbit','triplet','pinch','recoil'],4031:['tide','sweep','single','ripple','drift'],4302:['thorn','fall','triplet','fracture','vanish'],4330:['eclipse','orbit','single','pinch','recoil'],4301:['wings','sweep','double','cleave','drift'],4313:['fulgur','pierce','triplet','fracture','vanish']});
  for(const id of Object.keys(bindings))if(!Object.hasOwn(options.family,bindings[id][0]))delete bindings[id];
- const bySkill=new Map(Object.entries(bindings).map(([id,v])=>[Number(id),resolve({family:v[0],path:v[1],rhythm:v[2],impact:v[3],release:v[4],seed:Number(id)})]));
+ const bySkill=new Map(Object.entries(bindings).map(([id,v])=>[Number(id),resolve({family:v[0],path:v[1],rhythm:v[2],impact:v[3],release:v[4],seed:Number(id),variation:.65,...signature(v[0])})]));
  const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)),mix=(a,b,t)=>a+(b-a)*t;
  const hash=(seed,i)=>{let x=(seed^Math.imul(i+1,0x9e3779b1))>>>0;x=Math.imul(x^(x>>>16),0x85ebca6b);return ((x^(x>>>13))>>>0)/4294967296;};
+ // A cast owns one cosmetic sample. Same input token replays exactly; the
+ // chosen family/path/beats/palette and all simulation data remain stable.
+ function forCast(recipe,token=0){
+  if(!recipe||!recipe.variation)return recipe;
+  let seed=recipe.seed;for(const c of String(token))seed=Math.imul(seed^c.charCodeAt(0),16777619)>>>0;
+  const v=recipe.variation;
+  return resolve({...recipe,seed,thickness:clamp(recipe.thickness*(1+(hash(seed,1)*2-1)*.18*v),.5,3),afterglow:clamp(recipe.afterglow*(1+(hash(seed,2)*2-1)*.22*v),.5,2.4)});
+ }
+ const paletteIndex=r=>Object.keys(colorways).indexOf(r.palette??'native');
+ function colorAt(recipe,phase=0){
+  const pair=colorways[recipe.palette??'native'];if(!pair?.[1])return null;
+  const rgb=h=>h.slice(1).match(/../g).map(x=>parseInt(x,16)),a=rgb(pair[1]),b=rgb(pair[2]);
+  return '#'+a.map((v,i)=>Math.round(mix(v,b[i],clamp(phase))).toString(16).padStart(2,'0')).join('');
+ }
+ function decorate(list,recipe){return list.map(p=>{const phase=p.age??0,color=colorAt(recipe,phase);return {...p,palette:paletteIndex(recipe),color:p.mode===5?p.color:color??p.color};});}
  const add=(a,b)=>a.map((v,i)=>v+b[i]);
  function pathPoint(path,u){
   if(path==='pierce')return [.10*Math.sin(u*Math.PI),1.12,.2+u*2.1];
@@ -64,11 +85,11 @@ const SkillEffects = (() => {
   return [Math.sin(a)*(path==='orbit'?1.45:1.65),1.1+.12*Math.sin(u*Math.PI),.05+Math.cos(a)*1.8];
  }
  function writer(recipe,quality){
-  const list=[],colors=palettes[recipe.family],budget=quality==='low'?80:LIMIT;
+  const list=[],native=palettes[recipe.family],colors=(recipe.palette??'native')==='native'?native:[colorAt(recipe,0),colorAt(recipe,.45),colorAt(recipe,1)],budget=quality==='low'?80:LIMIT;
   const put=p=>{if(list.length<budget&&p.alpha>.008)list.push(p);};
   return {list,colors,
-   line:(a,b,width=.025,alpha=1,tone=0)=>put({kind:'line',a,b,width,alpha:clamp(alpha),color:colors[tone]}),
-   shard:(p,size,turn=0,alpha=1,tone=1)=>put({kind:'shard',p,size,turn,alpha:clamp(alpha),color:colors[tone]})};
+   line:(a,b,width=.025,alpha=1,tone=0)=>put({kind:'line',a,b,width:width*(recipe.thickness??2.2)/2.2,alpha:clamp(alpha),color:colors[tone]}),
+   shard:(p,size,turn=0,alpha=1,tone=1)=>put({kind:'shard',p,size:size.map(v=>v*Math.sqrt((recipe.thickness??2.2)/2.2)),turn,alpha:clamp(alpha),color:colors[tone]})};
  }
  function ring(w,c,r,alpha,plane='ground',steps=16,turn=0,open=1,width=.017){
   const point=a=>plane==='ground'?[c[0]+Math.cos(a)*r,c[1],c[2]+Math.sin(a)*r]:[c[0]+Math.cos(a)*r,c[1]+Math.sin(a)*r,c[2]];
@@ -77,7 +98,7 @@ const SkillEffects = (() => {
  function stroke(recipe,u,quality='high',legacyBlade=false){
   if(!Number.isFinite(u)||u<0||u>1)return [];
   if(arcane?.has(recipe.family))return arcane.stroke(recipe,u,quality);
-  if(recipe.family==='blade'&&!legacyBlade&&typeof SkillSilk!=='undefined')return SkillSilk.stroke(recipe,u,quality);
+  if(recipe.family==='blade'&&!legacyBlade&&typeof SkillSilk!=='undefined')return decorate(SkillSilk.stroke(recipe,u,quality),recipe);
   const w=writer(recipe,quality),n=quality==='low'?9:16,head=pathPoint(recipe.path,u),fade=Math.sin(Math.PI*clamp(u/.94)),rnd=i=>hash(recipe.seed,i);
   if(recipe.family==='blade'){
    for(let j=0;j<n;j++){
@@ -120,11 +141,13 @@ const SkillEffects = (() => {
   }
   return w.list;
  }
- const life=recipe=>arcane?.has(recipe.family)?arcane.life(recipe):.55;
+ const impactLength=recipe=>recipe.release==='vanish'?.24:recipe.release==='recoil'?.36:.50;
+ const life=recipe=>arcane?.has(recipe.family)?arcane.life(recipe):.12+(impactLength(recipe)-.12)*(recipe.afterglow??1);
  function impact(recipe,age,quality='high',ground=-1.065){
   if(arcane?.has(recipe.family))return arcane.impact(recipe,age,quality,ground);
-  if(!Number.isFinite(age)||age<0||age>.55)return [];
-  const duration=recipe.release==='vanish'?.24:recipe.release==='recoil'?.36:.50;
+  if(!Number.isFinite(age)||age<0||age>=life(recipe))return [];
+  age=age<=.12?age:.12+(age-.12)/(recipe.afterglow??1);
+  const duration=impactLength(recipe);
   if(age>=duration)return [];
   const w=writer(recipe,quality),u=age/duration,fade=(1-u)**1.5,rnd=i=>hash(recipe.seed,i),n=quality==='low'?8:14;
   const spread=1-(1-u)**3,c=[0,0,0];
@@ -169,7 +192,7 @@ const SkillEffects = (() => {
   return w.list;
  }
  const beats=recipe=>recipe.rhythm==='double'?[.34,.63]:recipe.rhythm==='triplet'?[.30,.48,.70]:[.40];
- const duration=1.5;
+ const duration=3;
  function frame(recipe,time,quality='high',legacyBlade=false){
   if(!Number.isFinite(time))return [];
   const list=[];
@@ -193,5 +216,5 @@ const SkillEffects = (() => {
   let remaining=voices.length;
   for(const [start,end,type,length] of voices){const o=ctx.createOscillator(),g=ctx.createGain();o.type=type;o.frequency.setValueAtTime(start,when);o.frequency.exponentialRampToValueAtTime(end,when+length);g.gain.setValueAtTime(.001,when);g.gain.linearRampToValueAtTime(.3/voices.length,when+.006);g.gain.exponentialRampToValueAtTime(.001,when+length);o.connect(g);g.connect(gain);o.start(when);o.stop(when+length+.01);o.onended=()=>{o.disconnect();g.disconnect();if(--remaining===0)gain.disconnect();};}
  }
- return Object.freeze({VERSION,LIMIT,options,presets,resolve,forSkill:id=>bySkill.get(id)||null,stroke,impact,frame,beats,duration,life,transform,sound});
+ return Object.freeze({VERSION,LIMIT,colorways,colorAt,decorate,forCast,options,presets,resolve,forSkill:id=>bySkill.get(id)||null,stroke,impact,frame,beats,duration,life,transform,sound});
 })();

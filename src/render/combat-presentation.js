@@ -11,7 +11,21 @@ const COMBAT_FX = Object.freeze({
  parry:{life:.24,count:9,color:'#d8eee8'}
 });
 class CombatPresentation{
- constructor(r){this.r=r;this.trails=new Map();this.room=null;this.compositionBudget=512;this.silkKeys=new Set();this.silkSlot=0;}
+ constructor(r){this.r=r;this.trails=new Map();this.castSamples=new Map();this.castSerial=0;this.room=null;this.compositionBudget=512;this.silkKeys=new Set();this.silkSlot=0;}
+ castRecipe(a,skill,t){
+  if(typeof SkillEffects==='undefined')return null;
+  const base=SkillEffects.forSkill(skill?.id);if(!base){this.castSamples.delete(a.id);return null;}
+  let entry=this.castSamples.get(a.id);const active=a.action==='attack',elapsed=t-(a.actionStarted??0);
+  if(!entry||entry.id!==skill.id||(active&&(!entry.active||elapsed<entry.elapsed-1e-5))){
+   entry={id:skill.id,recipe:SkillEffects.forCast(base,String(a.id)+':'+(++this.castSerial))};this.castSamples.set(a.id,entry);
+  }
+  entry.active=active;entry.elapsed=elapsed;return entry.recipe;
+ }
+ hitRecipe(e){
+  if(e.type!=='hit'||typeof SkillEffects==='undefined')return null;
+  const cast=this.castSamples.get(e.source);
+  return e.skillRecipe??=(cast?.active&&cast.id===e.skill?cast.recipe:SkillEffects.forCast(SkillEffects.forSkill(e.skill),String(e.source??'')+':'+String(e.seq??e.born)));
+ }
  contact(e,target,x,z,dir){
   const r=this.r,cm=r.characterMaster,part=e.part||'torso';
   if(cm?.owner?.id===target?.id&&cm.lastFrame===r.frame){
@@ -38,7 +52,7 @@ class CombatPresentation{
  }
  cut(a,skill,beat,duration,full){
   const r=this.r,shape=SkillMotion.shape(skill),age=(beat-.43)*duration;
-  const recipe=typeof SkillEffects==='undefined'?null:SkillEffects.forSkill(skill.id);
+  const sample=this.castSamples.get(a.id),recipe=sample?.id===skill.id?sample.recipe:(typeof SkillEffects==='undefined'?null:SkillEffects.forSkill(skill.id));
   if(recipe){
    const dir=a.dir||0,reach=clamp((a.attackReach||skill.reach||1.5)/1.85,.5,1.5),ground=a.baseY??SkillMotion.groundAt(r,a.x,a.z);
    const point=v=>[a.x+(Math.cos(dir)*v[0]+Math.sin(dir)*v[2])*reach,ground+v[1],a.z+(-Math.sin(dir)*v[0]+Math.cos(dir)*v[2])*reach];
@@ -110,13 +124,13 @@ class CombatPresentation{
  update(s){const r=this.r,t=s.t,p=s.player,list=[...s.actors||[],...s.players||[]];if(p&&!list.some(e=>e.id===p.id))list.push(p);const byId=new Map(list.map(e=>[e.id,e]));
   this.compositionBudget=r.quality==='low'?256:512;
   this.silkSlot=0;
-  const room=s.room?.id??p?.room;if(this.room!==room){for(const id of this.trails.keys())this.forget(id);this.clearSilk();this.room=room;}
+  const room=s.room?.id??p?.room;if(this.room!==room){for(const id of this.trails.keys())this.forget(id);this.clearSilk();this.castSamples.clear();this.room=room;}
   const visible=new Set();
   for(const a of list){if(!a.alive||Math.hypot(a.x-r.camera.x,a.z-r.camera.z)>20)continue;visible.add(a.id);
    const skill=skillById(a.pendingSkill?.id??a.attackSkill);
    if(a.telegraph){const q=a.telegraph,u=clamp((t-q.started)/Math.max(.01,q.at-q.started),0,1);for(let j=0;j<3;j++)r.add('gltf:spark-streak',a.x+Math.sin(q.dir??a.dir)*(.8+j*.22),.28,a.z+Math.cos(q.dir??a.dir)*(.8+j*.22),.45,.24,.2,'#db9c63',-(q.dir??a.dir),0,Math.PI/2,4,.2+u*.42,r.fxBatches);}
    let trail=this.trails.get(a.id);const attacking=a.action==='attack'&&a.actionUntil>t&&skill;
-   const silkRecipe=typeof SkillEffects!=='undefined'?SkillEffects.forSkill(skill?.id):null;
+   const silkRecipe=this.castRecipe(a,skill,t);
    // Simulation shifts actionStarted during hitstop. This clock freezes both
    // the sampled blade wake and its noise, and resets cleanly on a new action.
    const trailTime=silkRecipe?.family==='blade'?t-(a.actionStarted??0):t;
@@ -139,7 +153,7 @@ class CombatPresentation{
    if(!trail.length){this.forget(a.id);continue;}
    if(trail.length>=2){
     if(typeof SkillSilk!=='undefined'&&silkRecipe?.family==='blade'){
-     const ribbon=SkillSilk.trail(trail,r.eye,trailTime,r.quality,silkRecipe);if(ribbon)this.composition([ribbon],v=>v);continue;
+     const ribbon=SkillSilk.trail(trail,r.eye,trailTime,r.quality,silkRecipe);if(ribbon)this.composition(SkillEffects.decorate([ribbon],silkRecipe),v=>v);continue;
     }
     const center=trail[0].p,P=[],N=[];
     for(let j=0;j<trail.length-1;j++){
@@ -156,8 +170,9 @@ class CombatPresentation{
    }
   }
   for(const id of this.trails.keys())if(!visible.has(id))this.forget(id);
+  for(const id of this.castSamples.keys())if(!visible.has(id))this.castSamples.delete(id);
   r.effects=r.effects.filter(e=>{
-   const composed=e.type==='hit'&&typeof SkillEffects!=='undefined'&&SkillEffects.forSkill(e.skill);
+   const composed=this.hitRecipe(e);
    return t-e.born<(composed ? SkillEffects.life(composed) : (COMBAT_FX[e.type]?.life??e.life));
   });
   for(const e of r.effects){
@@ -173,7 +188,7 @@ class CombatPresentation{
    // Fix the contact position on the first rendered frame; sparks then travel
    // independently of the body's recoil. Attack VFX retain their existing path.
    const center=hurt||e.type==='guarded'?(e.contact??=this.contact(e,target,x,z,dir)):[x-Math.sin(dir)*.22,1.18,z-Math.cos(dir)*.22];
-   const recipe=e.type==='hit'&&typeof SkillEffects!=='undefined'?SkillEffects.forSkill(e.skill):null;
+   const recipe=this.hitRecipe(e);
    if(recipe){
     // A confirmed contact owns its effect; a miss never invents an impact.
     const origin=e.skillContact??=this.contact(e,target,x,z,dir);
