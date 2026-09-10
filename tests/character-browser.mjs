@@ -10,6 +10,7 @@ import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {chromium} from '../deploy/node_modules/playwright/index.mjs';
+import {installCharacterPerformanceProbe} from './character-performance.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const started=Date.now();
 const mode=process.env.CHARACTER_MODE||'all';
@@ -211,24 +212,24 @@ try{
     check(version+' mobile layout',await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2&&!AERIN_QA.app.renderer.gl.isContextLost()));
     await page.setViewportSize({width:1000,height:900});
     }
-    // Actual render-loop timestamps, no simulation-clamped dt, no instantaneous FPS averaging.
+    // Actual completed-frame timestamps, no simulation-clamped dt or FPS averaging.
     // Three steady village runs plus rain/combat. Keep the viewport and workload
     // unchanged; slow software GPU samples extend to obtain at least 12 intervals.
     for(const scenario of (mode==='functional'||gate)?[]:['clear-1','clear-2','clear-3','rain','combat']){
       await fixture(page);
       await page.evaluate(scenario=>{const a=AERIN_QA.app,p=AERIN_QA.player();if(scenario==='rain')a.renderer.weather.setOverride('rain');
         if(scenario==='combat'){const d=a.sim.getRoom(p).actors.find(e=>e.kind==='dummy');p.x=d.x;p.z=d.z+1.3;}
-        const original=a.renderer.render.bind(a.renderer);window.characterPerf=[];
-        if(!a.renderer.qaRenderOriginal){a.renderer.qaRenderOriginal=original;a.renderer.render=function(...args){const t=performance.now(),result=this.qaRenderOriginal(...args);if(window.characterPerfOn)window.characterPerf.push({t,calls:this.stats.calls,triangles:this.stats.triangles,cpu:this.stats.cpuSubmitMs});return result;};}
-        a.closed=false;a.lastFrame=0;requestAnimationFrame(t=>a.frame(t));
       },scenario);
-      await page.waitForTimeout(10000);await page.evaluate(()=>{window.characterPerf=[];window.characterPerfOn=true;window.characterPerfStart=performance.now();});
-      try{await page.waitForFunction(()=>performance.now()-window.characterPerfStart>=30000&&window.characterPerf.length>=13,{},{timeout:90000,polling:1000});}
+      await page.evaluate(`window.characterPerformance=(${installCharacterPerformanceProbe.toString()})(AERIN_QA.app)`);
+      await page.evaluate(()=>{const a=AERIN_QA.app;a.closed=false;a.lastFrame=0;requestAnimationFrame(t=>a.frame(t));});
+      await page.waitForTimeout(10000);await page.evaluate(()=>window.characterPerformance.begin());
+      try{await page.waitForFunction(()=>window.characterPerformance.complete,{},{timeout:90000,polling:1000});}
       catch(error){if(error.name!=='TimeoutError')throw error;record.sampleTimeout=scenario;}
-      const sample=await page.evaluate(()=>{window.characterPerfOn=false;const a=AERIN_QA.app;a.closed=true;return {frames:window.characterPerf,stats:a.renderer.stats,age:AERIN_QA.player().age};});
+      const sample=await page.evaluate(()=>({...window.characterPerformance.stop(),age:AERIN_QA.player().age}));
       const dt=sample.frames.slice(1).map((f,i)=>f.t-sample.frames[i].t),sorted=[...dt].sort((a,b)=>a-b),percentile=p=>sorted[Math.min(sorted.length-1,Math.floor(sorted.length*p))];
       record.performance.push({scenario,frames:sample.frames.length,elapsedMs:dt.reduce((a,b)=>a+b,0),fps:dt.length?dt.length*1000/dt.reduce((a,b)=>a+b,0):null,p50:percentile(.5),p95:percentile(.95),p99:percentile(.99),max:dt.length?Math.max(...dt):null,over100ms:dt.filter(x=>x>100).length,raw:sample});
       flush();check(version+' '+scenario+' rendered frames',dt.length>=12,{frames:dt.length});
+      check(version+' '+scenario+' sustained window',sample.complete&&sample.elapsedMs>=30000,{elapsedMs:sample.elapsedMs,complete:sample.complete});
       await shot(version+'-perf-'+scenario);
     }
     check(version+' final WebGL has no error',await page.evaluate(()=>AERIN_QA.app.renderer.gl.getError()===0&&!AERIN_QA.app.renderer.gl.isContextLost()));

@@ -84,6 +84,14 @@ and structural evidence, not a claim of exhaustive visual equivalence or device 
 The full report records measured frame data for human comparison; no new arbitrary
 performance pass threshold is introduced.
 
+The performance probe synchronizes each fully rasterized frame with a 1-pixel
+readback, including warm-up. Completed-frame intervals include software GPU time;
+submission queues cannot accumulate across samples or screenshots. Each of the five
+scenarios still requires at least 30 seconds and 12 intervals within the existing
+90-second sampling timeout. The probe stops the native loop at completion and
+restores the renderer before the next scenario. Insufficient samples, context loss
+and an incomplete sustained window fail; viewport, quality and workload are unchanged.
+
 Superseded PR/develop Character runs cancel; queued stale develop work is skipped
 with an explicit NOT RUN summary. Deployment's existing revision and rollout guards
 are unchanged. Integration must use the final develop SHA's completed Full Review,
