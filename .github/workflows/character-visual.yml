@@ -3,17 +3,17 @@ on:
   workflow_dispatch:
     inputs:
       full_review:
-        description: Run the full visual and software performance comparison
+        description: Run full baseline/head visuals, video and software performance
         type: boolean
         default: false
+      baseline_sha:
+        description: Optional full comparison baseline (defaults to checked-out commit parent)
+        type: string
+        default: ''
   pull_request:
     branches: [develop]
-    paths:
-      - 'src/character/**'
-      - 'public/assets/character/**'
-      - 'tests/character*'
-      - 'tools/generate_character.py'
-      - '.github/workflows/character-visual.yml'
+  push:
+    branches: [develop]
 permissions:
   contents: read
 concurrency:
@@ -21,57 +21,95 @@ concurrency:
   cancel-in-progress: true
 jobs:
   character:
+    # Preserve the existing check identity for branch protection.
     name: Character build, input and visual evidence
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
+      - name: Avoid superseded develop verification
+        id: current
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          current=true
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            latest_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/develop" --jq .object.sha)"
+            if [ "$latest_sha" != "$GITHUB_SHA" ]; then
+              current=false
+              echo 'Superseded SHA: Character verification NOT RUN. Follow latest develop.' >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
+          echo "current=$current" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@v4
+        if: steps.current.outputs.current == 'true'
         with:
           node-version: '24'
           cache: npm
           cache-dependency-path: |
             package-lock.json
             deploy/package-lock.json
-      - run: npm ci --ignore-scripts --no-audit --no-fund
-      # General CI owns unit/regression/shader tests. This job owns the
-      # character assets and actual browser/input evidence, without a second full suite.
-      - run: node build.mjs
-      - name: Validate character assets
-        run: |
-          python -m pip install -r tools/requirements-character.txt
-          python tests/character_asset_validation.py
-      - run: npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
-      - run: bash tools/ci/prepare-linux-deps.sh browser
-      - name: Build the pull request implementation baseline
+      - name: Select Character verification
+        id: plan
+        if: steps.current.outputs.current == 'true'
         env:
-          CHARACTER_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '717931fd92271104b89a9c5645ed4792bbf06c2e' }}
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          CHARACTER_FULL_REVIEW: ${{ inputs.full_review }}
+        run: node tools/ci/character-plan.mjs
+      # General CI remains the sole owner of unit/regression/shader tests.
+      - name: Build current head
+        if: steps.plan.outputs.browser == 'true'
         run: |
-          git worktree add --detach /tmp/character-baseline "$CHARACTER_BASE_SHA"
+          npm ci --ignore-scripts --no-audit --no-fund
+          node build.mjs
+      - name: Validate changed character assets
+        if: steps.plan.outputs.assets == 'true'
+        run: |
+          python -m pip install 'numpy>=1.24,<3'
+          python tests/character_asset_validation.py > verification/current/assets.json
+      - name: Prepare browser
+        if: steps.plan.outputs.browser == 'true'
+        run: |
+          npm ci --prefix deploy --ignore-scripts --no-audit --no-fund
+          bash tools/ci/prepare-linux-deps.sh browser
+      - name: Build baseline only for Full Review
+        id: baseline
+        if: steps.plan.outputs.full == 'true'
+        env:
+          REQUESTED_BASE: ${{ inputs.baseline_sha || github.event.before }}
+        run: |
+          baseline="$REQUESTED_BASE"
+          if [ -z "$baseline" ] || [ "$baseline" = 0000000000000000000000000000000000000000 ]; then
+            baseline="$(git rev-parse HEAD^)"
+          fi
+          [[ "$baseline" =~ ^[0-9a-f]{40}$ ]]
+          git cat-file -e "$baseline^{commit}"
+          git worktree add --detach /tmp/character-baseline "$baseline"
+          npm ci --prefix /tmp/character-baseline --ignore-scripts --no-audit --no-fund
           node /tmp/character-baseline/build.mjs
-      - name: Verify character input, equipment and save integration
-        # Software rendering of the integrated village needs several seconds
-        # per frame; retain the complete functional coverage and evidence.
-        timeout-minutes: 35
+          echo "sha=$baseline" >> "$GITHUB_OUTPUT"
+      - name: Verify Character (head gate or Full Review)
+        if: steps.plan.outputs.browser == 'true'
         env:
+          CHARACTER_MODE: ${{ steps.plan.outputs.mode }}
           CHARACTER_BASELINE: /tmp/character-baseline/dist/index.html
-          CHARACTER_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '717931fd92271104b89a9c5645ed4792bbf06c2e' }}
-          CHARACTER_MODE: functional
-          CHARACTER_AFTER_ONLY: '1'
+          CHARACTER_BASE_SHA: ${{ steps.baseline.outputs.sha }}
         run: node tests/character-browser.mjs
-      - name: Compare sustained performance on the same runner
-        if: inputs.full_review == true
-        timeout-minutes: 22
+      - name: Compare sustained software performance without video
+        if: steps.plan.outputs.full == 'true'
+        timeout-minutes: 25
         env:
-          CHARACTER_BASELINE: /tmp/character-baseline/dist/index.html
-          CHARACTER_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '717931fd92271104b89a9c5645ed4792bbf06c2e' }}
           CHARACTER_MODE: performance
+          CHARACTER_BASELINE: /tmp/character-baseline/dist/index.html
+          CHARACTER_BASE_SHA: ${{ steps.baseline.outputs.sha }}
         run: node tests/character-browser.mjs
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && steps.current.outputs.current == 'true'
         with:
           name: character-evidence-${{ github.run_id }}-${{ github.run_attempt }}
           path: verification/current/
