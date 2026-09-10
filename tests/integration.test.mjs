@@ -42,6 +42,9 @@ test('missing, pending, cancelled, skipped and failed current-head checks cannot
   assert(!checkEvidence(green(),[],['Unknown required check']).ok);
   assert(!checkEvidence(green(),[{context:'external',state:'pending'}]).ok);
   assert(!checkEvidence([...green(),{path:'.github/workflows/extra.yml',status:'completed',conclusion:'failure',jobs:[]}]).ok);
+  const audit={path:'.github/workflows/integration-check.yml',status:'completed',conclusion:'failure',jobs:[]};
+  assert(!checkEvidence([...green(),audit]).ok,'actual integration must reject a failed integration contract');
+  assert(checkEvidence([...green(),{...audit,status:'in_progress',conclusion:null,selfAudit:true}]).ok,'read-only live audit may avoid waiting for itself');
 });
 
 class Fixture {

@@ -77,7 +77,7 @@ export function checkEvidence(runs, statuses = [], requiredContexts = []) {
     for (const job of requiredJobs[name]) if (!run.jobs.some(j => j.name === job && j.conclusion === 'success')) return {ok:false,failed:true,reason:`Missing successful job ${job}`};
   }
   for (const run of runs) {
-    if (run.path === '.github/workflows/integration-check.yml') continue; // This read-only audit cannot wait for itself.
+    if (run.selfAudit === true) continue; // Only the currently executing read-only audit may exclude itself.
     if (run.status !== 'completed') return {ok:false,reason:`Pending ${run.path}`};
     if (run.conclusion !== 'success') return {ok:false,failed:true,reason:`${run.path}: ${run.conclusion}`};
   }

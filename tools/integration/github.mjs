@@ -45,14 +45,16 @@ export class GitHub {
       if(r.head_sha!==head || r.event!==event || r.head_repository?.full_name!==REPOSITORY)continue;
       if(!byPath.has(r.path))byPath.set(r.path,r);
     }
-    return Promise.all([...byPath.values()].map(async r=>({...r,jobs:await this.pages(`actions/runs/${r.id}/jobs?filter=latest`,'jobs')})));
+    return Promise.all([...byPath.values()].map(async r=>({...r,
+      selfAudit:r.path==='.github/workflows/integration-check.yml' && process.env.GITHUB_EVENT_NAME==='pull_request' && r.id===Number(process.env.GITHUB_RUN_ID),
+      jobs:await this.pages(`actions/runs/${r.id}/jobs?filter=latest`,'jobs')})));
   }
   async checks(head, protection) {
     const [runs,allStatuses,checks]=await Promise.all([this.runs(head),this.pages(`commits/${head}/statuses`),this.pages(`commits/${head}/check-runs?filter=latest`,'check_runs')]);
     const latest=new Map();
     for(const s of allStatuses.sort((a,b)=>b.id-a.id))if(!latest.has(s.context))latest.set(s.context,s);
     const evidence=checkEvidence(runs,[...latest.values()],protection.requiredContexts||[]);
-    const auditIds=new Set(runs.filter(r=>r.path==='.github/workflows/integration-check.yml').flatMap(r=>r.jobs.map(j=>Number(j.check_run_url?.split('/').pop()))));
+    const auditIds=new Set(runs.filter(r=>r.selfAudit).flatMap(r=>r.jobs.map(j=>Number(j.check_run_url?.split('/').pop()))));
     for(const c of checks) {
       if(auditIds.has(c.id))continue;
       if(c.head_sha!==head)return {runs,evidence:{ok:false,reason:'Check revision mismatch'}};
