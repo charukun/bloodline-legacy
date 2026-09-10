@@ -124,6 +124,13 @@ test('reader exhausts pages, keeps latest same-head workflow attempt and discard
   api.pages=async(endpoint)=>endpoint.includes('/jobs?')?[]:[{id:1,path:'x',head_sha:H,event:'pull_request',head_repository:{full_name:REPOSITORY}},{id:2,path:'x',head_sha:H,event:'pull_request',head_repository:{full_name:REPOSITORY}},{id:3,path:'y',head_sha:A,event:'pull_request',head_repository:{full_name:REPOSITORY}},{id:4,path:'z',head_sha:H,event:'push',head_repository:{full_name:REPOSITORY}}];
   assert.deepEqual((await api.runs(H)).map(r=>r.id),[2]);
 });
+test('non-admin protection reader combines enforced classic rules and rulesets, and fails closed on missing evidence',async()=>{
+  const api=new GitHub('test');api.graph=async(query)=>{assert(query.includes('refUpdateRule'));assert(!query.includes('branchProtectionRule'));return {repository:{ref:{refUpdateRule:{requiredStatusCheckContexts:['Build and verify']}}}};};
+  api.repo=async()=>[{type:'required_status_checks',parameters:{required_status_checks:[{context:'External gate'}]}}];
+  const p=await api.protection();assert(p.known);assert.deepEqual(p.requiredContexts,['Build and verify','External gate']);
+  api.graph=async()=>({repository:{ref:{refUpdateRule:null}}});assert.equal((await api.protection()).known,false);
+  api.graph=async()=>{throw Error('Denied');};assert.equal((await api.protection()).known,false);
+});
 test('explicit integration deployment cannot target staging/main, stale SHA or non-dispatch event',()=>{
   assert.doesNotThrow(()=>assertIntegrationDeployment('dev','develop','workflow_dispatch',A,A));
   for(const args of [['staging','staging','workflow_dispatch',A,A],['production','main','workflow_dispatch',A,A],['dev','develop','pull_request',A,A],['dev','develop','workflow_dispatch',A,B],['dev','develop','workflow_dispatch','',A]])assert.throws(()=>assertIntegrationDeployment(...args));

@@ -32,8 +32,10 @@ branch through its normal reviewed release process. That is a separate main chan
 and can trigger the existing Production pipeline; do not copy game changes to main
 as an integration setup shortcut. This WORK's deliverable is a develop PR.
 
-No branch protection is disabled or bypassed. The runtime reads classic protection
-through GraphQL and effective ruleset rules through REST. Missing permission or
+No branch protection is disabled or bypassed. The runtime reads the viewer-enforced
+`RefUpdateRule` through GraphQL and effective ruleset rules through REST. This is
+the view available to non-admin tokens; the administrative settings remain UNKNOWN
+and are never assumed absent. Missing permission or
 incomplete evidence blocks mutation. If GitHub rejects the ordinary merge operation,
 report the concrete blocker; do not add an administrator bypass. The API connection
 used by a WORK and the Actions job token can have different read permissions.
@@ -135,5 +137,6 @@ The implementation PR must report those stages separately as VERIFIED/UNVERIFIED
 
 - [GitHub merge queue availability](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue)
 - [Workflow events and default-branch behavior](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows)
+- [Non-admin viewer-enforced RefUpdateRule](https://docs.github.com/en/graphql/reference/git#refupdaterule)
 - [GITHUB_TOKEN event suppression and dispatch](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)
 - [Existing validation ownership](CI_VALIDATION.md), [Review Lab](REVIEW_LAB.md)

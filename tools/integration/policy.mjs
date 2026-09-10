@@ -47,6 +47,7 @@ export function decision(s) {
   if (!SHA.test(p.head.sha) || !SHA.test(s.base)) return stop('human', 'Unknown revision identity');
   if (p.labels.some(l => ['integration:hold','do-not-merge'].includes(l.name))) return stop('human', 'Explicit integration hold');
   if (!s.protection.known) return stop('human', 'Branch protection UNKNOWN; no merge');
+  if (s.protection.branch?.requiresLinearHistory || s.protection.rules?.some(r=>r.type==='required_linear_history')) return stop('human', 'Merge commits prohibited by branch protection');
   if (s.reviewDecision === 'CHANGES_REQUESTED') return stop('human', 'Changes requested');
   if (p.mergeable === false || p.mergeable_state === 'dirty') return stop('human', 'Merge conflict');
   if (p.mergeable !== true || ['unknown','behind','blocked','unstable'].includes(p.mergeable_state)) return stop('wait', `GitHub mergeability: ${p.mergeable_state}`);

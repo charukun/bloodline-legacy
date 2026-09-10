@@ -21,19 +21,21 @@ export class GitHub {
   }
   async graph(query, variables) {
     const r=await this.api('/graphql',{method:'POST',body:{query,variables}});
-    if(r.errors?.length)throw Error('GraphQL evidence unavailable');return r.data;
+    if(r.errors?.length)throw Error(`GraphQL evidence unavailable: ${r.errors.map(e=>e.message).join('; ')}`);return r.data;
   }
   async base() { return (await this.repo('git/ref/heads/develop')).object.sha; }
   async permission(login) { return (await this.repo(`collaborators/${encodeURIComponent(login)}/permission`)).permission; }
   async protection() {
     try {
-      const data=await this.graph(`query { repository(owner:"charukun",name:"bloodline-legacy") { ref(qualifiedName:"refs/heads/develop") { branchProtectionRule { requiresStatusChecks requiredStatusCheckContexts requiresStrictStatusChecks requiresApprovingReviews requiredApprovingReviewCount requiresConversationResolution } } } }`);
+      // RefUpdateRule is GitHub's non-admin view of protection enforced on this token.
+      // BranchProtectionRule is administration-only and makes GITHUB_TOKEN fail closed forever.
+      const data=await this.graph(`query { repository(owner:"charukun",name:"bloodline-legacy") { ref(qualifiedName:"refs/heads/develop") { refUpdateRule { pattern requiredStatusCheckContexts requiredApprovingReviewCount requiresCodeOwnerReviews requiresConversationResolution requiresLinearHistory allowsForcePushes allowsDeletions } } } }`);
       // REST exposes active ruleset rules without requiring administration access.
       const rules=await this.repo('rules/branches/develop');
-      const branch=data.repository?.ref?.branchProtectionRule;
+      const branch=data.repository?.ref?.refUpdateRule;
       if(!branch || !Array.isArray(rules))return {known:false};
       const requiredContexts=[...(branch.requiredStatusCheckContexts||[]),...rules.filter(r=>r.type==='required_status_checks').flatMap(r=>r.parameters.required_status_checks.map(c=>c.context))];
-      return {known:true,branch,rules,requiredContexts:[...new Set(requiredContexts)]};
+      return {known:true,source:'viewer-enforced RefUpdateRule and active rulesets',administrativeDetails:'UNKNOWN (not used to waive protection)',branch,rules,requiredContexts:[...new Set(requiredContexts)]};
     } catch(e) { return {known:false,error:e.message}; }
   }
   async runs(head, event='pull_request') {
