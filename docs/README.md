@@ -18,6 +18,7 @@ historical化はゲーム仕様や技術上の制約の変更を意味しない�
 - [DEPLOYMENT.md](DEPLOYMENT.md): 配信実装・確認方法
 - [DEV_FAST_CI.md](DEV_FAST_CI.md): DEVのHTTP確認と専用Browser workflowの区別
 - [CI_VALIDATION.md](CI_VALIDATION.md): 変更範囲に応じたPR検証と最終developの全体回帰
+- [AUTOMATED_INTEGRATION.md](AUTOMATED_INTEGRATION.md): Ready PRの自動判定、バッチ最終検証、初回有効化と復旧
 - [BUILD_VERSION.md](BUILD_VERSION.md): Build Versionの生成と識別
 - [GITHUB_WORK_HANDOFF.md](GITHUB_WORK_HANDOFF.md)、[GITHUB_CICD_INSTRUCTIONS.md](GITHUB_CICD_INSTRUCTIONS.md): 上記への参照入口。初回搬入の重複手順は廃止
 - [初回移行記録](historical/initial-migration/README.md): 新規作成・main搬入・35ファイル固定を含む旧手順の来歴

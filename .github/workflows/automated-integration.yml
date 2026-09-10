@@ -1,0 +1,48 @@
+name: Automated develop integration
+on:
+  pull_request_target:
+    branches: [develop]
+    types: [opened, ready_for_review, reopened, synchronize, edited, labeled, unlabeled, closed]
+  workflow_run:
+    workflows: [Bloodline Legacy CI and deployment, Character visual verification, Review Lab Preview]
+    types: [completed]
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: bloodline-develop-integration
+  cancel-in-progress: false
+jobs:
+  integrate:
+    if: github.repository == 'charukun/bloodline-legacy' && vars.AUTOMATED_INTEGRATION_PAUSED != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+      checks: read
+      statuses: read
+    steps:
+      # Only merged develop code is trusted. Never checkout a PR or consume its artifacts here.
+      - uses: actions/checkout@v6
+        with:
+          ref: develop
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Reconcile current queue and recover unfinished batches
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INTEGRATION_PAUSED: ${{ vars.AUTOMATED_INTEGRATION_PAUSED }}
+        run: node tools/integration/controller.mjs --apply
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-${{ github.run_id }}-${{ github.run_attempt }}
+          path: deploy/evidence/integration.json
+          if-no-files-found: error
+          retention-days: 30
