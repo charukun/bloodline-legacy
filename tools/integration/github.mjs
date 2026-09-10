@@ -8,7 +8,7 @@ export class GitHub {
     if (!r.ok) { const e=Error(`GitHub ${method} ${endpoint}: ${r.status}`);e.status=r.status;throw e; }
     return r.status === 204 ? null : r.json();
   }
-  repo(endpoint, options) { return this.api(`/repos/${REPOSITORY}/${endpoint}`,options); }
+  repo(endpoint, options) { return this.api(`/repos/${REPOSITORY}${endpoint?'/'+endpoint:''}`,options); }
   async pages(endpoint, key) {
     const all=[];
     for(let page=1;page<=50;page++) {

@@ -115,6 +115,8 @@ test('GitHub transport sends expected head and propagates protection denial with
   const calls=[];const api=new GitHub('test-token',async(url,opts)=>{calls.push({url,opts});return new Response('{}',{status:403});});
   await assert.rejects(api.repo('pulls/1/merge',{method:'PUT',body:{sha:H,merge_method:'merge'}}),/403/);
   assert.equal(calls.length,1);assert.equal(JSON.parse(calls[0].opts.body).sha,H);
+  const metadata=new GitHub('test-token',async(url)=>{assert.equal(url,`https://api.github.com/repos/${REPOSITORY}`);return Response.json({default_branch:'main'});});
+  assert.equal((await metadata.repo('')).default_branch,'main');
 });
 test('reader exhausts pages, keeps latest same-head workflow attempt and discards other provenance',async()=>{
   const api=new GitHub('test');let pages=0;
