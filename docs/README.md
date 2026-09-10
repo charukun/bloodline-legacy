@@ -14,6 +14,8 @@ historical化はゲーム仕様や技術上の制約の変更を意味しない�
 
 ## 運用の技術資料
 
+- [Production Workflows](workflows/README.md): 3D Model、Skill / Combat Motion、Enemy制作の標準工程と中間成果物の品質ゲート。制作対象に該当するWORKだけが参照する
+
 - [BRANCH_STRATEGY.md](BRANCH_STRATEGY.md): branchの役割
 - [DEPLOYMENT.md](DEPLOYMENT.md): 配信実装・確認方法
 - [DEV_FAST_CI.md](DEV_FAST_CI.md): DEVのHTTP確認と専用Browser workflowの区別
