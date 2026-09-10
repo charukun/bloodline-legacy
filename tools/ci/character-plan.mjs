@@ -14,7 +14,7 @@ export function characterPlan({event, fullReview=false, changedFiles=[], diffAva
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   const changes=readChanges(process.env);
-  const plan={...characterPlan({event:process.env.GITHUB_EVENT_NAME,fullReview:process.env.CHARACTER_FULL_REVIEW==='true',...changes}),...changes,head:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim()};
+  const plan={...characterPlan({event:process.env.CHARACTER_PLAN_EVENT||process.env.GITHUB_EVENT_NAME,fullReview:process.env.CHARACTER_FULL_REVIEW==='true',...changes}),...changes,head:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim()};
   fs.mkdirSync('verification/current',{recursive:true});
   fs.writeFileSync('verification/current/plan.json',JSON.stringify(plan,null,2)+'\n');
   if(process.env.GITHUB_OUTPUT)for(const key of ['browser','full','mode','assets'])fs.appendFileSync(process.env.GITHUB_OUTPUT,`${key}=${plan[key]}\n`);

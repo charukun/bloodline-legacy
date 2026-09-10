@@ -1,10 +1,24 @@
 name: Bloodline Legacy CI and deployment
+run-name: ${{ inputs.integration_sha && format('Integration final {0}', inputs.integration_sha) || github.workflow }}
 on:
   push:
     branches: [develop, staging, main]
   pull_request:
     branches: [develop, staging, main]
   workflow_dispatch:
+    inputs:
+      integration_sha:
+        description: Exact final develop SHA (automation only; empty means validation without deploy)
+        type: string
+        default: ''
+      integration_base:
+        description: First develop SHA before this integration batch
+        type: string
+        default: ''
+      integration_prs:
+        description: Comma-separated merged PR numbers for Review preview cleanup
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -22,6 +36,18 @@ jobs:
     outputs:
       current: ${{ steps.current.outputs.current }}
     steps:
+      - name: Validate integration dispatch identity
+        if: inputs.integration_sha != ''
+        env:
+          FINAL_SHA: ${{ inputs.integration_sha }}
+          BASE_SHA: ${{ inputs.integration_base }}
+          MERGED_PRS: ${{ inputs.integration_prs }}
+        run: |
+          test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          test "$GITHUB_REF" = refs/heads/develop
+          test "$FINAL_SHA" = "$GITHUB_SHA"
+          [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$MERGED_PRS" =~ ^[1-9][0-9]*(,[1-9][0-9]*){0,7}$ ]]
       - name: Avoid expensive work for superseded develop pushes
         id: current
         env:
@@ -130,7 +156,7 @@ jobs:
     # Enable each environment only after its source/hosting audit and account setup.
     # Repository-level secrets avoid requiring paid private-repo Environments.
     if: >-
-      github.event_name == 'push' &&
+      (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/develop' && inputs.integration_sha == github.sha)) &&
       vars[format('CICD_ENABLED_{0}', needs.build.outputs.suffix)] == 'true' &&
       contains(fromJSON('["refs/heads/develop","refs/heads/staging","refs/heads/main"]'), github.ref)
     runs-on: ubuntu-latest
@@ -162,10 +188,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           EVENT_NAME: ${{ github.event_name }}
           REF_NAME: ${{ github.ref_name }}
+          INTEGRATION_SHA: ${{ inputs.integration_sha }}
         run: |
           node --input-type=module <<'JS'
-          import {assertDeployment,environments} from './deploy/config.mjs';
-          assertDeployment(process.env.TARGET,process.env.REF_NAME,process.env.EVENT_NAME);
+          import {assertDeployment,assertIntegrationDeployment,environments} from './deploy/config.mjs';
+          if(process.env.INTEGRATION_SHA) assertIntegrationDeployment(process.env.TARGET,process.env.REF_NAME,process.env.EVENT_NAME,process.env.INTEGRATION_SHA,process.env.GITHUB_SHA);
+          else assertDeployment(process.env.TARGET,process.env.REF_NAME,process.env.EVENT_NAME);
           const u=new URL(process.env.FIXED_URL);
           if(u.protocol!=='https:' || u.username || u.password || u.pathname!=='/' || u.search || u.hash || !u.hostname.startsWith(environments[process.env.TARGET].worker+'.') || !u.hostname.endsWith('.workers.dev')) throw Error('Confirm the correct fixed Worker URL before deploying');
           JS
@@ -201,3 +229,42 @@ jobs:
           name: smoke-published-${{ github.run_id }}-${{ github.run_attempt }}
           path: deploy/evidence/
           retention-days: 7
+
+  character-final:
+    name: Full Character
+    needs: revision
+    if: inputs.integration_sha != '' && needs.revision.outputs.current == 'true'
+    uses: ./.github/workflows/character-visual.yml
+    with:
+      integration_sha: ${{ inputs.integration_sha }}
+      integration_base: ${{ inputs.integration_base }}
+  review-final:
+    name: Final Review Lab
+    needs: revision
+    if: inputs.integration_sha != '' && needs.revision.outputs.current == 'true'
+    uses: ./.github/workflows/review-lab.yml
+    with:
+      integration_sha: ${{ inputs.integration_sha }}
+      integration_prs: ${{ inputs.integration_prs }}
+    secrets: inherit
+  integration-result:
+    name: Record integrated develop result
+    needs: [revision, build, deploy, character-final, review-final]
+    if: always() && inputs.integration_sha != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Require every final gate and the current develop identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FINAL_SHA: ${{ inputs.integration_sha }}
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          node --input-type=module <<'JS'
+          const results=JSON.parse(process.env.RESULTS);
+          if(Object.values(results).some(job=>job.result!=='success'))throw Error('Final integration gate failed, cancelled or skipped');
+          JS
+          current_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/develop" --jq .object.sha)"
+          test "$current_sha" = "$FINAL_SHA"
+          echo "Final develop verified: $FINAL_SHA (full regression, applicable Character Full Review, DEV artifact/HTTP, Review Lab browser and authorization)" >> "$GITHUB_STEP_SUMMARY"
