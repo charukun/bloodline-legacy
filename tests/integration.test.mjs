@@ -101,6 +101,12 @@ test('duplicate wakeups wait on the same dispatched final workflow',async()=>{
   api.dispatchRuns=[{id:7,head_sha:C,display_title:`Integration final ${C}`,status:'queued'}];
   const r=await integrate(api,{apply:true});assert(r.blocked);assert.equal(api.dispatches.length,1);assert.equal(api.merges.length,2);
 });
+test('a later manual push cannot hide an unverified bot batch behind a green narrow Character push',async()=>{
+  const api=new Fixture({count:1});api.failDispatch=true;await integrate(api,{apply:true});
+  api.current=C;api.commits[C]={commit:{message:'manual docs merge'},parents:[{sha:B}]};api.failDispatch=false;
+  const r=await integrate(api,{apply:true});assert(r.recovered);assert.deepEqual(api.merges,[1]);
+  assert.deepEqual(api.dispatches.at(-1).inputs,{integration_sha:C,integration_base:A,integration_prs:'1'});
+});
 test('PR metadata/head changes and external develop movement abort before mutation',async()=>{
   const api=new Fixture();api.open[0].head={...api.open[0].head,sha:C};
   const r=await integrate(api,{apply:true});assert(r.error);assert.equal(api.merges.length,0);

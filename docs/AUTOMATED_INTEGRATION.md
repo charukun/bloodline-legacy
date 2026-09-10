@@ -9,7 +9,8 @@ the implementation in this tree, not proof that the automation is already instal
 PR update, CI completion and a 15-minute recovery schedule wake it. It reloads the
 current queue; no ChatGPT session, ChatGPT scheduled task, dummy PR, external server,
 PAT or paid merge queue is required. The GitHub schedule can be delayed; it is a
-recovery mechanism, not a latency guarantee. No PR means no merge or deployment.
+recovery mechanism, not a latency guarantee. An empty queue with no unfinished
+batch causes no merge or deployment.
 
 The repository is personally owned. GitHub's merge queue is currently available
 for organization repositories, and ordinary auto-merge does not analyze dependency
@@ -119,7 +120,10 @@ Each bot merge commit stores an immutable `Bloodline-Integration` JSON marker wi
 the original baseline and merged PR list. If the process stops after merge or the
 dispatch response is lost, the next invocation locates the exact-SHA workflow or
 recovers its missing dispatch from the marker. A completed/queued matching final
-run prevents re-merging that batch. Actions concurrency serializes controllers and
+run prevents re-merging that batch. If an external update followed an unfinished
+batch, a bounded first-parent scan recovers its original baseline: the external
+push's narrow Character diff cannot hide the unverified earlier changes. Incomplete
+ancestry is UNKNOWN. Actions concurrency serializes controllers and
 preserves deployments; existing superseded revision and PR-cancellation guards remain.
 
 GitHub's REST merge API atomically guards the PR head, but has no expected-base

@@ -1,6 +1,5 @@
 // Pure decisions. GitHub data is input, never executable instructions.
 export const REPOSITORY = 'charukun/bloodline-legacy';
-export const FINAL_CHECK = 'Integration final verification';
 export const SHA = /^[a-f0-9]{40}$/;
 export const workflows = ['deploy.yml', 'character-visual.yml', 'review-lab.yml'];
 export const requiredJobs = {

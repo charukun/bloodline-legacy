@@ -26,6 +26,27 @@ export function order(prs) {
   return {prs:result,cyclic};
 }
 
+async function ancestorRecovery(api, commit) {
+  // A manual push may follow a bot merge before its dispatch. Its normal push
+  // diff excludes that bot batch, so a green docs-only Character skip is insufficient.
+  for(let count=0;count<50;count++) {
+    if(commit.files?.some(f=>f.filename==='tools/integration/controller.mjs'&&f.status==='added'))return null;
+    const parent=commit.parents?.[0]?.sha;
+    if(!parent)return null;
+    commit=await api.repo(`commits/${parent}`);
+    const batch=readMarker(commit.commit.message);
+    if(!batch)continue;
+    const runs=await api.pages(`actions/workflows/deploy.yml/runs?head_sha=${parent}&event=workflow_dispatch`,'workflow_runs');
+    const latest=runs.filter(r=>r.head_sha===parent&&r.display_title===`Integration final ${parent}`).sort((a,b)=>b.id-a.id)[0];
+    if(latest?.status==='completed'&&latest.conclusion==='success') {
+      const jobs=await api.pages(`actions/runs/${latest.id}/jobs?filter=latest`,'jobs');
+      if(jobs.some(j=>j.name==='Record integrated develop result'&&j.conclusion==='success'))return null;
+    }
+    return {kind:'recover',batch,reason:'Unverified bot batch preceded an external develop update; validate the whole baseline range'};
+  }
+  return {kind:'human',reason:'Integration ancestry exceeds bounded scan; final baseline UNKNOWN'};
+}
+
 export async function finalState(api, sha) {
   const dispatches=await api.pages(`actions/workflows/deploy.yml/runs?head_sha=${sha}&event=workflow_dispatch`,'workflow_runs');
   const final=dispatches.filter(r=>r.head_sha===sha && r.display_title===`Integration final ${sha}`).sort((a,b)=>b.id-a.id)[0];
@@ -50,6 +71,11 @@ export async function finalState(api, sha) {
     const run=runs.find(r=>r.path===`.github/workflows/${file}`);
     if(!run || run.status!=='completed')return {kind:'wait',reason:`Current develop ${file} evidence pending/absent`};
     if(run.conclusion!=='success' || names.some(n=>!run.jobs.some(j=>j.name===n&&j.conclusion==='success')))return {kind:'human',reason:`Current develop ${file} verification not successful`};
+  }
+  const recovery=await ancestorRecovery(api,commit);
+  if(recovery) {
+    if(recovery.kind==='recover' && (await api.repo(`compare/${recovery.batch.base}...${sha}`)).status!=='ahead')throw Error('Recovery baseline is not an ancestor');
+    return recovery;
   }
   return {kind:'verified',reason:'Current develop full push validation and DEV/Review deployment passed'};
 }
