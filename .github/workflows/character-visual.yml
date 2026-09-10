@@ -1,5 +1,13 @@
 name: Character visual verification
 on:
+  workflow_call:
+    inputs:
+      integration_sha:
+        required: true
+        type: string
+      integration_base:
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       full_review:
@@ -28,9 +36,19 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ inputs.integration_sha || github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
+      - name: Validate integration baseline
+        if: inputs.integration_sha != ''
+        env:
+          FINAL_SHA: ${{ inputs.integration_sha }}
+          BASE_SHA: ${{ inputs.integration_base }}
+        run: |
+          test "$GITHUB_REF" = refs/heads/develop
+          test "$FINAL_SHA" = "$GITHUB_SHA"
+          [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git merge-base --is-ancestor "$BASE_SHA" "$FINAL_SHA"
       - name: Avoid superseded develop verification
         id: current
         env:
@@ -57,9 +75,10 @@ jobs:
         id: plan
         if: steps.current.outputs.current == 'true'
         env:
-          CI_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
-          CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          CI_BASE_SHA: ${{ inputs.integration_base || github.event.pull_request.base.sha || github.event.before }}
+          CI_HEAD_SHA: ${{ inputs.integration_sha || github.event.pull_request.head.sha || github.sha }}
           CHARACTER_FULL_REVIEW: ${{ inputs.full_review }}
+          CHARACTER_PLAN_EVENT: ${{ inputs.integration_sha != '' && 'push' || github.event_name }}
         run: node tools/ci/character-plan.mjs
       # General CI remains the sole owner of unit/regression/shader tests.
       - name: Build current head
@@ -81,7 +100,7 @@ jobs:
         id: baseline
         if: steps.plan.outputs.full == 'true'
         env:
-          REQUESTED_BASE: ${{ inputs.baseline_sha || github.event.before }}
+          REQUESTED_BASE: ${{ inputs.integration_base || inputs.baseline_sha || github.event.before }}
         run: |
           baseline="$REQUESTED_BASE"
           if [ -z "$baseline" ] || [ "$baseline" = 0000000000000000000000000000000000000000 ]; then

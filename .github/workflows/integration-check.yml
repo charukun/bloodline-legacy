@@ -1,0 +1,37 @@
+name: Integration contract and live audit
+on:
+  pull_request:
+    branches: [develop]
+    paths: ['tools/integration/**', 'tests/integration*', '.github/workflows/**', 'docs/AUTOMATED_INTEGRATION.md']
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
+  checks: read
+  statuses: read
+concurrency:
+  group: integration-audit-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test tests/integration*.test.mjs
+      - name: Exercise the actual GitHub reader without mutation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node tools/integration/controller.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-audit-${{ github.event.pull_request.head.sha }}
+          path: deploy/evidence/integration.json
+          retention-days: 30
