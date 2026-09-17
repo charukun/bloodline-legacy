@@ -1,8 +1,9 @@
 # Tidebreak current combat preview
 
-This file exists only to open an isolated Draft PR Review Lab preview from the current `develop` baseline.
+This Draft branch exists only to publish and inspect the current Bloodline Legacy combat runtime from the browser.
 
 - Source baseline: `dcfb48523ff0f8a48a997afd51f6823a4d7e203e`
-- Runtime under review: the existing Bloodline Legacy combat / skill / presentation runtime included by `tools/build-review-lab.mjs`
-- No gameplay, balance, asset, CI policy, staging, main, or Production behavior is changed by this marker.
-- Keep this PR Draft and open while the isolated preview URL is needed.
+- Runtime under review: the existing combat / skill / presentation runtime included by `tools/build-review-lab.mjs`
+- Public preview: deployed without login by `.github/workflows/tidebreak-public-preview.yml`
+- No gameplay, balance, asset, staging, main, or Production behavior is changed.
+- Keep this PR Draft and open while the public preview URL is needed.
